@@ -1,0 +1,157 @@
+import re, sys
+sys.stdout.reconfigure(encoding='utf-8')
+
+# 1. New attributes definition
+new_attributes_ts = '''export const initialAttributes: Attribute[] = [
+  {
+    id: 'attr-material',
+    key: 'material',
+    titleRu: 'Материал',
+    titleUz: 'Material',
+    type: 'select',
+    options: [
+      { value: 'ПНД', labelRu: 'ПНД (HDPE)', labelUz: 'PND (HDPE)' },
+      { value: 'ПВД', labelRu: 'ПВД (LDPE)', labelUz: 'PVD (LDPE)' },
+      { value: 'Нитрил', labelRu: 'Нитрил', labelUz: 'Nitril' },
+      { value: 'Резина', labelRu: 'Резина', labelUz: 'Rezina' },
+      { value: 'Алюминий', labelRu: 'Алюминий', labelUz: 'Alyuminiy' },
+      { value: 'ПВХ / Стрейч', labelRu: 'ПВХ / Стрейч', labelUz: 'PVX / Strech' },
+      { value: 'Пергамент', labelRu: 'Пищевой пергамент', labelUz: 'Oziq-ovqat pergamenti' },
+      { value: 'Полиэтилен', labelRu: 'Полиэтилен', labelUz: 'Polietilen' },
+    ],
+    filterable: true,
+    required: false,
+    cardVisible: true,
+    productVisible: true,
+    sortOrder: 1,
+  },
+  {
+    id: 'attr-volume',
+    key: 'volume',
+    titleRu: 'Объём',
+    titleUz: 'Hajmi',
+    type: 'select',
+    unit: 'л',
+    categoryIds: ['cat-trash-bags', 'cat-packaging'],
+    options: [
+      { value: '20 л', labelRu: '20 литров', labelUz: '20 litr' },
+      { value: '22 л', labelRu: '22 литра', labelUz: '22 litr' },
+      { value: '41 л', labelRu: '41 литр', labelUz: '41 litr' },
+      { value: '85 л', labelRu: '85 литров', labelUz: '85 litr' },
+      { value: '160 л', labelRu: '160 литров', labelUz: '160 litr' },
+      { value: '220 л', labelRu: '220 литров', labelUz: '220 litr' },
+      { value: '240 л', labelRu: '240 литров', labelUz: '240 litr' },
+    ],
+    filterable: true,
+    required: false,
+    cardVisible: true,
+    productVisible: true,
+    sortOrder: 2,
+  },
+  {
+    id: 'attr-thickness',
+    key: 'thickness',
+    titleRu: 'Толщина / Плотность',
+    titleUz: 'Qalinligi / Zichligi',
+    type: 'select',
+    unit: 'мкм',
+    options: [
+      { value: '8 мкм', labelRu: '8 мкм', labelUz: '8 mkm' },
+      { value: '10 мкм', labelRu: '10 мкм', labelUz: '10 mkm' },
+      { value: '11 мкм', labelRu: '11 мкм', labelUz: '11 mkm' },
+      { value: '12 мкм', labelRu: '12 мкм', labelUz: '12 mkm' },
+      { value: '14 мкм', labelRu: '14 мкм', labelUz: '14 mkm' },
+      { value: '15 мкм', labelRu: '15 мкм', labelUz: '15 mkm' },
+      { value: '20 мкм', labelRu: '20 мкм', labelUz: '20 mkm' },
+      { value: '25 мкм', labelRu: '25 мкм', labelUz: '25 mkm' },
+      { value: '30 мкм', labelRu: '30 мкм', labelUz: '30 mkm' },
+      { value: '40 мкм', labelRu: '40 мкм', labelUz: '40 mkm' },
+    ],
+    filterable: true,
+    required: false,
+    cardVisible: true,
+    productVisible: true,
+    sortOrder: 3,
+  },
+  {
+    id: 'attr-weight',
+    key: 'weight',
+    titleRu: 'Фасовка / Вес',
+    titleUz: 'Qadoq / Og‘irligi',
+    type: 'select',
+    categoryIds: ['cat-food', 'cat-groceries', 'cat-cheeses', 'cat-greens'],
+    options: [
+      { value: '20 гр', labelRu: '20 гр', labelUz: '20 gr' },
+      { value: '60 гр', labelRu: '60 гр', labelUz: '60 gr' },
+      { value: '150 гр', labelRu: '150 гр', labelUz: '150 gr' },
+      { value: '250 гр', labelRu: '250 гр', labelUz: '250 gr' },
+      { value: '400 гр', labelRu: '400 гр', labelUz: '400 gr' },
+      { value: '500 гр', labelRu: '500 гр', labelUz: '500 gr' },
+      { value: '1 кг', labelRu: '1 кг', labelUz: '1 kg' },
+      { value: '2.5 кг', labelRu: '2.5 кг', labelUz: '2.5 kg' },
+      { value: '3 кг', labelRu: '3 кг', labelUz: '3 kg' },
+      { value: '5 кг', labelRu: '5 кг', labelUz: '5 kg' },
+      { value: '50 кг', labelRu: '50 кг', labelUz: '50 kg' },
+    ],
+    filterable: true,
+    required: false,
+    cardVisible: true,
+    productVisible: true,
+    sortOrder: 4,
+  },
+  {
+    id: 'attr-packaging-type',
+    key: 'packaging_type',
+    titleRu: 'Вид упаковки',
+    titleUz: 'Qadoq turi',
+    type: 'select',
+    options: [
+      { value: 'Рулон', labelRu: 'Рулон', labelUz: 'Rulon' },
+      { value: 'Вакуумная упаковка', labelRu: 'Вакуумная упаковка', labelUz: 'Vakuum qadoq' },
+      { value: 'Пачка', labelRu: 'Пачка', labelUz: 'Pachka' },
+      { value: 'Брус', labelRu: 'Брус', labelUz: 'Brus' },
+      { value: 'Контейнер / Лоток', labelRu: 'Контейнер / Лоток', labelUz: 'Konteyner' },
+      { value: 'Мешок 50 кг', labelRu: 'Мешок 50 кг', labelUz: 'Qop 50 kg' },
+      { value: 'Бутылка 1 л', labelRu: 'Бутылка 1 л', labelUz: 'Butilka 1 l' },
+    ],
+    filterable: true,
+    required: false,
+    cardVisible: true,
+    productVisible: true,
+    sortOrder: 5,
+  },
+  {
+    id: 'attr-horeca-category',
+    key: 'horeca_category',
+    titleRu: 'Сегмент HoReCa',
+    titleUz: 'HoReCa segmenti',
+    type: 'select',
+    options: [
+      { value: 'Мусорные мешки', labelRu: 'Мусорные мешки', labelUz: 'Chiqindi qoplari' },
+      { value: 'Пакеты Майка', labelRu: 'Пакеты Майка', labelUz: 'Mayka paketlar' },
+      { value: 'Перчатки и Защита', labelRu: 'Перчатки и Защита', labelUz: 'Qo‘lqoplar' },
+      { value: 'Плёнка и Фольга', labelRu: 'Плёнка и Фольга', labelUz: 'Plyonka va Folga' },
+      { value: 'Свежая зелень Novagreen', labelRu: 'Свежая зелень Novagreen', labelUz: 'Yangi ko‘katlar' },
+      { value: 'Сыры и Масло', labelRu: 'Сыры и Масло', labelUz: 'Pishloqlar va Sariyog‘' },
+      { value: 'Бакалея и Мука', labelRu: 'Бакалея и Мука', labelUz: 'Baqolchilik va Un' },
+      { value: 'Брендирование Nova Print', labelRu: 'Брендирование Nova Print', labelUz: 'Brendlash Nova Print' },
+    ],
+    filterable: true,
+    required: false,
+    cardVisible: true,
+    productVisible: true,
+    sortOrder: 6,
+  },
+];'''
+
+print('Updating attributes in seedData.ts...')
+with open('lib/seedData.ts', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# Replace initialAttributes block
+new_content = re.sub(r'export const initialAttributes: Attribute\[\] = \[[\s\S]*?\];', new_attributes_ts, content)
+
+with open('lib/seedData.ts', 'w', encoding='utf-8') as f:
+    f.write(new_content)
+
+print('Attributes updated successfully!')

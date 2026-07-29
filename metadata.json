@@ -1,0 +1,6 @@
+{
+  "name": "SANPACK - Каталог упаковочных материалов и товаров для HoReCa",
+  "description": "Полноценный B2B-каталог и интернет-магазин упаковочных материалов, расходников, продуктов питания и полиграфии для SANPACK",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

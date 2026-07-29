@@ -1,0 +1,488 @@
+'use client';
+
+import React, { useState, useEffect, use } from 'react';
+import Link from 'next/link';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { ProductGallery } from '@/components/catalog/ProductGallery';
+import { ProductCard } from '@/components/catalog/ProductCard';
+import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { Product, ProductVariant } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
+import { useRequestCart } from '@/context/RequestCartContext';
+import { useFavorites } from '@/context/FavoritesContext';
+import { motion } from 'motion/react';
+import {
+  ChevronRight,
+  ShieldCheck,
+  Heart,
+  ShoppingCart,
+  Check,
+  Download,
+  Phone,
+  Send,
+  MessageCircle,
+  Truck,
+  Factory,
+  FileText,
+  Calculator,
+  TrendingDown,
+} from 'lucide-react';
+
+export default function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ productSlug: string }>;
+}) {
+  const { productSlug } = use(params);
+  const { t, getLocalizedText } = useLanguage();
+  const { addItem, isInCart } = useRequestCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'delivery' | 'docs'>('desc');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProduct() {
+      const p = await SanpackRepository.getProductBySlug(productSlug);
+      if (p) {
+        setProduct(p);
+        setSelectedVariant(p.variants[0] || null);
+        setQuantity(p.minimumOrder || 1);
+
+        const all = await SanpackRepository.getProducts();
+        const related = all.filter((item) => item.categoryId === p.categoryId && item.id !== p.id);
+        setRelatedProducts(related.slice(0, 4));
+      }
+      setLoading(false);
+    }
+    loadProduct();
+  }, [productSlug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 py-16 flex-1 w-full">
+          <div className="h-96 bg-slate-200 animate-pulse rounded-3xl" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center flex-1">
+          <h2 className="text-2xl font-bold text-[#222B35] mb-4">Товар не найден</h2>
+          <Link href="/catalog" className="px-6 py-3 bg-[#006F3C] text-white font-bold rounded-xl text-xs">
+            Вернуться в каталог
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const title = getLocalizedText(product.titleRu, product.titleUz);
+  const description = getLocalizedText(product.descriptionRu, product.descriptionUz);
+  const favorited = isFavorite(product.id);
+  const inCart = isInCart(product.id, selectedVariant?.id);
+
+  // Dynamic price computation considering wholesale tiers
+  const activeTiers = selectedVariant?.wholesaleTiers || product.wholesaleTiers || [];
+  let unitPrice = selectedVariant?.price || product.price || 0;
+
+  if (activeTiers.length > 0) {
+    // Find matching tier
+    const sortedTiers = [...activeTiers].sort((a, b) => b.minQuantity - a.minQuantity);
+    const matchedTier = sortedTiers.find((t) => quantity >= t.minQuantity);
+    if (matchedTier) {
+      unitPrice = matchedTier.price;
+    }
+  }
+
+  const totalPrice = unitPrice * quantity;
+
+  const handleAddToCart = () => {
+    addItem(product, selectedVariant || undefined, quantity);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+      <Header />
+
+      <main className="flex-1 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Breadcrumbs */}
+          <nav className="flex items-center gap-2 text-xs text-slate-500 mb-6 flex-wrap font-medium">
+            <Link href="/" className="hover:text-[#006F3C] transition-colors">
+              {t('home')}
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <Link href="/catalog" className="hover:text-[#006F3C] transition-colors">
+              {t('catalog')}
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-[#222B35] font-bold truncate max-w-xs">{title}</span>
+          </nav>
+
+          {/* Product Hero Top Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+            {/* Col 1: Gallery */}
+            <div className="lg:col-span-5">
+              <ProductGallery images={product.images} title={title} />
+            </div>
+
+            {/* Col 2: Info & Specs */}
+            <div className="lg:col-span-4 space-y-5">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md font-semibold">
+                    {t('sku')} {selectedVariant?.sku || product.sku}
+                  </span>
+                  {product.ownProduction && (
+                    <span className="bg-[#EAF5EF] text-[#006F3C] text-xs font-semibold px-2.5 py-1 rounded-md flex items-center gap-1 border border-[#006F3C]/20">
+                      <Factory className="w-3.5 h-3.5" /> SANPACK
+                    </span>
+                  )}
+                </div>
+
+                <h1 className="text-xl sm:text-2xl font-bold text-[#222B35] leading-snug tracking-tight">
+                  {title}
+                </h1>
+              </div>
+
+              {/* Stock Status Badge */}
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#006F3C] bg-[#EAF5EF] p-3 rounded-xl border border-[#006F3C]/20">
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>
+                  {product.stockStatus === 'in_stock' ? 'В наличии на складе в Ташкенте' : 'Под заказ'}
+                </span>
+              </div>
+
+              {/* Wholesale Tiers Visual Badge */}
+              {activeTiers.length > 0 && (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 p-4 rounded-2xl border border-emerald-200/60 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                    <TrendingDown className="w-4 h-4 text-[#006F3C]" />
+                    <span>Скидки от объема заказа (Оптовые уровни):</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    {activeTiers.map((tier, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded-xl border text-center transition-all ${
+                          quantity >= tier.minQuantity
+                            ? 'bg-[#006F3C] text-white font-bold border-transparent shadow-2xs'
+                            : 'bg-white text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        <div className="text-[10px] opacity-80">от {tier.minQuantity} {product.salesUnit}</div>
+                        <div>{tier.price.toLocaleString()} сум</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Specs List */}
+              <div className="space-y-2 border-t border-b border-slate-200 py-4 text-xs">
+                <h4 className="font-bold text-[#222B35] uppercase tracking-wider mb-2">
+                  Основные свойства:
+                </h4>
+                {Object.entries(product.attributes || {}).map(([key, val]) => (
+                  <div key={key} className="flex items-center justify-between py-1 border-b border-dashed border-slate-100 last:border-0">
+                    <span className="text-slate-500 capitalize font-medium">{key}:</span>
+                    <span className="font-bold text-[#222B35]">{String(val)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Variants Picker */}
+              {product.variants && product.variants.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#222B35] block">
+                    {t('chooseVariant')}
+                  </label>
+                  <div className="space-y-2">
+                    {product.variants.map((v) => {
+                      const isSelected = selectedVariant?.id === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => setSelectedVariant(v)}
+                          className={`w-full p-3 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${
+                            isSelected
+                              ? 'border-[#006F3C] bg-[#EAF5EF] text-[#006F3C] font-bold shadow-2xs'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                          }`}
+                        >
+                          <span>{getLocalizedText(v.titleRu, v.titleUz)}</span>
+                          {isSelected && <Check className="w-4 h-4 text-[#006F3C]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Col 3: Sticky Commercial Action Box */}
+            <div className="lg:col-span-3">
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xl sticky top-24 space-y-5">
+                <div>
+                  <span className="text-xs text-slate-400 block mb-1 font-medium">
+                    {t('wholesalePrices')} SANPACK:
+                  </span>
+                  <span className="text-2xl font-bold text-[#006F3C] block tracking-tight">
+                    {product.showPrice && unitPrice > 0
+                      ? `${unitPrice.toLocaleString()} сум`
+                      : t('priceOnRequest')}
+                  </span>
+                  <span className="text-[11px] text-slate-500 block mt-1">
+                    {t('minOrder')} <strong className="text-[#222B35]">{product.minimumOrder} {product.salesUnit}</strong>
+                  </span>
+                </div>
+
+                {/* Quantity Controls */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#222B35] block">
+                    {t('quantity')} ({product.salesUnit})
+                  </label>
+                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                    <button
+                      onClick={() => setQuantity((q) => Math.max(product.minimumOrder || 1, q - 1))}
+                      className="px-3.5 py-2.5 text-slate-600 hover:bg-slate-200 font-bold transition-colors"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full text-center bg-transparent font-bold text-sm text-[#222B35] outline-none"
+                    />
+                    <button
+                      onClick={() => setQuantity((q) => q + 1)}
+                      className="px-3.5 py-2.5 text-slate-600 hover:bg-slate-200 font-bold transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Price Total Calculation */}
+                {product.showPrice && unitPrice > 0 && (
+                  <div className="p-3 bg-[#F2F7F4] rounded-xl border border-[#006F3C]/20 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-600 flex items-center gap-1">
+                      <Calculator className="w-3.5 h-3.5 text-[#006F3C]" /> Итого:
+                    </span>
+                    <span className="font-bold text-base text-[#006F3C]">
+                      {totalPrice.toLocaleString()} сум
+                    </span>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-1">
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleAddToCart}
+                    className={`w-full py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md ${
+                      inCart
+                        ? 'bg-[#004F2B] text-white'
+                        : 'bg-[#008348] hover:bg-[#006F3C] text-white active:bg-[#004F2B]'
+                    }`}
+                  >
+                    {inCart ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Добавлено в заявку</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-4 h-4" />
+                        <span>{t('addToRequest')}</span>
+                      </>
+                    )}
+                  </motion.button>
+
+                  <button
+                    onClick={() => toggleFavorite(product.id)}
+                    className={`w-full py-2.5 rounded-xl border text-xs font-bold transition-colors flex items-center justify-center gap-2 ${
+                      favorited
+                        ? 'border-rose-200 bg-rose-50 text-rose-600'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${favorited ? 'fill-current' : ''}`} />
+                    <span>{favorited ? 'В избранном' : t('favorites')}</span>
+                  </button>
+                </div>
+
+                {/* Fast Messenger Triggers */}
+                <div className="border-t border-slate-100 pt-4 space-y-2">
+                  <p className="text-[11px] text-slate-500 font-semibold">Быстрая связь с менеджером:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <a
+                      href={`https://t.me/sanpack_uz?text=${encodeURIComponent(`Здравствуйте! Интересует товар: ${title} (SKU: ${product.sku})`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="py-2 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Telegram</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/998998510506?text=${encodeURIComponent(`Здравствуйте! Интересует товар: ${title} (SKU: ${product.sku})`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Details Tabs Section */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 md:p-8 mb-12 shadow-2xs">
+            <div className="flex items-center gap-4 border-b border-slate-200 pb-4 mb-6 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => setActiveTab('desc')}
+                className={`text-sm font-bold pb-2 transition-all border-b-2 whitespace-nowrap ${
+                  activeTab === 'desc'
+                    ? 'border-[#006F3C] text-[#006F3C]'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {t('tabDescription')}
+              </button>
+              <button
+                onClick={() => setActiveTab('specs')}
+                className={`text-sm font-bold pb-2 transition-all border-b-2 whitespace-nowrap ${
+                  activeTab === 'specs'
+                    ? 'border-[#006F3C] text-[#006F3C]'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {t('tabSpecs')}
+              </button>
+              <button
+                onClick={() => setActiveTab('delivery')}
+                className={`text-sm font-bold pb-2 transition-all border-b-2 whitespace-nowrap ${
+                  activeTab === 'delivery'
+                    ? 'border-[#006F3C] text-[#006F3C]'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {t('tabDelivery')}
+              </button>
+              <button
+                onClick={() => setActiveTab('docs')}
+                className={`text-sm font-bold pb-2 transition-all border-b-2 whitespace-nowrap ${
+                  activeTab === 'docs'
+                    ? 'border-[#006F3C] text-[#006F3C]'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {t('tabDocs')}
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'desc' && (
+              <div className="prose max-w-none text-xs sm:text-sm text-[#222B35] leading-relaxed space-y-4">
+                <p>{description}</p>
+                <div className="bg-[#EAF5EF] p-4 rounded-2xl border border-[#006F3C]/20 text-[#006F3C] font-semibold text-xs flex items-start gap-2">
+                  <span>💡</span>
+                  <span>SANPACK поставляет упаковку напрямую с собственного производства. Предоставляем образцы продукции и гибкие условия оплаты для постоянных клиентов HoReCa и дистрибьюторов.</span>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'specs' && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  {Object.entries(product.attributes || {}).map(([k, v]) => (
+                    <div key={k} className="p-3 bg-slate-50 rounded-xl flex justify-between">
+                      <span className="text-slate-500 capitalize">{k}:</span>
+                      <span className="font-bold text-[#222B35]">{String(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'delivery' && (
+              <div className="space-y-4 text-xs text-slate-700 leading-relaxed">
+                <div className="flex items-start gap-3">
+                  <Truck className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-[#222B35] text-sm">Доставка по Ташкенту</h4>
+                    <p>Бесплатная курьерская доставка при сумме B2B-заявки от 2 000 000 сум. В остальные случаи — экспресс-доставка день в день.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-[#222B35] text-sm">Регионы Узбекистана</h4>
+                    <p>Отправка через партнерские автотранспортные службы в Самарканд, Бухару, Наманган, Андижан, Фергану и все области.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'docs' && (
+              <div className="space-y-3">
+                {product.documents && product.documents.length > 0 ? (
+                  product.documents.map((doc) => (
+                    <a
+                      key={doc.id}
+                      href={doc.url}
+                      className="p-4 rounded-2xl border border-slate-200 hover:border-[#006F3C] bg-slate-50 flex items-center justify-between text-xs font-bold text-[#222B35] transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-[#006F3C]" />
+                        <span>{getLocalizedText(doc.titleRu, doc.titleUz)}</span>
+                      </div>
+                      <Download className="w-4 h-4 text-slate-400" />
+                    </a>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Сертификаты соответствия и санитарно-эпидемиологические заключения предоставляются менеджером при оформлении договора.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Related Products */}
+          {relatedProducts.length > 0 && (
+            <section className="space-y-6">
+              <h3 className="text-xl font-bold text-[#222B35] tracking-tight">{t('relatedProducts')}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {relatedProducts.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

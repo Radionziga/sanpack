@@ -1,0 +1,77 @@
+@import "tailwindcss";
+@import "../stylesheet.css";
+
+@theme {
+  --font-sans: 'MTS Text', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-compact: 'MTS Compact', sans-serif;
+  --font-wide: 'MTS Text', sans-serif;
+  --font-extended: 'MTS Extended', sans-serif;
+  --font-text: 'MTS Text', sans-serif;
+}
+
+@layer base {
+  :root {
+    --sanpack-green: #0F6E43;
+    --sanpack-dark: #095030;
+    --sanpack-lime: #DCE9AF;
+    --sanpack-button: #0F6E43;
+    --sanpack-light-bg: #F4F7F5;
+    --sanpack-white: #FFFFFF;
+    --sanpack-surface: #F8FAFC;
+    --sanpack-border: #E2E8F0;
+    --sanpack-text: #1E293B;
+    --sanpack-muted: #64748B;
+    --sanpack-warning: #D97706;
+    --sanpack-error: #DC2626;
+    --sanpack-success: #0F6E43;
+    --sanpack-kraft: #D8C7A3;
+    --sanpack-kraft-light: #F1EBDD;
+  }
+
+  body {
+    font-family: 'MTS Text', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 400;
+    color: #1E293B;
+    background-color: #F8FAFC;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6, .heading-font {
+    font-family: 'MTS Text', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Custom scrollbar and utilities */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth transition for hover effects */
+.transition-sanpack {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
