@@ -1,13 +1,18 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
-import { UserProfile, UserRole } from '@/types';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import type { UserProfile, UserRole } from '@/types';
 
 interface AuthContextType {
   user: UserProfile | null;
   login: (email?: string, password?: string) => Promise<void>;
-  loginAsDemoAdmin: (role?: UserRole) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAdmin: boolean;
   role: UserRole | null;
   error: string | null;
@@ -15,62 +20,61 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_AUTH_KEY = 'sanpack_admin_user_v1';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_AUTH_KEY);
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
-
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (email?: string) => {
+  useEffect(
+    () =>
+      onAuthStateChanged(auth, (firebaseUser) => {
+        if (!firebaseUser) setUser(null);
+      }),
+    []
+  );
+
+  const login = async (email = '', password = '') => {
     setError(null);
-    const adminUser: UserProfile = {
-      uid: 'admin-salahova',
-      email: email || 'salahovamilana009@gmail.com',
-      name: 'Милана Салахова (Admin)',
-      role: 'super_admin',
-      createdAt: new Date().toISOString(),
-    };
-    setUser(adminUser);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(adminUser));
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await credential.user.getIdToken();
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        await signOut(auth);
+        throw new Error(result.error || 'Учетная запись не имеет доступа.');
+      }
+
+      const adminUser: UserProfile = {
+        ...result.admin,
+        createdAt: credential.user.metadata.creationTime || new Date().toISOString(),
+      };
+      setUser(adminUser);
+    } catch (loginError) {
+      const message =
+        loginError instanceof Error ? loginError.message : 'Не удалось войти.';
+      setError(message);
+      throw loginError;
     }
   };
 
-  const loginAsDemoAdmin = (role: UserRole = 'super_admin') => {
-    const demoUser: UserProfile = {
-      uid: 'demo-admin-1',
-      email: 'salahovamilana009@gmail.com',
-      name: 'Администратор SANPACK',
-      role,
-      createdAt: new Date().toISOString(),
-    };
-    setUser(demoUser);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(demoUser));
-    }
-  };
-
-  const logout = () => {
+  const logout = async () => {
+    await Promise.allSettled([
+      signOut(auth),
+      fetch('/api/auth/logout', { method: 'POST' }),
+    ]);
     setUser(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(LOCAL_STORAGE_AUTH_KEY);
-    }
   };
 
   const isAdmin = !!user;
   const role = user?.role || null;
 
   return (
-    <AuthContext.Provider value={{ user, login, loginAsDemoAdmin, logout, isAdmin, role, error }}>
+    <AuthContext.Provider value={{ user, login, logout, isAdmin, role, error }}>
       {children}
     </AuthContext.Provider>
   );

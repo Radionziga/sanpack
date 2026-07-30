@@ -50,7 +50,7 @@ export function CallbackModal({ isOpen, onClose }: CallbackModalProps) {
 
         {submitted ? (
           <div className="text-center py-6">
-            <CheckCircle className="w-16 h-16 text-[#006F3C] mx-auto mb-4 animate-bounce" />
+            <CheckCircle className="w-16 h-16 text-[#006F3C] mx-auto mb-4" />
             <h3 className="text-xl font-bold text-[#18231E] mb-2">Заявка принята!</h3>
             <p className="text-slate-600 text-sm">
               Менеджер SANPACK перезвонит вам в ближайшие 15 минут.

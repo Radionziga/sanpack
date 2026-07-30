@@ -1,4 +1,4 @@
-export type Language = 'ru' | 'uz';
+export type Language = 'ru' | 'uz' | 'en';
 
 export type SalesMode = 'request_only' | 'ecommerce';
 
@@ -181,12 +181,7 @@ export interface RequestOrder {
   deliveryAddress?: string;
   paymentMethod?: string;
   notes?: string;
-  items: Array<{
-    product: Product;
-    variant?: ProductVariant;
-    quantity: number;
-    comment?: string;
-  }>;
+  items: RequestItem[];
   status: 'new' | 'processing' | 'fulfilled' | 'cancelled';
   createdAt: string;
   updatedAt?: string;
@@ -252,11 +247,6 @@ export interface SiteSettings {
     primaryColor: string;
     secondaryColor: string;
     borderRadius: number;
-  };
-  integrations: {
-    telegramBotToken?: string;
-    telegramChatId?: string;
-    emailNotifications?: boolean;
   };
   seo: {
     defaultTitleRu: string;

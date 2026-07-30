@@ -9,7 +9,7 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const { login, error: authError } = useAuth();
 
-  const [email, setEmail] = useState('salahovamilana009@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -22,6 +22,7 @@ export default function AdminLoginPage() {
     try {
       await login(email, password);
       router.push('/admin');
+      router.refresh();
     } catch (err: unknown) {
       if (err instanceof Error) {
         setErrorMsg(err.message || 'Ошибка входа');
@@ -65,7 +66,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="salahovamilana009@gmail.com"
+                placeholder="admin@sanpack.uz"
                 className="w-full pl-9 pr-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white outline-none focus:border-[#006F3C] font-mono"
               />
             </div>
@@ -97,7 +98,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="text-[10px] text-center text-slate-500">
-          Демо-доступ включен для <code className="text-emerald-400">salahovamilana009@gmail.com</code> (введите любой тестовый пароль)
+          Используйте учетную запись Firebase, которой выдана роль администратора.
         </p>
       </div>
     </div>

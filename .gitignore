@@ -3,5 +3,10 @@ node_modules/
 coverage/
 .DS_Store
 *.log
+*.tsbuildinfo
+
+# Local skill-manager integrations (canonical skills live in .agents/skills).
+.claude/
+agent/
 .env*
 !.env.example

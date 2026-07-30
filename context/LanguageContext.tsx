@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Language } from '@/types';
 import { translations, TranslationKeys } from '@/lib/i18n/translations';
 import { fixPrepositions } from '@/lib/utils/formatText';
@@ -15,26 +16,33 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window === 'undefined') return 'ru';
-    try {
-      const saved = localStorage.getItem('sanpack_language') as Language;
-      return saved === 'ru' || saved === 'uz' ? saved : 'ru';
-    } catch {
-      return 'ru';
-    }
-  });
+export function LanguageProvider({
+  children,
+  initialLanguage,
+}: {
+  children: React.ReactNode;
+  initialLanguage: Language;
+}) {
+  const [language, setLanguageState] = useState<Language>(initialLanguage);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sanpack_language', lang);
-    }
+    const segments = pathname.split('/');
+    segments[1] = lang;
+    router.push(segments.join('/') || `/${lang}`);
   };
 
   const t = (key: TranslationKeys): string => {
-    const raw = translations[language][key] || translations['ru'][key] || key;
+    const dictionary = translations[language] as Partial<
+      Record<TranslationKeys, string>
+    >;
+    const raw = dictionary[key] || translations.ru[key] || key;
     return fixPrepositions(raw);
   };
 

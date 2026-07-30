@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import Image from 'next/image';
+import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { PrinterIcon, CheckIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
@@ -58,9 +59,12 @@ export function BrandingBanner() {
 
           <div className="lg:col-span-5">
             <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-lg bg-white p-2">
-              <img
+              <Image
                 src="/catalog/extracted_p14_img1.jpeg"
                 alt="SANPACK Branding & Polygraphy"
+                width={800}
+                height={480}
+                sizes="(min-width: 1024px) 40vw, 90vw"
                 className="w-full h-60 object-contain rounded-lg bg-white"
               />
             </div>

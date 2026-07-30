@@ -8,10 +8,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        request.auth.token.email in ['salahovamilana009@gmail.com', 'admin@sanpack.uz']
-      );
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active != false;
     }
 
     // Default deny catch-all
@@ -50,14 +49,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // B2B Requests - Public can create, only admin can list/read/update
+    // B2B requests are created by the validated server endpoint.
     match /requests/{requestId} {
-      allow create: if true;
+      allow create: if false;
       allow read, update, delete: if isAdmin();
     }
 
     match /admins/{userId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if false;
     }
   }
 }

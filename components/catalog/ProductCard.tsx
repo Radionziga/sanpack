@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import Image from 'next/image';
+import { Link } from '@/i18n/navigation';
 import { motion } from 'motion/react';
 import { Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
@@ -56,9 +57,12 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
         className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-lg hover:border-[#0F6E43]/30 transition-all flex flex-col md:flex-row items-center gap-5 group"
       >
         <Link href={`/product/${product.slug}`} className="shrink-0 relative">
-          <img
+          <Image
             src={product.mainImage}
             alt={title}
+            width={128}
+            height={128}
+            sizes="128px"
             className="w-32 h-32 object-contain rounded-md bg-white p-2 group-hover:scale-105 transition-transform duration-300"
           />
           {product.ownProduction && (
@@ -198,11 +202,12 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
           href={`/product/${product.slug}`}
           className="block relative aspect-square bg-white rounded-md p-2 mb-3 overflow-hidden"
         >
-          <img
+          <Image
             src={product.mainImage}
             alt={title}
-            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
+            className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
           />
         </Link>
 

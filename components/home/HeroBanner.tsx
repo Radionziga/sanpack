@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import Image from 'next/image';
+import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   ShieldCheckIcon,
@@ -75,10 +76,13 @@ export function HeroBanner() {
           <div className="lg:col-span-5 relative">
             <div className="relative rounded-xl overflow-hidden border border-white/15 bg-white/5 backdrop-blur-md p-5 shadow-xl space-y-3">
               <div className="aspect-4/3 rounded-lg bg-white p-3 shadow-inner relative overflow-hidden group">
-                <img
+                <Image
                   src="/catalog/page_1.png"
                   alt="SANPACK Packaging & HoReCa"
-                  className="w-full h-full object-cover rounded-md group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 40vw, 90vw"
+                  className="object-cover rounded-md group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
                   <span className="text-[11px] font-semibold text-[#DCE9AF]">SANPACK HoReCa Line</span>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useLanguage } from '@/context/LanguageContext';
 import { ClientPartner } from '@/types';
 
@@ -61,9 +62,12 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
               key={client.id}
               className="bg-[#F8FAFC] rounded-lg p-4 border border-slate-200/80 hover:bg-white hover:shadow-md hover:border-[#0F6E43] transition-all flex flex-col items-center justify-center text-center group h-32"
             >
-              <img
+              <Image
                 src={client.logo}
                 alt={client.name}
+                width={200}
+                height={48}
+                sizes="160px"
                 className="w-full h-12 object-contain grayscale group-hover:grayscale-0 transition-all opacity-80 group-hover:opacity-100"
               />
               <span className="text-[11px] font-semibold text-[#1E293B] mt-2 line-clamp-1">

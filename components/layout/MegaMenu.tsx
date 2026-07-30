@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Category } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { ChevronRight, Package, Trash2, ShoppingBag, Layers, Shield, Hand, Film, Utensils, Wheat, Leaf, Printer } from 'lucide-react';

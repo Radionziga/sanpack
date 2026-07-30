@@ -24,17 +24,12 @@ export const initialSiteSettings: SiteSettings = {
   salesMode: 'request_only',
   locale: {
     defaultLanguage: 'ru',
-    supportedLanguages: ['ru', 'uz'],
+    supportedLanguages: ['ru', 'uz', 'en'],
   },
   design: {
     primaryColor: '#0F6E43',
     secondaryColor: '#093E25',
     borderRadius: 8,
-  },
-  integrations: {
-    telegramBotToken: '',
-    telegramChatId: '',
-    emailNotifications: true,
   },
   seo: {
     defaultTitleRu: 'SANPACK — Упаковка, расходные материалы и продукты для HoReCa в Ташкенте',
@@ -52,7 +47,7 @@ export const initialCategories: Category[] = [
     titleUz: 'Qadoqlash va paketlar',
     descriptionRu: 'Полиэтиленовые пакеты, мусорные мешки, фасовочные рулонные пакеты и упаковка для пиццы.',
     descriptionUz: 'Polietilen paketlar, chiqindi qoplari, rulondagi paketlar va pitsa uchun qadoqlar.',
-    image: '/catalog/page_4.png',
+    image: '/catalog/page_4.webp',
     icon: 'Package',
     status: 'active',
     sortOrder: 1,
@@ -78,7 +73,7 @@ export const initialCategories: Category[] = [
     titleUz: '«Mayka» va rulonli paketlar',
     descriptionRu: 'Пакеты маечного типа высокой прочности (3–50 кг) и рулонные пакеты.',
     descriptionUz: 'Mustahkam mayka paketlar (3–50 kg) va rulonli paketlar.',
-    image: '/catalog/commercial_packaging_10.png',
+    image: '/catalog/commercial_packaging_10.webp',
     icon: 'ShoppingBag',
     status: 'active',
     sortOrder: 11,
@@ -128,7 +123,7 @@ export const initialCategories: Category[] = [
     titleUz: 'Oziq-ovqat mahsulotlari',
     descriptionRu: 'Бакалея, рис, мука, сливочное масло, сыры, мясо и свежая зелень Novagreen.',
     descriptionUz: 'Baqolchilik, guruch, un, sariyog‘, pishloqlar, go‘sht va yangi ko‘katlar.',
-    image: '/catalog/page_7.png',
+    image: '/catalog/page_7.webp',
     icon: 'Utensils',
     status: 'active',
     sortOrder: 3,
@@ -927,9 +922,9 @@ export const initialProducts: Product[] = [
   "descriptionRu": "Пакеты «Майка» SANPACK ULTRA грузоподъемностью до 3 кг. Плотный штампованный полиэтилен, удобные ручки.",
   "descriptionUz": "SANPACK ULTRA 3 kg gacha yuk ko'taruvchi mayka paketlari.",
   "images": [
-    "/catalog/commercial_packaging_10.png"
+    "/catalog/commercial_packaging_10.webp"
   ],
-  "mainImage": "/catalog/commercial_packaging_10.png",
+  "mainImage": "/catalog/commercial_packaging_10.webp",
   "attributes": {
       "material": "ПНД",
       "thickness": "10 мкм",
@@ -962,9 +957,9 @@ export const initialProducts: Product[] = [
   "descriptionRu": "Универсальные пакеты «Майка» 5 кг SANPACK ULTRA для розничной торговли и фасовки.",
   "descriptionUz": "Chakana savdo va qadoqlash uchun universal 5 kg li mayka paketlar.",
   "images": [
-    "/catalog/commercial_packaging_3.png"
+    "/catalog/commercial_packaging_3.webp"
   ],
-  "mainImage": "/catalog/commercial_packaging_3.png",
+  "mainImage": "/catalog/commercial_packaging_3.webp",
   "attributes": {
       "material": "ПНД",
       "thickness": "12 мкм",
@@ -997,9 +992,9 @@ export const initialProducts: Product[] = [
   "descriptionRu": "Вместительные пакеты маечного типа SANPACK ULTRA на 10 кг для магазинов одежды, продуктов и рынков.",
   "descriptionUz": "Kiyim va oziq-ovqat do'konlari uchun 10 kg li keng mayka paketlar.",
   "images": [
-    "/catalog/commercial_packaging_4.png"
+    "/catalog/commercial_packaging_4.webp"
   ],
-  "mainImage": "/catalog/commercial_packaging_4.png",
+  "mainImage": "/catalog/commercial_packaging_4.webp",
   "attributes": {
       "material": "ПНД",
       "thickness": "15 мкм",
@@ -1032,9 +1027,9 @@ export const initialProducts: Product[] = [
   "descriptionRu": "Грузовые суперпрочные пакеты SANPACK ULTRA 25 кг для тяжелых коробок, бакалеи и строительных материалов.",
   "descriptionUz": "Og'ir qutilar va baqolchilik uchun SANPACK ULTRA 25 kg li yuk paketlari.",
   "images": [
-    "/catalog/commercial_packaging_5.png"
+    "/catalog/commercial_packaging_5.webp"
   ],
-  "mainImage": "/catalog/commercial_packaging_5.png",
+  "mainImage": "/catalog/commercial_packaging_5.webp",
   "attributes": {
       "material": "ПНД",
       "thickness": "20 мкм",
@@ -1067,9 +1062,9 @@ export const initialProducts: Product[] = [
   "descriptionRu": "Огромные суперпрочные пакеты майка SANPACK ULTRA 50 кг для оптовых рынков и оптовых складов.",
   "descriptionUz": "Ulgurji bozorlar va omborlar uchun 50 kg li ulkan mustahkam paketlar.",
   "images": [
-    "/catalog/commercial_packaging_6.png"
+    "/catalog/commercial_packaging_6.webp"
   ],
-  "mainImage": "/catalog/commercial_packaging_6.png",
+  "mainImage": "/catalog/commercial_packaging_6.webp",
   "attributes": {
       "material": "ПНД",
       "thickness": "12 мкм",
@@ -1102,9 +1097,9 @@ export const initialProducts: Product[] = [
   "descriptionRu": "Фасовочные полиэтиленовые пакеты в рулоне SANPACK (222 штуки). Легкий отрыв по перфорации.",
   "descriptionUz": "SANPACK rulonli polietilen qadoq paketlari (222 dona). Teshik bo'ylab oson uzish.",
   "images": [
-    "/catalog/commercial_packaging_8.png"
+    "/catalog/commercial_packaging_8.webp"
   ],
-  "mainImage": "/catalog/commercial_packaging_8.png",
+  "mainImage": "/catalog/commercial_packaging_8.webp",
   "attributes": {
       "material": "ПНД",
       "thickness": "8 мкм",
@@ -1138,9 +1133,9 @@ export const initialProducts: Product[] = [
   "descriptionRu": "Прозрачные пищевые пакеты в рулоне 303 штуки SANPACK ULTRA для супермаркетов и пекарен.",
   "descriptionUz": "Supermarketlar va novvoyxonalar uchun SANPACK ULTRA 303 donalik rulonli paketlar.",
   "images": [
-    "/catalog/commercial_packaging_9.png"
+    "/catalog/commercial_packaging_9.webp"
   ],
-  "mainImage": "/catalog/commercial_packaging_9.png",
+  "mainImage": "/catalog/commercial_packaging_9.webp",
   "attributes": {
       "material": "ПНД",
       "thickness": "8 мкм",

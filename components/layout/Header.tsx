@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import Image from 'next/image';
+import { Link } from '@/i18n/navigation';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -22,7 +23,7 @@ import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { CallbackModal } from '@/components/modals/CallbackModal';
 import { MegaMenu } from '@/components/layout/MegaMenu';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
 import { Category, Product } from '@/types';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
 
@@ -183,7 +184,7 @@ export function Header() {
           <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-3 md:gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0 h-10">
-              <SanpackLogo variant="green" className="h-7 sm:h-8" />
+              <SanpackLogo variant="green" className="h-5 sm:h-8" />
             </Link>
 
             {/* Catalog Button & Global Search Bar */}
@@ -262,9 +263,11 @@ export function Header() {
                               onClick={() => setIsSearchOpen(false)}
                               className="flex items-center gap-3 p-2.5 hover:bg-[#F2F7F4] transition-colors group"
                             >
-                              <img
+                              <Image
                                 src={product.mainImage}
                                 alt={product.titleRu}
+                                width={36}
+                                height={36}
                                 className="w-9 h-9 object-cover rounded bg-slate-50 border border-slate-200"
                               />
                               <div className="flex-1 min-w-0">
@@ -291,7 +294,7 @@ export function Header() {
             </div>
 
             {/* Actions: Request, Favorites, Request Cart, Lang */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <Link
                 href="/request"
                 className="hidden lg:flex items-center gap-1.5 h-10 px-3.5 bg-[#F2F7F4] hover:bg-[#0F6E43] text-[#0F6E43] hover:text-white text-xs font-bold rounded-lg transition-all shadow-2xs"
@@ -303,7 +306,7 @@ export function Header() {
               {/* Favorites */}
               <Link
                 href="/favorites"
-                className="relative h-10 w-10 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-[#0F6E43] transition-colors flex items-center justify-center shrink-0"
+                className="relative hidden sm:flex h-10 w-10 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-[#0F6E43] transition-colors items-center justify-center shrink-0"
                 title={t('favorites')}
               >
                 <HeartIcon className="w-5 h-5" />
@@ -321,7 +324,7 @@ export function Header() {
               {/* Request Cart */}
               <Link
                 href="/request"
-                className="relative h-10 px-3 rounded-lg bg-[#F2F7F4] text-[#0F6E43] hover:bg-[#0F6E43] hover:text-white transition-all flex items-center gap-1.5 group shrink-0"
+                className="relative hidden sm:flex h-10 px-3 rounded-lg bg-[#F2F7F4] text-[#0F6E43] hover:bg-[#0F6E43] hover:text-white transition-all items-center gap-1.5 group shrink-0"
                 title={t('requestCart')}
               >
                 <ShoppingCartIcon className="w-5 h-5" />
@@ -360,6 +363,16 @@ export function Header() {
                   }`}
                 >
                   UZ
+                </button>
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={`h-full px-2 rounded transition-all flex items-center justify-center ${
+                    language === 'en'
+                      ? 'bg-white text-[#0F6E43] shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  EN
                 </button>
               </div>
 
@@ -475,6 +488,20 @@ export function Header() {
                         className="block py-2 text-[#0F6E43] font-bold border-b border-slate-100"
                       >
                         📁 Каталог товаров
+                      </Link>
+                      <Link
+                        href="/favorites"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2"
+                      >
+                        {t('favorites')}{favCount > 0 ? ` (${favCount})` : ''}
+                      </Link>
+                      <Link
+                        href="/request"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block py-2"
+                      >
+                        {t('requestCart')}{itemCount > 0 ? ` (${itemCount})` : ''}
                       </Link>
                       <Link
                         href="/"

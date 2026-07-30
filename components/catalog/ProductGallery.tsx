@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Maximize2, X } from 'lucide-react';
 
 interface ProductGalleryProps {
@@ -16,10 +17,13 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
     <div className="space-y-4">
       {/* Main Image Stage */}
       <div className="relative aspect-square bg-white rounded-2xl p-6 border border-slate-200 overflow-hidden group">
-        <img
+        <Image
           src={activeImage}
           alt={title}
-          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+          fill
+          priority
+          sizes="(min-width: 1024px) 45vw, 90vw"
+          className="object-contain p-6 transition-transform duration-300 group-hover:scale-105"
         />
 
         <button
@@ -38,13 +42,19 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
             <button
               key={idx}
               onClick={() => setActiveImage(img)}
-              className={`w-16 h-16 rounded-xl border-2 p-1 bg-white overflow-hidden shrink-0 transition-all ${
+              className={`relative w-16 h-16 rounded-xl border-2 p-1 bg-white overflow-hidden shrink-0 transition-all ${
                 activeImage === img
                   ? 'border-[#006F3C] ring-2 ring-[#006F3C]/20 scale-105'
                   : 'border-slate-200 opacity-70 hover:opacity-100'
               }`}
             >
-              <img src={img} alt={`${title} - ${idx}`} className="w-full h-full object-contain" />
+              <Image
+                src={img}
+                alt={`${title} — ${idx + 1}`}
+                fill
+                sizes="80px"
+                className="object-contain p-1"
+              />
             </button>
           ))}
         </div>
@@ -60,10 +70,13 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
             >
               <X className="w-5 h-5" />
             </button>
-            <img
+            <Image
               src={activeImage}
               alt={title}
-              className="max-w-full max-h-[80vh] object-contain mx-auto"
+              width={1200}
+              height={1200}
+              sizes="90vw"
+              className="max-w-full max-h-[80vh] w-auto h-auto object-contain mx-auto"
             />
           </div>
         </div>

@@ -1,15 +1,14 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { RequestCartProvider } from '@/context/RequestCartContext';
-import { FavoritesProvider } from '@/context/FavoritesContext';
-import { AuthProvider } from '@/context/AuthContext';
-
-import { ToastProvider } from '@/context/ToastContext';
 
 export const metadata: Metadata = {
-  title: 'SANPACK — Упаковка, расходные материалы и продукты для HoReCa',
-  description: 'Комплексный B2B-каталог и поставщик упаковочных материалов, перчаток, фольги, плёнок, бакалеи и полиграфии для бизнеса в Узбекистане',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  title: {
+    default: 'SANPACK — комплексные поставки для HoReCa',
+    template: '%s | SANPACK',
+  },
+  description:
+    'Упаковка, расходные материалы, продукты и брендирование для бизнеса в Узбекистане.',
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -24,17 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ru">
       <body suppressHydrationWarning className="bg-[#F5F7F6] text-[#18231E] antialiased">
-        <AuthProvider>
-          <LanguageProvider>
-            <FavoritesProvider>
-              <RequestCartProvider>
-                <ToastProvider>
-                  {children}
-                </ToastProvider>
-              </RequestCartProvider>
-            </FavoritesProvider>
-          </LanguageProvider>
-        </AuthProvider>
+        {children}
       </body>
     </html>
   );

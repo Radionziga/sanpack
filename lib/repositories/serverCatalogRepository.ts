@@ -1,0 +1,92 @@
+import 'server-only';
+
+import { unstable_cache } from 'next/cache';
+import type {
+  Attribute,
+  Banner,
+  Category,
+  ClientPartner,
+  Product,
+  SiteSettings,
+} from '@/types';
+import {
+  initialAttributes,
+  initialBanners,
+  initialCategories,
+  initialClients,
+  initialProducts,
+  initialSiteSettings,
+} from '@/lib/seedData';
+import { getAdminDb } from '@/lib/firebase/admin';
+
+function isSeedFallbackEnabled() {
+  if (process.env.SANPACK_USE_SEED_DATA === 'true') return true;
+  if (process.env.SANPACK_USE_SEED_DATA === 'false') return false;
+  return !process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL.includes('localhost');
+}
+
+async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
+  try {
+    const snapshot = await getAdminDb().collection(name).get();
+    if (!snapshot.empty) {
+      return snapshot.docs.map((document) => ({
+        id: document.id,
+        ...document.data(),
+      })) as T[];
+    }
+    if (!isSeedFallbackEnabled()) return [];
+  } catch (error) {
+    if (!isSeedFallbackEnabled()) throw error;
+    console.warn(`Using read-only seed data for ${name}.`, error);
+  }
+  return fallback;
+}
+
+export const getPublicProducts = unstable_cache(
+  () => readCollection<Product>('products', initialProducts),
+  ['public-products-v1'],
+  { revalidate: 300, tags: ['products'] }
+);
+
+export const getPublicCategories = unstable_cache(
+  () => readCollection<Category>('categories', initialCategories),
+  ['public-categories-v1'],
+  { revalidate: 1800, tags: ['categories'] }
+);
+
+export const getPublicAttributes = unstable_cache(
+  () => readCollection<Attribute>('attributes', initialAttributes),
+  ['public-attributes-v1'],
+  { revalidate: 1800, tags: ['attributes'] }
+);
+
+export const getPublicClients = unstable_cache(
+  () => readCollection<ClientPartner>('clients', initialClients),
+  ['public-clients-v1'],
+  { revalidate: 3600, tags: ['clients'] }
+);
+
+export const getPublicBanners = unstable_cache(
+  () => readCollection<Banner>('banners', initialBanners),
+  ['public-banners-v1'],
+  { revalidate: 900, tags: ['banners'] }
+);
+
+export const getPublicSettings = unstable_cache(
+  async () => {
+    try {
+      const snapshot = await getAdminDb().collection('settings').doc('global').get();
+      if (snapshot.exists) return snapshot.data() as SiteSettings;
+      if (!isSeedFallbackEnabled()) {
+        throw new Error('Public settings are not configured.');
+      }
+    } catch (error) {
+      if (!isSeedFallbackEnabled()) throw error;
+      console.warn('Using read-only seed settings.', error);
+    }
+    return initialSiteSettings;
+  },
+  ['public-settings-v1'],
+  { revalidate: 1800, tags: ['settings'] }
+);
