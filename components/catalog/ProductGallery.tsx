@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Maximize2, X } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ProductGalleryProps {
   images: string[];
@@ -10,6 +11,8 @@ interface ProductGalleryProps {
 }
 
 export function ProductGallery({ images, title }: ProductGalleryProps) {
+  const { language } = useLanguage();
+  const zoomTitle = { ru: 'Увеличить', uz: 'Kattalashtirish', en: 'Enlarge image' }[language];
   const [activeImage, setActiveImage] = useState(images[0] || 'https://picsum.photos/800/800');
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
@@ -29,7 +32,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
         <button
           onClick={() => setIsZoomOpen(true)}
           className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-white/80 hover:bg-white text-slate-700 shadow-md flex items-center justify-center transition-colors"
-          title="Увеличить"
+          title={zoomTitle}
         >
           <Maximize2 className="w-4 h-4" />
         </button>

@@ -6,6 +6,7 @@ import {
   SESSION_MAX_AGE_MS,
   verifyAdminToken,
 } from '@/lib/auth/server';
+import { checkRateLimit } from '@/lib/security/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -14,6 +15,17 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request, 'admin-session', 10, 5 * 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Слишком много попыток. Попробуйте позже.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rateLimit.retryAfter) },
+      }
+    );
+  }
+
   try {
     const body = requestSchema.parse(await request.json());
     const decoded = await getAdminAuth().verifyIdToken(body.idToken, true);

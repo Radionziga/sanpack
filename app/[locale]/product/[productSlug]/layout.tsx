@@ -32,12 +32,14 @@ export async function generateMetadata({
   const title = localized(
     locale,
     product.seo?.titleRu || product.titleRu,
-    product.seo?.titleUz || product.titleUz
+    product.seo?.titleUz || product.titleUz,
+    product.seo?.titleEn || product.titleEn
   );
   const description = localized(
     locale,
     product.seo?.descriptionRu || product.shortDescriptionRu,
-    product.seo?.descriptionUz || product.shortDescriptionUz
+    product.seo?.descriptionUz || product.shortDescriptionUz,
+    product.seo?.descriptionEn || product.shortDescriptionEn
   );
   const pathname = `/product/${product.slug}`;
 
@@ -75,11 +77,12 @@ export default async function ProductSeoLayout({
   );
   if (!product) notFound();
 
-  const name = localized(locale, product.titleRu, product.titleUz);
+  const name = localized(locale, product.titleRu, product.titleUz, product.titleEn);
   const description = localized(
     locale,
     product.shortDescriptionRu,
-    product.shortDescriptionUz
+    product.shortDescriptionUz,
+    product.shortDescriptionEn
   );
   const structuredData = {
     '@context': 'https://schema.org',

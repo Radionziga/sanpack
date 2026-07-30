@@ -29,6 +29,41 @@ import { SanpackLogo } from '@/components/ui/SanpackLogo';
 
 export function Header() {
   const { language, setLanguage, t, getLocalizedText, fixText } = useLanguage();
+  const copy = {
+    ru: {
+      city: 'Ташкент',
+      found: 'Найдено в каталоге',
+      sku: 'Арт.',
+      admin: 'Вход в Admin',
+      search: 'Поиск по каталогу…',
+      catalog: 'Каталог товаров',
+      address: 'Ташкент, Сергелийский район',
+      adminPanel: 'Панель администратора',
+      currency: 'сум',
+    },
+    uz: {
+      city: 'Toshkent',
+      found: 'Katalogda topildi',
+      sku: 'Art.',
+      admin: 'Admin kirish',
+      search: 'Katalog bo‘yicha qidirish…',
+      catalog: 'Mahsulotlar katalogi',
+      address: 'Toshkent, Sergeli tumani',
+      adminPanel: 'Administrator paneli',
+      currency: 'so‘m',
+    },
+    en: {
+      city: 'Tashkent',
+      found: 'Found in catalog',
+      sku: 'SKU',
+      admin: 'Admin sign in',
+      search: 'Search the catalog…',
+      catalog: 'Product catalog',
+      address: 'Sergeli district, Tashkent',
+      adminPanel: 'Administration panel',
+      currency: 'UZS',
+    },
+  }[language];
   const { itemCount } = useRequestCart();
   const { count: favCount } = useFavorites();
   const router = useRouter();
@@ -133,7 +168,7 @@ export function Header() {
             <div className="flex items-center gap-4 text-slate-300">
               <span className="flex items-center gap-1.5">
                 <MapPinIcon className="w-3.5 h-3.5 text-[#0F6E43]" />
-                <span>{t('city')}: Ташкент</span>
+                <span>{t('city')}: {copy.city}</span>
               </span>
               <span className="hidden sm:flex items-center gap-1.5 border-l border-slate-700/70 pl-4">
                 <ClockIcon className="w-3.5 h-3.5 text-[#0F6E43]" />
@@ -253,7 +288,7 @@ export function Header() {
                       className="absolute top-full left-0 w-full mt-1.5 bg-white/95 backdrop-blur-xl rounded-lg shadow-2xl border border-slate-200 overflow-hidden z-50"
                     >
                       <div className="p-2 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3">
-                        {fixText(`Найдено в каталоге (${searchResults.length})`)}
+                        {fixText(`${copy.found} (${searchResults.length})`)}
                       </div>
                       <ul className="divide-y divide-slate-100">
                         {searchResults.map((product) => (
@@ -272,15 +307,15 @@ export function Header() {
                               />
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold text-[#222B35] group-hover:text-[#0F6E43] truncate">
-                                  {getLocalizedText(product.titleRu, product.titleUz)}
+                                  {getLocalizedText(product.titleRu, product.titleUz, product.titleEn)}
                                 </p>
                                 <p className="text-[10px] text-slate-500">
-                                  Арт: {product.sku}
+                                  {copy.sku}: {product.sku}
                                 </p>
                               </div>
                               <span className="text-xs font-bold text-[#0F6E43] whitespace-nowrap">
                                 {product.showPrice && product.price
-                                  ? `${product.price.toLocaleString()} сум`
+                                  ? `${product.price.toLocaleString()} ${copy.currency}`
                                   : t('priceOnRequest')}
                               </span>
                             </Link>
@@ -424,7 +459,7 @@ export function Header() {
               href="/admin/login"
               className="text-[11px] text-slate-400 hover:text-slate-700 transition-colors font-medium"
             >
-              Вход в Admin
+              {copy.admin}
             </Link>
           </div>
         </div>
@@ -476,7 +511,7 @@ export function Header() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Поиск по каталогу..."
+                        placeholder={copy.search}
                         className="w-full px-3 py-2 rounded-lg bg-slate-100 text-xs font-medium outline-none"
                       />
                     </form>
@@ -487,7 +522,7 @@ export function Header() {
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="block py-2 text-[#0F6E43] font-bold border-b border-slate-100"
                       >
-                        📁 Каталог товаров
+                        📁 {copy.catalog}
                       </Link>
                       <Link
                         href="/favorites"
@@ -556,13 +591,13 @@ export function Header() {
                   >
                     📞 +998 99 851 05 06
                   </a>
-                  <p>{fixText('📍 г. Ташкент, Сергелийский р-н')}</p>
+                  <p>{fixText(`📍 ${copy.address}`)}</p>
                   <Link
                     href="/admin/login"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block text-slate-400"
                   >
-                    🔒 Панель администратора
+                    🔒 {copy.adminPanel}
                   </Link>
                 </div>
               </motion.div>

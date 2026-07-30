@@ -8,12 +8,14 @@ import { ProductCard } from '@/components/catalog/ProductCard';
 import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
 import { Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
+import { pageCopy } from '@/lib/i18n/pageCopy';
 import { Search } from 'lucide-react';
 
 function SearchResultsContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
-  const { t, getLocalizedText } = useLanguage();
+  const { t, language } = useLanguage();
+  const copy = pageCopy[language].search;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,7 @@ function SearchResultsContent() {
     <main className="flex-1 py-10 max-w-7xl mx-auto px-4 w-full">
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#18231E]">
-          Результаты поиска по запросу: &ldquo;{query}&rdquo;
+          {copy.title}: &ldquo;{query}&rdquo;
         </h1>
         <p className="text-xs text-[#68736D] mt-1">
           {t('foundItems')} <span className="font-bold text-[#006F3C]">{products.length}</span>
@@ -60,9 +62,9 @@ function SearchResultsContent() {
       ) : products.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 max-w-md mx-auto">
           <Search className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-base font-bold text-[#18231E]">По вашему запросу ничего не найдено</h3>
+          <h3 className="text-base font-bold text-[#18231E]">{copy.emptyTitle}</h3>
           <p className="text-xs text-slate-500">
-            Проверьте написание артикула или названия, либо свяжитесь с менеджером SANPACK для индивидуального подбора.
+            {copy.emptyText}
           </p>
         </div>
       ) : (
@@ -77,10 +79,11 @@ function SearchResultsContent() {
 }
 
 export default function SearchPage() {
+  const { language } = useLanguage();
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F7F6]">
       <Header />
-      <Suspense fallback={<div className="p-10 text-center text-xs">Загрузка результатов...</div>}>
+      <Suspense fallback={<div className="p-10 text-center text-xs">{pageCopy[language].search.loading}</div>}>
         <SearchResultsContent />
       </Suspense>
       <Footer />

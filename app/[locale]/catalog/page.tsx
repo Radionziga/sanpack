@@ -14,7 +14,36 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Grid, List, Filter, ChevronRight, RotateCcw, X } from 'lucide-react';
 
 export default function CatalogPage() {
-  const { t, getLocalizedText } = useLanguage();
+  const { t, getLocalizedText, language } = useLanguage();
+  const copy = {
+    ru: {
+      active: 'Активные фильтры',
+      stock: 'Только в наличии',
+      own: 'Собственное производство',
+      resetAll: 'Сбросить все',
+      empty: 'Товары не найдены',
+      emptyText: 'Измените параметры фильтрации или выберите другую категорию.',
+      show: 'Показать результаты',
+    },
+    uz: {
+      active: 'Faol filtrlar',
+      stock: 'Faqat mavjud',
+      own: 'O‘z ishlab chiqarishimiz',
+      resetAll: 'Hammasini tozalash',
+      empty: 'Mahsulotlar topilmadi',
+      emptyText: 'Filtrlarni o‘zgartiring yoki boshqa kategoriyani tanlang.',
+      show: 'Natijalarni ko‘rsatish',
+    },
+    en: {
+      active: 'Active filters',
+      stock: 'In stock only',
+      own: 'Own production',
+      resetAll: 'Reset all',
+      empty: 'No products found',
+      emptyText: 'Change the filters or select another category.',
+      show: 'Show results',
+    },
+  }[language];
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -100,7 +129,7 @@ export default function CatalogPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#222B35] tracking-tight">
-                Каталог продукции SANPACK
+                {t('catalog')} SANPACK
               </h1>
               <p className="text-xs text-[#5C6A75] mt-1">
                 {t('foundItems')} <span className="font-bold text-[#0F6E43]">{filteredProducts.length}</span>
@@ -114,7 +143,7 @@ export default function CatalogPage() {
                 className="lg:hidden px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2 shadow-2xs"
               >
                 <Filter className="w-4 h-4 text-[#0F6E43]" />
-                <span>Фильтры</span>
+                <span>{t('filterTitle')}</span>
               </button>
 
               <div className="flex items-center gap-2">
@@ -186,16 +215,16 @@ export default function CatalogPage() {
               {/* Active Filter Chips */}
               {(inStockOnly || ownProductionOnly || Object.values(selectedFilters).some((a) => a.length > 0)) && (
                 <div className="flex flex-wrap items-center gap-2 bg-white p-3 rounded-2xl border border-slate-200">
-                  <span className="text-xs text-slate-400 font-medium">Активные фильтры:</span>
+                  <span className="text-xs text-slate-400 font-medium">{copy.active}:</span>
                   {inStockOnly && (
                     <span className="bg-[#EAF5EF] text-[#0F6E43] text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-[#0F6E43]/20">
-                      Только в наличии
+                      {copy.stock}
                       <X className="w-3 h-3 cursor-pointer" onClick={() => setInStockOnly(false)} />
                     </span>
                   )}
                   {ownProductionOnly && (
                     <span className="bg-[#EAF5EF] text-[#0F6E43] text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-[#0F6E43]/20">
-                      Собственное производство
+                      {copy.own}
                       <X className="w-3 h-3 cursor-pointer" onClick={() => setOwnProductionOnly(false)} />
                     </span>
                   )}
@@ -203,7 +232,7 @@ export default function CatalogPage() {
                     onClick={handleResetFilters}
                     className="text-xs text-rose-600 hover:underline ml-auto font-semibold flex items-center gap-1"
                   >
-                    <RotateCcw className="w-3 h-3" /> Сбросить все
+                    <RotateCcw className="w-3 h-3" /> {copy.resetAll}
                   </button>
                 </div>
               )}
@@ -221,16 +250,16 @@ export default function CatalogPage() {
                     🔍
                   </div>
                   <h3 className="text-lg font-bold text-[#222B35]">
-                    Товары не найдены
+                    {copy.empty}
                   </h3>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Попробуйте измените параметры фильтрации или выберите другую категорию.
+                    {copy.emptyText}
                   </p>
                   <button
                     onClick={handleResetFilters}
                     className="px-5 py-2.5 bg-[#0F6E43] text-white font-bold text-xs rounded-xl shadow-2xs"
                   >
-                    Сбросить все фильтры
+                    {copy.resetAll}
                   </button>
                 </div>
               ) : (
@@ -256,7 +285,7 @@ export default function CatalogPage() {
         <div className="fixed inset-0 z-50 bg-black/50 lg:hidden">
           <div className="fixed top-0 right-0 w-4/5 max-w-md h-full bg-white shadow-2xl p-6 overflow-y-auto space-y-6">
             <div className="flex items-center justify-between border-b pb-4">
-              <h3 className="font-bold text-lg text-[#222B35]">Фильтры каталога</h3>
+              <h3 className="font-bold text-lg text-[#222B35]">{t('filterTitle')}</h3>
               <button onClick={() => setIsMobileFilterOpen(false)} className="p-2 text-slate-400">
                 <X className="w-6 h-6" />
               </button>
@@ -278,7 +307,7 @@ export default function CatalogPage() {
               onClick={() => setIsMobileFilterOpen(false)}
               className="w-full py-3 bg-[#0F6E43] text-white font-bold rounded-xl text-xs"
             >
-              Показать результаты ({filteredProducts.length})
+              {copy.show} ({filteredProducts.length})
             </button>
           </div>
         </div>

@@ -7,33 +7,19 @@ import { ClientsSection } from '@/components/home/ClientsSection';
 import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
 import { ClientPartner } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
+import { pageCopy } from '@/lib/i18n/pageCopy';
 import { Star, Quote } from 'lucide-react';
 
 export default function ClientsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const copy = pageCopy[language].clients;
   const [clients, setClients] = useState<ClientPartner[]>([]);
 
   useEffect(() => {
     SanpackRepository.getClients().then(setClients);
   }, []);
 
-  const reviews = [
-    {
-      name: 'Сеть ресторанов «Caravan Group»',
-      author: 'Алишер Каримов (Директор по закупкам)',
-      text: 'С SANPACK работаем больше 2 лет. Качество мусорных мешков 240L и пищевой фольги идеальное. Ни разу не было разрывов на кухне. Всегда вовремя привозят по Ташкенту.',
-    },
-    {
-      name: 'Пекарня «Bon!»',
-      author: 'Мадина Саидова (Зав. производством)',
-      text: 'Заказываем брендированные пакеты-майка и пергамент. Полиграфия четкая, цвета яркие, завязки надежные. Спасибо за оперативность!',
-    },
-    {
-      name: 'Отель «Lotte City Hotel»',
-      author: 'Фарход Турсунов (Менеджер HoReCa)',
-      text: 'Прекрасный B2B-сервис. Менеджер выезжает прямо с образцами, выписка счетов-фактур происходит за 10 минут. Рекомендуем SANPACK всем коллегам.',
-    },
-  ];
+  const reviews = copy.reviews;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F7F6]">
@@ -46,7 +32,7 @@ export default function ClientsPage() {
               {t('clients')} SANPACK
             </h1>
             <p className="text-xs text-[#68736D] mt-1">
-              Нам доверяют ведущие ресторанные холдинги, отели и производственные сети Узбекистана
+              {copy.intro}
             </p>
           </div>
 
@@ -54,10 +40,10 @@ export default function ClientsPage() {
 
           {/* Testimonials */}
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-[#18231E]">Отзывы наших B2B-партнёров</h2>
+            <h2 className="text-xl font-bold text-[#18231E]">{copy.reviewsTitle}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {reviews.map((r, i) => (
-                <div key={i} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4 relative">
+              {reviews.map(([name, author, text]) => (
+                <div key={name} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4 relative">
                   <Quote className="w-8 h-8 text-[#006F3C]/20 absolute top-4 right-4" />
                   <div className="flex items-center gap-1 text-amber-500">
                     {[...Array(5)].map((_, s) => (
@@ -65,11 +51,11 @@ export default function ClientsPage() {
                     ))}
                   </div>
                   <p className="text-xs text-[#18231E] leading-relaxed italic">
-                    &ldquo;{r.text}&rdquo;
+                    &ldquo;{text}&rdquo;
                   </p>
                   <div className="border-t pt-3">
-                    <p className="text-xs font-bold text-[#006F3C]">{r.name}</p>
-                    <p className="text-[10px] text-slate-400">{r.author}</p>
+                    <p className="text-xs font-bold text-[#006F3C]">{name}</p>
+                    <p className="text-[10px] text-slate-400">{author}</p>
                   </div>
                 </div>
               ))}

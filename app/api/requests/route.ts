@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { checkRateLimit } from '@/lib/security/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -9,10 +10,12 @@ const itemSchema = z.object({
   productId: z.string().min(1).max(100),
   productTitleRu: z.string().min(1).max(240),
   productTitleUz: z.string().max(240).default(''),
+  productTitleEn: z.string().max(240).optional(),
   productSlug: z.string().max(180).default(''),
   variantId: z.string().max(100).optional(),
   variantTitleRu: z.string().max(240).optional(),
   variantTitleUz: z.string().max(240).optional(),
+  variantTitleEn: z.string().max(240).optional(),
   sku: z.string().max(100),
   quantity: z.number().int().positive().max(100000),
   unit: z.string().max(40),
@@ -34,6 +37,17 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request, 'quote-request', 5, 10 * 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Слишком много запросов. Попробуйте позже.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rateLimit.retryAfter) },
+      }
+    );
+  }
+
   try {
     const input = requestSchema.parse(await request.json());
     const document = getAdminDb().collection('requests').doc();

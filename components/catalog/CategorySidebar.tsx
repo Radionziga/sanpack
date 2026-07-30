@@ -12,7 +12,7 @@ interface CategorySidebarProps {
 }
 
 export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps) {
-  const { getLocalizedText } = useLanguage();
+  const { getLocalizedText, t } = useLanguage();
 
   const parents = categories.filter((c) => !c.parentId);
 
@@ -20,7 +20,7 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
     <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
       <div className="flex items-center gap-2 text-base font-bold text-[#18231E] pb-3 mb-3 border-b border-slate-100">
         <Folder className="w-5 h-5 text-[#006F3C]" />
-        <span>Категории SANPACK</span>
+        <span>{t('adminCategories')} SANPACK</span>
       </div>
 
       <ul className="space-y-2">
@@ -33,7 +33,7 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
                 : 'text-slate-700 hover:bg-slate-100'
             }`}
           >
-            Все товары каталога
+            {t('allCategories')}
           </Link>
         </li>
 
@@ -54,7 +54,7 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
                     : 'text-[#18231E] hover:bg-slate-100'
                 }`}
               >
-                <span>{getLocalizedText(parent.titleRu, parent.titleUz)}</span>
+                <span>{getLocalizedText(parent.titleRu, parent.titleUz, parent.titleEn)}</span>
                 {subs.length > 0 && <ChevronRight className="w-3.5 h-3.5" />}
               </Link>
 
@@ -72,7 +72,7 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
                               : 'text-[#68736D] hover:text-[#006F3C] hover:bg-slate-50'
                           }`}
                         >
-                          {getLocalizedText(sub.titleRu, sub.titleUz)}
+                          {getLocalizedText(sub.titleRu, sub.titleUz, sub.titleEn)}
                         </Link>
                       </li>
                     );

@@ -13,6 +13,7 @@ export interface WholesaleTier {
   price: number;
   nameRu?: string;
   nameUz?: string;
+  nameEn?: string;
 }
 
 export interface ProductVariant {
@@ -20,6 +21,7 @@ export interface ProductVariant {
   sku: string;
   titleRu: string;
   titleUz: string;
+  titleEn?: string;
   price?: number;
   oldPrice?: number;
   wholesaleTiers?: WholesaleTier[];
@@ -34,6 +36,7 @@ export interface ProductDocument {
   id: string;
   titleRu: string;
   titleUz: string;
+  titleEn?: string;
   url: string;
   type: string; // e.g. 'pdf', 'cert', 'spec'
   size?: string;
@@ -50,10 +53,13 @@ export interface Product {
   categorySlug: string;
   titleRu: string;
   titleUz: string;
+  titleEn?: string;
   shortDescriptionRu: string;
   shortDescriptionUz: string;
+  shortDescriptionEn?: string;
   descriptionRu: string;
   descriptionUz: string;
+  descriptionEn?: string;
   images: string[];
   mainImage: string;
   attributes: Record<string, string | number | boolean | string[]>;
@@ -76,8 +82,10 @@ export interface Product {
   seo?: {
     titleRu?: string;
     titleUz?: string;
+    titleEn?: string;
     descriptionRu?: string;
     descriptionUz?: string;
+    descriptionEn?: string;
   };
   sortOrder: number;
   createdAt: string;
@@ -92,8 +100,10 @@ export interface Category {
   slug: string;
   titleRu: string;
   titleUz: string;
+  titleEn?: string;
   descriptionRu?: string;
   descriptionUz?: string;
+  descriptionEn?: string;
   image?: string;
   icon?: string;
   banner?: string;
@@ -103,8 +113,10 @@ export interface Category {
   seo?: {
     titleRu?: string;
     titleUz?: string;
+    titleEn?: string;
     descriptionRu?: string;
     descriptionUz?: string;
+    descriptionEn?: string;
   };
 }
 
@@ -114,6 +126,7 @@ export interface AttributeOption {
   value: string;
   labelRu: string;
   labelUz: string;
+  labelEn?: string;
 }
 
 export interface Attribute {
@@ -121,6 +134,7 @@ export interface Attribute {
   key: string;
   titleRu: string;
   titleUz: string;
+  titleEn?: string;
   type: AttributeType;
   unit?: string;
   options?: AttributeOption[];
@@ -136,10 +150,12 @@ export interface RequestItem {
   productId: string;
   productTitleRu: string;
   productTitleUz: string;
+  productTitleEn?: string;
   productSlug: string;
   variantId?: string;
   variantTitleRu?: string;
   variantTitleUz?: string;
+  variantTitleEn?: string;
   sku: string;
   quantity: number;
   unit: string;
@@ -196,6 +212,7 @@ export interface ClientPartner {
   category: 'restaurant' | 'cafe' | 'hotel' | 'bakery' | 'distributor' | 'production' | 'shop' | 'partner';
   descriptionRu?: string;
   descriptionUz?: string;
+  descriptionEn?: string;
   website?: string;
   caseStudy?: string;
   sortOrder: number;
@@ -205,12 +222,15 @@ export interface Banner {
   id: string;
   titleRu: string;
   titleUz: string;
+  titleEn?: string;
   subtitleRu?: string;
   subtitleUz?: string;
+  subtitleEn?: string;
   imageDesktop: string;
   imageMobile?: string;
   buttonTextRu?: string;
   buttonTextUz?: string;
+  buttonTextEn?: string;
   link: string;
   sortOrder: number;
   active: boolean;
@@ -223,6 +243,7 @@ export interface SiteSettings {
     favicon: string;
     descriptionRu: string;
     descriptionUz: string;
+    descriptionEn?: string;
   };
   contacts: {
     phone1: string;
@@ -230,12 +251,15 @@ export interface SiteSettings {
     email: string;
     addressRu: string;
     addressUz: string;
+    addressEn?: string;
     workingHoursRu: string;
     workingHoursUz: string;
+    workingHoursEn?: string;
     telegram: string;
     whatsapp: string;
     cityRu: string;
     cityUz: string;
+    cityEn?: string;
     mapIframe?: string;
   };
   salesMode: SalesMode;
@@ -251,8 +275,10 @@ export interface SiteSettings {
   seo: {
     defaultTitleRu: string;
     defaultTitleUz: string;
+    defaultTitleEn?: string;
     defaultDescriptionRu: string;
     defaultDescriptionUz: string;
+    defaultDescriptionEn?: string;
   };
 }
 

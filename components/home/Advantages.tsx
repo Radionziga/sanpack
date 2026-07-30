@@ -12,7 +12,24 @@ import {
 } from '@heroicons/react/24/outline';
 
 export function Advantages() {
-  const { t, fixText } = useLanguage();
+  const { t, fixText, language } = useLanguage();
+  const copy = {
+    ru: {
+      subtitle: 'Прямое сотрудничество с производителем гарантирует лучшую цену и надёжность поставок',
+      quality: ['Контроль качества', 'Технический контроль толщины и прочности шва каждого рулона'],
+      manager: ['Персональный менеджер', 'Сопровождение B2B-заказа от предложения до разгрузки на вашем складе'],
+    },
+    uz: {
+      subtitle: 'Ishlab chiqaruvchi bilan to‘g‘ridan-to‘g‘ri hamkorlik eng yaxshi narx va ishonchli yetkazib berishni ta’minlaydi',
+      quality: ['Sifat nazorati', 'Har bir rulon qalinligi va chok mustahkamligining texnik nazorati'],
+      manager: ['Shaxsiy menejer', 'Taklifdan omboringizga tushirishgacha B2B buyurtmasini kuzatish'],
+    },
+    en: {
+      subtitle: 'Working directly with the manufacturer ensures competitive pricing and reliable supply',
+      quality: ['Quality control', 'Technical checks of thickness and seam strength for every roll'],
+      manager: ['Dedicated manager', 'B2B order support from quotation through warehouse delivery'],
+    },
+  }[language];
 
   const advs = [
     {
@@ -37,13 +54,13 @@ export function Advantages() {
     },
     {
       icon: ShieldCheckIcon,
-      title: 'Контроль качества',
-      desc: 'Строгий технический контроль толщины и прочности шва каждого рулона',
+      title: copy.quality[0],
+      desc: copy.quality[1],
     },
     {
       icon: UserIcon,
-      title: 'Персональный менеджер',
-      desc: 'Сопровождение B2B-заказа от согласования КП до разгрузки на вашем складе',
+      title: copy.manager[0],
+      desc: copy.manager[1],
     },
   ];
 
@@ -55,7 +72,7 @@ export function Advantages() {
             {t('advantagesTitle')}
           </h2>
           <p className="text-xs sm:text-sm text-[#5C6A75] mt-1.5">
-            {fixText('Прямое сотрудничество с производителем гарантирует лучшую цену и надежность поставок')}
+            {fixText(copy.subtitle)}
           </p>
         </div>
 

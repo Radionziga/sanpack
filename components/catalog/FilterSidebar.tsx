@@ -28,7 +28,12 @@ export function FilterSidebar({
   onOwnProductionChange,
   onReset,
 }: FilterSidebarProps) {
-  const { t, getLocalizedText } = useLanguage();
+  const { t, getLocalizedText, language } = useLanguage();
+  const visibilityCopy = {
+    ru: { hide: 'Скрыть', more: 'Показать ещё' },
+    uz: { hide: 'Yashirish', more: 'Yana ko‘rsatish' },
+    en: { hide: 'Show less', more: 'Show more' },
+  }[language];
 
   // State to track collapsed attribute groups (key -> boolean)
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -136,7 +141,13 @@ export function FilterSidebar({
           // 2. Build complete list of available options
           const predefined = attr.options || [];
           const predefinedValues = new Set(predefined.map((o) => o.value));
-          const combinedOptions: { value: string; labelRu: string; labelUz: string; count: number }[] = [];
+          const combinedOptions: {
+            value: string;
+            labelRu: string;
+            labelUz: string;
+            labelEn?: string;
+            count: number;
+          }[] = [];
 
           predefined.forEach((opt) => {
             const count = optionCounts[opt.value] || 0;
@@ -144,6 +155,7 @@ export function FilterSidebar({
               value: opt.value,
               labelRu: opt.labelRu,
               labelUz: opt.labelUz,
+              labelEn: opt.labelEn,
               count,
             });
           });
@@ -154,6 +166,7 @@ export function FilterSidebar({
                 value: valStr,
                 labelRu: valStr,
                 labelUz: valStr,
+                labelEn: valStr,
                 count: optionCounts[valStr],
               });
             }
@@ -182,7 +195,7 @@ export function FilterSidebar({
               >
                 <div className="flex items-center gap-2">
                   <span className="uppercase tracking-wider">
-                    {getLocalizedText(attr.titleRu, attr.titleUz)}
+                    {getLocalizedText(attr.titleRu, attr.titleUz, attr.titleEn)}
                   </span>
                   {attr.unit && (
                     <span className="text-[10px] text-slate-400 font-normal lowercase">
@@ -231,7 +244,7 @@ export function FilterSidebar({
                               isSelected ? 'font-semibold text-[#006F3C]' : 'text-slate-700'
                             }`}
                           >
-                            {getLocalizedText(opt.labelRu, opt.labelUz)}
+                            {getLocalizedText(opt.labelRu, opt.labelUz, opt.labelEn)}
                           </span>
                         </div>
 
@@ -252,8 +265,8 @@ export function FilterSidebar({
                       className="text-[11px] font-semibold text-[#006F3C] hover:underline pt-1 block"
                     >
                       {isShowMore
-                        ? 'Скрыть'
-                        : `+ Показать ещё ${visibleOptions.length - INITIAL_LIMIT}`}
+                        ? visibilityCopy.hide
+                        : `+ ${visibilityCopy.more} ${visibleOptions.length - INITIAL_LIMIT}`}
                     </button>
                   )}
                 </div>

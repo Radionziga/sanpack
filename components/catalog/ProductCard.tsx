@@ -25,13 +25,18 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
-  const { t, getLocalizedText, fixText } = useLanguage();
+  const { t, getLocalizedText, fixText, language } = useLanguage();
+  const copy = {
+    ru: ['Товар добавлен в заявку', 'Удалено из избранного', 'Добавлено в избранное', 'сум'],
+    uz: ['Mahsulot arizaga qo‘shildi', 'Tanlanganlardan olib tashlandi', 'Tanlanganlarga qo‘shildi', 'so‘m'],
+    en: ['Product added to quote', 'Removed from favorites', 'Added to favorites', 'UZS'],
+  }[language];
   const { addItem, isInCart } = useRequestCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { showToast } = useToast();
 
-  const title = getLocalizedText(product.titleRu, product.titleUz);
-  const shortDesc = getLocalizedText(product.shortDescriptionRu, product.shortDescriptionUz);
+  const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
+  const shortDesc = getLocalizedText(product.shortDescriptionRu, product.shortDescriptionUz, product.shortDescriptionEn);
   const favorited = isFavorite(product.id);
   const inCart = isInCart(product.id);
 
@@ -39,14 +44,14 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     addItem(product, product.variants?.[0], product.minimumOrder || 1);
-    showToast('Товар добавлен в заявку', title);
+    showToast(copy[0], title);
   };
 
   const handleToggleFav = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     toggleFavorite(product.id);
-    showToast(favorited ? 'Удалено из избранного' : 'Добавлено в избранное', title, 'info');
+    showToast(favorited ? copy[1] : copy[2], title, 'info');
   };
 
   if (viewMode === 'list') {
@@ -108,7 +113,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
           <div className="text-right">
             <span className="text-base font-semibold text-[#0F6E43] block tracking-tight">
               {product.showPrice && product.price
-                ? `${product.price.toLocaleString()} сум`
+                ? `${product.price.toLocaleString()} ${copy[3]}`
                 : t('priceOnRequest')}
             </span>
             <span className="text-[11px] text-slate-400">
@@ -248,7 +253,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
         <div>
           <span className="text-sm font-semibold text-[#0F6E43] block tracking-tight">
             {product.showPrice && product.price
-              ? `${product.price.toLocaleString()} сум`
+              ? `${product.price.toLocaleString()} ${copy[3]}`
               : t('priceOnRequest')}
           </span>
           <span className="text-[10px] text-slate-400 block">

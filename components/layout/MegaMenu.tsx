@@ -27,7 +27,12 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
-  const { getLocalizedText } = useLanguage();
+  const { getLocalizedText, language } = useLanguage();
+  const copy = {
+    ru: ['Оптовые поставки с гарантией от завода SANPACK', 'Бесплатная доставка по Ташкенту от 2 000 000 сум', 'Смотреть весь каталог'],
+    uz: ['SANPACK zavodidan kafolatlangan ulgurji yetkazib berish', 'Toshkent bo‘ylab 2 000 000 so‘mdan bepul yetkazib berish', 'To‘liq katalogni ko‘rish'],
+    en: ['Guaranteed wholesale supply from SANPACK', 'Free Tashkent delivery on orders over UZS 2,000,000', 'View the full catalog'],
+  }[language];
 
   if (!isOpen) return null;
 
@@ -51,7 +56,7 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
                   <div className="w-8 h-8 rounded-lg bg-[#EAF5EF] flex items-center justify-center group-hover:bg-[#006F3C] group-hover:text-white transition-colors">
                     <Icon className="w-4 h-4" />
                   </div>
-                  <span>{getLocalizedText(parent.titleRu, parent.titleUz)}</span>
+                  <span>{getLocalizedText(parent.titleRu, parent.titleUz, parent.titleEn)}</span>
                   <ChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
 
@@ -64,7 +69,7 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
                         className="text-xs text-[#68736D] hover:text-[#006F3C] hover:underline flex items-center gap-1.5 py-0.5 transition-colors"
                       >
                         <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                        {getLocalizedText(sub.titleRu, sub.titleUz)}
+                        {getLocalizedText(sub.titleRu, sub.titleUz, sub.titleEn)}
                       </Link>
                     </li>
                   ))}
@@ -82,10 +87,10 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
             </div>
             <div>
               <p className="text-xs font-bold text-[#18231E]">
-                Оптовые поставки с гарантией от завода SANPACK
+                {copy[0]}
               </p>
               <p className="text-[11px] text-[#68736D]">
-                Бесплатная доставка по Ташкенту при заказе от 2 000 000 сум
+                {copy[1]}
               </p>
             </div>
           </div>
@@ -94,7 +99,7 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
             onClick={onClose}
             className="px-4 py-2 bg-[#006F3C] hover:bg-[#004F2B] text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
           >
-            Смотреть весь каталог
+            {copy[2]}
           </Link>
         </div>
       </div>

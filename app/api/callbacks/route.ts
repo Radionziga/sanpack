@@ -1,0 +1,47 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/lib/firebase/admin';
+import { checkRateLimit } from '@/lib/security/rateLimit';
+
+export const runtime = 'nodejs';
+
+const callbackSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  phone: z.string().trim().min(7).max(32),
+});
+
+export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request, 'callback', 5, 10 * 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Слишком много запросов. Попробуйте позже.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rateLimit.retryAfter) },
+      }
+    );
+  }
+
+  try {
+    const input = callbackSchema.parse(await request.json());
+    const document = getAdminDb().collection('callbacks').doc();
+    await document.create({
+      id: document.id,
+      ...input,
+      status: 'new',
+      createdAt: new Date().toISOString(),
+      serverCreatedAt: FieldValue.serverTimestamp(),
+    });
+    return NextResponse.json({ success: true }, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Проверьте имя и номер телефона.' }, { status: 400 });
+    }
+    console.error('Callback creation failed.', error);
+    return NextResponse.json(
+      { error: 'Запрос не сохранён. Попробуйте ещё раз.' },
+      { status: 503 }
+    );
+  }
+}

@@ -28,9 +28,11 @@ export default function AdminCategoriesPage() {
     setEditingCategory({
       titleRu: '',
       titleUz: '',
+      titleEn: '',
       slug: '',
       descriptionRu: '',
       descriptionUz: '',
+      descriptionEn: '',
       icon: 'Package',
       sortOrder: 1,
     });
@@ -196,6 +198,16 @@ export default function AdminCategoriesPage() {
                 required
                 value={editingCategory.titleUz || ''}
                 onChange={(e) => setEditingCategory({ ...editingCategory, titleUz: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold block mb-1">Название (EN)</label>
+              <input
+                type="text"
+                value={editingCategory.titleEn || ''}
+                onChange={(e) => setEditingCategory({ ...editingCategory, titleEn: e.target.value })}
                 className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
               />
             </div>

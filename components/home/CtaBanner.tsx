@@ -6,7 +6,12 @@ import { useLanguage } from '@/context/LanguageContext';
 import { ChatBubbleLeftEllipsisIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
 export function CtaBanner() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const copy = {
+    ru: ['B2B-консультация SANPACK', 'Написать в Telegram'],
+    uz: ['SANPACK B2B maslahati', 'Telegram orqali yozish'],
+    en: ['SANPACK B2B consultation', 'Message us on Telegram'],
+  }[language];
 
   return (
     <section className="py-16 bg-slate-900 text-white">
@@ -15,7 +20,7 @@ export function CtaBanner() {
           <div className="space-y-3 max-w-2xl text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 text-[#DCE9AF] text-xs font-semibold">
               <ChatBubbleLeftEllipsisIcon className="w-4 h-4 text-[#DCE9AF]" />
-              <span>B2B Консультация SANPACK</span>
+              <span>{copy[0]}</span>
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
@@ -42,7 +47,7 @@ export function CtaBanner() {
               rel="noreferrer"
               className="px-5 py-3.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-lg border border-white/20 transition-all backdrop-blur-sm"
             >
-              Написать в Telegram
+              {copy[1]}
             </a>
           </div>
         </div>

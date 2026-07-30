@@ -10,15 +10,29 @@ interface ClientsSectionProps {
 }
 
 export function ClientsSection({ clients }: ClientsSectionProps) {
-  const { t, getLocalizedText } = useLanguage();
+  const { t, getLocalizedText, language } = useLanguage();
   const [filter, setFilter] = useState<string>('all');
 
+  const copy = {
+    ru: {
+      categories: ['Все клиенты', 'Рестораны и кафе', 'Отели', 'Пекарни', 'Производства'],
+      subtitle: 'Рестораны, отели, кондитерские и сетевые бизнесы Узбекистана выбирают SANPACK',
+    },
+    uz: {
+      categories: ['Barcha mijozlar', 'Restoran va kafelar', 'Mehmonxonalar', 'Novvoyxonalar', 'Ishlab chiqarish'],
+      subtitle: 'O‘zbekiston restoranlari, mehmonxonalari, qandolatchilari va tarmoqlari SANPACKni tanlaydi',
+    },
+    en: {
+      categories: ['All clients', 'Restaurants and cafés', 'Hotels', 'Bakeries', 'Production'],
+      subtitle: 'Restaurants, hotels, bakeries and multi-site businesses across Uzbekistan choose SANPACK',
+    },
+  }[language];
   const categories = [
-    { id: 'all', label: 'Все клиенты' },
-    { id: 'restaurant', label: 'Рестораны и кафе' },
-    { id: 'hotel', label: 'Отели' },
-    { id: 'bakery', label: 'Пекарни' },
-    { id: 'production', label: 'Производства' },
+    { id: 'all', label: copy.categories[0] },
+    { id: 'restaurant', label: copy.categories[1] },
+    { id: 'hotel', label: copy.categories[2] },
+    { id: 'bakery', label: copy.categories[3] },
+    { id: 'production', label: copy.categories[4] },
   ];
 
   const filteredClients =
@@ -34,7 +48,7 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
             {t('clientsTitle')}
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-2">
-            Рестораны, отели, кондитерские и сетевые бизнесы Узбекистана выбирают SANPACK
+            {copy.subtitle}
           </p>
         </div>
 
@@ -75,7 +89,7 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
               </span>
               {client.descriptionRu && (
                 <span className="text-[10px] text-slate-500 line-clamp-1">
-                  {getLocalizedText(client.descriptionRu, client.descriptionUz)}
+                  {getLocalizedText(client.descriptionRu, client.descriptionUz, client.descriptionEn)}
                 </span>
               )}
             </div>

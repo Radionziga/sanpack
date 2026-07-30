@@ -5,10 +5,12 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { CallbackModal } from '@/components/modals/CallbackModal';
-import { Phone, Mail, MapPin, Clock, Send, Building, MessageCircle } from 'lucide-react';
+import { pageCopy } from '@/lib/i18n/pageCopy';
+import { Phone, Mail, MapPin, Clock, Send, MessageCircle } from 'lucide-react';
 
 export default function ContactsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const copy = pageCopy[language].contacts;
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
 
   return (
@@ -20,7 +22,7 @@ export default function ContactsPage() {
           <div>
             <h1 className="text-3xl font-bold text-[#18231E]">{t('contacts')}</h1>
             <p className="text-xs text-[#68736D] mt-1">
-              Офис продаж и склад готовой продукции SANPACK в Ташкенте
+              {copy.intro}
             </p>
           </div>
 
@@ -28,14 +30,14 @@ export default function ContactsPage() {
             {/* Contacts Info Box */}
             <div className="lg:col-span-5 bg-white rounded-3xl p-8 border border-slate-200 shadow-xs space-y-6">
               <h2 className="text-xl font-bold text-[#18231E] border-b pb-3">
-                Контакты отдела продаж
+                {copy.salesTitle}
               </h2>
 
               <div className="space-y-4 text-xs">
                 <div className="flex items-start gap-3">
                   <Phone className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-slate-400 block font-medium">Отдел B2B продаж:</span>
+                    <span className="text-slate-400 block font-medium">{copy.sales}:</span>
                     <a href="tel:+998998510506" className="text-base font-extrabold text-[#006F3C] block hover:underline">
                       +998 99 851 05 06
                     </a>
@@ -48,7 +50,7 @@ export default function ContactsPage() {
                 <div className="flex items-start gap-3">
                   <Mail className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-slate-400 block font-medium">Электронная почта:</span>
+                    <span className="text-slate-400 block font-medium">{copy.email}:</span>
                     <a href="mailto:info@sanpack.uz" className="text-sm font-bold text-[#18231E] hover:underline">
                       info@sanpack.uz
                     </a>
@@ -58,9 +60,9 @@ export default function ContactsPage() {
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-slate-400 block font-medium">Адрес склада и офиса:</span>
+                    <span className="text-slate-400 block font-medium">{copy.addressLabel}:</span>
                     <p className="font-bold text-[#18231E]">
-                      Республика Узбекистан, г. Ташкент, Сергелийский район, ул. Янги Сергели, 14А
+                      {copy.address}
                     </p>
                   </div>
                 </div>
@@ -68,9 +70,9 @@ export default function ContactsPage() {
                 <div className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-slate-400 block font-medium">Режим работы:</span>
+                    <span className="text-slate-400 block font-medium">{copy.hoursLabel}:</span>
                     <p className="font-bold text-[#18231E]">
-                      Понедельник — Суббота: 09:00 - 18:00 (Воскресенье — выходной)
+                      {copy.hours}
                     </p>
                   </div>
                 </div>
@@ -81,7 +83,7 @@ export default function ContactsPage() {
                   onClick={() => setIsCallbackOpen(true)}
                   className="w-full py-3.5 bg-[#008348] text-white font-bold rounded-xl text-xs shadow-md"
                 >
-                  Заказать обратный звонок
+                  {copy.callback}
                 </button>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -109,10 +111,10 @@ export default function ContactsPage() {
             <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between p-6">
               <div className="space-y-2 mb-4">
                 <h3 className="font-bold text-base text-[#18231E]">
-                  Карта проезда к складу SANPACK
+                  {copy.mapTitle}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Ориентир: Сергелийский авторынок, ул. Янги Сергели.
+                  {copy.landmark}
                 </p>
               </div>
 

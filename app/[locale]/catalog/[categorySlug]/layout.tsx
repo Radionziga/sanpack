@@ -20,11 +20,15 @@ export async function generateMetadata({
   const title =
     locale === 'uz'
       ? category.seo?.titleUz || category.titleUz
-      : category.seo?.titleRu || category.titleRu;
+      : locale === 'en'
+        ? category.seo?.titleEn || category.titleEn || category.titleRu
+        : category.seo?.titleRu || category.titleRu;
   const description =
     locale === 'uz'
       ? category.seo?.descriptionUz || category.descriptionUz
-      : category.seo?.descriptionRu || category.descriptionRu;
+      : locale === 'en'
+        ? category.seo?.descriptionEn || category.descriptionEn || category.descriptionRu
+        : category.seo?.descriptionRu || category.descriptionRu;
   const path = `/catalog/${category.slug}`;
 
   return {

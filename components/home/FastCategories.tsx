@@ -22,7 +22,12 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export function FastCategories({ categories }: FastCategoriesProps) {
-  const { t, getLocalizedText } = useLanguage();
+  const { t, getLocalizedText, language } = useLanguage();
+  const subtitle = {
+    ru: 'Основные направления поставки продукции SANPACK',
+    uz: 'SANPACK mahsulotlarini yetkazib berishning asosiy yo‘nalishlari',
+    en: 'SANPACK’s core supply categories',
+  }[language];
 
   return (
     <section className="py-12 bg-[#F8FAF9]">
@@ -33,7 +38,7 @@ export function FastCategories({ categories }: FastCategoriesProps) {
               {t('fastCategoriesTitle')}
             </h2>
             <p className="text-xs text-[#62726B] mt-1 font-wide">
-              Основные направления поставки продукции SANPACK
+              {subtitle}
             </p>
           </div>
 
@@ -49,7 +54,7 @@ export function FastCategories({ categories }: FastCategoriesProps) {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 font-wide">
           {categories.map((cat) => {
             const Icon = iconMap[cat.icon || 'Package'] || Package;
-            const title = getLocalizedText(cat.titleRu, cat.titleUz);
+            const title = getLocalizedText(cat.titleRu, cat.titleUz, cat.titleEn);
 
             return (
               <Link
@@ -69,7 +74,7 @@ export function FastCategories({ categories }: FastCategoriesProps) {
                     {title}
                   </h3>
                   <p className="text-[11px] text-[#62726B] line-clamp-2">
-                    {getLocalizedText(cat.descriptionRu, cat.descriptionUz)}
+                    {getLocalizedText(cat.descriptionRu, cat.descriptionUz, cat.descriptionEn)}
                   </p>
                 </div>
               </Link>

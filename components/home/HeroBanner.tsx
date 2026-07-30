@@ -13,7 +13,30 @@ import {
 } from '@heroicons/react/24/outline';
 
 export function HeroBanner() {
-  const { t, fixText } = useLanguage();
+  const { t, fixText, language } = useLanguage();
+  const copy = {
+    ru: {
+      eyebrow: 'Собственное производство и прямые поставки в Узбекистане',
+      bullets: ['Оптовые цены от завода', 'Доставка по Ташкенту', 'Брендирование под ключ'],
+      catalogCaption: 'Упаковка, перчатки, плёнки и продукты',
+      quality: 'Сертифицированное качество',
+      standard: 'Соответствие стандартам HoReCa',
+    },
+    uz: {
+      eyebrow: 'O‘z ishlab chiqarishimiz va O‘zbekiston bo‘ylab to‘g‘ridan-to‘g‘ri yetkazib berish',
+      bullets: ['Zavoddan ulgurji narxlar', 'Toshkent bo‘ylab yetkazib berish', 'Tayyor brendlash xizmati'],
+      catalogCaption: 'Qadoqlash, qo‘lqoplar, plyonkalar va mahsulotlar',
+      quality: 'Sertifikatlangan sifat',
+      standard: 'HoReCa standartlariga muvofiq',
+    },
+    en: {
+      eyebrow: 'In-house production and direct supply across Uzbekistan',
+      bullets: ['Factory-direct wholesale prices', 'Delivery throughout Tashkent', 'Turnkey branding'],
+      catalogCaption: 'Packaging, gloves, films and food products',
+      quality: 'Certified quality',
+      standard: 'Compliant with HoReCa standards',
+    },
+  }[language];
 
   return (
     <section className="relative bg-gradient-to-br from-[#0A4B2E] via-[#0F6E43] to-[#1C2C24] text-white overflow-hidden py-12 md:py-16">
@@ -26,7 +49,7 @@ export function HeroBanner() {
           <div className="lg:col-span-7 space-y-5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 backdrop-blur-md text-[#DCE9AF] text-xs font-semibold border border-white/10">
               <BuildingOffice2Icon className="w-4 h-4 text-[#DCE9AF]" />
-              <span>{fixText('Собственное производство и прямые поставки в Узбекистане')}</span>
+              <span>{fixText(copy.eyebrow)}</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-[1.15] text-white tracking-tight">
@@ -41,15 +64,15 @@ export function HeroBanner() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
               <div className="flex items-center gap-2 text-slate-200 font-medium">
                 <CheckCircleIcon className="w-4 h-4 text-[#DCE9AF] shrink-0" />
-                <span>{fixText('Оптовые цены от завода')}</span>
+                <span>{fixText(copy.bullets[0])}</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200 font-medium">
                 <CheckCircleIcon className="w-4 h-4 text-[#DCE9AF] shrink-0" />
-                <span>{fixText('Доставка по Ташкенту')}</span>
+                <span>{fixText(copy.bullets[1])}</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200 font-medium">
                 <CheckCircleIcon className="w-4 h-4 text-[#DCE9AF] shrink-0" />
-                <span>{fixText('Брендирование под ключ')}</span>
+                <span>{fixText(copy.bullets[2])}</span>
               </div>
             </div>
 
@@ -87,7 +110,7 @@ export function HeroBanner() {
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
                   <span className="text-[11px] font-semibold text-[#DCE9AF]">SANPACK HoReCa Line</span>
                   <span className="text-sm sm:text-base font-bold tracking-tight">
-                    {fixText('Упаковка, перчатки, плёнки и продукты')}
+                    {fixText(copy.catalogCaption)}
                   </span>
                 </div>
               </div>
@@ -97,8 +120,8 @@ export function HeroBanner() {
                 <div className="flex items-center gap-2.5">
                   <ShieldCheckIcon className="w-5 h-5 text-[#DCE9AF]" />
                   <div>
-                    <p className="font-bold text-white">{fixText('Сертифицированное качество')}</p>
-                    <p className="text-[11px] text-slate-300">{fixText('Соответствие ГОСТ и стандартам HoReCa')}</p>
+                    <p className="font-bold text-white">{fixText(copy.quality)}</p>
+                    <p className="text-[11px] text-slate-300">{fixText(copy.standard)}</p>
                   </div>
                 </div>
                 <TruckIcon className="w-5 h-5 text-[#DCE9AF] shrink-0" />

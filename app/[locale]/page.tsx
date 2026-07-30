@@ -18,7 +18,12 @@ import { Link } from '@/i18n/navigation';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const copy = {
+    ru: ['Популярный выбор HoReCa', 'Перейти в полный каталог'],
+    uz: ['HoReCa tanlovi', 'To‘liq katalogga o‘tish'],
+    en: ['Popular with HoReCa', 'View the full catalog'],
+  }[language];
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [clients, setClients] = useState<ClientPartner[]>([]);
@@ -57,7 +62,7 @@ export default function HomePage() {
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF5EF] text-[#006F3C] text-xs font-bold mb-2">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Популярный выбор HoReCa</span>
+                  <span>{copy[0]}</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-[#18231E]">
                   {t('popularProductsTitle')}
@@ -68,7 +73,7 @@ export default function HomePage() {
                 href="/catalog"
                 className="text-xs font-bold text-[#006F3C] hover:text-[#004F2B] flex items-center gap-1 group self-start sm:self-auto"
               >
-                <span>Перейти в полный каталог</span>
+                <span>{copy[1]}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>

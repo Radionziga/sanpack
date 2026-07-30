@@ -39,13 +39,16 @@ export default function AdminProductsPage() {
     setEditingProduct({
       titleRu: '',
       titleUz: '',
+      titleEn: '',
       slug: '',
       sku: 'SP-' + Math.floor(1000 + Math.random() * 9000),
       categoryId: categories[0]?.id || '',
       shortDescriptionRu: '',
       shortDescriptionUz: '',
+      shortDescriptionEn: '',
       descriptionRu: '',
       descriptionUz: '',
+      descriptionEn: '',
       mainImage: 'https://picsum.photos/seed/sanpack-new-prod/800/800',
       images: ['https://picsum.photos/seed/sanpack-new-prod/800/800'],
       salesUnit: 'рулон',
@@ -252,7 +255,7 @@ export default function AdminProductsPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="font-bold block mb-1">Название (RU) *</label>
                 <input
@@ -271,6 +274,16 @@ export default function AdminProductsPage() {
                   required
                   value={editingProduct.titleUz || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleUz: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold block mb-1">Название (EN)</label>
+                <input
+                  type="text"
+                  value={editingProduct.titleEn || ''}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, titleEn: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
                 />
               </div>

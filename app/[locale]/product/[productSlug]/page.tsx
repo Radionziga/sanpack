@@ -35,7 +35,72 @@ export default function ProductDetailPage({
   params: Promise<{ productSlug: string }>;
 }) {
   const { productSlug } = use(params);
-  const { t, getLocalizedText } = useLanguage();
+  const { t, getLocalizedText, language } = useLanguage();
+  const copy = {
+    ru: {
+      notFound: 'Товар не найден',
+      back: 'Вернуться в каталог',
+      stock: 'В наличии на складе в Ташкенте',
+      order: 'Под заказ',
+      tiers: 'Скидки от объёма заказа',
+      from: 'от',
+      properties: 'Основные свойства',
+      total: 'Итого',
+      added: 'Добавлено в заявку',
+      favorite: 'В избранном',
+      manager: 'Быстрая связь с менеджером',
+      message: 'Здравствуйте! Интересует товар',
+      production: 'SANPACK поставляет упаковку напрямую с собственного производства. Предоставляем образцы и гибкие условия оплаты для постоянных клиентов.',
+      cityDelivery: 'Доставка по Ташкенту',
+      cityDeliveryText: 'Бесплатная доставка B2B-заявок от 2 000 000 сум. Для остальных заказов доступна экспресс-доставка.',
+      regions: 'Регионы Узбекистана',
+      regionsText: 'Отправка через партнёрские службы во все области Узбекистана.',
+      docs: 'Сертификаты и санитарные заключения предоставляются менеджером при оформлении договора.',
+      currency: 'сум',
+    },
+    uz: {
+      notFound: 'Mahsulot topilmadi',
+      back: 'Katalogga qaytish',
+      stock: 'Toshkent omborida mavjud',
+      order: 'Buyurtma asosida',
+      tiers: 'Buyurtma hajmi bo‘yicha chegirmalar',
+      from: 'dan',
+      properties: 'Asosiy xususiyatlar',
+      total: 'Jami',
+      added: 'Arizaga qo‘shildi',
+      favorite: 'Tanlanganlarda',
+      manager: 'Menejer bilan tezkor aloqa',
+      message: 'Salom! Meni ushbu mahsulot qiziqtiradi',
+      production: 'SANPACK qadoqlash mahsulotlarini o‘z ishlab chiqarishidan to‘g‘ridan-to‘g‘ri yetkazadi. Doimiy mijozlarga namunalar va moslashuvchan to‘lov shartlari taqdim etiladi.',
+      cityDelivery: 'Toshkent bo‘ylab yetkazib berish',
+      cityDeliveryText: '2 000 000 so‘mdan B2B arizalar uchun yetkazib berish bepul. Boshqa buyurtmalar uchun tezkor yetkazib berish mavjud.',
+      regions: 'O‘zbekiston hududlari',
+      regionsText: 'Hamkor logistika xizmatlari orqali O‘zbekistonning barcha hududlariga jo‘natish.',
+      docs: 'Sertifikatlar va sanitariya xulosalari shartnoma rasmiylashtirilganda menejer tomonidan taqdim etiladi.',
+      currency: 'so‘m',
+    },
+    en: {
+      notFound: 'Product not found',
+      back: 'Back to catalog',
+      stock: 'In stock at our Tashkent warehouse',
+      order: 'Available to order',
+      tiers: 'Volume discounts',
+      from: 'from',
+      properties: 'Key properties',
+      total: 'Total',
+      added: 'Added to request',
+      favorite: 'In favorites',
+      manager: 'Contact a manager',
+      message: 'Hello! I am interested in this product',
+      production: 'SANPACK supplies packaging directly from its own production. Samples and flexible payment terms are available to regular business clients.',
+      cityDelivery: 'Delivery in Tashkent',
+      cityDeliveryText: 'Free delivery for B2B requests over UZS 2,000,000. Express delivery is available for other orders.',
+      regions: 'Regions of Uzbekistan',
+      regionsText: 'Shipping through partner logistics providers to every region of Uzbekistan.',
+      docs: 'Certificates and sanitary documents are provided by a manager when the contract is prepared.',
+      currency: 'UZS',
+    },
+  }[language];
   const { addItem, isInCart } = useRequestCart();
   const { isFavorite, toggleFavorite } = useFavorites();
 
@@ -80,9 +145,9 @@ export default function ProductDetailPage({
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
         <Header />
         <div className="max-w-7xl mx-auto px-4 py-20 text-center flex-1">
-          <h2 className="text-2xl font-bold text-[#222B35] mb-4">Товар не найден</h2>
+          <h2 className="text-2xl font-bold text-[#222B35] mb-4">{copy.notFound}</h2>
           <Link href="/catalog" className="px-6 py-3 bg-[#006F3C] text-white font-bold rounded-xl text-xs">
-            Вернуться в каталог
+            {copy.back}
           </Link>
         </div>
         <Footer />
@@ -90,8 +155,8 @@ export default function ProductDetailPage({
     );
   }
 
-  const title = getLocalizedText(product.titleRu, product.titleUz);
-  const description = getLocalizedText(product.descriptionRu, product.descriptionUz);
+  const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
+  const description = getLocalizedText(product.descriptionRu, product.descriptionUz, product.descriptionEn);
   const favorited = isFavorite(product.id);
   const inCart = isInCart(product.id, selectedVariant?.id);
 
@@ -163,7 +228,7 @@ export default function ProductDetailPage({
               <div className="flex items-center gap-2 text-xs font-semibold text-[#006F3C] bg-[#EAF5EF] p-3 rounded-xl border border-[#006F3C]/20">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>
-                  {product.stockStatus === 'in_stock' ? 'В наличии на складе в Ташкенте' : 'Под заказ'}
+                  {product.stockStatus === 'in_stock' ? copy.stock : copy.order}
                 </span>
               </div>
 
@@ -172,7 +237,7 @@ export default function ProductDetailPage({
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 p-4 rounded-2xl border border-emerald-200/60 space-y-2">
                   <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
                     <TrendingDown className="w-4 h-4 text-[#006F3C]" />
-                    <span>Скидки от объема заказа (Оптовые уровни):</span>
+                    <span>{copy.tiers}:</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     {activeTiers.map((tier, idx) => (
@@ -184,8 +249,8 @@ export default function ProductDetailPage({
                             : 'bg-white text-slate-700 border-slate-200'
                         }`}
                       >
-                        <div className="text-[10px] opacity-80">от {tier.minQuantity} {product.salesUnit}</div>
-                        <div>{tier.price.toLocaleString()} сум</div>
+                        <div className="text-[10px] opacity-80">{copy.from} {tier.minQuantity} {product.salesUnit}</div>
+                        <div>{tier.price.toLocaleString()} {copy.currency}</div>
                       </div>
                     ))}
                   </div>
@@ -195,7 +260,7 @@ export default function ProductDetailPage({
               {/* Specs List */}
               <div className="space-y-2 border-t border-b border-slate-200 py-4 text-xs">
                 <h4 className="font-bold text-[#222B35] uppercase tracking-wider mb-2">
-                  Основные свойства:
+                  {copy.properties}:
                 </h4>
                 {Object.entries(product.attributes || {}).map(([key, val]) => (
                   <div key={key} className="flex items-center justify-between py-1 border-b border-dashed border-slate-100 last:border-0">
@@ -224,7 +289,7 @@ export default function ProductDetailPage({
                               : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                           }`}
                         >
-                          <span>{getLocalizedText(v.titleRu, v.titleUz)}</span>
+                          <span>{getLocalizedText(v.titleRu, v.titleUz, v.titleEn)}</span>
                           {isSelected && <Check className="w-4 h-4 text-[#006F3C]" />}
                         </button>
                       );
@@ -243,7 +308,7 @@ export default function ProductDetailPage({
                   </span>
                   <span className="text-2xl font-bold text-[#006F3C] block tracking-tight">
                     {product.showPrice && unitPrice > 0
-                      ? `${unitPrice.toLocaleString()} сум`
+                      ? `${unitPrice.toLocaleString()} ${copy.currency}`
                       : t('priceOnRequest')}
                   </span>
                   <span className="text-[11px] text-slate-500 block mt-1">
@@ -282,10 +347,10 @@ export default function ProductDetailPage({
                 {product.showPrice && unitPrice > 0 && (
                   <div className="p-3 bg-[#F2F7F4] rounded-xl border border-[#006F3C]/20 flex items-center justify-between text-xs">
                     <span className="font-semibold text-slate-600 flex items-center gap-1">
-                      <Calculator className="w-3.5 h-3.5 text-[#006F3C]" /> Итого:
+                      <Calculator className="w-3.5 h-3.5 text-[#006F3C]" /> {copy.total}:
                     </span>
                     <span className="font-bold text-base text-[#006F3C]">
-                      {totalPrice.toLocaleString()} сум
+                      {totalPrice.toLocaleString()} {copy.currency}
                     </span>
                   </div>
                 )}
@@ -304,7 +369,7 @@ export default function ProductDetailPage({
                     {inCart ? (
                       <>
                         <Check className="w-4 h-4" />
-                        <span>Добавлено в заявку</span>
+                        <span>{copy.added}</span>
                       </>
                     ) : (
                       <>
@@ -323,16 +388,16 @@ export default function ProductDetailPage({
                     }`}
                   >
                     <Heart className={`w-4 h-4 ${favorited ? 'fill-current' : ''}`} />
-                    <span>{favorited ? 'В избранном' : t('favorites')}</span>
+                    <span>{favorited ? copy.favorite : t('favorites')}</span>
                   </button>
                 </div>
 
                 {/* Fast Messenger Triggers */}
                 <div className="border-t border-slate-100 pt-4 space-y-2">
-                  <p className="text-[11px] text-slate-500 font-semibold">Быстрая связь с менеджером:</p>
+                  <p className="text-[11px] text-slate-500 font-semibold">{copy.manager}:</p>
                   <div className="grid grid-cols-2 gap-2">
                     <a
-                      href={`https://t.me/sanpack_uz?text=${encodeURIComponent(`Здравствуйте! Интересует товар: ${title} (SKU: ${product.sku})`)}`}
+                      href={`https://t.me/sanpack_uz?text=${encodeURIComponent(`${copy.message}: ${title} (SKU: ${product.sku})`)}`}
                       target="_blank"
                       rel="noreferrer"
                       className="py-2 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
@@ -341,7 +406,7 @@ export default function ProductDetailPage({
                       <span>Telegram</span>
                     </a>
                     <a
-                      href={`https://wa.me/998998510506?text=${encodeURIComponent(`Здравствуйте! Интересует товар: ${title} (SKU: ${product.sku})`)}`}
+                      href={`https://wa.me/998998510506?text=${encodeURIComponent(`${copy.message}: ${title} (SKU: ${product.sku})`)}`}
                       target="_blank"
                       rel="noreferrer"
                       className="py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
@@ -406,7 +471,7 @@ export default function ProductDetailPage({
                 <p>{description}</p>
                 <div className="bg-[#EAF5EF] p-4 rounded-2xl border border-[#006F3C]/20 text-[#006F3C] font-semibold text-xs flex items-start gap-2">
                   <span>💡</span>
-                  <span>SANPACK поставляет упаковку напрямую с собственного производства. Предоставляем образцы продукции и гибкие условия оплаты для постоянных клиентов HoReCa и дистрибьюторов.</span>
+                  <span>{copy.production}</span>
                 </div>
               </div>
             )}
@@ -429,15 +494,15 @@ export default function ProductDetailPage({
                 <div className="flex items-start gap-3">
                   <Truck className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-bold text-[#222B35] text-sm">Доставка по Ташкенту</h4>
-                    <p>Бесплатная курьерская доставка при сумме B2B-заявки от 2 000 000 сум. В остальные случаи — экспресс-доставка день в день.</p>
+                    <h4 className="font-bold text-[#222B35] text-sm">{copy.cityDelivery}</h4>
+                    <p>{copy.cityDeliveryText}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-bold text-[#222B35] text-sm">Регионы Узбекистана</h4>
-                    <p>Отправка через партнерские автотранспортные службы в Самарканд, Бухару, Наманган, Андижан, Фергану и все области.</p>
+                    <h4 className="font-bold text-[#222B35] text-sm">{copy.regions}</h4>
+                    <p>{copy.regionsText}</p>
                   </div>
                 </div>
               </div>
@@ -454,14 +519,14 @@ export default function ProductDetailPage({
                     >
                       <div className="flex items-center gap-3">
                         <FileText className="w-5 h-5 text-[#006F3C]" />
-                        <span>{getLocalizedText(doc.titleRu, doc.titleUz)}</span>
+                        <span>{getLocalizedText(doc.titleRu, doc.titleUz, doc.titleEn)}</span>
                       </div>
                       <Download className="w-4 h-4 text-slate-400" />
                     </a>
                   ))
                 ) : (
                   <p className="text-xs text-slate-500">
-                    Сертификаты соответствия и санитарно-эпидемиологические заключения предоставляются менеджером при оформлении договора.
+                    {copy.docs}
                   </p>
                 )}
               </div>

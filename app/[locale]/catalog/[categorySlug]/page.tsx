@@ -19,7 +19,12 @@ export default function CategoryDetailPage({
   params: Promise<{ categorySlug: string }>;
 }) {
   const { categorySlug } = use(params);
-  const { t, getLocalizedText } = useLanguage();
+  const { t, getLocalizedText, language } = useLanguage();
+  const copy = {
+    ru: { catalog: 'Каталог', filters: 'Фильтры', empty: 'В этой категории пока нет подходящих товаров', reset: 'Сбросить фильтры', show: 'Показать результаты' },
+    uz: { catalog: 'Katalog', filters: 'Filtrlar', empty: 'Bu kategoriyada mos mahsulotlar topilmadi', reset: 'Filtrlarni tozalash', show: 'Natijalarni ko‘rsatish' },
+    en: { catalog: 'Catalog', filters: 'Filters', empty: 'There are no matching products in this category', reset: 'Reset filters', show: 'Show results' },
+  }[language];
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -98,11 +103,11 @@ export default function CategoryDetailPage({
   }, [products, selectedFilters, inStockOnly, ownProductionOnly, sortBy]);
 
   const categoryTitle = currentCategory
-    ? getLocalizedText(currentCategory.titleRu, currentCategory.titleUz)
-    : 'Каталог';
+    ? getLocalizedText(currentCategory.titleRu, currentCategory.titleUz, currentCategory.titleEn)
+    : copy.catalog;
 
   const categoryDesc = currentCategory
-    ? getLocalizedText(currentCategory.descriptionRu, currentCategory.descriptionUz)
+    ? getLocalizedText(currentCategory.descriptionRu, currentCategory.descriptionUz, currentCategory.descriptionEn)
     : '';
 
   return (
@@ -144,7 +149,7 @@ export default function CategoryDetailPage({
                 className="lg:hidden px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2 shadow-xs"
               >
                 <Filter className="w-4 h-4 text-[#006F3C]" />
-                <span>Фильтры</span>
+                <span>{copy.filters}</span>
               </button>
 
               <button
@@ -152,7 +157,7 @@ export default function CategoryDetailPage({
                 className="lg:hidden px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2 shadow-2xs"
               >
                 <Filter className="w-4 h-4 text-[#006F3C]" />
-                <span>Фильтры</span>
+                <span>{copy.filters}</span>
               </button>
 
               <div className="flex items-center gap-2">
@@ -225,13 +230,13 @@ export default function CategoryDetailPage({
               ) : filteredProducts.length === 0 ? (
                 <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4">
                   <h3 className="text-lg font-bold text-[#18231E]">
-                    В этой категории пока нет подходящих товаров
+                    {copy.empty}
                   </h3>
                   <button
                     onClick={handleResetFilters}
                     className="px-5 py-2.5 bg-[#006F3C] text-white font-bold text-xs rounded-xl shadow-md"
                   >
-                    Сбросить фильтры
+                    {copy.reset}
                   </button>
                 </div>
               ) : (
@@ -257,7 +262,7 @@ export default function CategoryDetailPage({
         <div className="fixed inset-0 z-50 bg-black/50 lg:hidden">
           <div className="fixed top-0 right-0 w-4/5 max-w-md h-full bg-white shadow-2xl p-6 overflow-y-auto space-y-6">
             <div className="flex items-center justify-between border-b pb-4">
-              <h3 className="font-bold text-lg text-[#18231E]">Фильтры категории</h3>
+              <h3 className="font-bold text-lg text-[#18231E]">{copy.filters}</h3>
               <button onClick={() => setIsMobileFilterOpen(false)} className="p-2 text-slate-400">
                 <X className="w-6 h-6" />
               </button>
@@ -279,7 +284,7 @@ export default function CategoryDetailPage({
               onClick={() => setIsMobileFilterOpen(false)}
               className="w-full py-3 bg-[#006F3C] text-white font-bold rounded-xl text-xs shadow-md"
             >
-              Показать результаты ({filteredProducts.length})
+              {copy.show} ({filteredProducts.length})
             </button>
           </div>
         </div>

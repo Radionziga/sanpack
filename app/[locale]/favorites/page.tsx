@@ -9,11 +9,13 @@ import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories
 import { Product } from '@/types';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { pageCopy } from '@/lib/i18n/pageCopy';
 import { Heart, Trash2 } from 'lucide-react';
 
 export default function FavoritesPage() {
   const { favoriteIds, clearFavorites } = useFavorites();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const copy = pageCopy[language].favorites;
 
   const [favProducts, setFavProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function FavoritesPage() {
               {t('favorites')}
             </h1>
             <p className="text-xs text-[#68736D] mt-1">
-              Сохранённые позиции для быстрого добавления в заявку
+              {copy.intro}
             </p>
           </div>
 
@@ -53,7 +55,7 @@ export default function FavoritesPage() {
               className="text-xs text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1.5"
             >
               <Trash2 className="w-4 h-4" />
-              <span>Очистить избранное</span>
+              <span>{copy.clear}</span>
             </button>
           )}
         </div>
@@ -67,15 +69,15 @@ export default function FavoritesPage() {
         ) : favProducts.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 max-w-md mx-auto">
             <Heart className="w-12 h-12 text-slate-300 mx-auto" />
-            <h3 className="text-base font-bold text-[#18231E]">Список избранного пуст</h3>
+            <h3 className="text-base font-bold text-[#18231E]">{copy.emptyTitle}</h3>
             <p className="text-xs text-slate-500">
-              Нажмите на сердечко у любого товара в каталоге, чтобы сохранить его в этом разделе.
+              {copy.emptyText}
             </p>
             <Link
               href="/catalog"
               className="inline-block px-6 py-3 bg-[#006F3C] text-white font-bold rounded-xl text-xs"
             >
-              Перейти в каталог
+              {t('goToCatalog')}
             </Link>
           </div>
         ) : (

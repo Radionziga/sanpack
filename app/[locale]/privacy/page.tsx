@@ -3,19 +3,25 @@
 import React from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { useLanguage } from '@/context/LanguageContext';
+import { pageCopy } from '@/lib/i18n/pageCopy';
 
 export default function PrivacyPage() {
+  const { language } = useLanguage();
+  const copy = pageCopy[language].privacy;
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F7F6]">
       <Header />
       <main className="flex-1 py-12 max-w-4xl mx-auto px-4 w-full">
         <div className="bg-white rounded-3xl p-8 border border-slate-200 space-y-4 text-xs text-[#18231E] leading-relaxed">
-          <h1 className="text-2xl font-bold mb-4">Политика конфиденциальности SANPACK</h1>
-          <p>Настоящая Политика конфиденциальности персональных данных действует в отношении всей информации, которую компания SANPACK может получить о пользователе во время использования сайта.</p>
-          <h3 className="font-bold text-sm text-[#006F3C]">1. Обработка персональных данных</h3>
-          <p>Мы собираем только те данные (наименование компании, ИНН, ФИО контактного лица, номер телефона), которые необходимы для формирования коммерческого предложения, выписки счета-фактуры и осуществления курьерской доставки.</p>
-          <h3 className="font-bold text-sm text-[#006F3C]">2. Защита информации</h3>
-          <p>SANPACK не передает персональные данные третьим лицам, за исключением случаев, предусмотренных законодательством Республики Узбекистан.</p>
+          <h1 className="text-2xl font-bold mb-4">{copy.title}</h1>
+          <p>{copy.intro}</p>
+          {copy.sections.map(([title, text]) => (
+            <React.Fragment key={title}>
+              <h3 className="font-bold text-sm text-[#006F3C]">{title}</h3>
+              <p>{text}</p>
+            </React.Fragment>
+          ))}
         </div>
       </main>
       <Footer />

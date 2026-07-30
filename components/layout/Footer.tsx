@@ -7,7 +7,24 @@ import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
 
 export function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const copy = {
+    ru: {
+      categories: ['Мешки для мусора', 'Пакеты «Майка»', 'Одноразовые перчатки', 'Фольга и стрейч-плёнка', 'Бакалея и рис', 'Полиграфия и брендирование'],
+      address: 'Ташкент, Сергелийский район, ул. Янги Сергели, 14А',
+      hours: 'Пн — сб: 09:00–18:00',
+    },
+    uz: {
+      categories: ['Chiqindi paketlari', '“Mayka” paketlar', 'Bir martalik qo‘lqoplar', 'Folga va streych plyonka', 'Oziq-ovqat va guruch', 'Poligrafiya va brendlash'],
+      address: 'Toshkent, Sergeli tumani, Yangi Sergeli ko‘chasi, 14A',
+      hours: 'Du — sh: 09:00–18:00',
+    },
+    en: {
+      categories: ['Waste bags', 'Carrier bags', 'Disposable gloves', 'Foil and stretch film', 'Groceries and rice', 'Printing and branding'],
+      address: '14A Yangi Sergeli Street, Sergeli district, Tashkent',
+      hours: 'Mon–Sat: 09:00–18:00',
+    },
+  }[language];
   const currentYear = new Date().getFullYear();
 
   return (
@@ -43,32 +60,32 @@ export function Footer() {
             <ul className="space-y-2 text-slate-200">
               <li>
                 <Link href="/catalog/meshki-dlya-musora" className="hover:text-[#DCE9AF] transition-colors">
-                  Мешки для мусора
+                  {copy.categories[0]}
                 </Link>
               </li>
               <li>
                 <Link href="/catalog/pakety-mayka" className="hover:text-[#DCE9AF] transition-colors">
-                  Пакеты «Майка»
+                  {copy.categories[1]}
                 </Link>
               </li>
               <li>
                 <Link href="/catalog/perchatki" className="hover:text-[#DCE9AF] transition-colors">
-                  Перчатки одноразовые
+                  {copy.categories[2]}
                 </Link>
               </li>
               <li>
                 <Link href="/catalog/folga-i-plenka" className="hover:text-[#DCE9AF] transition-colors">
-                  Фольга и стрейч-пленка
+                  {copy.categories[3]}
                 </Link>
               </li>
               <li>
                 <Link href="/catalog/bakaleya" className="hover:text-[#DCE9AF] transition-colors">
-                  Бакалея и рис
+                  {copy.categories[4]}
                 </Link>
               </li>
               <li>
                 <Link href="/catalog/branding-polygraphy" className="hover:text-[#DCE9AF] transition-colors">
-                  Полиграфия и брендирование
+                  {copy.categories[5]}
                 </Link>
               </li>
             </ul>
@@ -136,11 +153,11 @@ export function Footer() {
               </a>
               <div className="flex items-start gap-2 pt-1">
                 <MapPin className="w-3.5 h-3.5 text-[#DCE9AF] shrink-0 mt-0.5" />
-                <span>г. Ташкент, Сергелийский р-н, ул. Янги Сергели, 14А</span>
+                <span>{copy.address}</span>
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <Clock className="w-3.5 h-3.5 text-[#DCE9AF] shrink-0" />
-                <span>Пн — Сб: 09:00 - 18:00</span>
+                <span>{copy.hours}</span>
               </div>
             </div>
           </div>

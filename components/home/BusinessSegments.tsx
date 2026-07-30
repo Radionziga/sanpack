@@ -14,49 +14,90 @@ import {
 } from '@heroicons/react/24/outline';
 
 export function BusinessSegments() {
-  const { t, fixText } = useLanguage();
+  const { t, fixText, language } = useLanguage();
+  const copy = {
+    ru: {
+      subtitle: 'Готовые комплексные подборки под специфику вашего предприятия',
+      action: 'Перейти к продукции',
+      descriptions: [
+        'Пакеты, фольга, плёнка, перчатки, бакалея, рис и свежая зелень.',
+        'Мусорные мешки, расходные материалы и гигиеническая упаковка.',
+        'Пергамент, пищевая фольга и фасовочные рулонные пакеты.',
+        'Брендированные пакеты, контейнеры, стикеры и наклейки.',
+        'Большие мусорные мешки, нитриловые перчатки и вакуумная плёнка.',
+        'Прочные мешки, резинки, салфетки и хозяйственные перчатки.',
+      ],
+      badges: ['HoReCa', 'Отели', 'Пекарни', 'Доставка', 'Производство', 'Клининг'],
+    },
+    uz: {
+      subtitle: 'Korxonangiz xususiyatiga mos tayyor kompleks mahsulot to‘plamlari',
+      action: 'Mahsulotlarga o‘tish',
+      descriptions: [
+        'Paketlar, folga, plyonka, qo‘lqoplar, oziq-ovqat va yangi ko‘katlar.',
+        'Chiqindi paketlari, sarf materiallari va gigiyenik qadoqlash.',
+        'Pergament, oziq-ovqat folgasi va rulon paketlar.',
+        'Brendlangan paketlar, konteynerlar, stikerlar va yorliqlar.',
+        'Katta chiqindi paketlari, nitril qo‘lqoplar va vakuum plyonkasi.',
+        'Mustahkam paketlar, rezinalar, salfetkalar va xo‘jalik qo‘lqoplari.',
+      ],
+      badges: ['HoReCa', 'Mehmonxonalar', 'Novvoyxonalar', 'Yetkazib berish', 'Ishlab chiqarish', 'Klining'],
+    },
+    en: {
+      subtitle: 'Ready-made product selections tailored to your operation',
+      action: 'View products',
+      descriptions: [
+        'Bags, foil, film, gloves, groceries, rice and fresh herbs.',
+        'Waste bags, consumables and hygienic packaging.',
+        'Parchment, food foil and produce bags on rolls.',
+        'Branded bags, containers, stickers and labels.',
+        'Large waste bags, nitrile gloves and vacuum film.',
+        'Heavy-duty bags, bands, wipes and household gloves.',
+      ],
+      badges: ['HoReCa', 'Hotels', 'Bakeries', 'Delivery', 'Production', 'Cleaning'],
+    },
+  }[language];
 
   const segments = [
     {
       title: t('segRestaurants'),
       icon: BuildingStorefrontIcon,
-      desc: 'Пакеты, фольга, стрейч-пленка, перчатки, бакалея, рис и свежая зелень.',
-      badge: 'HoReCa Special',
+      desc: copy.descriptions[0],
+      badge: copy.badges[0],
       link: '/catalog',
     },
     {
       title: t('segHotels'),
       icon: BuildingOffice2Icon,
-      desc: 'Мусорные мешки 20L-41L, расходные материалы, гигиеническая упаковка.',
-      badge: 'Отели & Гостиницы',
+      desc: copy.descriptions[1],
+      badge: copy.badges[1],
       link: '/catalog/meshki-dlya-musora',
     },
     {
       title: t('segBakeries'),
       icon: CakeIcon,
-      desc: 'Пергаментная бумага, пищевая фольга, фасовочные рулонные пакеты.',
-      badge: 'Пекарни',
+      desc: copy.descriptions[2],
+      badge: copy.badges[2],
       link: '/catalog/folga-i-plenka',
     },
     {
       title: t('segDelivery'),
       icon: TruckIcon,
-      desc: 'Брендированные пакеты майка, контейнеры, стикеры и наклейки.',
-      badge: 'Delivery Line',
+      desc: copy.descriptions[3],
+      badge: copy.badges[3],
       link: '/catalog/pakety-mayka',
     },
     {
       title: t('segProduction'),
       icon: BriefcaseIcon,
-      desc: 'Большие мусорные мешки 160L-240L, нитриловые перчатки, вакуумная плёнка.',
-      badge: 'Промышленность',
+      desc: copy.descriptions[4],
+      badge: copy.badges[4],
       link: '/catalog/perchatki',
     },
     {
       title: t('segCleaning'),
       icon: SparklesIcon,
-      desc: 'Сверхпрочные мусорные мешки, резинки, салфетки, хозяйственные перчатки.',
-      badge: 'Клининг',
+      desc: copy.descriptions[5],
+      badge: copy.badges[5],
       link: '/catalog/meshki-dlya-musora',
     },
   ];
@@ -69,7 +110,7 @@ export function BusinessSegments() {
             {t('forBusinessTitle')}
           </h2>
           <p className="text-xs sm:text-sm text-[#5C6A75] mt-1.5">
-            {fixText('Готовые комплексные подборки продукции под специфику вашего предприятия')}
+            {fixText(copy.subtitle)}
           </p>
         </div>
 
@@ -102,7 +143,7 @@ export function BusinessSegments() {
                 </div>
 
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F6E43] group-hover:translate-x-1 transition-transform">
-                  <span>{fixText('Перейти к продукции')}</span>
+                  <span>{fixText(copy.action)}</span>
                   <ArrowRightIcon className="w-3.5 h-3.5" />
                 </div>
               </Link>
