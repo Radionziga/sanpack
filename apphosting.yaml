@@ -41,6 +41,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_PUBLIC_CATALOG_PDF_URL
+    secret: sanpack-catalog-pdf-url
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: SANPACK_USE_SEED_DATA
     value: "false"
     availability:
