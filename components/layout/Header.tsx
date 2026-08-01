@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import NextLink from 'next/link';
 import { Link } from '@/i18n/navigation';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
@@ -27,7 +28,13 @@ import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories
 import { Category, Product } from '@/types';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
 
-export function Header() {
+export function Header({
+  initialCategories = [],
+  initialProducts = [],
+}: {
+  initialCategories?: Category[];
+  initialProducts?: Product[];
+} = {}) {
   const { language, setLanguage, t, getLocalizedText, fixText } = useLanguage();
   const copy = {
     ru: {
@@ -76,13 +83,16 @@ export function Header() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>(initialProducts);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    SanpackRepository.getCategories().then(setCategories);
-  }, []);
+    if (initialCategories.length === 0) {
+      SanpackRepository.getCategories().then(setCategories).catch(() => setCategories([]));
+    }
+  }, [initialCategories.length]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -95,7 +105,13 @@ export function Header() {
   useEffect(() => {
     let active = true;
     if (searchQuery.trim().length >= 2) {
-      SanpackRepository.getProducts().then((products) => {
+      const loadProducts = catalogProducts.length > 0
+        ? Promise.resolve(catalogProducts)
+        : SanpackRepository.getProducts().then((products) => {
+            setCatalogProducts(products);
+            return products;
+          });
+      loadProducts.then((products) => {
         if (!active) return;
         const q = searchQuery.toLowerCase();
         const filtered = products.filter(
@@ -107,6 +123,8 @@ export function Header() {
         );
         setSearchResults(filtered.slice(0, 6));
         setIsSearchOpen(true);
+      }).catch(() => {
+        if (active) setSearchResults([]);
       });
     } else {
       const timer = setTimeout(() => {
@@ -120,7 +138,7 @@ export function Header() {
     return () => {
       active = false;
     };
-  }, [searchQuery]);
+  }, [catalogProducts, searchQuery]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -455,12 +473,12 @@ export function Header() {
               </Link>
             </nav>
 
-            <Link
+            <NextLink
               href="/admin/login"
               className="text-[11px] text-slate-400 hover:text-slate-700 transition-colors font-medium"
             >
               {copy.admin}
-            </Link>
+            </NextLink>
           </div>
         </div>
 
@@ -592,13 +610,13 @@ export function Header() {
                     📞 +998 99 851 05 06
                   </a>
                   <p>{fixText(`📍 ${copy.address}`)}</p>
-                  <Link
+                  <NextLink
                     href="/admin/login"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block text-slate-400"
                   >
                     🔒 {copy.adminPanel}
-                  </Link>
+                  </NextLink>
                 </div>
               </motion.div>
             </div>

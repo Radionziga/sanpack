@@ -2,5 +2,34 @@
   "metadata": {
     "title": "Packaging and supplies for HoReCa",
     "description": "Packaging, consumables, food products and print services for businesses in Uzbekistan."
+  },
+  "homeCatalog": {
+    "eyebrow": "A business catalog for Uzbekistan",
+    "title": "Product catalog for business",
+    "description": "Packaging, consumables and food products for restaurants, cafés, hotels, shops and manufacturers — in one SANPACK catalog.",
+    "downloadCatalog": "Download PDF catalog",
+    "requestQuote": "Request a quote",
+    "searchLabel": "Search the catalog",
+    "searchPlaceholder": "Product, category or SKU",
+    "clearSearch": "Clear search",
+    "advancedFilters": "All filters",
+    "categoriesTitle": "Product categories",
+    "categoriesHint": "Choose a category to jump straight to the products you need",
+    "fullCatalog": "Open full catalog",
+    "allProducts": "All products",
+    "itemsCount": "{count, plural, one {# item} other {# items}}",
+    "assortment": "SANPACK assortment",
+    "shownCount": "Showing: {count}",
+    "sortLabel": "Sort",
+    "sortRecommended": "Recommended",
+    "sortNewest": "Newest first",
+    "sortName": "By name",
+    "nothingFoundTitle": "No products match your search",
+    "nothingFoundDescription": "Change the search or return to all categories.",
+    "emptyCatalogTitle": "The catalog is being prepared",
+    "emptyCatalogDescription": "We are adding the assortment. You can download the PDF catalog or contact sales in the meantime.",
+    "errorTitle": "The catalog is temporarily unavailable",
+    "errorDescription": "We could not load current data. Please refresh the page a little later.",
+    "resetFilters": "Show all products"
   }
 }

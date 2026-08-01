@@ -1,110 +1,58 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
+import { setRequestLocale } from 'next-intl/server';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { HeroBanner } from '@/components/home/HeroBanner';
-import { FastCategories } from '@/components/home/FastCategories';
-import { Advantages } from '@/components/home/Advantages';
-import { BusinessSegments } from '@/components/home/BusinessSegments';
-import { ClientsSection } from '@/components/home/ClientsSection';
-import { BrandingBanner } from '@/components/home/BrandingBanner';
-import { CtaBanner } from '@/components/home/CtaBanner';
-import { ProductCard } from '@/components/catalog/ProductCard';
-import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
-import { Product, Category, ClientPartner } from '@/types';
-import { useLanguage } from '@/context/LanguageContext';
-import { Link } from '@/i18n/navigation';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { CatalogHome } from '@/components/home/CatalogHome';
+import {
+  getPublicCategories,
+  getPublicProducts,
+} from '@/lib/repositories/serverCatalogRepository';
+import type { Category, Language, Product } from '@/types';
 
-export default function HomePage() {
-  const { t, language } = useLanguage();
-  const copy = {
-    ru: ['Популярный выбор HoReCa', 'Перейти в полный каталог'],
-    uz: ['HoReCa tanlovi', 'To‘liq katalogga o‘tish'],
-    en: ['Popular with HoReCa', 'View the full catalog'],
-  }[language];
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [clients, setClients] = useState<ClientPartner[]>([]);
-  const [loading, setLoading] = useState(true);
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    async function loadData() {
-      const [p, c, cl] = await Promise.all([
-        SanpackRepository.getProducts(),
-        SanpackRepository.getCategories(),
-        SanpackRepository.getClients(),
-      ]);
-      setProducts(p);
-      setCategories(c.filter((cat) => !cat.parentId));
-      setClients(cl);
-      setLoading(false);
-    }
-    loadData();
-  }, []);
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: Language }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
 
-  const popularProducts = products.filter((p) => p.featured).slice(0, 8);
+  let dataUnavailable = false;
+  let products: Product[] = [];
+  let categories: Category[] = [];
+
+  try {
+    [products, categories] = await Promise.all([
+      getPublicProducts(),
+      getPublicCategories(),
+    ]);
+  } catch (error) {
+    dataUnavailable = true;
+    console.error('Home catalog data could not be loaded.', error);
+  }
+
+  const publishedProducts = products
+    .filter((product) => product.status === 'published')
+    .sort((a, b) => b.sortOrder - a.sortOrder);
+  const activeCategories = categories
+    .filter((category) => category.status === 'active')
+    .sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F7F6]">
-      <Header />
-
+    <div className="flex min-h-screen flex-col bg-[#F4F7F5]">
+      <Header
+        initialCategories={activeCategories}
+        initialProducts={publishedProducts}
+      />
       <main className="flex-1">
-        <HeroBanner />
-
-        <FastCategories categories={categories} />
-
-        {/* Popular Products */}
-        <section className="py-16 bg-white border-y border-slate-200">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF5EF] text-[#006F3C] text-xs font-bold mb-2">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{copy[0]}</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-[#18231E]">
-                  {t('popularProductsTitle')}
-                </h2>
-              </div>
-
-              <Link
-                href="/catalog"
-                className="text-xs font-bold text-[#006F3C] hover:text-[#004F2B] flex items-center gap-1 group self-start sm:self-auto"
-              >
-                <span>{copy[1]}</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-80 bg-slate-100 animate-pulse rounded-2xl" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {popularProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        <Advantages />
-
-        <BusinessSegments />
-
-        <ClientsSection clients={clients} />
-
-        <BrandingBanner />
-
-        <CtaBanner />
+        <CatalogHome
+          products={publishedProducts}
+          categories={activeCategories}
+          catalogPdfUrl={process.env.NEXT_PUBLIC_CATALOG_PDF_URL}
+          dataUnavailable={dataUnavailable}
+        />
       </main>
-
       <Footer />
     </div>
   );

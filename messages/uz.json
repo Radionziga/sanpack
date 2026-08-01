@@ -2,5 +2,34 @@
   "metadata": {
     "title": "HoReCa uchun qadoqlash va mahsulotlar",
     "description": "O‘zbekistondagi biznes uchun qadoqlash, sarf materiallari, oziq-ovqat va poligrafiya yetkazib berish."
+  },
+  "homeCatalog": {
+    "eyebrow": "O‘zbekistondagi biznes uchun katalog",
+    "title": "Biznes uchun mahsulotlar katalogi",
+    "description": "Restoran, kafe, mehmonxona, do‘kon va ishlab chiqarish uchun qadoqlash, sarf materiallari va oziq-ovqat — SANPACK yagona katalogida.",
+    "downloadCatalog": "PDF-katalogni yuklab olish",
+    "requestQuote": "Taklif olish",
+    "searchLabel": "Katalog bo‘yicha qidirish",
+    "searchPlaceholder": "Mahsulot, kategoriya yoki artikul",
+    "clearSearch": "Qidiruvni tozalash",
+    "advancedFilters": "Barcha filtrlar",
+    "categoriesTitle": "Mahsulot kategoriyalari",
+    "categoriesHint": "Kerakli mahsulotlarga tez o‘tish uchun yo‘nalishni tanlang",
+    "fullCatalog": "To‘liq katalogni ochish",
+    "allProducts": "Barcha mahsulotlar",
+    "itemsCount": "{count} ta mahsulot",
+    "assortment": "SANPACK assortimenti",
+    "shownCount": "Ko‘rsatildi: {count}",
+    "sortLabel": "Saralash",
+    "sortRecommended": "Tavsiya bo‘yicha",
+    "sortNewest": "Avval yangilari",
+    "sortName": "Nomi bo‘yicha",
+    "nothingFoundTitle": "So‘rovingiz bo‘yicha hech narsa topilmadi",
+    "nothingFoundDescription": "So‘rovni o‘zgartiring yoki barcha kategoriyalarga qayting.",
+    "emptyCatalogTitle": "Katalog nashrga tayyorlanmoqda",
+    "emptyCatalogDescription": "Assortiment to‘ldirilmoqda. Hozircha PDF-katalogni yuklab olishingiz yoki savdo bo‘limiga murojaat qilishingiz mumkin.",
+    "errorTitle": "Katalog vaqtincha mavjud emas",
+    "errorDescription": "Dolzarb ma’lumotlarni olishning iloji bo‘lmadi. Sahifani birozdan keyin yangilang.",
+    "resetFilters": "Barcha mahsulotlarni ko‘rsatish"
   }
 }
