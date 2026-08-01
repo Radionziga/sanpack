@@ -27,23 +27,19 @@ env:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: firebase-api-key
+    secret: sanpack-firebase-api-key
     availability:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    secret: firebase-messaging-sender-id
+    secret: sanpack-firebase-messaging-sender-id
     availability:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    secret: firebase-app-id
+    secret: sanpack-firebase-app-id
     availability:
       - BUILD
-      - RUNTIME
-  - variable: ADMIN_EMAILS
-    secret: admin-emails
-    availability:
       - RUNTIME
   - variable: SANPACK_USE_SEED_DATA
     value: "false"

@@ -2,6 +2,22 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "apphosting": [
+    {
+      "backendId": "sanpack",
+      "rootDir": ".",
+      "ignore": [
+        "node_modules",
+        ".next",
+        ".git",
+        ".env.local",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "dev-server*.log",
+        "next-start*.log"
+      ]
+    }
+  ],
   "emulators": {
     "auth": {
       "port": 9099
