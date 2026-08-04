@@ -30,8 +30,8 @@ export default function AdminClientsPage() {
       name: '',
       logo: 'https://picsum.photos/seed/sanpack-partner/300/150',
       category: 'restaurant',
-      descriptionRu: 'Поставщик упаковочных материалов SANPACK',
-      descriptionUz: 'SANPACK qadoqlash mahsulotlari yetkazib beruvchi',
+      descriptionRu: 'Партнёр магазина',
+      descriptionUz: 'Do‘kon hamkori',
       sortOrder: 1,
     });
     setIsModalOpen(true);
@@ -64,7 +64,7 @@ export default function AdminClientsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#18231E]">
-            Партнёры и Клиенты HoReCa
+            Клиенты и партнёры
           </h1>
           <p className="text-xs text-[#68736D] mt-1">
             Управление логотипами и брендами на главной странице
@@ -129,7 +129,7 @@ export default function AdminClientsPage() {
             className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs"
           >
             <div className="flex items-center justify-between pb-3 border-b">
-              <h3 className="font-bold text-base text-[#18231E]">Партнёр HoReCa</h3>
+              <h3 className="font-bold text-base text-[#18231E]">Партнёр</h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}

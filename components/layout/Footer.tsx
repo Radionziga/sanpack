@@ -28,7 +28,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#0F6E43] text-slate-100 text-xs border-t border-[#0B5735] pt-12 pb-8">
+    <footer className="bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-xs border-t border-[var(--sp-brand-deep)] pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Col 1: SANPACK Info */}
@@ -44,7 +44,7 @@ export function Footer() {
                 href="https://t.me/sanpack_uz"
                 target="_blank"
                 rel="noreferrer"
-                className="w-8 h-8 rounded-lg bg-[#0B5735] hover:bg-[#DCE9AF] hover:text-[#0F6E43] text-white flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-[var(--sp-brand-deep)] hover:bg-[var(--sp-lime)] hover:text-[#173A28] text-[var(--sp-on-brand-deep)] flex items-center justify-center transition-colors"
                 title="Telegram"
               >
                 <Send className="w-4 h-4" />

@@ -54,7 +54,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200">
         <div>
           <h1 className="text-2xl font-bold text-[#18231E]">
-            Панель управления SANPACK
+            Панель управления магазином
           </h1>
           <p className="text-xs text-[#68736D] mt-1">
             Оперативный обзор коммерческих заявок, остатков и базы Cloud Firestore
@@ -113,7 +113,7 @@ export default function AdminOverviewPage() {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs text-slate-400 font-bold block">Завод SANPACK</span>
+            <span className="text-xs text-slate-400 font-bold block">Собственная продукция</span>
             <span className="text-3xl font-bold text-[#006F3C] block mt-1">{ownProductionCount}</span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-[#EAF5EF] text-[#006F3C] flex items-center justify-center">

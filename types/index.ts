@@ -105,6 +105,7 @@ export interface Category {
   descriptionUz?: string;
   descriptionEn?: string;
   image?: string;
+  imagePath?: string;
   icon?: string;
   banner?: string;
   attributeIds?: string[];
@@ -227,7 +228,9 @@ export interface Banner {
   subtitleUz?: string;
   subtitleEn?: string;
   imageDesktop: string;
+  imageDesktopPath?: string;
   imageMobile?: string;
+  imageMobilePath?: string;
   buttonTextRu?: string;
   buttonTextUz?: string;
   buttonTextEn?: string;
@@ -268,9 +271,12 @@ export interface SiteSettings {
     supportedLanguages: Language[];
   };
   design: {
+    designVersion?: 2;
     primaryColor: string;
     secondaryColor: string;
     borderRadius: number;
+    themeMode: 'light' | 'dark';
+    fontPair?: 'brand' | 'modern' | 'editorial' | 'neutral';
   };
   seo: {
     defaultTitleRu: string;

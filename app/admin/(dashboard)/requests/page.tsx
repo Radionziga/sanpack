@@ -64,7 +64,7 @@ export default function AdminRequestsPage() {
             Коммерческие заявки B2B
           </h1>
           <p className="text-xs text-[#68736D] mt-1">
-            Управление заявками на поставку продукции SANPACK
+            Управление заявками на товары и коммерческие предложения
           </p>
         </div>
 

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
@@ -12,6 +13,7 @@ import type { UserProfile, UserRole } from '@/types';
 interface AuthContextType {
   user: UserProfile | null;
   login: (email?: string, password?: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   isAdmin: boolean;
   role: UserRole | null;
@@ -19,6 +21,36 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function authErrorMessage(error: unknown) {
+  if (error instanceof TypeError && error.message === 'Failed to fetch') {
+    return 'Локальный сервер недоступен. Перезагрузите страницу и повторите вход.';
+  }
+  const code = typeof error === 'object' && error && 'code' in error
+    ? String(error.code)
+    : '';
+
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'Email или пароль не подходят. Проверьте данные или восстановите пароль.';
+    case 'auth/too-many-requests':
+      return 'Слишком много попыток входа. Подождите несколько минут или восстановите пароль.';
+    case 'auth/user-disabled':
+      return 'Учётная запись отключена. Обратитесь к владельцу проекта.';
+    case 'auth/network-request-failed':
+      return 'Нет связи с Firebase. Проверьте интернет-соединение и повторите попытку.';
+    case 'auth/operation-not-allowed':
+      return 'Вход по email и паролю не включён в Firebase Authentication.';
+    case 'auth/invalid-email':
+      return 'Проверьте формат email.';
+    case 'auth/missing-project-id':
+      return 'Firebase был загружен без проекта. Перезагрузите страницу и повторите вход.';
+    default:
+      return error instanceof Error ? error.message : 'Не удалось войти.';
+  }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -35,7 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email = '', password = '') => {
     setError(null);
     try {
-      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const normalizedEmail = email.trim().toLowerCase();
+      const credential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
       const idToken = await credential.user.getIdToken();
       const response = await fetch('/api/auth/session', {
         method: 'POST',
@@ -55,10 +88,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(adminUser);
     } catch (loginError) {
-      const message =
-        loginError instanceof Error ? loginError.message : 'Не удалось войти.';
+      const message = authErrorMessage(loginError);
       setError(message);
-      throw loginError;
+      throw new Error(message);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) throw new Error('Сначала укажите email администратора.');
+    try {
+      await sendPasswordResetEmail(auth, normalizedEmail);
+    } catch (resetError) {
+      throw new Error(authErrorMessage(resetError));
     }
   };
 
@@ -74,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const role = user?.role || null;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAdmin, role, error }}>
+    <AuthContext.Provider value={{ user, login, resetPassword, logout, isAdmin, role, error }}>
       {children}
     </AuthContext.Provider>
   );

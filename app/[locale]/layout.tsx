@@ -5,25 +5,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PublicProviders } from '@/components/PublicProviders';
 import { routing } from '@/i18n/routing';
-import type { Language } from '@/types';
-
-const seo = {
-  ru: {
-    title: 'Упаковка и продукты для HoReCa',
-    description:
-      'Комплексные поставки упаковки, расходных материалов, продуктов и полиграфии для бизнеса в Узбекистане.',
-  },
-  uz: {
-    title: 'HoReCa uchun qadoqlash va mahsulotlar',
-    description:
-      'O‘zbekistondagi biznes uchun qadoqlash, sarf materiallari, oziq-ovqat va poligrafiya yetkazib berish.',
-  },
-  en: {
-    title: 'Packaging and supplies for HoReCa',
-    description:
-      'Packaging, consumables, food products and print services for businesses in Uzbekistan.',
-  },
-} satisfies Record<Language, { title: string; description: string }>;
+import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
+import { SanpackTheme } from '@/components/theme/SanpackTheme';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -37,10 +20,30 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) return {};
 
-  const content = seo[locale];
+  const settings = await getPublicSettings();
+  const fallbackTitle = locale === 'uz'
+    ? 'Onlayn katalog'
+    : locale === 'en'
+      ? 'Online catalog'
+      : 'Интернет-магазин';
+  const fallbackDescription = locale === 'uz'
+    ? 'Mahsulotlar va xizmatlar onlayn katalogi.'
+    : locale === 'en'
+      ? 'Online catalog of products and services.'
+      : 'Онлайн-каталог товаров и услуг.';
+  const title = locale === 'uz'
+    ? settings.seo?.defaultTitleUz || fallbackTitle
+    : locale === 'en'
+      ? settings.seo?.defaultTitleEn || settings.seo?.defaultTitleRu || fallbackTitle
+      : settings.seo?.defaultTitleRu || fallbackTitle;
+  const description = locale === 'uz'
+    ? settings.seo?.defaultDescriptionUz || fallbackDescription
+    : locale === 'en'
+      ? settings.seo?.defaultDescriptionEn || settings.seo?.defaultDescriptionRu || fallbackDescription
+      : settings.seo?.defaultDescriptionRu || fallbackDescription;
   return {
-    title: content.title,
-    description: content.description,
+    title,
+    description,
     alternates: {
       canonical: `/${locale}`,
       languages: {
@@ -53,9 +56,9 @@ export async function generateMetadata({
     openGraph: {
       type: 'website',
       locale,
-      title: content.title,
-      description: content.description,
-      siteName: 'SANPACK',
+      title,
+      description,
+      siteName: settings.company?.name || 'Storefront',
     },
   };
 }
@@ -70,11 +73,16 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  const messages = await getMessages();
+  const [messages, settings] = await Promise.all([
+    getMessages(),
+    getPublicSettings(),
+  ]);
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <PublicProviders locale={locale}>{children}</PublicProviders>
+      <SanpackTheme design={settings.design}>
+        <PublicProviders locale={locale}>{children}</PublicProviders>
+      </SanpackTheme>
     </NextIntlClientProvider>
   );
 }

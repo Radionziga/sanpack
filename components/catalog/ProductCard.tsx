@@ -59,7 +59,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
       <motion.div
         whileHover={{ y: -2 }}
         transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-        className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-lg hover:border-[#0F6E43]/30 transition-all flex flex-col md:flex-row items-center gap-5 group"
+        className="bg-[var(--sp-surface)] rounded-lg border border-[var(--sp-line)] p-4 hover:border-[var(--sp-line-strong)] transition-colors flex flex-col md:flex-row items-center gap-5 group"
       >
         <Link href={`/product/${product.slug}`} className="shrink-0 relative">
           <Image
@@ -68,10 +68,10 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
             width={128}
             height={128}
             sizes="128px"
-            className="w-32 h-32 object-contain rounded-md bg-white p-2 group-hover:scale-105 transition-transform duration-300"
+            className="w-32 h-32 object-contain rounded-md bg-[var(--sp-surface)] p-2 group-hover:scale-105 transition-transform duration-300"
           />
           {product.ownProduction && (
-            <span className="absolute top-2 left-2 bg-[#0F6E43] text-white text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 shadow-2xs">
+            <span className="absolute top-2 left-2 bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1">
               <BuildingOffice2Icon className="w-3 h-3" /> SANPACK
             </span>
           )}
@@ -83,25 +83,25 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
               {t('sku')} {product.sku}
             </span>
             <span className="text-slate-300">•</span>
-            <span className="text-[11px] text-[#0F6E43] font-semibold flex items-center gap-1">
+            <span className="text-[11px] text-[var(--sp-brand)] font-semibold flex items-center gap-1">
               <ShieldCheckIcon className="w-3.5 h-3.5" />
               {product.stockStatus === 'in_stock' ? t('inStock') : t('outOfStock')}
             </span>
           </div>
 
           <Link href={`/product/${product.slug}`}>
-            <h3 className="text-sm font-semibold text-[#222B35] group-hover:text-[#0F6E43] transition-colors mb-1 line-clamp-1 tracking-tight">
+            <h3 className="text-sm font-semibold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)] transition-colors mb-1 line-clamp-1 tracking-tight">
               {title}
             </h3>
           </Link>
 
-          <p className="text-xs text-[#5C6A75] line-clamp-2 mb-3 leading-relaxed">{shortDesc}</p>
+          <p className="text-xs text-[var(--sp-ink-secondary)] line-clamp-2 mb-3 leading-relaxed">{shortDesc}</p>
 
           <div className="flex flex-wrap gap-1.5 text-[11px] text-slate-600">
             {Object.entries(product.attributes || {}).map(([key, val]) => (
               <span
                 key={key}
-                className="bg-slate-100 px-2 py-0.5 rounded font-medium border border-slate-200/60"
+                className="bg-[var(--sp-surface-inset)] px-2 py-0.5 rounded font-medium border border-[var(--sp-line)]"
               >
                 {fixText(String(val))}
               </span>
@@ -111,7 +111,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
 
         <div className="flex flex-col items-end justify-between gap-3 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-5 w-full md:w-auto">
           <div className="text-right">
-            <span className="text-base font-semibold text-[#0F6E43] block tracking-tight">
+            <span className="text-base font-semibold text-[var(--sp-brand)] block tracking-tight">
               {product.showPrice && product.price
                 ? `${product.price.toLocaleString()} ${copy[3]}`
                 : t('priceOnRequest')}
@@ -143,8 +143,8 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
               onClick={handleAddToCart}
               className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs ${
                 inCart
-                  ? 'bg-[#0B5735] text-white'
-                  : 'bg-[#0F6E43] hover:bg-[#0B5735] text-white'
+                  ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
+                  : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:opacity-90'
               }`}
             >
               {inCart ? (
@@ -170,14 +170,14 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-      className="bg-white rounded-lg border border-slate-200 p-4 hover:shadow-lg hover:border-[#0F6E43]/30 transition-all flex flex-col justify-between group relative overflow-hidden"
+      className="bg-[var(--sp-surface)] rounded-lg border border-[var(--sp-line)] p-4 hover:border-[var(--sp-line-strong)] transition-colors flex flex-col justify-between group relative overflow-hidden"
     >
       <div>
         {/* Top Badges */}
         <div className="flex items-center justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-1.5 flex-wrap">
             {product.ownProduction && (
-              <span className="bg-[#EAF5EF] text-[#0F6E43] text-[10px] font-semibold px-2 py-0.5 rounded border border-[#0F6E43]/20 flex items-center gap-1">
+              <span className="bg-[var(--sp-surface-inset)] text-[var(--sp-brand)] text-[10px] font-semibold px-2 py-0.5 rounded border border-[var(--sp-line)] flex items-center gap-1">
                 <BuildingOffice2Icon className="w-3 h-3" /> SANPACK
               </span>
             )}
@@ -205,7 +205,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
         {/* Image Container */}
         <Link
           href={`/product/${product.slug}`}
-          className="block relative aspect-square bg-white rounded-md p-2 mb-3 overflow-hidden"
+          className="block relative aspect-square bg-[var(--sp-surface)] rounded-md p-2 mb-3 overflow-hidden"
         >
           <Image
             src={product.mainImage}
@@ -221,14 +221,14 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
           <span>
             {t('sku')} {product.sku}
           </span>
-          <span className="text-[#0F6E43] font-semibold">
+          <span className="text-[var(--sp-brand)] font-semibold">
             {product.stockStatus === 'in_stock' ? t('inStock') : t('outOfStock')}
           </span>
         </div>
 
         {/* Product Title */}
         <Link href={`/product/${product.slug}`}>
-          <h3 className="text-sm font-semibold text-[#222B35] group-hover:text-[#0F6E43] transition-colors mb-2 line-clamp-2 leading-snug tracking-tight">
+          <h3 className="text-sm font-semibold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)] transition-colors mb-2 line-clamp-2 leading-snug tracking-tight">
             {title}
           </h3>
         </Link>
@@ -240,7 +240,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
             .map(([key, val]) => (
               <span
                 key={key}
-                className="bg-slate-100 px-2 py-0.5 rounded font-medium text-slate-700 border border-slate-200/50"
+                className="bg-[var(--sp-surface-inset)] px-2 py-0.5 rounded font-medium text-[var(--sp-ink-secondary)] border border-[var(--sp-line)]"
               >
                 {fixText(String(val))}
               </span>
@@ -251,7 +251,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
       {/* Footer Price & Add Button */}
       <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
         <div>
-          <span className="text-sm font-semibold text-[#0F6E43] block tracking-tight">
+          <span className="text-sm font-semibold text-[var(--sp-brand)] block tracking-tight">
             {product.showPrice && product.price
               ? `${product.price.toLocaleString()} ${copy[3]}`
               : t('priceOnRequest')}
@@ -266,8 +266,8 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
           onClick={handleAddToCart}
           className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-2xs ${
             inCart
-              ? 'bg-[#0B5735] text-white'
-              : 'bg-[#0F6E43] hover:bg-[#0B5735] text-white'
+              ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
+              : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:opacity-90'
           }`}
         >
           {inCart ? (

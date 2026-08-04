@@ -27,9 +27,12 @@ export const initialSiteSettings: SiteSettings = {
     supportedLanguages: ['ru', 'uz', 'en'],
   },
   design: {
+    designVersion: 2,
     primaryColor: '#0F6E43',
-    secondaryColor: '#093E25',
+    secondaryColor: '#DCE9AF',
     borderRadius: 8,
+    themeMode: 'light',
+    fontPair: 'brand',
   },
   seo: {
     defaultTitleRu: 'SANPACK — Упаковка, расходные материалы и продукты для HoReCa в Ташкенте',
@@ -353,7 +356,8 @@ export const initialBanners: Banner[] = [
     titleUz: 'Chiqindi qoplari va paketlar o‘z ishlab chiqarishimiz',
     subtitleRu: 'Прямые оптовые поставки по Ташкенту и Узбекистану от производителя SANPACK',
     subtitleUz: 'SANPACK ishlab chiqaruvchisidan Toshkent va O‘zbekiston bo‘ylab ulgurji yetkazib berish',
-    imageDesktop: '/catalog/page_1.png',
+    imageDesktop: '/promo/sanpack-supply-desktop.webp',
+    imageMobile: '/promo/sanpack-supply-mobile.webp',
     buttonTextRu: 'Перейти в каталог',
     buttonTextUz: 'Katalogni ko‘rish',
     link: '/catalog',

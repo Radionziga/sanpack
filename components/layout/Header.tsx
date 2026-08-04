@@ -179,17 +179,17 @@ export function Header({
 
   return (
     <>
-      <header className="w-full bg-white relative z-30 font-sans">
+      <header className="w-full bg-[var(--sp-surface)] text-[var(--sp-ink)] relative z-30 font-sans">
         {/* Level 1: Top Utility Bar */}
         <div className="bg-[#1C2520] text-slate-300 text-xs py-2 border-b border-slate-800/80">
           <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-4 text-slate-300">
               <span className="flex items-center gap-1.5">
-                <MapPinIcon className="w-3.5 h-3.5 text-[#0F6E43]" />
+                <MapPinIcon className="w-3.5 h-3.5 text-[var(--sp-brand)]" />
                 <span>{t('city')}: {copy.city}</span>
               </span>
               <span className="hidden sm:flex items-center gap-1.5 border-l border-slate-700/70 pl-4">
-                <ClockIcon className="w-3.5 h-3.5 text-[#0F6E43]" />
+                <ClockIcon className="w-3.5 h-3.5 text-[var(--sp-brand)]" />
                 <span>{t('workingHours')}</span>
               </span>
             </div>
@@ -206,7 +206,7 @@ export function Header({
                   href="tel:+998998510506"
                   className="hover:text-white transition-colors flex items-center gap-1 font-semibold"
                 >
-                  <PhoneIcon className="w-3.5 h-3.5 text-[#0F6E43]" />
+                  <PhoneIcon className="w-3.5 h-3.5 text-[var(--sp-brand)]" />
                   <span>+998 99 851 05 06</span>
                 </a>
                 <span className="text-slate-600">|</span>
@@ -222,7 +222,7 @@ export function Header({
                   href="https://t.me/sanpack_uz"
                   target="_blank"
                   rel="noreferrer"
-                  className="w-6 h-6 rounded-full bg-slate-800 hover:bg-[#0F6E43] flex items-center justify-center text-white transition-colors"
+                  className="w-6 h-6 rounded-full bg-slate-800 hover:bg-[var(--sp-brand)] flex items-center justify-center text-white transition-colors"
                   title="Telegram"
                 >
                   <PaperAirplaneIcon className="w-3 h-3" />
@@ -233,7 +233,7 @@ export function Header({
         </div>
 
         {/* Level 2: Main Header */}
-        <div className="border-b border-slate-200/80 py-3">
+        <div className="border-b border-[var(--sp-line)] py-3">
           <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-3 md:gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0 h-10">
@@ -247,8 +247,8 @@ export function Header({
                 onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
                 className={`h-10 flex items-center gap-2 px-4 rounded-lg text-white font-bold text-xs transition-all shadow-2xs shrink-0 ${
                   isMegaMenuOpen
-                    ? 'bg-[#093E25]'
-                    : 'bg-[#0F6E43] hover:bg-[#0B5735]'
+                    ? 'bg-[var(--sp-brand-deep)]'
+                    : 'bg-[var(--sp-brand)] hover:opacity-90'
                 }`}
               >
                 <Bars3Icon className="w-4 h-4" />
@@ -268,7 +268,7 @@ export function Header({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('searchPlaceholder')}
-                    className="w-full h-10 pl-3.5 pr-16 rounded-lg bg-[#F8FAFC] border border-slate-200 focus:border-[#0F6E43] focus:bg-white focus:ring-2 focus:ring-[#0F6E43]/20 outline-none text-xs font-medium transition-all"
+                    className="w-full h-10 pl-3.5 pr-11 rounded-lg bg-[var(--sp-control)] border border-[var(--sp-control-border)] text-[var(--sp-ink)] focus:border-[var(--sp-brand)] outline-none text-xs font-medium transition-all"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {searchQuery ? (
@@ -282,14 +282,10 @@ export function Header({
                       >
                         <XMarkIcon className="w-3.5 h-3.5" />
                       </button>
-                    ) : (
-                      <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[9px] font-mono font-semibold text-slate-400 bg-slate-200/60 rounded border border-slate-300/60">
-                        Ctrl K
-                      </kbd>
-                    )}
+                    ) : null}
                     <button
                       type="submit"
-                      className="p-1 text-slate-400 hover:text-[#0F6E43] transition-colors"
+                      className="p-1 text-slate-400 hover:text-[var(--sp-brand)] transition-colors"
                     >
                       <MagnifyingGlassIcon className="w-4 h-4" />
                     </button>
@@ -324,14 +320,14 @@ export function Header({
                                 className="w-9 h-9 object-cover rounded bg-slate-50 border border-slate-200"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-[#222B35] group-hover:text-[#0F6E43] truncate">
+                                <p className="text-xs font-bold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)] truncate">
                                   {getLocalizedText(product.titleRu, product.titleUz, product.titleEn)}
                                 </p>
                                 <p className="text-[10px] text-slate-500">
                                   {copy.sku}: {product.sku}
                                 </p>
                               </div>
-                              <span className="text-xs font-bold text-[#0F6E43] whitespace-nowrap">
+                              <span className="text-xs font-bold text-[var(--sp-brand)] whitespace-nowrap">
                                 {product.showPrice && product.price
                                   ? `${product.price.toLocaleString()} ${copy.currency}`
                                   : t('priceOnRequest')}
@@ -350,7 +346,7 @@ export function Header({
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <Link
                 href="/request"
-                className="hidden lg:flex items-center gap-1.5 h-10 px-3.5 bg-[#F2F7F4] hover:bg-[#0F6E43] text-[#0F6E43] hover:text-white text-xs font-bold rounded-lg transition-all shadow-2xs"
+                className="hidden lg:flex items-center gap-1.5 h-10 px-3.5 bg-[var(--sp-surface-inset)] hover:bg-[var(--sp-brand)] text-[var(--sp-brand)] hover:text-[var(--sp-on-brand)] text-xs font-bold rounded-lg transition-colors"
               >
                 <SparklesIcon className="w-3.5 h-3.5" />
                 <span>{t('leaveRequest')}</span>
@@ -359,7 +355,7 @@ export function Header({
               {/* Favorites */}
               <Link
                 href="/favorites"
-                className="relative hidden sm:flex h-10 w-10 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-[#0F6E43] transition-colors items-center justify-center shrink-0"
+                className="relative hidden sm:flex h-10 w-10 rounded-lg hover:bg-[var(--sp-surface-inset)] text-[var(--sp-ink-secondary)] hover:text-[var(--sp-brand)] transition-colors items-center justify-center shrink-0"
                 title={t('favorites')}
               >
                 <HeartIcon className="w-5 h-5" />
@@ -367,7 +363,7 @@ export function Header({
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#0F6E43] text-white text-[9px] font-bold flex items-center justify-center border-2 border-white shadow-2xs"
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-[9px] font-bold flex items-center justify-center border-2 border-white"
                   >
                     {favCount}
                   </motion.span>
@@ -377,7 +373,7 @@ export function Header({
               {/* Request Cart */}
               <Link
                 href="/request"
-                className="relative hidden sm:flex h-10 px-3 rounded-lg bg-[#F2F7F4] text-[#0F6E43] hover:bg-[#0F6E43] hover:text-white transition-all items-center gap-1.5 group shrink-0"
+                className="relative hidden sm:flex h-10 px-3 rounded-lg bg-[var(--sp-surface-inset)] text-[var(--sp-brand)] hover:bg-[var(--sp-brand)] hover:text-[var(--sp-on-brand)] transition-colors items-center gap-1.5 group shrink-0"
                 title={t('requestCart')}
               >
                 <ShoppingCartIcon className="w-5 h-5" />
@@ -388,7 +384,7 @@ export function Header({
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="w-4.5 h-4.5 rounded-full bg-[#0F6E43] text-white text-[10px] font-bold flex items-center justify-center border border-white shadow-2xs"
+                    className="w-4.5 h-4.5 rounded-full bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-[10px] font-bold flex items-center justify-center border border-white"
                   >
                     {itemCount}
                   </motion.span>
@@ -401,7 +397,7 @@ export function Header({
                   onClick={() => setLanguage('ru')}
                   className={`h-full px-2 rounded transition-all flex items-center justify-center ${
                     language === 'ru'
-                      ? 'bg-white text-[#0F6E43] shadow-2xs'
+                      ? 'bg-[var(--sp-surface)] text-[var(--sp-brand)]'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
@@ -411,7 +407,7 @@ export function Header({
                   onClick={() => setLanguage('uz')}
                   className={`h-full px-2 rounded transition-all flex items-center justify-center ${
                     language === 'uz'
-                      ? 'bg-white text-[#0F6E43] shadow-2xs'
+                      ? 'bg-[var(--sp-surface)] text-[var(--sp-brand)]'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
@@ -421,7 +417,7 @@ export function Header({
                   onClick={() => setLanguage('en')}
                   className={`h-full px-2 rounded transition-all flex items-center justify-center ${
                     language === 'en'
-                      ? 'bg-white text-[#0F6E43] shadow-2xs'
+                      ? 'bg-[var(--sp-surface)] text-[var(--sp-brand)]'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
@@ -432,7 +428,7 @@ export function Header({
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden h-10 w-10 flex items-center justify-center text-slate-700 hover:text-[#0F6E43]"
+                className="md:hidden h-10 w-10 flex items-center justify-center text-[var(--sp-ink)] hover:text-[var(--sp-brand)]"
               >
                 {isMobileMenuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
               </button>
@@ -444,16 +440,16 @@ export function Header({
         <div
           className={`hidden md:block transition-all duration-300 ${
             isSticky
-              ? 'fixed top-0 left-0 w-full bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm z-40 py-2'
-              : 'border-b border-slate-100 py-2 bg-white'
+              ? 'fixed top-0 left-0 w-full bg-[var(--sp-surface)]/95 backdrop-blur-xl border-b border-[var(--sp-line)] z-40 py-2'
+              : 'border-b border-[var(--sp-line-soft)] py-2 bg-[var(--sp-surface)]'
           }`}
         >
-          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs font-semibold text-[#222B35]">
+          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs font-semibold text-[var(--sp-ink)]">
             <nav className="flex items-center gap-7">
               <Link href="/" className="hover:text-[#0F6E43] transition-colors py-1">
                 {t('home')}
               </Link>
-              <Link href="/catalog" className="hover:text-[#0F6E43] transition-colors py-1 text-[#0F6E43] font-bold">
+              <Link href="/catalog" className="hover:text-[var(--sp-brand)] transition-colors py-1 text-[var(--sp-brand)] font-bold">
                 {t('catalog')}
               </Link>
               <Link href="/about" className="hover:text-[#0F6E43] transition-colors py-1">
@@ -465,7 +461,7 @@ export function Header({
               <Link href="/delivery" className="hover:text-[#0F6E43] transition-colors py-1">
                 {t('delivery')}
               </Link>
-              <Link href="/branding" className="hover:text-[#0F6E43] transition-colors py-1 text-[#0F6E43] font-bold">
+              <Link href="/branding" className="hover:text-[var(--sp-brand)] transition-colors py-1 text-[var(--sp-brand)] font-bold">
                 {t('branding')}
               </Link>
               <Link href="/contacts" className="hover:text-[#0F6E43] transition-colors py-1">
@@ -505,15 +501,15 @@ export function Header({
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
-                className="relative w-4/5 max-w-sm h-full bg-white shadow-2xl p-6 flex flex-col justify-between overflow-y-auto"
+                className="relative w-4/5 max-w-sm h-full bg-[var(--sp-surface)] p-6 flex flex-col justify-between overflow-y-auto"
               >
                 <div>
                   <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#0F6E43] text-white font-bold flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--sp-brand)] text-[var(--sp-on-brand)] font-bold flex items-center justify-center">
                         SP
                       </div>
-                      <span className="font-bold text-[#0F6E43]">SANPACK</span>
+                      <span className="font-bold text-[var(--sp-brand)]">SANPACK</span>
                     </div>
                     <button
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -538,7 +534,7 @@ export function Header({
                       <Link
                         href="/catalog"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="block py-2 text-[#0F6E43] font-bold border-b border-slate-100"
+                        className="block py-2 text-[var(--sp-brand)] font-bold border-b border-slate-100"
                       >
                         📁 {copy.catalog}
                       </Link>
@@ -587,7 +583,7 @@ export function Header({
                       <Link
                         href="/branding"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="block py-2 text-[#0F6E43]"
+                        className="block py-2 text-[var(--sp-brand)]"
                       >
                         {t('branding')}
                       </Link>
@@ -605,7 +601,7 @@ export function Header({
                 <div className="pt-4 border-t border-slate-100 space-y-3 text-xs text-slate-600">
                   <a
                     href="tel:+998998510506"
-                    className="block font-bold text-[#0F6E43]"
+                    className="block font-bold text-[var(--sp-brand)]"
                   >
                     📞 +998 99 851 05 06
                   </a>

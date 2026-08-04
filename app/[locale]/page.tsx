@@ -5,8 +5,10 @@ import { CatalogHome } from '@/components/home/CatalogHome';
 import {
   getPublicCategories,
   getPublicProducts,
+  getPublicBanners,
 } from '@/lib/repositories/serverCatalogRepository';
-import type { Category, Language, Product } from '@/types';
+import type { Banner, Category, Language, Product } from '@/types';
+import { initialBanners } from '@/lib/seedData';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,11 +23,13 @@ export default async function HomePage({
   let dataUnavailable = false;
   let products: Product[] = [];
   let categories: Category[] = [];
+  let banners: Banner[] = [];
 
   try {
-    [products, categories] = await Promise.all([
+    [products, categories, banners] = await Promise.all([
       getPublicProducts(),
       getPublicCategories(),
+      getPublicBanners(),
     ]);
   } catch (error) {
     dataUnavailable = true;
@@ -38,9 +42,18 @@ export default async function HomePage({
   const activeCategories = categories
     .filter((category) => category.status === 'active')
     .sort((a, b) => a.sortOrder - b.sortOrder);
+  const publicBanners = (banners.length > 0 ? banners : initialBanners).map((banner) =>
+    banner.imageDesktop === '/catalog/page_1.png'
+      ? {
+          ...banner,
+          imageDesktop: '/promo/sanpack-supply-desktop.webp',
+          imageMobile: '/promo/sanpack-supply-mobile.webp',
+        }
+      : banner
+  );
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F4F7F5]">
+    <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header
         initialCategories={activeCategories}
         initialProducts={publishedProducts}
@@ -49,6 +62,8 @@ export default async function HomePage({
         <CatalogHome
           products={publishedProducts}
           categories={activeCategories}
+          banners={publicBanners}
+          locale={locale}
           catalogPdfUrl={process.env.NEXT_PUBLIC_CATALOG_PDF_URL}
           dataUnavailable={dataUnavailable}
         />

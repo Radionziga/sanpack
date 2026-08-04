@@ -2,15 +2,18 @@
 @import "../stylesheet.css";
 
 @theme {
-  --font-sans: 'MTS Text', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-compact: 'MTS Compact', sans-serif;
-  --font-wide: 'MTS Text', sans-serif;
-  --font-extended: 'MTS Extended', sans-serif;
-  --font-text: 'MTS Text', sans-serif;
+  --font-sans: var(--sp-font-body);
+  --font-compact: var(--sp-font-ui);
+  --font-wide: var(--sp-font-body);
+  --font-extended: var(--sp-font-heading);
+  --font-text: var(--sp-font-body);
 }
 
 @layer base {
   :root {
+    --sp-font-heading: 'MTS Extended', 'MTS Text', sans-serif;
+    --sp-font-body: 'MTS Text', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --sp-font-ui: 'MTS Compact', 'MTS Text', sans-serif;
     --sanpack-green: #0F6E43;
     --sanpack-dark: #095030;
     --sanpack-lime: #DCE9AF;
@@ -26,21 +29,172 @@
     --sanpack-success: #0F6E43;
     --sanpack-kraft: #D8C7A3;
     --sanpack-kraft-light: #F1EBDD;
+    --sp-primary: #0F6E43;
+    --sp-primary-strong: #0A4B2E;
+    --sp-secondary: #DCE9AF;
+    --sp-secondary-strong: #9FA87E;
+    --sp-on-primary: #FFFFFF;
+    --sp-on-primary-strong: #FFFFFF;
+    --sp-on-secondary: #14231C;
+    --sp-on-secondary-strong: #14231C;
+    --sp-brand: var(--sp-primary);
+    --sp-brand-deep: var(--sp-primary-strong);
+    --sp-on-brand: #FFFFFF;
+    --sp-on-brand-deep: #FFFFFF;
+    --sp-accent: var(--sp-secondary);
+    --sp-on-accent: var(--sp-on-secondary);
+    --sp-canvas: #F6F7F6;
+    --sp-surface: #FFFFFF;
+    --sp-surface-raised: #FFFFFF;
+    --sp-surface-inset: #EFF2F0;
+    --sp-ink: #151B18;
+    --sp-ink-secondary: #4C5751;
+    --sp-ink-tertiary: #6E7973;
+    --sp-ink-muted: #929C96;
+    --sp-line: #DCE2DE;
+    --sp-line-soft: #E8ECE9;
+    --sp-line-strong: #AEB9B2;
+    --sp-kraft: #D8C7A3;
+    --sp-lime: var(--sp-secondary);
+    --sp-danger: #B4233A;
+    --sp-success: #0F6E43;
+    --sp-control: #EDF2EF;
+    --sp-control-border: #CAD5CE;
+    --sp-focus: color-mix(in srgb, var(--sp-brand) 70%, #14231C);
+    --sp-cta-bg: var(--sp-primary-strong);
+    --sp-cta-ink: var(--sp-on-primary-strong);
+    --sp-cta-action: var(--sp-secondary);
+    --sp-cta-action-ink: var(--sp-on-secondary);
+    --sp-shadow-raised: 0 12px 32px rgb(21 27 24 / 7%);
+    --sp-radius: 8px;
   }
 
   body {
-    font-family: 'MTS Text', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--sp-font-body);
     font-weight: 400;
-    color: #1E293B;
-    background-color: #F8FAFC;
+    color: var(--sp-ink);
+    background-color: var(--sp-canvas);
     letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6, .heading-font {
-    font-family: 'MTS Text', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--sp-font-heading);
     font-weight: 700;
     letter-spacing: -0.015em;
+  }
+}
+
+[data-sanpack-theme] {
+  --radius-sm: max(2px, calc(var(--sp-radius) * 0.55));
+  --radius-md: max(2px, calc(var(--sp-radius) * 0.8));
+  --radius-lg: var(--sp-radius);
+  --radius-xl: calc(var(--sp-radius) * 1.25);
+  --radius-2xl: calc(var(--sp-radius) * 1.5);
+  --radius-3xl: calc(var(--sp-radius) * 1.8);
+  color-scheme: light;
+}
+
+[data-font-pair="modern"] {
+  --sp-font-heading: var(--font-manrope), sans-serif;
+  --sp-font-body: var(--font-inter), sans-serif;
+  --sp-font-ui: var(--font-inter), sans-serif;
+}
+
+[data-font-pair="editorial"] {
+  --sp-font-heading: var(--font-roboto-slab), serif;
+  --sp-font-body: var(--font-inter), sans-serif;
+  --sp-font-ui: var(--font-inter), sans-serif;
+}
+
+[data-font-pair="neutral"] {
+  --sp-font-heading: var(--font-inter), sans-serif;
+  --sp-font-body: var(--font-inter), sans-serif;
+  --sp-font-ui: var(--font-inter), sans-serif;
+}
+
+[data-sanpack-theme="dark"] {
+  --sp-canvas: #0F1311;
+  --sp-surface: #151A17;
+  --sp-surface-raised: #1A201C;
+  --sp-surface-inset: #0B0F0D;
+  --sp-ink: #F3F5F4;
+  --sp-ink-secondary: #C1CBC5;
+  --sp-ink-tertiary: #94A39A;
+  --sp-ink-muted: #748078;
+  --sp-line: #2B332E;
+  --sp-line-soft: #222824;
+  --sp-line-strong: #566159;
+  --sp-control: #101512;
+  --sp-control-border: #3A433D;
+  --sp-danger: #FF8092;
+  --sp-success: #78D7A4;
+  --sp-focus: color-mix(in srgb, var(--sp-brand) 68%, white);
+  --sp-shadow-raised: 0 14px 34px rgb(0 0 0 / 22%);
+  color-scheme: dark;
+}
+
+[data-sanpack-theme] :focus-visible {
+  outline: 2px solid var(--sp-focus);
+  outline-offset: 2px;
+}
+
+/* Compatibility bridge while legacy catalog surfaces move to semantic tokens. */
+[data-sanpack-theme] [class~="text-[#0F6E43]"] {
+  color: var(--sp-brand) !important;
+}
+
+[data-sanpack-theme] [class~="bg-[#0F6E43]"] {
+  background-color: var(--sp-brand) !important;
+  color: var(--sp-on-brand);
+}
+
+[data-sanpack-theme] [class~="bg-[#0B5735]"],
+[data-sanpack-theme] [class~="bg-[#093E25]"] {
+  background-color: var(--sp-brand-deep) !important;
+}
+
+[data-sanpack-theme="dark"] .bg-white,
+[data-sanpack-theme="dark"] .bg-slate-50,
+[data-sanpack-theme="dark"] [class~="bg-[#F8FAFC]"],
+[data-sanpack-theme="dark"] [class~="bg-[#F5F7F6]"],
+[data-sanpack-theme="dark"] [class~="bg-[#F4F7F5]"] {
+  background-color: var(--sp-surface) !important;
+}
+
+[data-sanpack-theme="dark"] .bg-slate-100,
+[data-sanpack-theme="dark"] [class~="bg-[#F2F7F4]"] {
+  background-color: var(--sp-surface-inset) !important;
+}
+
+[data-sanpack-theme="dark"] .text-slate-900,
+[data-sanpack-theme="dark"] .text-slate-800,
+[data-sanpack-theme="dark"] .text-slate-700,
+[data-sanpack-theme="dark"] [class~="text-[#222B35]"],
+[data-sanpack-theme="dark"] [class~="text-[#18231E]"] {
+  color: var(--sp-ink) !important;
+}
+
+[data-sanpack-theme="dark"] .text-slate-600,
+[data-sanpack-theme="dark"] .text-slate-500,
+[data-sanpack-theme="dark"] [class~="text-[#5C6A75]"],
+[data-sanpack-theme="dark"] [class~="text-[#68736D]"] {
+  color: var(--sp-ink-secondary) !important;
+}
+
+[data-sanpack-theme="dark"] .border-slate-100,
+[data-sanpack-theme="dark"] .border-slate-200 {
+  border-color: var(--sp-line) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

@@ -1,252 +1,271 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
-import { Category } from '@/types';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import { Edit3, FolderTree, ImagePlus, Plus, Save, Trash2 } from 'lucide-react';
+import { MediaUploadField, deleteUploadedMedia } from '@/components/admin/MediaUploadField';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { Plus, Edit, Trash2, Folder, X } from 'lucide-react';
+import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import type { Category } from '@/types';
+
+const newCategory: Partial<Category> = {
+  titleRu: '',
+  titleUz: '',
+  titleEn: '',
+  slug: '',
+  descriptionRu: '',
+  descriptionUz: '',
+  descriptionEn: '',
+  status: 'active',
+  sortOrder: 1,
+};
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [editingCategory, setEditingCategory] = useState<Partial<Category>>({ ...newCategory });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [pageError, setPageError] = useState('');
+  const [notice, setNotice] = useState('');
+  const persistedCategory = editingCategory.id
+    ? categories.find((category) => category.id === editingCategory.id)
+    : undefined;
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
+  const cleanupStagedImage = () => {
+    if (editingCategory.imagePath && editingCategory.imagePath !== persistedCategory?.imagePath) {
+      void deleteUploadedMedia(editingCategory.imagePath).catch(() => undefined);
+    }
+  };
+
+  const loadCategories = async () => {
+    setLoading(true);
+    setPageError('');
+    try {
+      const data = await SanpackRepository.getCategories();
+      setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Не удалось загрузить категории.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    loadCategories();
+    let active = true;
+    SanpackRepository.getCategories()
+      .then((data) => {
+        if (active) setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
+      })
+      .catch((error: unknown) => {
+        if (active) setPageError(error instanceof Error ? error.message : 'Не удалось загрузить категории.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, []);
 
-  async function loadCategories() {
-    setLoading(true);
-    const data = await SanpackRepository.getCategories();
-    setCategories(data);
-    setLoading(false);
-  }
-
-  const handleCreate = () => {
-    setEditingCategory({
-      titleRu: '',
-      titleUz: '',
-      titleEn: '',
-      slug: '',
-      descriptionRu: '',
-      descriptionUz: '',
-      descriptionEn: '',
-      icon: 'Package',
-      sortOrder: 1,
-    });
-    setIsModalOpen(true);
+  const startCreate = () => {
+    cleanupStagedImage();
+    setEditingCategory({ ...newCategory, sortOrder: categories.length + 1 });
+    setNotice('');
   };
 
-  const handleEdit = (cat: Category) => {
-    setEditingCategory(cat);
-    setIsModalOpen(true);
+  const selectCategory = (category: Category) => {
+    cleanupStagedImage();
+    setEditingCategory({ ...category });
+    setNotice('');
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Вы уверены, что хотите удалить эту категорию?')) {
-      await SanpackRepository.deleteCategory(id);
-      loadCategories();
+  const saveCategory = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setPageError('');
+    setNotice('');
+    if (!editingCategory.titleRu?.trim() || !editingCategory.titleUz?.trim() || !editingCategory.slug?.trim()) {
+      setPageError('Заполните названия RU/UZ и URL категории.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const previous = editingCategory.id
+        ? categories.find((category) => category.id === editingCategory.id)
+        : undefined;
+      const payload = {
+        ...editingCategory,
+        parentId: editingCategory.parentId || null,
+        slug: editingCategory.slug.trim().toLowerCase(),
+        status: editingCategory.status || 'active',
+        sortOrder: Number(editingCategory.sortOrder || 0),
+      };
+      const saved = editingCategory.id
+        ? await SanpackRepository.updateCategory(editingCategory.id, payload)
+        : await SanpackRepository.saveCategory(payload);
+      setEditingCategory(saved);
+      await loadCategories();
+      let cleanupFailed = false;
+      if (previous?.imagePath && previous.imagePath !== saved.imagePath) {
+        try {
+          await deleteUploadedMedia(previous.imagePath);
+        } catch {
+          cleanupFailed = true;
+        }
+      }
+      setNotice(cleanupFailed
+        ? 'Категория сохранена, но старое изображение не удалось очистить из Storage.'
+        : 'Категория сохранена. Изображение уже доступно в каталоге.');
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Категория не сохранена.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingCategory) return;
-
-    if (!editingCategory.slug) {
-      editingCategory.slug = (editingCategory.titleRu || 'cat')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-');
+  const removeCategory = async (category: Category) => {
+    if (!window.confirm(`Удалить категорию «${category.titleRu}»?`)) return;
+    setPageError('');
+    setNotice('');
+    try {
+      await SanpackRepository.deleteCategory(category.id);
+      let cleanupFailed = false;
+      if (category.imagePath) {
+        try {
+          await deleteUploadedMedia(category.imagePath);
+        } catch {
+          cleanupFailed = true;
+        }
+      }
+      if (editingCategory.id === category.id) startCreate();
+      await loadCategories();
+      setNotice(cleanupFailed
+        ? 'Категория удалена, но изображение не удалось очистить из Storage.'
+        : 'Категория удалена.');
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : 'Категория не удалена.');
     }
-
-    if (editingCategory.id) {
-      await SanpackRepository.updateCategory(editingCategory.id, editingCategory);
-    } else {
-      await SanpackRepository.createCategory(editingCategory as Omit<Category, 'id' | 'createdAt' | 'updatedAt'>);
-    }
-
-    setIsModalOpen(false);
-    setEditingCategory(null);
-    loadCategories();
   };
 
-  const parentCategories = categories.filter((c) => !c.parentId);
+  const parentCategories = categories.filter((category) => !category.parentId && category.id !== editingCategory.id);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="mx-auto max-w-[1500px] space-y-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-[var(--sp-line)] pb-5 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-2xl font-bold text-[#18231E]">
-            Категории каталога
-          </h1>
-          <p className="text-xs text-[#68736D] mt-1">
-            Управление иерархией товаров SANPACK
-          </p>
+          <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)]">Категории каталога</h1>
+          <p className="mt-1.5 max-w-2xl text-sm text-[var(--sp-ink-secondary)]">Управляйте структурой каталога и изображениями, которые покупатель видит на главной странице.</p>
         </div>
-
-        <button
-          onClick={handleCreate}
-          className="px-5 py-2.5 bg-[#008348] hover:bg-[#006F3C] text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-md"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Добавить категорию</span>
+        <button type="button" onClick={startCreate} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-4 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90">
+          <Plus className="size-4" aria-hidden="true" /> Новая категория
         </button>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {parentCategories.map((parent) => {
-          const subCats = categories.filter((c) => c.parentId === parent.id);
-          return (
-            <div key={parent.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#EAF5EF] text-[#006F3C] flex items-center justify-center font-bold">
-                    <Folder className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-[#18231E]">{parent.titleRu}</h3>
-                    <span className="text-[10px] text-slate-400 font-mono">/{parent.slug}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleEdit(parent)}
-                    className="p-1.5 text-slate-400 hover:text-[#006F3C]"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(parent.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Subcategories */}
-              <div className="space-y-2 pl-4">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Подкатегории ({subCats.length}):
-                </span>
-                {subCats.map((sub) => (
-                  <div
-                    key={sub.id}
-                    className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs"
-                  >
-                    <span className="font-semibold text-[#18231E]">{sub.titleRu}</span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleEdit(sub)}
-                        className="p-1 text-slate-400 hover:text-[#006F3C]"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(sub.id)}
-                        className="p-1 text-slate-400 hover:text-rose-600"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Modal */}
-      {isModalOpen && editingCategory && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <form
-            onSubmit={handleSave}
-            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs"
-          >
-            <div className="flex items-center justify-between pb-3 border-b">
-              <h3 className="font-bold text-base text-[#18231E]">
-                {editingCategory.id ? 'Редактировать категорию' : 'Новая категория'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div>
-              <label className="font-bold block mb-1">Название (RU) *</label>
-              <input
-                type="text"
-                required
-                value={editingCategory.titleRu || ''}
-                onChange={(e) => setEditingCategory({ ...editingCategory, titleRu: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold block mb-1">Название (UZ) *</label>
-              <input
-                type="text"
-                required
-                value={editingCategory.titleUz || ''}
-                onChange={(e) => setEditingCategory({ ...editingCategory, titleUz: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold block mb-1">Название (EN)</label>
-              <input
-                type="text"
-                value={editingCategory.titleEn || ''}
-                onChange={(e) => setEditingCategory({ ...editingCategory, titleEn: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
-              />
-            </div>
-
-            <div>
-              <CustomSelect
-                label="Родительская категория"
-                value={editingCategory.parentId || ''}
-                onChange={(val) =>
-                  setEditingCategory({
-                    ...editingCategory,
-                    parentId: val || undefined,
-                  })
-                }
-                options={[
-                  { value: '', label: '— Корневая категория —' },
-                  ...parentCategories.map((c) => ({ value: c.id, label: c.titleRu })),
-                ]}
-              />
-            </div>
-
-            <div className="pt-4 border-t flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-slate-100 rounded-xl font-bold text-slate-700"
-              >
-                Отмена
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-[#006F3C] text-white font-bold rounded-xl shadow-md"
-              >
-                Сохранить
-              </button>
-            </div>
-          </form>
-        </div>
+      {(pageError || notice) && (
+        <p className={`rounded-lg border px-4 py-3 text-sm ${pageError ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-500/30 bg-emerald-500/8 text-[var(--sp-success)]'}`} role={pageError ? 'alert' : 'status'}>
+          {pageError || notice}
+        </p>
       )}
+
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(300px,0.72fr)_minmax(520px,1.28fr)]">
+        <section className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">
+          <div className="flex items-center justify-between border-b border-[var(--sp-line)] px-4 py-3">
+            <span className="font-compact text-xs font-bold text-[var(--sp-ink)]">Структура</span>
+            <span className="text-[11px] text-[var(--sp-ink-tertiary)]">{categories.length} категорий</span>
+          </div>
+          {loading ? (
+            <p className="px-4 py-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Загрузка…</p>
+          ) : categories.length === 0 ? (
+            <div className="px-5 py-10 text-center">
+              <FolderTree className="mx-auto size-6 text-[var(--sp-ink-muted)]" aria-hidden="true" />
+              <p className="mt-3 text-sm font-semibold text-[var(--sp-ink)]">Категорий пока нет</p>
+              <p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">Создайте первую корневую категорию.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-[var(--sp-line-soft)]">
+              {categories.map((category) => (
+                <li key={category.id} className={category.parentId ? 'pl-5' : ''}>
+                  <div className={`flex items-center gap-3 px-3 py-3 ${editingCategory.id === category.id ? 'bg-[var(--sp-surface-inset)]' : ''}`}>
+                    <div className="relative size-12 shrink-0 overflow-hidden rounded-md border border-[var(--sp-line)] bg-[var(--sp-surface-inset)]">
+                      {category.image ? <Image src={category.image} alt="" fill sizes="48px" className="object-contain" /> : <ImagePlus className="absolute inset-0 m-auto size-4 text-[var(--sp-ink-muted)]" />}
+                    </div>
+                    <button type="button" onClick={() => selectCategory(category)} className="min-w-0 flex-1 text-left">
+                      <span className="line-clamp-1 text-xs font-bold text-[var(--sp-ink)]">{category.titleRu}</span>
+                      <span className="mt-1 block truncate font-mono text-[10px] text-[var(--sp-ink-tertiary)]">/{category.slug}</span>
+                    </button>
+                    <button type="button" onClick={() => selectCategory(category)} aria-label={`Редактировать ${category.titleRu}`} className="flex size-9 items-center justify-center rounded-md text-[var(--sp-ink-tertiary)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]">
+                      <Edit3 className="size-4" aria-hidden="true" />
+                    </button>
+                    <button type="button" onClick={() => void removeCategory(category)} aria-label={`Удалить ${category.titleRu}`} className="flex size-9 items-center justify-center rounded-md text-[var(--sp-ink-tertiary)] hover:bg-red-500/8 hover:text-[var(--sp-danger)]">
+                      <Trash2 className="size-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <form onSubmit={saveCategory} className="space-y-6 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6">
+          <div className="border-b border-[var(--sp-line)] pb-4">
+            <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">{editingCategory.id ? 'Редактирование категории' : 'Новая категория'}</h2>
+            <p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">Изображение категории показывается в компактной витрине и не должно содержать мелкий текст.</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {([
+              ['titleRu', 'Название RU *'],
+              ['titleUz', 'Название UZ *'],
+              ['titleEn', 'Название EN'],
+            ] as const).map(([field, label]) => (
+              <label key={field} className="text-xs font-bold text-[var(--sp-ink)]">
+                {label}
+                <input value={editingCategory[field] || ''} required={field !== 'titleEn'} onChange={(event) => setEditingCategory((current) => ({ ...current, [field]: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+              </label>
+            ))}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="text-xs font-bold text-[var(--sp-ink)]">
+              URL категории *
+              <input value={editingCategory.slug || ''} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="odnorazovaya-upakovka" onChange={(event) => setEditingCategory((current) => ({ ...current, slug: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 font-mono text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+              <span className="mt-1 block font-normal text-[var(--sp-ink-tertiary)]">Только латиница, цифры и дефисы.</span>
+            </label>
+            <CustomSelect label="Родительская категория" value={editingCategory.parentId || ''} onChange={(value) => setEditingCategory((current) => ({ ...current, parentId: value || null }))} options={[
+              { value: '', label: '— Корневая категория —' },
+              ...parentCategories.map((category) => ({ value: category.id, label: category.titleRu })),
+            ]} />
+          </div>
+
+          <MediaUploadField kind="category" label="Изображение категории" recommendation="Рекомендуется 800×600 px · 4:3" value={editingCategory.image} optional onUploaded={(media) => {
+            if (editingCategory.imagePath && editingCategory.imagePath !== persistedCategory?.imagePath) {
+              void deleteUploadedMedia(editingCategory.imagePath).catch(() => undefined);
+            }
+            setEditingCategory((current) => ({ ...current, image: media.url, imagePath: media.path }));
+          }} onClear={() => {
+            if (editingCategory.imagePath && editingCategory.imagePath !== persistedCategory?.imagePath) {
+              void deleteUploadedMedia(editingCategory.imagePath).catch(() => undefined);
+            }
+            setEditingCategory((current) => ({ ...current, image: undefined, imagePath: undefined }));
+          }} />
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="sm:col-span-2">
+              <CustomSelect label="Статус" value={editingCategory.status || 'active'} onChange={(value) => setEditingCategory((current) => ({ ...current, status: value as Category['status'] }))} options={[
+                { value: 'active', label: 'Показывать на сайте' },
+                { value: 'hidden', label: 'Скрыть' },
+              ]} />
+            </div>
+            <label className="text-xs font-bold text-[var(--sp-ink)]">
+              Порядок
+              <input type="number" min="0" value={editingCategory.sortOrder ?? 0} onChange={(event) => setEditingCategory((current) => ({ ...current, sortOrder: Number(event.target.value) }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+            </label>
+          </div>
+
+          <div className="flex justify-end border-t border-[var(--sp-line)] pt-5">
+            <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-5 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60">
+              <Save className="size-4" aria-hidden="true" /> {saving ? 'Сохранение…' : 'Сохранить категорию'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

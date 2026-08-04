@@ -18,6 +18,7 @@ import {
   initialSiteSettings,
 } from '@/lib/seedData';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
 
 function isSeedFallbackEnabled() {
   if (process.env.SANPACK_USE_SEED_DATA === 'true') return true;
@@ -81,9 +82,8 @@ export const getPublicSettings = unstable_cache(
 
     try {
       const snapshot = await getAdminDb().collection('settings').doc('global').get();
-      if (snapshot.exists) return snapshot.data() as SiteSettings;
-      if (!isSeedFallbackEnabled()) {
-        throw new Error('Public settings are not configured.');
+      if (snapshot.exists) {
+        return mergeSiteSettings(initialSiteSettings, snapshot.data() as Partial<SiteSettings>);
       }
     } catch (error) {
       if (!isSeedFallbackEnabled()) throw error;

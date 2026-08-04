@@ -1,6 +1,5 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,7 +16,9 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId
   );
 }
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-export const db = getFirestore(app);
+const CLIENT_APP_NAME = 'sanpack-client';
+const app = getApps().find((candidate) => candidate.name === CLIENT_APP_NAME)
+  ?? initializeApp(firebaseConfig, CLIENT_APP_NAME);
+
 export const auth = getAuth(app);
 export default app;

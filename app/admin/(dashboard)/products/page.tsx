@@ -373,7 +373,7 @@ export default function AdminProductsPage() {
                   onChange={(e) => setEditingProduct({ ...editingProduct, ownProduction: e.target.checked })}
                   className="accent-[#006F3C] w-4 h-4"
                 />
-                <span>Завод SANPACK (Собственное)</span>
+                <span>Собственное производство</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer font-bold">

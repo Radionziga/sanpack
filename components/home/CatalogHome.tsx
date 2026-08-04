@@ -13,11 +13,14 @@ import {
 import { Link } from '@/i18n/navigation';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { useLanguage } from '@/context/LanguageContext';
-import type { Category, Product } from '@/types';
+import type { Banner, Category, Language, Product } from '@/types';
+import { PromoCarousel } from '@/components/home/PromoCarousel';
 
 interface CatalogHomeProps {
   products: Product[];
   categories: Category[];
+  banners: Banner[];
+  locale: Language;
   catalogPdfUrl?: string;
   dataUnavailable?: boolean;
 }
@@ -41,14 +44,14 @@ function ProductShelf({
     <section className="py-8 md:py-11">
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
-          <h2 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[#14231C] md:text-[28px]">
+          <h2 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] md:text-[28px]">
             {title}
           </h2>
-          <p className="mt-1.5 max-w-2xl text-sm text-[#69776F]">{description}</p>
+          <p className="mt-1.5 max-w-2xl text-sm text-[var(--sp-ink-secondary)]">{description}</p>
         </div>
         <Link
           href="/catalog"
-          className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-bold text-[#0F6E43] transition-colors hover:text-[#084F30] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F6E43] sm:inline-flex"
+          className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-bold text-[var(--sp-brand)] transition-opacity hover:opacity-75 sm:inline-flex"
         >
           {actionLabel}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -63,7 +66,7 @@ function ProductShelf({
 
       <Link
         href="/catalog"
-        className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#BFCBC4] bg-white font-compact text-xs font-bold text-[#173A28] transition-colors hover:border-[#0F6E43] hover:text-[#0F6E43] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F6E43] sm:hidden"
+        className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[var(--sp-line-strong)] bg-[var(--sp-surface)] font-compact text-xs font-bold text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] sm:hidden"
       >
         {actionLabel}
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -75,6 +78,8 @@ function ProductShelf({
 export function CatalogHome({
   products,
   categories,
+  banners,
+  locale,
   catalogPdfUrl,
   dataUnavailable = false,
 }: CatalogHomeProps) {
@@ -95,14 +100,6 @@ export function CatalogHome({
     .filter((item) => item.count > 0)
     .slice(0, 10);
 
-  const heroProducts = products
-    .filter(
-      (product) =>
-        product.ownProduction &&
-        product.categorySlug !== 'branding-polygraphy' &&
-        Boolean(product.mainImage)
-    )
-    .slice(0, 3);
   const popularProducts = products.filter((product) => product.featured).slice(0, 8);
   const ownProductionProducts = products
     .filter(
@@ -112,100 +109,23 @@ export function CatalogHome({
     .slice(0, 4);
 
   return (
-    <div className="bg-[#F4F7F5]">
+    <div className="bg-[var(--sp-canvas)]">
       <section className="mx-auto max-w-7xl px-4 pb-7 pt-5 md:pb-9 md:pt-7">
-        <div className="relative min-h-[310px] overflow-hidden rounded-2xl bg-[#0B5D3B] text-white shadow-[0_16px_45px_rgba(11,93,59,0.14)] md:min-h-[350px]">
-          <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(5,51,30,0.96)_0%,rgba(11,93,59,0.94)_48%,rgba(31,124,78,0.78)_100%)]" />
-          <div className="absolute -right-16 -top-32 h-96 w-96 rounded-full border border-white/10" />
-          <div className="absolute -right-4 -top-20 h-72 w-72 rounded-full border border-white/10" />
-
-          <div className="relative z-10 grid min-h-[310px] items-center gap-8 px-6 py-8 md:min-h-[350px] md:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] md:px-10 lg:px-14">
-            <div className="max-w-xl">
-              <div className="mb-3 flex items-center gap-2 font-compact text-[11px] font-bold uppercase tracking-[0.13em] text-[#DCE9AF]">
-                <span className="h-px w-7 bg-[#DCE9AF]" />
-                {t('bannerEyebrow')}
-              </div>
-              <h1 className="text-pretty font-extended text-3xl font-bold leading-[1.08] tracking-[-0.035em] sm:text-4xl lg:text-[43px]">
-                {t('bannerTitle')}
-              </h1>
-              <p className="mt-4 max-w-lg text-sm leading-6 text-white/72 md:text-[15px]">
-                {t('bannerDescription')}
-              </p>
-              <div className="mt-6 flex flex-wrap gap-2.5">
-                <Link
-                  href="/catalog"
-                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-[#DCE9AF] px-4 font-compact text-xs font-bold text-[#173A28] transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                >
-                  {t('openCatalog')}
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-                {catalogPdfUrl && (
-                  <a
-                    href={catalogPdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/25 bg-white/8 px-4 font-compact text-xs font-bold text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                  >
-                    <Download className="h-4 w-4" aria-hidden="true" />
-                    {t('downloadCatalog')}
-                  </a>
-                )}
-              </div>
-            </div>
-
-            <div className="relative hidden h-[290px] md:block" aria-hidden="true">
-              {heroProducts.length > 0 ? (
-                heroProducts.map((product, index) => {
-                  const positions = [
-                    'left-[2%] top-[21%] h-[70%] w-[40%] -rotate-6',
-                    'left-[30%] top-[2%] h-[86%] w-[43%] rotate-2',
-                    'right-[0%] top-[24%] h-[66%] w-[36%] rotate-6',
-                  ];
-                  return (
-                    <div
-                      key={product.id}
-                      className={`absolute ${positions[index]} drop-shadow-[0_24px_22px_rgba(3,35,20,0.34)]`}
-                    >
-                      <Image
-                        src={product.mainImage}
-                        alt=""
-                        fill
-                        priority={index === 1}
-                        sizes="(min-width: 1280px) 280px, 22vw"
-                        className="object-contain"
-                      />
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="absolute inset-0">
-                  <Image
-                    src="/catalog/page_1.png"
-                    alt=""
-                    fill
-                    priority
-                    sizes="45vw"
-                    className="object-contain drop-shadow-[0_24px_22px_rgba(3,35,20,0.34)]"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <PromoCarousel banners={banners} locale={locale} />
       </section>
 
-      <section className="border-y border-[#DDE5E0] bg-white py-8 md:py-10">
+      <section className="border-y border-[var(--sp-line)] bg-[var(--sp-surface)] py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[#14231C] md:text-[28px]">
+              <h2 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] md:text-[28px]">
                 {t('categoriesTitle')}
               </h2>
-              <p className="mt-1.5 text-sm text-[#69776F]">{t('categoriesDescription')}</p>
+              <p className="mt-1.5 text-sm text-[var(--sp-ink-secondary)]">{t('categoriesDescription')}</p>
             </div>
             <Link
               href="/catalog"
-              className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-bold text-[#0F6E43] transition-colors hover:text-[#084F30] sm:inline-flex"
+              className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-bold text-[var(--sp-brand)] transition-opacity hover:opacity-75 sm:inline-flex"
             >
               {t('allCategories')}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -218,13 +138,13 @@ export function CatalogHome({
                 <Link
                   key={category.id}
                   href={`/catalog/${category.slug}`}
-                  className="group relative min-h-[176px] min-w-[184px] max-w-[184px] snap-start overflow-hidden rounded-xl border border-[#E0E7E3] bg-[#F5F7F6] p-4 transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[#AAC0B3] hover:shadow-[0_12px_30px_rgba(20,35,28,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F6E43] md:min-h-[196px] md:min-w-[212px] md:max-w-[212px]"
+                  className="group relative min-h-[176px] min-w-[184px] max-w-[184px] snap-start overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 transition-[border-color,transform] hover:-translate-y-0.5 hover:border-[var(--sp-line-strong)] md:min-h-[196px] md:min-w-[212px] md:max-w-[212px]"
                 >
                   <div className="relative z-10 max-w-[85%]">
-                    <h3 className="line-clamp-2 font-compact text-sm font-bold leading-snug text-[#14231C]">
+                    <h3 className="line-clamp-2 font-compact text-sm font-bold leading-snug text-[var(--sp-ink)]">
                       {getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
                     </h3>
-                    <p className="mt-1 text-[11px] text-[#708078]">
+                    <p className="mt-1 text-[11px] text-[var(--sp-ink-tertiary)]">
                       {t('itemsCount', { count })}
                     </p>
                   </div>
@@ -239,20 +159,20 @@ export function CatalogHome({
                       />
                     </div>
                   ) : (
-                    <PackageSearch className="absolute bottom-5 right-5 h-16 w-16 text-[#B9C8BF]" aria-hidden="true" />
+                    <PackageSearch className="absolute bottom-5 right-5 h-16 w-16 text-[var(--sp-ink-muted)]" aria-hidden="true" />
                   )}
                 </Link>
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-[#BFCBC4] bg-[#F7F9F8] px-6 py-10 text-center text-sm text-[#69776F]">
+            <div className="rounded-xl border border-dashed border-[var(--sp-line-strong)] bg-[var(--sp-surface-inset)] px-6 py-10 text-center text-sm text-[var(--sp-ink-secondary)]">
               {dataUnavailable ? t('errorDescription') : t('emptyCatalogDescription')}
             </div>
           )}
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl divide-y divide-[#DDE5E0] px-4">
+      <div className="mx-auto max-w-7xl divide-y divide-[var(--sp-line)] px-4">
         <ProductShelf
           title={t('popularTitle')}
           description={t('popularDescription')}
@@ -268,11 +188,11 @@ export function CatalogHome({
       </div>
 
       <section className="mx-auto max-w-7xl px-4 pb-12 pt-3 md:pb-16 md:pt-5">
-        <div className="relative overflow-hidden rounded-2xl bg-[#15251D] px-6 py-8 text-white md:px-10 md:py-10">
-          <div className="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_75%_20%,rgba(220,233,175,0.18),transparent_48%)]" />
+        <div className="relative overflow-hidden rounded-2xl bg-[var(--sp-cta-bg)] px-6 py-8 text-[var(--sp-cta-ink)] md:px-10 md:py-10">
+          <div className="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_75%_20%,color-mix(in_srgb,var(--sp-cta-action)_22%,transparent),transparent_48%)]" />
           <div className="relative z-10 grid items-center gap-7 md:grid-cols-[1fr_auto]">
             <div className="max-w-2xl">
-              <div className="mb-3 flex items-center gap-2 text-[#DCE9AF]">
+              <div className="mb-3 flex items-center gap-2 text-[var(--sp-cta-action)]">
                 <FileText className="h-4 w-4" aria-hidden="true" />
                 <span className="font-compact text-[11px] font-bold uppercase tracking-[0.12em]">
                   {t('ctaEyebrow')}
@@ -281,21 +201,32 @@ export function CatalogHome({
               <h2 className="text-pretty font-extended text-2xl font-bold tracking-[-0.025em] md:text-3xl">
                 {t('ctaTitle')}
               </h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">
+              <p className="mt-2 max-w-xl text-sm leading-6 opacity-70">
                 {t('ctaDescription')}
               </p>
             </div>
             <div className="flex flex-wrap gap-2.5 md:justify-end">
               <Link
                 href="/request"
-                className="inline-flex h-11 items-center gap-2 rounded-lg bg-[#DCE9AF] px-4 font-compact text-xs font-bold text-[#173A28] transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--sp-cta-action)] px-4 font-compact text-xs font-bold text-[var(--sp-cta-action-ink)] transition-opacity hover:opacity-[0.88]"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
                 {t('sendList')}
               </Link>
+              {catalogPdfUrl && (
+                <a
+                  href={catalogPdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-current/20 px-4 font-compact text-xs font-bold transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  {t('downloadCatalog')}
+                </a>
+              )}
               <a
                 href="tel:+998998510506"
-                className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/20 px-4 font-compact text-xs font-bold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="inline-flex h-11 items-center gap-2 rounded-lg border border-current/20 px-4 font-compact text-xs font-bold transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <PhoneCall className="h-4 w-4" aria-hidden="true" />
                 {t('callSales')}

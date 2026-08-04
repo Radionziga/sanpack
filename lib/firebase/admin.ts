@@ -3,6 +3,7 @@ import 'server-only';
 import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 
 function getCredential() {
   const encoded = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -19,12 +20,14 @@ function getCredential() {
 }
 
 function getAdminApp() {
+  const adminAppName = 'sanpack-admin';
   return (
-    getApps()[0] ??
+    getApps().find((app) => app.name === adminAppName) ??
     initializeApp({
       credential: getCredential(),
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    })
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    }, adminAppName)
   );
 }
 
@@ -34,4 +37,8 @@ export function getAdminAuth() {
 
 export function getAdminDb() {
   return getFirestore(getAdminApp());
+}
+
+export function getAdminStorage() {
+  return getStorage(getAdminApp());
 }

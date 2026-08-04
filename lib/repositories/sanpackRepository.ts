@@ -89,11 +89,12 @@ export const SanpackRepository = {
   getCategories: () => read<Category[]>('categories'),
   saveCategory(category: Partial<Category>) {
     const id = category.id || createId('cat');
+    const { id: _ignoredId, ...data } = category;
     return mutate<Category>({
       action: 'save',
       resource: 'categories',
       id,
-      data: category,
+      data,
     });
   },
   createCategory(category: Omit<Category, 'id'>) {
@@ -174,7 +175,33 @@ export const SanpackRepository = {
     return true;
   },
 
-  getBanners: () => read<Banner[]>('banners'),
+  async getBanners() {
+    const banners = await read<Banner[]>('banners');
+    return banners.map((banner) => banner.imageDesktop === '/catalog/page_1.png'
+      ? {
+          ...banner,
+          imageDesktop: '/promo/sanpack-supply-desktop.webp',
+          imageMobile: '/promo/sanpack-supply-mobile.webp',
+        }
+      : banner);
+  },
+  saveBanner(banner: Partial<Banner>) {
+    const id = banner.id || createId('banner');
+    const { id: _ignoredId, ...data } = banner;
+    return mutate<Banner>({
+      action: 'save',
+      resource: 'banners',
+      id,
+      data,
+    });
+  },
+  updateBanner(id: string, banner: Partial<Banner>) {
+    return this.saveBanner({ ...banner, id });
+  },
+  async deleteBanner(id: string) {
+    await mutate({ action: 'delete', resource: 'banners', id });
+    return true;
+  },
   getSettings: () => read<SiteSettings>('settings'),
   async saveSettings(settings: Partial<SiteSettings>) {
     return mutate<SiteSettings>({

@@ -12,6 +12,8 @@ import {
   initialSiteSettings,
 } from '@/lib/seedData';
 import type { UserRole } from '@/types';
+import { validateAdminResourceData } from '@/lib/validation/adminContent';
+import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
 
 export const runtime = 'nodejs';
 
@@ -31,7 +33,7 @@ const mutationSchema = z.object({
   resource: resourceSchema.optional(),
   id: z.string().max(160).optional(),
   data: z.record(z.string(), z.unknown()).optional(),
-});
+}).strict();
 
 function canMutate(role: UserRole, resource?: Resource, action?: string) {
   if (role === 'super_admin') return true;
@@ -65,7 +67,11 @@ export async function GET(request: Request) {
   try {
     if (parsed.data === 'settings') {
       const document = await getAdminDb().collection('settings').doc('global').get();
-      return NextResponse.json(document.exists ? document.data() : {});
+      return NextResponse.json(
+        document.exists
+          ? mergeSiteSettings(initialSiteSettings, document.data() as Partial<typeof initialSiteSettings>)
+          : initialSiteSettings
+      );
     }
     const snapshot = await getAdminDb().collection(parsed.data).get();
     const data = snapshot.docs.map((document) => ({
@@ -87,7 +93,21 @@ export async function POST(request: Request) {
   if (authorization.response || !authorization.admin) return authorization.response;
 
   try {
-    const mutation = mutationSchema.parse(await request.json());
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Некорректное тело запроса.' }, { status: 400 });
+    }
+
+    const parsedMutation = mutationSchema.safeParse(rawBody);
+    if (!parsedMutation.success) {
+      return NextResponse.json(
+        { error: 'Некорректная операция.', issues: parsedMutation.error.issues },
+        { status: 400 }
+      );
+    }
+    const mutation = parsedMutation.data;
     if (!canMutate(authorization.admin.role, mutation.resource, mutation.action)) {
       return NextResponse.json(
         { error: 'У вашей роли нет прав на эту операцию.' },
@@ -145,9 +165,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ id: updated.id, ...updated.data() });
     }
 
+    const validatedData = validateAdminResourceData(
+      mutation.resource,
+      mutation.data ?? {}
+    );
+    if (!validatedData.success) {
+      return NextResponse.json(
+        { error: 'Проверьте заполненные поля.', issues: validatedData.error.issues },
+        { status: 400 }
+      );
+    }
+
     const timestamp = new Date().toISOString();
     const data = {
-      ...mutation.data,
+      ...(validatedData.data as Record<string, unknown>),
       id: mutation.id,
       updatedAt: timestamp,
       updatedBy: authorization.admin.uid,
@@ -157,9 +188,6 @@ export async function POST(request: Request) {
     const saved = await document.get();
     return NextResponse.json({ id: saved.id, ...saved.data() });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Некорректная операция.' }, { status: 400 });
-    }
     console.error('Admin mutation failed.', error);
     return NextResponse.json(
       { error: 'Firestore отклонил операцию. Изменения не сохранены.' },

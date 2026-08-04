@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   // Allow access to remote image placeholders.
   images: {
     formats: ['image/avif', 'image/webp'],
+    qualities: [75, 86, 88],
     minimumCacheTTL: 2678400,
     remotePatterns: [
       {
