@@ -22,9 +22,16 @@ export const initialSiteSettings: SiteSettings = {
     cityUz: 'Toshkent',
   },
   salesMode: 'request_only',
+  commerce: {
+    currency: 'UZS',
+    checkoutFields: {
+      name: true,
+      phone: true,
+    },
+  },
   locale: {
     defaultLanguage: 'ru',
-    supportedLanguages: ['ru', 'uz', 'en'],
+    supportedLanguages: ['ru'],
   },
   design: {
     designVersion: 2,

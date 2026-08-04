@@ -2,11 +2,43 @@ export type Language = 'ru' | 'uz' | 'en';
 
 export type SalesMode = 'request_only' | 'ecommerce';
 
+export type ProductPriceMode =
+  | 'fixed'
+  | 'from'
+  | 'request'
+  | 'informational';
+
+export type ProductAvailability =
+  | 'in_stock'
+  | 'on_order'
+  | 'temporarily_unavailable'
+  | 'discontinued';
+
+export type QuantityUnit =
+  | 'piece'
+  | 'gram'
+  | 'kilogram'
+  | 'milliliter'
+  | 'liter'
+  | 'meter'
+  | 'square_meter'
+  | 'pack'
+  | 'roll'
+  | 'box'
+  | 'set'
+  | 'service'
+  | 'custom';
+
 export type UserRole = 'super_admin' | 'content_manager' | 'sales_manager' | 'viewer';
 
 export type ProductStatus = 'draft' | 'published' | 'hidden' | 'archived';
 
-export type StockStatus = 'in_stock' | 'out_of_stock' | 'on_order';
+export type StockStatus =
+  | 'in_stock'
+  | 'out_of_stock'
+  | 'on_order'
+  | 'temporarily_unavailable'
+  | 'discontinued';
 
 export interface WholesaleTier {
   minQuantity: number;
@@ -30,6 +62,11 @@ export interface ProductVariant {
   attributes: Record<string, string>;
   image?: string;
   minOrder?: number;
+  priceMode?: ProductPriceMode;
+  availability?: ProductAvailability;
+  quantityStep?: number;
+  minQuantity?: number;
+  maxQuantity?: number;
 }
 
 export interface ProductDocument {
@@ -73,6 +110,12 @@ export interface Product {
   stockQuantity?: number;
   minimumOrder: number;
   salesUnit: string; // 'рулон', 'пачка', 'упаковка', 'коробка', 'кг', 'шт'
+  unitCode?: QuantityUnit;
+  quantityStep?: number;
+  maximumOrder?: number;
+  catchWeight?: boolean;
+  priceMode?: ProductPriceMode;
+  availability?: ProductAvailability;
   featured: boolean;
   newProduct: boolean;
   ownProduction: boolean;
@@ -148,6 +191,7 @@ export interface Attribute {
 }
 
 export interface RequestItem {
+  lineId?: string;
   productId: string;
   productTitleRu: string;
   productTitleUz: string;
@@ -161,6 +205,8 @@ export interface RequestItem {
   quantity: number;
   unit: string;
   price?: number;
+  priceMode?: ProductPriceMode;
+  lineTotal?: number;
   comment?: string;
   image?: string;
   product?: Product;
@@ -194,14 +240,41 @@ export interface RequestOrder {
   inn?: string;
   contactName: string;
   phone: string;
+  phoneNormalized?: string;
+  customerUid?: string;
+  source?: 'web' | 'telegram_mini_app' | 'admin';
+  telegramUser?: {
+    id: string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+    languageCode?: string;
+  };
   deliveryType?: string;
   deliveryAddress?: string;
   paymentMethod?: string;
   notes?: string;
   items: RequestItem[];
+  originalItems?: RequestItem[];
   status: 'new' | 'processing' | 'fulfilled' | 'cancelled';
+  currency?: 'UZS';
+  subtotal?: number;
+  adjustment?: number;
+  total?: number;
+  revision?: number;
+  auditTrail?: OrderAuditEntry[];
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface OrderAuditEntry {
+  id: string;
+  action: 'created' | 'status_changed' | 'order_edited' | 'document_generated';
+  actorUid?: string;
+  actorLabel: string;
+  createdAt: string;
+  summary: string;
+  revision: number;
 }
 
 export type B2BRequest = RequestOrder;
@@ -266,6 +339,13 @@ export interface SiteSettings {
     mapIframe?: string;
   };
   salesMode: SalesMode;
+  commerce?: {
+    currency: 'UZS';
+    checkoutFields: {
+      name: true;
+      phone: true;
+    };
+  };
   locale: {
     defaultLanguage: Language;
     supportedLanguages: Language[];
@@ -286,6 +366,40 @@ export interface SiteSettings {
     defaultDescriptionUz: string;
     defaultDescriptionEn?: string;
   };
+}
+
+export interface TelegramPrivateSettings {
+  storefront: {
+    enabled: boolean;
+    botUsername?: string;
+    tokenEncrypted?: string;
+    tokenLast4?: string;
+    webAppUrl?: string;
+  };
+  notifications: {
+    enabled: boolean;
+    tokenEncrypted?: string;
+    tokenLast4?: string;
+    chatId?: string;
+  };
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export interface InternalDocumentSettings {
+  documentTitle: string;
+  companyName: string;
+  legalName?: string;
+  taxId?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  bankDetails?: string;
+  logoUrl?: string;
+  footerText?: string;
+  numberPrefix: string;
+  showSignatureFields: boolean;
+  showStampPlaceholder: boolean;
 }
 
 export interface UserProfile {

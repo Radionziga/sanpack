@@ -36,10 +36,13 @@ const mutationSchema = z.object({
 }).strict();
 
 function canMutate(role: UserRole, resource?: Resource, action?: string) {
+  // Orders are append-only business records. All allowed changes go through the
+  // dedicated order endpoint, which validates the payload and writes an audit trail.
+  if (resource === 'requests') return false;
   if (role === 'super_admin') return true;
   if (role === 'viewer' || action === 'seed') return false;
-  if (role === 'sales_manager') return resource === 'requests';
-  return resource !== 'requests';
+  if (role === 'sales_manager') return false;
+  return true;
 }
 
 async function denyUnlessAdmin() {
@@ -134,7 +137,7 @@ export async function POST(request: Request) {
       batch.set(database.collection('settings').doc('global'), initialSiteSettings);
       await batch.commit();
       for (const name of ['products', 'categories', 'attributes', 'clients', 'banners', 'settings']) {
-        revalidateTag(name);
+        revalidateTag(name, 'max');
       }
       return NextResponse.json({
         success: true,
@@ -152,7 +155,7 @@ export async function POST(request: Request) {
     const document = database.collection(mutation.resource).doc(mutation.id);
     if (mutation.action === 'delete') {
       await document.delete();
-      revalidateTag(mutation.resource);
+      revalidateTag(mutation.resource, 'max');
       return NextResponse.json({ success: true });
     }
 
@@ -184,7 +187,7 @@ export async function POST(request: Request) {
       updatedBy: authorization.admin.uid,
     };
     await document.set(data, { merge: true });
-    revalidateTag(mutation.resource);
+    revalidateTag(mutation.resource, 'max');
     const saved = await document.get();
     return NextResponse.json({ id: saved.id, ...saved.data() });
   } catch (error) {

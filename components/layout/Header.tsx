@@ -35,7 +35,7 @@ export function Header({
   initialCategories?: Category[];
   initialProducts?: Product[];
 } = {}) {
-  const { language, setLanguage, t, getLocalizedText, fixText } = useLanguage();
+  const { language, t, getLocalizedText, fixText } = useLanguage();
   const copy = {
     ru: {
       city: 'Ташкент',
@@ -391,39 +391,7 @@ export function Header({
                 )}
               </Link>
 
-              {/* Language Switcher */}
-              <div className="h-10 flex items-center bg-slate-100 p-1 rounded-lg text-xs font-bold shrink-0">
-                <button
-                  onClick={() => setLanguage('ru')}
-                  className={`h-full px-2 rounded transition-all flex items-center justify-center ${
-                    language === 'ru'
-                      ? 'bg-[var(--sp-surface)] text-[var(--sp-brand)]'
-                      : 'text-slate-500 hover:text-slate-900'
-                  }`}
-                >
-                  RU
-                </button>
-                <button
-                  onClick={() => setLanguage('uz')}
-                  className={`h-full px-2 rounded transition-all flex items-center justify-center ${
-                    language === 'uz'
-                      ? 'bg-[var(--sp-surface)] text-[var(--sp-brand)]'
-                      : 'text-slate-500 hover:text-slate-900'
-                  }`}
-                >
-                  UZ
-                </button>
-                <button
-                  onClick={() => setLanguage('en')}
-                  className={`h-full px-2 rounded transition-all flex items-center justify-center ${
-                    language === 'en'
-                      ? 'bg-[var(--sp-surface)] text-[var(--sp-brand)]'
-                      : 'text-slate-500 hover:text-slate-900'
-                  }`}
-                >
-                  EN
-                </button>
-              </div>
+              <span className="hidden h-10 items-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[10px] font-bold text-[var(--sp-ink-tertiary)] sm:inline-flex">RU</span>
 
               {/* Mobile Menu Button */}
               <button

@@ -20,5 +20,10 @@ const CLIENT_APP_NAME = 'sanpack-client';
 const app = getApps().find((candidate) => candidate.name === CLIENT_APP_NAME)
   ?? initializeApp(firebaseConfig, CLIENT_APP_NAME);
 
+const CUSTOMER_APP_NAME = 'sanpack-customer';
+const customerApp = getApps().find((candidate) => candidate.name === CUSTOMER_APP_NAME)
+  ?? initializeApp(firebaseConfig, CUSTOMER_APP_NAME);
+
 export const auth = getAuth(app);
+export const customerAuth = getAuth(customerApp);
 export default app;

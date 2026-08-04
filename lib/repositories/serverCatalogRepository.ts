@@ -28,7 +28,7 @@ function isSeedFallbackEnabled() {
 }
 
 async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
-  if (process.env.SANPACK_USE_SEED_DATA === 'true') return fallback;
+  if (isSeedFallbackEnabled()) return fallback;
 
   try {
     const snapshot = await getAdminDb().collection(name).get();
@@ -78,7 +78,7 @@ export const getPublicBanners = unstable_cache(
 
 export const getPublicSettings = unstable_cache(
   async () => {
-    if (process.env.SANPACK_USE_SEED_DATA === 'true') return initialSiteSettings;
+    if (isSeedFallbackEnabled()) return initialSiteSettings;
 
     try {
       const snapshot = await getAdminDb().collection('settings').doc('global').get();

@@ -7,6 +7,7 @@ import type {
   RequestOrder,
   SiteSettings,
 } from '@/types';
+import { getCustomerIdToken } from '@/lib/auth/customer';
 
 async function read<T>(resource: string): Promise<T> {
   const response = await fetch(`/api/catalog?resource=${resource}`);
@@ -32,10 +33,19 @@ export const PublicSanpackRepository = {
     const products = await this.getProducts();
     return products.find((product) => product.id === id) || null;
   },
-  async createRequest(data: Partial<RequestOrder>): Promise<RequestOrder> {
+  async createRequest(data: {
+    contactName: string;
+    phone: string;
+    items: Array<Pick<RequestOrder['items'][number], 'productId' | 'variantId' | 'quantity' | 'comment'>>;
+    telegramInitData?: string;
+  }): Promise<RequestOrder> {
+    const idToken = await getCustomerIdToken();
     const response = await fetch('/api/requests', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${idToken}`,
+      },
       body: JSON.stringify(data),
     });
     const body = await response.json();
@@ -43,5 +53,17 @@ export const PublicSanpackRepository = {
       throw new Error(body.error || 'Заявка не была сохранена.');
     }
     return body as RequestOrder;
+  },
+  async getMyRequests(): Promise<RequestOrder[]> {
+    const idToken = await getCustomerIdToken();
+    const response = await fetch('/api/requests', {
+      headers: { authorization: `Bearer ${idToken}` },
+      cache: 'no-store',
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      throw new Error(body.error || 'Не удалось загрузить историю заявок.');
+    }
+    return body as RequestOrder[];
   },
 };

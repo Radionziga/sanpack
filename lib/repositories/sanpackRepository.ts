@@ -137,23 +137,37 @@ export const SanpackRepository = {
     });
     return parseResponse<RequestOrder>(response);
   },
-  updateRequestStatus(
+  async updateRequestStatus(
     id: string,
     status: RequestOrder['status'],
-    notes?: string
   ) {
-    return mutate<RequestOrder>({
-      action: 'updateRequestStatus',
-      resource: 'requests',
-      id,
-      data: { status, ...(notes === undefined ? {} : { notes }) },
-    });
+    return parseResponse<RequestOrder>(await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'status', status }),
+    }));
   },
-  async deleteRequest(id: string) {
-    await mutate({ action: 'delete', resource: 'requests', id });
-    return true;
+  async updateRequest(id: string, order: {
+    contactName: string;
+    phone: string;
+    status: RequestOrder['status'];
+    notes?: string;
+    adjustment: number;
+    items: Array<{
+      lineId?: string;
+      productId: string;
+      variantId?: string;
+      quantity: number;
+      unitPrice?: number;
+      comment?: string;
+    }>;
+  }) {
+    return parseResponse<RequestOrder>(await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'edit', order }),
+    }));
   },
-
   getClients: () => read<ClientPartner[]>('clients'),
   saveClient(client: Partial<ClientPartner>) {
     const id = client.id || createId('client');

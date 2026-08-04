@@ -19,37 +19,33 @@ const RequestCartContext = createContext<RequestCartContextType | undefined>(und
 
 const LOCAL_STORAGE_CART_KEY = 'sanpack_request_cart_v1';
 
+function readStoredItems(): RequestItem[] {
+  try {
+    const data = window.localStorage.getItem(LOCAL_STORAGE_CART_KEY);
+    if (!data) return [];
+
+    const parsed: unknown = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed as RequestItem[] : [];
+  } catch {
+    return [];
+  }
+}
+
 export function RequestCartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<RequestItem[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const data = localStorage.getItem(LOCAL_STORAGE_CART_KEY);
-      if (data) {
-        const parsed = JSON.parse(data);
-        return parsed.map((item: RequestItem) => ({
-          ...item,
-          product: item.product || {
-            id: item.productId,
-            titleRu: item.productTitleRu || 'Товар',
-            titleUz: item.productTitleUz || 'Mahsulot',
-            slug: item.productSlug || 'product',
-            sku: item.sku,
-            mainImage: item.image || 'https://picsum.photos/300/300',
-            salesUnit: item.unit || 'шт',
-          },
-        }));
-      }
-      return [];
-    } catch {
-      return [];
-    }
-  });
+  const [items, setItems] = useState<RequestItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_CART_KEY, JSON.stringify(items));
-    }
-  }, [items]);
+    // Reading browser storage is necessarily a post-mount synchronization step.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setItems(readStoredItems());
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    window.localStorage.setItem(LOCAL_STORAGE_CART_KEY, JSON.stringify(items));
+  }, [isHydrated, items]);
 
   const addItem = (
     product: Product,

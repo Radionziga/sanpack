@@ -50,3 +50,7 @@ env:
     value: "false"
     availability:
       - RUNTIME
+  - variable: TELEGRAM_CONFIG_ENCRYPTION_KEY
+    secret: sanpack-telegram-config-encryption-key
+    availability:
+      - RUNTIME

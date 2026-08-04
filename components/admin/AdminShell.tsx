@@ -12,6 +12,7 @@ import {
   LogOut,
   Package,
   Settings2,
+  Bot,
   SlidersHorizontal,
   UserRound,
   Users,
@@ -46,6 +47,8 @@ const navigation = [
     label: 'Система',
     items: [
       { label: 'Внешний вид', href: '/admin/settings', icon: Settings2 },
+      { label: 'Telegram', href: '/admin/integrations', icon: Bot },
+      { label: 'Документы', href: '/admin/document-settings', icon: FileSpreadsheet },
     ],
   },
 ] as const;

@@ -1,287 +1,164 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { FileDown, History, PackagePlus, Pencil, Phone, Save, X } from 'lucide-react';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
-import { RequestOrder } from '@/types';
-import { CustomSelect } from '@/components/ui/CustomSelect';
-import {
-  FileSpreadsheet,
-  Eye,
-  Trash2,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Building,
-  Phone,
-  Send,
-  X,
-  FileText,
-} from 'lucide-react';
+import type { Product, RequestItem, RequestOrder } from '@/types';
+
+const statuses: Array<{ value: RequestOrder['status']; label: string }> = [
+  { value: 'new', label: 'Новый' },
+  { value: 'processing', label: 'В работе' },
+  { value: 'fulfilled', label: 'Завершён' },
+  { value: 'cancelled', label: 'Отменён' },
+];
+
+function formatMoney(value: number) {
+  return `${new Intl.NumberFormat('ru-RU').format(value)} сум`;
+}
+
+function statusLabel(value: RequestOrder['status']) {
+  return statuses.find((status) => status.value === value)?.label || value;
+}
 
 export default function AdminRequestsPage() {
-  const [requests, setRequests] = useState<RequestOrder[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<RequestOrder | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [orders, setOrders] = useState<RequestOrder[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selected, setSelected] = useState<RequestOrder | null>(null);
+  const [filter, setFilter] = useState<'all' | RequestOrder['status']>('all');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadRequests();
+    let active = true;
+    Promise.all([
+      SanpackRepository.getRequests(),
+      SanpackRepository.getProducts(),
+    ]).then(([nextOrders, nextProducts]) => {
+      if (!active) return;
+      setOrders(nextOrders);
+      setProducts(nextProducts.filter((product) => product.status !== 'archived'));
+    }).catch((reason) => {
+      if (active) setError(reason instanceof Error ? reason.message : 'Не удалось загрузить заказы.');
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
   }, []);
 
-  async function loadRequests() {
-    setLoading(true);
-    const data = await SanpackRepository.getRequests();
-    setRequests(data);
-    setLoading(false);
+  const filtered = filter === 'all' ? orders : orders.filter((order) => order.status === filter);
+  const calculatedSubtotal = useMemo(() => selected?.items.reduce(
+    (sum, item) => sum + (item.price === undefined ? 0 : item.price * item.quantity), 0
+  ) || 0, [selected]);
+
+  function patchSelected(patch: Partial<RequestOrder>) {
+    setSelected((current) => current ? { ...current, ...patch } : current);
   }
 
-  const handleStatusUpdate = async (id: string, newStatus: RequestOrder['status']) => {
-    await SanpackRepository.updateRequestStatus(id, newStatus);
-    if (selectedRequest && selectedRequest.id === id) {
-      setSelectedRequest({ ...selectedRequest, status: newStatus });
-    }
-    loadRequests();
-  };
+  function patchLine(index: number, patch: Partial<RequestItem>) {
+    if (!selected) return;
+    const items = selected.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item);
+    patchSelected({ items });
+  }
 
-  const handleDeleteRequest = async (id: string) => {
-    if (confirm('Вы уверены, что хотите удалить эту заявку?')) {
-      await SanpackRepository.deleteRequest(id);
-      if (selectedRequest?.id === id) setSelectedRequest(null);
-      loadRequests();
-    }
-  };
+  function removeLine(index: number) {
+    if (!selected || selected.items.length === 1) return;
+    patchSelected({ items: selected.items.filter((_, itemIndex) => itemIndex !== index) });
+  }
 
-  const filteredRequests =
-    statusFilter === 'all'
-      ? requests
-      : requests.filter((r) => r.status === statusFilter);
+  function addProduct(productId: string) {
+    if (!selected || !productId) return;
+    const product = products.find((candidate) => candidate.id === productId);
+    if (!product) return;
+    const variant = product.variants?.[0];
+    const item: RequestItem = {
+      productId: product.id,
+      productTitleRu: product.titleRu,
+      productTitleUz: product.titleUz || product.titleRu,
+      productSlug: product.slug,
+      variantId: variant?.id,
+      variantTitleRu: variant?.titleRu,
+      variantTitleUz: variant?.titleUz,
+      sku: variant?.sku || product.sku,
+      quantity: product.minimumOrder || 1,
+      unit: product.salesUnit || 'шт',
+      price: variant?.price ?? product.price,
+      priceMode: product.showPrice ? 'fixed' : 'request',
+      image: variant?.image || product.mainImage,
+    };
+    patchSelected({ items: [...selected.items, item] });
+  }
+
+  async function quickStatus(order: RequestOrder, status: RequestOrder['status']) {
+    setError(null);
+    try {
+      const updated = await SanpackRepository.updateRequestStatus(order.id, status);
+      setOrders((current) => current.map((item) => item.id === updated.id ? updated : item));
+      if (selected?.id === updated.id) setSelected(updated);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Статус не обновлён.'); }
+  }
+
+  async function saveOrder() {
+    if (!selected) return;
+    setSaving(true); setError(null); setNotice(null);
+    try {
+      const updated = await SanpackRepository.updateRequest(selected.id, {
+        contactName: selected.contactName,
+        phone: selected.phone,
+        status: selected.status,
+        notes: selected.notes || '',
+        adjustment: selected.adjustment || 0,
+        items: selected.items.map((item) => ({
+          lineId: item.lineId,
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: Number(item.quantity),
+          unitPrice: item.price,
+          comment: item.comment,
+        })),
+      });
+      setSelected(updated);
+      setOrders((current) => current.map((order) => order.id === updated.id ? updated : order));
+      setNotice(`Заказ ${updated.requestNumber} сохранён. Редакция ${updated.revision}.`);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Заказ не сохранён.'); }
+    finally { setSaving(false); }
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#18231E]">
-            Коммерческие заявки B2B
-          </h1>
-          <p className="text-xs text-[#68736D] mt-1">
-            Управление заявками на товары и коммерческие предложения
-          </p>
+    <div className="mx-auto max-w-[1500px] space-y-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-[var(--sp-line)] pb-5 lg:flex-row lg:items-end">
+        <div><h1 className="font-extended text-2xl font-bold tracking-[-0.025em]">Заказы</h1><p className="mt-1.5 text-sm text-[var(--sp-ink-secondary)]">Заявки покупателей, ручная корректировка и внутренние документы.</p></div>
+        <div className="flex flex-wrap gap-2">
+          {(['all', 'new', 'processing', 'fulfilled', 'cancelled'] as const).map((value) => (
+            <button key={value} type="button" onClick={() => setFilter(value)} className={`min-h-9 rounded-lg border px-3 text-[10px] font-bold ${filter === value ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)]'}`}>{value === 'all' ? `Все · ${orders.length}` : `${statusLabel(value)} · ${orders.filter((order) => order.status === value).length}`}</button>
+          ))}
         </div>
+      </header>
+      {error || notice ? <p role={error ? 'alert' : 'status'} className={`rounded-lg border px-4 py-3 text-sm ${error ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-400/30 bg-emerald-500/8 text-[var(--sp-success)]'}`}>{error || notice}</p> : null}
 
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 text-xs font-bold shadow-xs">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              statusFilter === 'all' ? 'bg-[#006F3C] text-white' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Все ({requests.length})
-          </button>
-          <button
-            onClick={() => setStatusFilter('new')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              statusFilter === 'new' ? 'bg-rose-600 text-white' : 'text-rose-700 hover:bg-rose-50'
-            }`}
-          >
-            Новые ({requests.filter((r) => r.status === 'new').length})
-          </button>
-          <button
-            onClick={() => setStatusFilter('processing')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              statusFilter === 'processing' ? 'bg-amber-600 text-white' : 'text-amber-700 hover:bg-amber-50'
-            }`}
-          >
-            В работе ({requests.filter((r) => r.status === 'processing').length})
-          </button>
-          <button
-            onClick={() => setStatusFilter('fulfilled')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              statusFilter === 'fulfilled' ? 'bg-emerald-600 text-white' : 'text-emerald-700 hover:bg-emerald-50'
-            }`}
-          >
-            Выполненные ({requests.filter((r) => r.status === 'fulfilled').length})
-          </button>
-        </div>
-      </div>
-
-      {/* Requests Table */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-xs text-slate-400">Загрузка заявок...</div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-400">Заявки не найдены</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                <tr>
-                  <th className="p-3.5">№ Заявки</th>
-                  <th className="p-3.5">Компания / ИП</th>
-                  <th className="p-3.5">Контактное лицо</th>
-                  <th className="p-3.5">Телефон</th>
-                  <th className="p-3.5">Позиций</th>
-                  <th className="p-3.5">Статус</th>
-                  <th className="p-3.5">Дата</th>
-                  <th className="p-3.5 text-right">Действия</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-slate-50">
-                    <td className="p-3.5 font-mono font-bold text-[#006F3C]">
-                      {req.requestNumber}
-                    </td>
-                    <td className="p-3.5 font-bold text-[#18231E]">
-                      {req.companyName || 'Частное лицо'}
-                      {req.inn && <span className="block text-[10px] text-slate-400 font-normal">ИНН: {req.inn}</span>}
-                    </td>
-                    <td className="p-3.5">{req.contactName}</td>
-                    <td className="p-3.5 font-bold">{req.phone}</td>
-                    <td className="p-3.5 font-bold">{req.items.length} поз.</td>
-                    <td className="p-3.5">
-                      <CustomSelect
-                        value={req.status}
-                        onChange={(val) =>
-                          handleStatusUpdate(req.id, val as RequestOrder['status'])
-                        }
-                        options={[
-                          { value: 'new', label: 'НОВАЯ', badge: 'New' },
-                          { value: 'processing', label: 'В РАБОТЕ' },
-                          { value: 'fulfilled', label: 'ВЫПОЛНЕНА' },
-                          { value: 'cancelled', label: 'ОТМЕНЕНА' },
-                        ]}
-                        size="sm"
-                        variant="default"
-                        className="w-36"
-                      />
-                    </td>
-                    <td className="p-3.5 text-slate-400">
-                      {new Date(req.createdAt).toLocaleString()}
-                    </td>
-                    <td className="p-3.5 text-right space-x-2">
-                      <button
-                        onClick={() => setSelectedRequest(req)}
-                        className="p-1.5 bg-[#EAF5EF] text-[#006F3C] hover:bg-[#006F3C] hover:text-white rounded-lg transition-colors"
-                        title="Просмотр"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRequest(req.id)}
-                        className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-colors"
-                        title="Удалить"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <section className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">
+        {loading ? <p className="p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Загрузка заказов…</p> : filtered.length === 0 ? <p className="p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Заказов в этом разделе нет.</p> : (
+          <div className="overflow-x-auto"><table className="w-full min-w-[880px] text-left text-xs"><thead className="border-b border-[var(--sp-line)] bg-[var(--sp-surface-inset)] text-[var(--sp-ink-tertiary)]"><tr><th className="p-3.5">Номер</th><th className="p-3.5">Клиент</th><th className="p-3.5">Телефон</th><th className="p-3.5">Состав</th><th className="p-3.5">Сумма</th><th className="p-3.5">Статус</th><th className="p-3.5">Дата</th><th className="p-3.5 text-right">Действие</th></tr></thead>
+            <tbody className="divide-y divide-[var(--sp-line)]">{filtered.map((order) => <tr key={order.id} className="hover:bg-[var(--sp-surface-inset)]"><td className="p-3.5 font-mono font-bold text-[var(--sp-brand)]">{order.requestNumber}</td><td className="p-3.5 font-bold">{order.contactName}</td><td className="p-3.5"><a href={`tel:${order.phoneNormalized || order.phone}`} className="inline-flex items-center gap-1.5"><Phone className="size-3.5" />{order.phone}</a></td><td className="p-3.5">{order.items.length} поз.</td><td className="p-3.5 font-bold">{order.total ? formatMoney(order.total) : 'По запросу'}</td><td className="p-3.5"><select value={order.status} onChange={(event) => void quickStatus(order, event.target.value as RequestOrder['status'])} className="min-h-9 rounded-md border border-[var(--sp-line)] bg-[var(--sp-control)] px-2 font-bold outline-none">{statuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select></td><td className="p-3.5 text-[var(--sp-ink-tertiary)]">{new Date(order.createdAt).toLocaleString('ru-RU')}</td><td className="p-3.5 text-right"><button type="button" onClick={() => { setSelected(order); setNotice(null); }} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--sp-line)] px-3 font-bold hover:border-[var(--sp-brand)]"><Pencil className="size-3.5" /> Открыть</button></td></tr>)}</tbody>
+          </table></div>
         )}
-      </div>
+      </section>
 
-      {/* View Modal */}
-      {selectedRequest && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b">
-              <div>
-                <span className="text-xs text-slate-400 block font-bold">Детали заявки</span>
-                <h3 className="text-xl font-bold text-[#006F3C] font-mono">
-                  {selectedRequest.requestNumber}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedRequest(null)}
-                className="p-1 text-slate-400 hover:text-slate-800"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Customer Details */}
-            <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <div>
-                <span className="text-slate-400 block">Организация:</span>
-                <strong className="text-[#18231E] block text-sm">
-                  {selectedRequest.companyName || 'Индивидуальный заказ'}
-                </strong>
-                {selectedRequest.inn && <span className="text-slate-500 font-mono">ИНН: {selectedRequest.inn}</span>}
-              </div>
-              <div>
-                <span className="text-slate-400 block">Контактное лицо:</span>
-                <strong className="text-[#18231E] block">{selectedRequest.contactName}</strong>
-                <a href={`tel:${selectedRequest.phone}`} className="text-[#006F3C] font-bold block mt-0.5">
-                  📞 {selectedRequest.phone}
-                </a>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Способ доставки:</span>
-                <strong className="text-[#18231E] capitalize">{selectedRequest.deliveryType}</strong>
-                {selectedRequest.deliveryAddress && (
-                  <p className="text-slate-600 mt-0.5">{selectedRequest.deliveryAddress}</p>
-                )}
-              </div>
-              <div>
-                <span className="text-slate-400 block">Форма оплаты:</span>
-                <strong className="text-[#18231E] uppercase">{selectedRequest.paymentMethod}</strong>
-              </div>
-            </div>
-
-            {selectedRequest.notes && (
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
-                <strong>Комментарий:</strong> {selectedRequest.notes}
-              </div>
-            )}
-
-            {/* Items Breakdown */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-xs uppercase tracking-wider text-[#18231E]">
-                Запрошенные товары ({selectedRequest.items.length}):
-              </h4>
-              <div className="divide-y divide-slate-100 border rounded-2xl p-2 bg-white">
-                {selectedRequest.items.map((it, idx) => (
-                  <div key={idx} className="p-3 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-[#18231E]">{it.productTitleRu}</p>
-                      {it.variant && (
-                        <p className="text-[11px] text-[#006F3C] font-semibold">{it.variant.titleRu}</p>
-                      )}
-                      <p className="text-[10px] text-slate-400 font-mono">
-                        SKU: {it.sku}
-                      </p>
-                    </div>
-                    <div className="text-right font-bold text-sm text-[#006F3C]">
-                      {it.quantity} {it.unit}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-4 border-t flex items-center justify-between">
-              <a
-                href={`https://t.me/sanpack_uz?text=${encodeURIComponent(`Заявка №${selectedRequest.requestNumber} (${selectedRequest.companyName || selectedRequest.contactName}): ${selectedRequest.phone}`)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 bg-sky-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5"
-              >
-                <Send className="w-3.5 h-3.5" /> Написать в Telegram
-              </a>
-
-              <button
-                onClick={() => setSelectedRequest(null)}
-                className="px-5 py-2 bg-slate-100 text-slate-800 font-bold rounded-xl text-xs"
-              >
-                Закрыть
-              </button>
-            </div>
+      {selected ? <div className="fixed inset-0 z-50 bg-black/55 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label={`Заказ ${selected.requestNumber}`}><div className="mx-auto flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-canvas)] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[var(--sp-line)] bg-[var(--sp-surface)] px-5 py-4"><div><span className="text-[10px] uppercase tracking-[0.08em] text-[var(--sp-ink-tertiary)]">Редактирование заказа</span><h2 className="mt-1 font-mono text-lg font-bold text-[var(--sp-brand)]">{selected.requestNumber} · ред. {selected.revision || 1}</h2></div><button type="button" onClick={() => setSelected(null)} className="flex size-10 items-center justify-center rounded-lg border border-[var(--sp-line)]" aria-label="Закрыть"><X className="size-4" /></button></div>
+        <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-5 p-5 sm:p-6">
+            <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold">Имя<input value={selected.contactName} onChange={(event) => patchSelected({ contactName: event.target.value })} className="mt-2 min-h-11 w-full rounded-lg border border-[var(--sp-line-strong)] bg-[var(--sp-control)] px-3 text-sm outline-none" /></label><label className="text-xs font-bold">Телефон<input value={selected.phone} onChange={(event) => patchSelected({ phone: event.target.value })} className="mt-2 min-h-11 w-full rounded-lg border border-[var(--sp-line-strong)] bg-[var(--sp-control)] px-3 text-sm outline-none" /></label></div>
+            <section><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-extended text-base font-bold">Состав заказа</h3><label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-xs font-bold"><PackagePlus className="size-4 text-[var(--sp-brand)]" /><select defaultValue="" onChange={(event) => { addProduct(event.target.value); event.target.value = ''; }} className="max-w-56 bg-transparent outline-none"><option value="">Добавить товар…</option>{products.map((product) => <option key={product.id} value={product.id}>{product.titleRu}</option>)}</select></label></div>
+              <div className="mt-3 space-y-2">{selected.items.map((item, index) => <div key={item.lineId || `${item.productId}-${index}`} className="grid gap-3 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 sm:grid-cols-[minmax(0,1fr)_110px_150px_40px] sm:items-end"><div><p className="text-xs font-bold">{item.productTitleRu}</p><p className="mt-1 font-mono text-[10px] text-[var(--sp-ink-tertiary)]">{item.sku} · {item.unit}</p></div><label className="text-[10px] font-bold text-[var(--sp-ink-tertiary)]">Количество<input type="number" min="0.001" step="any" value={item.quantity} onChange={(event) => patchLine(index, { quantity: Number(event.target.value) })} className="mt-1 min-h-10 w-full rounded-md border border-[var(--sp-line)] bg-[var(--sp-control)] px-2 text-xs text-[var(--sp-ink)] outline-none" /></label><label className="text-[10px] font-bold text-[var(--sp-ink-tertiary)]">Цена за единицу<input type="number" min="0" step="1" value={item.price ?? ''} onChange={(event) => patchLine(index, { price: event.target.value === '' ? undefined : Number(event.target.value) })} placeholder="По запросу" className="mt-1 min-h-10 w-full rounded-md border border-[var(--sp-line)] bg-[var(--sp-control)] px-2 text-xs text-[var(--sp-ink)] outline-none" /></label><button type="button" disabled={selected.items.length === 1} onClick={() => removeLine(index)} className="flex size-10 items-center justify-center rounded-md text-[var(--sp-danger)] disabled:opacity-30"><X className="size-4" /></button></div>)}</div>
+            </section>
+            <label className="block text-xs font-bold">Внутренний комментарий<textarea value={selected.notes || ''} onChange={(event) => patchSelected({ notes: event.target.value })} rows={3} className="mt-2 w-full rounded-lg border border-[var(--sp-line-strong)] bg-[var(--sp-control)] p-3 text-sm outline-none" /></label>
+            <section className="rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4"><h3 className="flex items-center gap-2 text-xs font-bold"><History className="size-4 text-[var(--sp-brand)]" /> История изменений</h3><div className="mt-3 space-y-2">{(selected.auditTrail || []).slice().reverse().map((entry) => <div key={entry.id} className="border-l-2 border-[var(--sp-line-strong)] pl-3 text-[10px]"><p className="font-bold text-[var(--sp-ink)]">{entry.summary}</p><p className="mt-0.5 text-[var(--sp-ink-tertiary)]">{entry.actorLabel} · {new Date(entry.createdAt).toLocaleString('ru-RU')}</p></div>)}</div></section>
           </div>
+          <aside className="border-t border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 lg:border-l lg:border-t-0"><label className="text-xs font-bold">Статус<select value={selected.status} onChange={(event) => patchSelected({ status: event.target.value as RequestOrder['status'] })} className="mt-2 min-h-11 w-full rounded-lg border border-[var(--sp-line-strong)] bg-[var(--sp-control)] px-3 text-sm outline-none">{statuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select></label><label className="mt-4 block text-xs font-bold">Корректировка суммы<input type="number" step="1" value={selected.adjustment || 0} onChange={(event) => patchSelected({ adjustment: Number(event.target.value) })} className="mt-2 min-h-11 w-full rounded-lg border border-[var(--sp-line-strong)] bg-[var(--sp-control)] px-3 text-sm outline-none" /><span className="mt-1 block text-[10px] font-normal text-[var(--sp-ink-tertiary)]">Скидка вводится отрицательным числом.</span></label><div className="mt-5 space-y-2 border-t border-[var(--sp-line)] pt-4 text-xs"><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Товары</span><span>{formatMoney(calculatedSubtotal)}</span></div><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Корректировка</span><span>{formatMoney(selected.adjustment || 0)}</span></div><div className="flex justify-between border-t border-[var(--sp-line)] pt-3 text-base font-bold"><span>Итого</span><span>{formatMoney(Math.max(0, calculatedSubtotal + (selected.adjustment || 0)))}</span></div></div><a href={`/api/admin/orders/${encodeURIComponent(selected.id)}/document`} target="_blank" className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-[var(--sp-line)] text-xs font-bold"><FileDown className="size-4" /> Внутренняя накладная</a><button type="button" disabled={saving} onClick={() => void saveOrder()} className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-4 text-xs font-bold text-[var(--sp-on-brand)] disabled:opacity-50"><Save className="size-4" /> {saving ? 'Сохраняем…' : 'Сохранить изменения'}</button><p className="mt-4 text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">Первоначальный состав заявки сохранён отдельно и не изменяется.</p></aside>
         </div>
-      )}
+      </div></div> : null}
     </div>
   );
 }

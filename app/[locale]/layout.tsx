@@ -7,6 +7,8 @@ import { PublicProviders } from '@/components/PublicProviders';
 import { routing } from '@/i18n/routing';
 import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
 import { SanpackTheme } from '@/components/theme/SanpackTheme';
+import Script from 'next/script';
+import { TelegramMiniAppBridge } from '@/components/telegram/TelegramMiniAppBridge';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -81,6 +83,8 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider messages={messages}>
       <SanpackTheme design={settings.design}>
+        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
+        <TelegramMiniAppBridge />
         <PublicProviders locale={locale}>{children}</PublicProviders>
       </SanpackTheme>
     </NextIntlClientProvider>
