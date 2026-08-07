@@ -7,6 +7,7 @@ import type {
   RequestOrder,
   SiteSettings,
 } from '@/types';
+import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
 type Resource =
   | 'products'
@@ -17,16 +18,8 @@ type Resource =
   | 'banners'
   | 'settings';
 
-async function parseResponse<T>(response: Response): Promise<T> {
-  const body = await response.json();
-  if (!response.ok) {
-    throw new Error(body.error || 'Операция не выполнена.');
-  }
-  return body as T;
-}
-
 async function read<T>(resource: Resource): Promise<T> {
-  return parseResponse<T>(
+  return parseJsonResponse<T>(
     await fetch(`/api/admin/data?resource=${resource}`, {
       credentials: 'same-origin',
       cache: 'no-store',
@@ -35,7 +28,7 @@ async function read<T>(resource: Resource): Promise<T> {
 }
 
 async function mutate<T>(body: Record<string, unknown>): Promise<T> {
-  return parseResponse<T>(
+  return parseJsonResponse<T>(
     await fetch('/api/admin/data', {
       method: 'POST',
       credentials: 'same-origin',
@@ -135,17 +128,17 @@ export const SanpackRepository = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(request),
     });
-    return parseResponse<RequestOrder>(response);
+    return parseJsonResponse<RequestOrder>(response, 'Заявка не была сохранена.');
   },
   async updateRequestStatus(
     id: string,
     status: RequestOrder['status'],
   ) {
-    return parseResponse<RequestOrder>(await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
+    return parseJsonResponse<RequestOrder>(await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'status', status }),
-    }));
+    }), 'Статус заявки не изменён.');
   },
   async updateRequest(id: string, order: {
     contactName: string;
@@ -162,11 +155,11 @@ export const SanpackRepository = {
       comment?: string;
     }>;
   }) {
-    return parseResponse<RequestOrder>(await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
+    return parseJsonResponse<RequestOrder>(await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'edit', order }),
-    }));
+    }), 'Изменения заявки не сохранены.');
   },
   getClients: () => read<ClientPartner[]>('clients'),
   saveClient(client: Partial<ClientPartner>) {

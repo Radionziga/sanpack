@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { Bot, CheckCircle2, ExternalLink, Send, ShieldCheck } from 'lucide-react';
+import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
 interface TelegramAdminSettings {
   storefront: {
@@ -24,15 +25,13 @@ const emptySettings: TelegramAdminSettings = {
   notifications: { enabled: false, chatId: '', tokenConfigured: false, tokenLast4: '' },
 };
 
-async function api(body?: unknown) {
+async function api<T>(body?: unknown) {
   const response = await fetch('/api/admin/telegram', body ? {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   } : { cache: 'no-store' });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Операция не выполнена.');
-  return result;
+  return parseJsonResponse<T>(response, 'Не удалось связаться с сервером. Попробуйте ещё раз.');
 }
 
 export default function IntegrationsPage() {
@@ -45,14 +44,14 @@ export default function IntegrationsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api().then(setSettings).catch((reason) => setError(reason.message)).finally(() => setLoading(false));
+    api<TelegramAdminSettings>().then(setSettings).catch((reason) => setError(reason.message)).finally(() => setLoading(false));
   }, []);
 
   async function save(event: FormEvent) {
     event.preventDefault();
     setBusy(true); setError(null); setNotice(null);
     try {
-      const result = await api({
+      const result = await api<{ settings: TelegramAdminSettings; message: string }>({
         action: 'save',
         settings: {
           storefront: {
@@ -76,7 +75,7 @@ export default function IntegrationsPage() {
 
   async function runAction(action: 'test_notifications' | 'configure_storefront') {
     setBusy(true); setError(null); setNotice(null);
-    try { const result = await api({ action }); setNotice(result.message); }
+    try { const result = await api<{ message: string }>({ action }); setNotice(result.message); }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Операция не выполнена.'); }
     finally { setBusy(false); }
   }
@@ -124,4 +123,3 @@ export default function IntegrationsPage() {
     </div>
   );
 }
-

@@ -85,7 +85,7 @@ export default async function LocaleLayout({
       <SanpackTheme design={settings.design}>
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
         <TelegramMiniAppBridge />
-        <PublicProviders locale={locale}>{children}</PublicProviders>
+        <PublicProviders locale={locale} settings={settings}>{children}</PublicProviders>
       </SanpackTheme>
     </NextIntlClientProvider>
   );

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import { Attribute, Category, AttributeOption } from '@/types';
 import { Button, CustomInput, Badge, CustomSelect } from '@/components/ui';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import {
   SlidersHorizontal,
   Plus,
@@ -151,7 +152,7 @@ export default function AdminAttributesPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto font-sans">
+    <div className="mx-auto max-w-[1500px] space-y-6 font-sans">
       {/* Toast Notification */}
       {notification && (
         <div className="fixed top-5 right-5 z-50 bg-[#18231E] text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border border-emerald-500/30 text-xs font-semibold animate-fade-in">
@@ -161,33 +162,23 @@ export default function AdminAttributesPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF5EF] text-[#006F3C] text-xs font-bold mb-2">
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Конструктор атрибутов</span>
-          </div>
-          <h1 className="text-2xl font-bold text-[#18231E] tracking-tight">
-            Управление атрибутами и фильтрами
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Создавайте динамические характеристики (объём, толщина, вес, бренд, вид упаковки), которые автоматически появляются в фильтрах каталога
-          </p>
-        </div>
-
-        <Button
-          onClick={handleOpenCreateModal}
-          variant="primary"
-          size="md"
-          leftIcon={<Plus className="w-4 h-4" />}
-          className="shadow-sm shrink-0"
-        >
-          Создать атрибут
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Управление атрибутами и фильтрами"
+        description="Создавайте характеристики товаров — объём, толщину, вес, бренд или вид упаковки. Нужные параметры автоматически появятся в каталоге и фильтрах."
+        action={(
+          <Button
+            onClick={handleOpenCreateModal}
+            variant="primary"
+            size="md"
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            Создать атрибут
+          </Button>
+        )}
+      />
 
       {/* Attributes List */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">
         {loading ? (
           <div className="p-12 text-center text-slate-400 text-xs">
             Загрузка списка характеристик...

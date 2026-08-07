@@ -23,12 +23,12 @@ export function Badge({
   };
 
   const variantStyles = {
-    brand: 'bg-[#EAF5EF] text-[#0F6E43] border border-[#0F6E43]/20 font-bold',
-    success: 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold',
-    warning: 'bg-amber-50 text-amber-700 border border-amber-200 font-bold',
-    danger: 'bg-rose-50 text-rose-700 border border-rose-200 font-bold',
-    neutral: 'bg-slate-100 text-slate-700 border border-slate-200 font-semibold',
-    outline: 'bg-white text-slate-700 border border-slate-200 font-medium',
+    brand: 'bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] text-[var(--sp-brand)] border border-[color-mix(in_srgb,var(--sp-brand)_24%,var(--sp-line))] font-bold',
+    success: 'bg-[color-mix(in_srgb,var(--sp-success)_10%,var(--sp-surface))] text-[var(--sp-success)] border border-[color-mix(in_srgb,var(--sp-success)_24%,var(--sp-line))] font-bold',
+    warning: 'bg-amber-500/10 text-amber-700 border border-amber-500/25 font-bold',
+    danger: 'bg-red-500/8 text-[var(--sp-danger)] border border-red-500/25 font-bold',
+    neutral: 'bg-[var(--sp-surface-inset)] text-[var(--sp-ink-secondary)] border border-[var(--sp-line)] font-semibold',
+    outline: 'bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)] border border-[var(--sp-line)] font-medium',
   };
 
   return (

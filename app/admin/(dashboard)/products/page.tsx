@@ -398,7 +398,7 @@ export default function AdminProductsPage() {
             </div>
 
             {/* Dynamic Attributes Section */}
-            <div className="space-y-4 pt-3 border-t border-slate-200 bg-slate-50 p-4 rounded-2xl">
+            <div className="space-y-4 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="font-bold text-xs text-[#18231E] block">
@@ -411,7 +411,7 @@ export default function AdminProductsPage() {
                 <a
                   href="/admin/attributes"
                   target="_blank"
-                  className="text-[10px] text-[#006F3C] hover:underline font-semibold bg-[#EAF5EF] px-2.5 py-1 rounded-full border border-[#006F3C]/20"
+                  className="rounded-md border border-[color-mix(in_srgb,var(--sp-brand)_24%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] px-2.5 py-1 text-[10px] font-semibold text-[var(--sp-brand)] hover:underline"
                 >
                   + Управление базой атрибутов
                 </a>

@@ -1,10 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import { RequestOrder, Product } from '@/types';
-import { FileSpreadsheet, Package, Clock, CheckCircle2, Factory, TrendingUp } from 'lucide-react';
+import { FileSpreadsheet, Package, Clock, Factory, RefreshCw, TriangleAlert } from 'lucide-react';
+
+function fetchOverviewStats() {
+  return Promise.all([
+    SanpackRepository.getRequests(),
+    SanpackRepository.getProducts(),
+  ]);
+}
 
 export default function AdminOverviewPage() {
   const [requests, setRequests] = useState<RequestOrder[]>([]);
@@ -12,33 +19,49 @@ export default function AdminOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadStats() {
-      const [r, p] = await Promise.all([
-        SanpackRepository.getRequests(),
-        SanpackRepository.getProducts(),
-      ]);
-      setRequests(r);
-      setProducts(p);
+  const loadStats = useCallback(async () => {
+    try {
+      const [nextRequests, nextProducts] = await fetchOverviewStats();
+      setRequests(nextRequests);
+      setProducts(nextProducts);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить обзор магазина.');
+    } finally {
       setLoading(false);
     }
-    loadStats();
+  }, []);
+
+  const retryLoadStats = () => {
+    setLoading(true);
+    setLoadError(null);
+    void loadStats();
+  };
+
+  useEffect(() => {
+    void fetchOverviewStats()
+      .then(([nextRequests, nextProducts]) => {
+        setRequests(nextRequests);
+        setProducts(nextProducts);
+      })
+      .catch((error: unknown) => {
+        setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить обзор магазина.');
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSeedFirestore = async () => {
     setSeeding(true);
     setSeedMessage(null);
-    const result = await SanpackRepository.seedFirestoreForced();
-    setSeeding(false);
-    setSeedMessage(result.message);
-    if (result.success) {
-      const [r, p] = await Promise.all([
-        SanpackRepository.getRequests(),
-        SanpackRepository.getProducts(),
-      ]);
-      setRequests(r);
-      setProducts(p);
+    try {
+      const result = await SanpackRepository.seedFirestoreForced();
+      setSeedMessage(result.message);
+      if (result.success) await loadStats();
+    } catch (error) {
+      setSeedMessage(error instanceof Error ? error.message : 'Демо-данные не перенесены.');
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -57,7 +80,7 @@ export default function AdminOverviewPage() {
             Панель управления магазином
           </h1>
           <p className="text-xs text-[#68736D] mt-1">
-            Оперативный обзор коммерческих заявок, остатков и базы Cloud Firestore
+            Оперативный обзор заявок и каталога товаров
           </p>
         </div>
 
@@ -76,6 +99,21 @@ export default function AdminOverviewPage() {
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-[#006F3C]">
           {seedMessage}
         </div>
+      )}
+
+      {loadError && (
+        <section role="alert" className="flex flex-col gap-4 rounded-2xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <TriangleAlert className="mt-0.5 size-5 shrink-0 text-red-600" aria-hidden="true" />
+            <div>
+              <p className="font-bold">Обзор магазина пока не загрузился</p>
+              <p className="mt-1 text-xs leading-5 text-red-800">{loadError}</p>
+            </div>
+          </div>
+          <button type="button" onClick={retryLoadStats} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 text-xs font-bold text-red-800 hover:bg-red-100">
+            <RefreshCw className="size-4" aria-hidden="true" /> Повторить
+          </button>
+        </section>
       )}
 
 

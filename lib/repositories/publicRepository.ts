@@ -8,14 +8,11 @@ import type {
   SiteSettings,
 } from '@/types';
 import { getCustomerIdToken } from '@/lib/auth/customer';
+import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
 async function read<T>(resource: string): Promise<T> {
   const response = await fetch(`/api/catalog?resource=${resource}`);
-  const body = await response.json();
-  if (!response.ok) {
-    throw new Error(body.error || 'Не удалось загрузить данные каталога.');
-  }
-  return body as T;
+  return parseJsonResponse<T>(response, 'Не удалось загрузить данные каталога.');
 }
 
 export const PublicSanpackRepository = {
@@ -48,11 +45,7 @@ export const PublicSanpackRepository = {
       },
       body: JSON.stringify(data),
     });
-    const body = await response.json();
-    if (!response.ok) {
-      throw new Error(body.error || 'Заявка не была сохранена.');
-    }
-    return body as RequestOrder;
+    return parseJsonResponse<RequestOrder>(response, 'Заявка не была сохранена.');
   },
   async getMyRequests(): Promise<RequestOrder[]> {
     const idToken = await getCustomerIdToken();
@@ -60,10 +53,6 @@ export const PublicSanpackRepository = {
       headers: { authorization: `Bearer ${idToken}` },
       cache: 'no-store',
     });
-    const body = await response.json();
-    if (!response.ok) {
-      throw new Error(body.error || 'Не удалось загрузить историю заявок.');
-    }
-    return body as RequestOrder[];
+    return parseJsonResponse<RequestOrder[]>(response, 'Не удалось загрузить историю заявок.');
   },
 };

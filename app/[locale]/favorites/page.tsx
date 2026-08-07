@@ -35,16 +35,16 @@ export default function FavoritesPage() {
   }, [favoriteIds]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F7F6]">
+    <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header />
 
-      <main className="flex-1 py-10 max-w-7xl mx-auto px-4 w-full">
-        <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10">
+        <div className="mb-8 flex items-center justify-between border-b border-[var(--sp-line)] pb-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#18231E]">
+            <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl">
               {t('favorites')}
             </h1>
-            <p className="text-xs text-[#68736D] mt-1">
+            <p className="mt-1 text-sm text-[var(--sp-ink-secondary)]">
               {copy.intro}
             </p>
           </div>
@@ -52,7 +52,7 @@ export default function FavoritesPage() {
           {favProducts.length > 0 && (
             <button
               onClick={clearFavorites}
-              className="text-xs text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1.5"
+              className="flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-[var(--sp-danger)] transition-colors hover:bg-red-500/8"
             >
               <Trash2 className="w-4 h-4" />
               <span>{copy.clear}</span>
@@ -67,15 +67,17 @@ export default function FavoritesPage() {
             ))}
           </div>
         ) : favProducts.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 max-w-md mx-auto">
-            <Heart className="w-12 h-12 text-slate-300 mx-auto" />
-            <h3 className="text-base font-bold text-[#18231E]">{copy.emptyTitle}</h3>
-            <p className="text-xs text-slate-500">
+          <div className="flex min-h-[360px] w-full flex-col items-center justify-center rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] px-6 py-12 text-center">
+            <div className="flex size-14 items-center justify-center rounded-full bg-[var(--sp-surface-inset)] text-[var(--sp-ink-muted)]">
+              <Heart className="size-7" aria-hidden="true" />
+            </div>
+            <h2 className="mt-5 text-lg font-bold text-[var(--sp-ink)]">{copy.emptyTitle}</h2>
+            <p className="mt-2 max-w-md text-sm leading-6 text-[var(--sp-ink-secondary)]">
               {copy.emptyText}
             </p>
             <Link
               href="/catalog"
-              className="inline-block px-6 py-3 bg-[#006F3C] text-white font-bold rounded-xl text-xs"
+              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--sp-brand)] px-5 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90"
             >
               {t('goToCatalog')}
             </Link>

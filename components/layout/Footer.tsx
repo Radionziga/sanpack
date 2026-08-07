@@ -5,9 +5,12 @@ import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
 
 export function Footer() {
   const { t, language } = useLanguage();
+  const { company, contacts } = useSiteSettings();
   const copy = {
     ru: {
       categories: ['Мешки для мусора', 'Пакеты «Майка»', 'Одноразовые перчатки', 'Фольга и стрейч-плёнка', 'Бакалея и рис', 'Полиграфия и брендирование'],
@@ -26,6 +29,9 @@ export function Footer() {
     },
   }[language];
   const currentYear = new Date().getFullYear();
+  const address = localizedContact(contacts, 'address', language);
+  const hours = localizedContact(contacts, 'workingHours', language);
+  const phones = [contacts.phone1, contacts.phone2].filter(Boolean);
 
   return (
     <footer className="bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-xs border-t border-[var(--sp-brand-deep)] pt-12 pb-8">
@@ -39,9 +45,9 @@ export function Footer() {
             <p className="text-slate-200 text-xs leading-relaxed max-w-sm">
               {t('footerDesc')}
             </p>
-            <div className="flex items-center gap-3 pt-2">
+            {contacts.telegram ? <div className="flex items-center gap-3 pt-2">
               <a
-                href="https://t.me/sanpack_uz"
+                href={contacts.telegram}
                 target="_blank"
                 rel="noreferrer"
                 className="w-8 h-8 rounded-lg bg-[var(--sp-brand-deep)] hover:bg-[var(--sp-lime)] hover:text-[#173A28] text-[var(--sp-on-brand-deep)] flex items-center justify-center transition-colors"
@@ -49,7 +55,7 @@ export function Footer() {
               >
                 <Send className="w-4 h-4" />
               </a>
-            </div>
+            </div> : null}
           </div>
 
           {/* Col 2: Catalog Categories */}
@@ -131,33 +137,30 @@ export function Footer() {
               {t('contacts')}
             </h4>
             <div className="space-y-2 text-slate-200">
+              {phones.map((phone) => (
+                <a
+                  key={phone}
+                  href={contactPhoneHref(phone)}
+                  className="flex items-center gap-2 font-semibold transition-colors hover:text-[var(--sp-accent)]"
+                >
+                  <Phone className="size-3.5 shrink-0 text-[var(--sp-accent)]" aria-hidden="true" />
+                  <span>{phone}</span>
+                </a>
+              ))}
               <a
-                href="tel:+998998510506"
-                className="flex items-center gap-2 hover:text-[#DCE9AF] transition-colors font-semibold"
-              >
-                <Phone className="w-3.5 h-3.5 text-[#DCE9AF] shrink-0" />
-                <span>+998 99 851 05 06</span>
-              </a>
-              <a
-                href="tel:+998992323999"
-                className="flex items-center gap-2 hover:text-[#DCE9AF] transition-colors font-semibold pl-5"
-              >
-                <span>+998 99 232 39 99</span>
-              </a>
-              <a
-                href="mailto:info@sanpack.uz"
+                href={`mailto:${contacts.email}`}
                 className="flex items-center gap-2 hover:text-[#DCE9AF] transition-colors pt-1"
               >
                 <Mail className="w-3.5 h-3.5 text-[#DCE9AF] shrink-0" />
-                <span>info@sanpack.uz</span>
+                <span>{contacts.email}</span>
               </a>
               <div className="flex items-start gap-2 pt-1">
                 <MapPin className="w-3.5 h-3.5 text-[#DCE9AF] shrink-0 mt-0.5" />
-                <span>{copy.address}</span>
+                <span>{address}</span>
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <Clock className="w-3.5 h-3.5 text-[#DCE9AF] shrink-0" />
-                <span>{copy.hours}</span>
+                <span>{hours}</span>
               </div>
             </div>
           </div>
@@ -165,7 +168,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="pt-8 border-t border-[#0B5735] flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-300 text-[11px]">
-          <p>© {currentYear} SANPACK. {t('allRightsReserved')}</p>
+          <p>© {currentYear} {company.name}. {t('allRightsReserved')}</p>
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="hover:text-white transition-colors">
               {t('privacyPolicy')}

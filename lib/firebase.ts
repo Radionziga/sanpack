@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { browserLocalPersistence, getAuth, initializeAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -24,6 +24,14 @@ const CUSTOMER_APP_NAME = 'sanpack-customer';
 const customerApp = getApps().find((candidate) => candidate.name === CUSTOMER_APP_NAME)
   ?? initializeApp(firebaseConfig, CUSTOMER_APP_NAME);
 
-export const auth = getAuth(app);
-export const customerAuth = getAuth(customerApp);
+function getBrowserAuth(firebaseApp: typeof app) {
+  try {
+    return initializeAuth(firebaseApp, { persistence: browserLocalPersistence });
+  } catch {
+    return getAuth(firebaseApp);
+  }
+}
+
+export const auth = getBrowserAuth(app);
+export const customerAuth = getBrowserAuth(customerApp);
 export default app;

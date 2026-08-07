@@ -7,6 +7,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { Eye, EyeOff, ImagePlus, Plus, Save, Trash2 } from 'lucide-react';
 import { MediaUploadField, deleteUploadedMedia } from '@/components/admin/MediaUploadField';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import type { Banner } from '@/types';
 
@@ -195,17 +196,15 @@ export default function AdminPromotionsPage() {
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-[var(--sp-line)] pb-5 sm:flex-row sm:items-end">
-        <div>
-          <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)]">Промо-карусель</h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-[var(--sp-ink-secondary)]">
-            Один активный баннер показывается статично. Два и больше автоматически образуют карусель.
-          </p>
-        </div>
-        <button type="button" onClick={startCreate} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-4 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90">
-          <Plus className="size-4" aria-hidden="true" /> Новый баннер
-        </button>
-      </header>
+      <AdminPageHeader
+        title="Промо-карусель"
+        description="Один активный баннер показывается статично. Два и больше автоматически образуют карусель."
+        action={(
+          <button type="button" onClick={startCreate} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-4 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90">
+            <Plus className="size-4" aria-hidden="true" /> Новый баннер
+          </button>
+        )}
+      />
 
       {(pageError || notice) && (
         <p className={`rounded-lg border px-4 py-3 text-sm ${pageError ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-500/30 bg-emerald-500/8 text-[var(--sp-success)]'}`} role={pageError ? 'alert' : 'status'}>

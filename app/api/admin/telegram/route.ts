@@ -6,6 +6,10 @@ import { telegramSettingsMutationSchema } from '@/lib/validation/order';
 import { getTelegramPrivateSettings, toPublicAdminTelegramSettings } from '@/lib/telegram/settings';
 import { decryptSecret, encryptSecret } from '@/lib/telegram/secrets';
 import { configureTelegramMenu, getTelegramBot, sendTelegramMessage } from '@/lib/telegram/api';
+import {
+  firebaseAdminUnavailableMessage,
+  isFirebaseAdminCredentialError,
+} from '@/lib/firebase/adminErrors';
 
 export const runtime = 'nodejs';
 
@@ -15,23 +19,55 @@ const actionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('configure_storefront') }).strict(),
 ]);
 
+function telegramErrorMessage(error: unknown) {
+  if (isFirebaseAdminCredentialError(error)) {
+    return firebaseAdminUnavailableMessage('данных', error);
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('TELEGRAM_CONFIG_ENCRYPTION_KEY')) {
+    return 'Не настроено защищённое хранение токена. Обратитесь к владельцу проекта.';
+  }
+  if (/unauthorized|invalid token|not found/i.test(message)) {
+    return 'Telegram не принял токен. Скопируйте его заново из BotFather без пробелов.';
+  }
+  if (/chat not found|chat_id/i.test(message)) {
+    return 'Указанный чат не найден. Сначала напишите боту, затем проверьте Chat ID.';
+  }
+  if (/button_url_invalid|wrong http url|https/i.test(message)) {
+    return 'Telegram не принял адрес магазина. Используйте публичный HTTPS-адрес сайта.';
+  }
+  if (/fetch failed|timeout|aborted|неполный ответ/i.test(message)) {
+    return 'Не удалось связаться с Telegram. Проверьте интернет и повторите попытку.';
+  }
+  return 'Настройки не сохранены. Проверьте введённые данные и попробуйте ещё раз.';
+}
+
 async function requireAdmin() {
   const admin = await getAdminSession();
   return admin ?? null;
 }
 
 export async function GET() {
-  const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
-  const settings = await getTelegramPrivateSettings();
-  return NextResponse.json(toPublicAdminTelegramSettings(settings));
+  try {
+    const admin = await requireAdmin();
+    if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+    const settings = await getTelegramPrivateSettings();
+    return NextResponse.json(toPublicAdminTelegramSettings(settings));
+  } catch (error) {
+    console.error('Telegram settings loading failed.', error);
+    return NextResponse.json(
+      { error: firebaseAdminUnavailableMessage('данных', error) },
+      { status: 503 }
+    );
+  }
 }
 
 export async function POST(request: Request) {
-  const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
-
   try {
+    const admin = await requireAdmin();
+    if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+
     const parsed = actionSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: 'Проверьте настройки Telegram.', issues: parsed.error.issues }, { status: 400 });
@@ -112,10 +148,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Telegram settings operation failed.', error);
-    const message = error instanceof Error && error.message.includes('TELEGRAM_CONFIG_ENCRYPTION_KEY')
-      ? 'На сервере не настроен ключ шифрования Telegram.'
-      : 'Telegram отклонил операцию. Проверьте токен, chat ID и адрес Mini App.';
+    const message = telegramErrorMessage(error);
     return NextResponse.json({ error: message }, { status: 503 });
   }
 }
-

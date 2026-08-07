@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function authErrorMessage(error: unknown) {
   if (error instanceof TypeError && error.message === 'Failed to fetch') {
-    return 'Локальный сервер недоступен. Перезагрузите страницу и повторите вход.';
+    return 'Не удалось подключиться. Проверьте интернет и попробуйте снова.';
   }
   const code = typeof error === 'object' && error && 'code' in error
     ? String(error.code)
@@ -34,21 +34,21 @@ function authErrorMessage(error: unknown) {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
     case 'auth/user-not-found':
-      return 'Email или пароль не подходят. Проверьте данные или восстановите пароль.';
+      return 'Неверный email или пароль. Проверьте данные и попробуйте снова.';
     case 'auth/too-many-requests':
-      return 'Слишком много попыток входа. Подождите несколько минут или восстановите пароль.';
+      return 'Слишком много попыток входа. Подождите несколько минут и попробуйте снова.';
     case 'auth/user-disabled':
-      return 'Учётная запись отключена. Обратитесь к владельцу проекта.';
+      return 'Доступ к этой учётной записи отключён. Обратитесь к владельцу магазина.';
     case 'auth/network-request-failed':
-      return 'Нет связи с Firebase. Проверьте интернет-соединение и повторите попытку.';
+      return 'Не удалось подключиться. Проверьте интернет и попробуйте снова.';
     case 'auth/operation-not-allowed':
-      return 'Вход по email и паролю не включён в Firebase Authentication.';
+      return 'Вход временно недоступен. Попробуйте позже.';
     case 'auth/invalid-email':
-      return 'Проверьте формат email.';
+      return 'Введите email в формате name@example.com.';
     case 'auth/missing-project-id':
-      return 'Firebase был загружен без проекта. Перезагрузите страницу и повторите вход.';
+      return 'Вход временно недоступен. Обновите страницу и попробуйте снова.';
     default:
-      return error instanceof Error ? error.message : 'Не удалось войти.';
+      return 'Не удалось войти. Обновите страницу и попробуйте снова.';
   }
 }
 
@@ -78,8 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await response.json();
 
       if (!response.ok) {
-        await signOut(auth);
-        throw new Error(result.error || 'Учетная запись не имеет доступа.');
+        await signOut(auth).catch(() => undefined);
+        throw new Error(result.error || 'Для этой учётной записи не открыт доступ к панели.');
       }
 
       const adminUser: UserProfile = {
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail) throw new Error('Сначала укажите email администратора.');
+    if (!normalizedEmail) throw new Error('Сначала укажите email.');
     try {
       await sendPasswordResetEmail(auth, normalizedEmail);
     } catch (resetError) {

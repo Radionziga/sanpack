@@ -29,9 +29,9 @@ const fontPairs = [
   {
     value: 'brand',
     title: 'Фирменная',
-    description: 'MTS Extended + MTS Text',
-    heading: "'MTS Extended', 'MTS Text', sans-serif",
-    body: "'MTS Text', sans-serif",
+    description: 'MTS Wide + MTS Text',
+    heading: "'MTS Wide', var(--font-manrope), sans-serif",
+    body: "'MTS Text', var(--font-inter), sans-serif",
   },
   {
     value: 'modern',
@@ -195,7 +195,9 @@ export default function AdminSettingsPage() {
     '--preview-on-primary': accessibleForeground(primaryColor),
     '--preview-secondary': normalizeHex(secondaryColor, DEFAULT_SECONDARY),
     '--preview-on-secondary': accessibleForeground(normalizeHex(secondaryColor, DEFAULT_SECONDARY)),
+    '--preview-radius-outer': `${(borderRadius ?? 8) + Math.min(borderRadius ?? 8, 8)}px`,
     '--preview-radius': `${borderRadius ?? 8}px`,
+    '--preview-radius-inner': `${Math.max(0, (borderRadius ?? 8) - 2)}px`,
     '--preview-heading': selectedFonts.heading,
     '--preview-body': selectedFonts.body,
   };
@@ -320,15 +322,15 @@ export default function AdminSettingsPage() {
             </div>
             <div
               style={previewStyle}
-              className={`overflow-hidden rounded-[var(--preview-radius)] border p-4 ${themeMode === 'dark' ? 'border-[#2B332E] bg-[#0F1311] text-[#F3F5F4]' : 'border-[#DCE2DE] bg-[#F6F7F6] text-[#151B18]'}`}
+              className={`overflow-hidden rounded-[var(--preview-radius-outer)] border p-4 ${themeMode === 'dark' ? 'border-[#2B332E] bg-[#0F1311] text-[#F3F5F4]' : 'border-[#DCE2DE] bg-[#F6F7F6] text-[#151B18]'}`}
             >
               <div className={`rounded-[var(--preview-radius)] border p-4 shadow-sm ${themeMode === 'dark' ? 'border-[#2B332E] bg-[#151A17]' : 'border-[#DCE2DE] bg-white'}`} style={{ fontFamily: 'var(--preview-body)' }}>
-                <span className="inline-flex rounded-[var(--preview-radius)] bg-[var(--preview-secondary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--preview-on-secondary)]">Новинка</span>
-                <div className={`mt-3 aspect-[16/7] rounded-[var(--preview-radius)] ${themeMode === 'dark' ? 'bg-[#0B0F0D]' : 'bg-[#EFF2F0]'}`} />
+                <span className="inline-flex rounded-[var(--preview-radius-inner)] bg-[var(--preview-secondary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--preview-on-secondary)]">Новинка</span>
+                <div className={`mt-3 aspect-[16/7] rounded-[var(--preview-radius-inner)] ${themeMode === 'dark' ? 'bg-[#0B0F0D]' : 'bg-[#EFF2F0]'}`} />
                 <h3 className="mt-4 text-base font-bold" style={{ fontFamily: 'var(--preview-heading)' }}>Название товара</h3>
                 <p className="mt-1 text-xs opacity-65">Краткое описание и ключевое преимущество</p>
-                <button type="button" className="mt-4 min-h-10 w-full rounded-[var(--preview-radius)] bg-[var(--preview-primary)] px-3 text-xs font-bold text-[var(--preview-on-primary)]">Добавить в корзину</button>
-                <button type="button" className="mt-2 min-h-10 w-full rounded-[var(--preview-radius)] bg-[var(--preview-secondary)] px-3 text-xs font-bold text-[var(--preview-on-secondary)]">Подробнее</button>
+                <button type="button" className="mt-4 min-h-10 w-full rounded-[var(--preview-radius-inner)] bg-[var(--preview-primary)] px-3 text-xs font-bold text-[var(--preview-on-primary)]">Добавить в корзину</button>
+                <button type="button" className="mt-2 min-h-10 w-full rounded-[var(--preview-radius-inner)] bg-[var(--preview-secondary)] px-3 text-xs font-bold text-[var(--preview-on-secondary)]">Подробнее</button>
               </div>
             </div>
             <button type="submit" disabled={isSubmitting} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-5 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60">

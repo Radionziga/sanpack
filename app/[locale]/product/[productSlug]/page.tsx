@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 import { ProductGallery } from '@/components/catalog/ProductGallery';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
-import { Product, ProductVariant } from '@/types';
+import { Attribute, Product, ProductVariant } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
@@ -28,6 +28,7 @@ import {
   Calculator,
   TrendingDown,
 } from 'lucide-react';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export default function ProductDetailPage({
   params,
@@ -36,6 +37,7 @@ export default function ProductDetailPage({
 }) {
   const { productSlug } = use(params);
   const { t, getLocalizedText, language } = useLanguage();
+  const { contacts } = useSiteSettings();
   const copy = {
     ru: {
       notFound: 'Товар не найден',
@@ -105,6 +107,7 @@ export default function ProductDetailPage({
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [attributeDefinitions, setAttributeDefinitions] = useState<Attribute[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -113,13 +116,17 @@ export default function ProductDetailPage({
 
   useEffect(() => {
     async function loadProduct() {
-      const p = await SanpackRepository.getProductBySlug(productSlug);
+      const [all, definitions] = await Promise.all([
+        SanpackRepository.getProducts(),
+        SanpackRepository.getAttributes(),
+      ]);
+      const p = all.find((item) => item.slug === productSlug) || null;
+      setAttributeDefinitions(definitions);
       if (p) {
         setProduct(p);
         setSelectedVariant(p.variants[0] || null);
         setQuantity(p.minimumOrder || 1);
 
-        const all = await SanpackRepository.getProducts();
         const related = all.filter((item) => item.categoryId === p.categoryId && item.id !== p.id);
         setRelatedProducts(related.slice(0, 4));
       }
@@ -174,6 +181,32 @@ export default function ProductDetailPage({
   }
 
   const totalPrice = unitPrice * quantity;
+
+  const visibleAttributes = Object.entries(product.attributes || {})
+    .map(([key, value]) => {
+      const definition = attributeDefinitions.find((attribute) => attribute.key === key);
+      const label = definition
+        ? getLocalizedText(definition.titleRu, definition.titleUz, definition.titleEn)
+        : key
+            .replace(/[_-]+/g, ' ')
+            .replace(/^./, (character) => character.toLocaleUpperCase(language));
+      const rawValues = Array.isArray(value) ? value : [value];
+      const localizedValues = rawValues.map((item) => {
+        const option = definition?.options?.find((candidate) => candidate.value === String(item));
+        return option
+          ? getLocalizedText(option.labelRu, option.labelUz, option.labelEn)
+          : String(item);
+      });
+      return {
+        key,
+        label,
+        value: localizedValues.join(', '),
+        visible: definition?.productVisible !== false,
+        sortOrder: definition?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+      };
+    })
+    .filter((attribute) => attribute.visible)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, language));
 
   const handleAddToCart = () => {
     addItem(product, selectedVariant || undefined, quantity);
@@ -258,14 +291,14 @@ export default function ProductDetailPage({
               )}
 
               {/* Specs List */}
-              <div className="space-y-2 border-t border-b border-slate-200 py-4 text-xs">
-                <h4 className="font-bold text-[#222B35] uppercase tracking-wider mb-2">
-                  {copy.properties}:
-                </h4>
-                {Object.entries(product.attributes || {}).map(([key, val]) => (
-                  <div key={key} className="flex items-center justify-between py-1 border-b border-dashed border-slate-100 last:border-0">
-                    <span className="text-slate-500 capitalize font-medium">{key}:</span>
-                    <span className="font-bold text-[#222B35]">{String(val)}</span>
+              <div className="space-y-2 border-y border-[var(--sp-line)] py-4 text-xs">
+                <h2 className="mb-2 font-compact text-sm font-bold text-[var(--sp-ink)]">
+                  {copy.properties}
+                </h2>
+                {visibleAttributes.map((attribute) => (
+                  <div key={attribute.key} className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] items-baseline gap-4 border-b border-dashed border-[var(--sp-line-soft)] py-1.5 last:border-0">
+                    <span className="font-medium text-[var(--sp-ink-secondary)]">{attribute.label}</span>
+                    <span className="text-right font-semibold text-[var(--sp-ink)]">{attribute.value}</span>
                   </div>
                 ))}
               </div>
@@ -393,29 +426,29 @@ export default function ProductDetailPage({
                 </div>
 
                 {/* Fast Messenger Triggers */}
-                <div className="border-t border-slate-100 pt-4 space-y-2">
+                {(contacts.telegram || contacts.whatsapp) ? <div className="space-y-2 border-t border-[var(--sp-line)] pt-4">
                   <p className="text-[11px] text-slate-500 font-semibold">{copy.manager}:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <a
-                      href={`https://t.me/sanpack_uz?text=${encodeURIComponent(`${copy.message}: ${title} (SKU: ${product.sku})`)}`}
+                  <div className={`grid gap-2 ${contacts.telegram && contacts.whatsapp ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {contacts.telegram ? <a
+                      href={`${contacts.telegram}${contacts.telegram.includes('?') ? '&' : '?'}text=${encodeURIComponent(`${copy.message}: ${title} (SKU: ${product.sku})`)}`}
                       target="_blank"
                       rel="noreferrer"
                       className="py-2 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Telegram</span>
-                    </a>
-                    <a
-                      href={`https://wa.me/998998510506?text=${encodeURIComponent(`${copy.message}: ${title} (SKU: ${product.sku})`)}`}
+                    </a> : null}
+                    {contacts.whatsapp ? <a
+                      href={`${contacts.whatsapp}${contacts.whatsapp.includes('?') ? '&' : '?'}text=${encodeURIComponent(`${copy.message}: ${title} (SKU: ${product.sku})`)}`}
                       target="_blank"
                       rel="noreferrer"
                       className="py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       <span>WhatsApp</span>
-                    </a>
+                    </a> : null}
                   </div>
-                </div>
+                </div> : null}
               </div>
             </div>
           </div>

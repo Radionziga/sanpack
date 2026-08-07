@@ -13,6 +13,7 @@ import {
   Package,
   Settings2,
   Bot,
+  ContactRound,
   SlidersHorizontal,
   UserRound,
   Users,
@@ -47,6 +48,7 @@ const navigation = [
     label: 'Система',
     items: [
       { label: 'Внешний вид', href: '/admin/settings', icon: Settings2 },
+      { label: 'Контакты магазина', href: '/admin/contact-settings', icon: ContactRound },
       { label: 'Telegram', href: '/admin/integrations', icon: Bot },
       { label: 'Документы', href: '/admin/document-settings', icon: FileSpreadsheet },
     ],
@@ -64,14 +66,13 @@ export default function AdminShell({ children, adminEmail }: { children: ReactNo
   };
 
   return (
-    <div className="min-h-screen bg-[var(--sp-canvas)] text-[var(--sp-ink)] md:grid md:grid-cols-[248px_minmax(0,1fr)]">
+    <div className="min-h-screen bg-[var(--sp-canvas)] text-[var(--sp-ink)] md:grid md:grid-cols-[264px_minmax(0,1fr)]">
       <aside className="border-b border-[var(--sp-line)] bg-[var(--sp-canvas)] md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r">
         <div className="flex h-full flex-col">
-          <div className="flex min-h-16 items-center justify-between gap-4 px-4 md:min-h-20 md:px-5">
-            <Link href="/admin" aria-label="SANPACK — главная админ-панели" className="text-[var(--sp-brand)]">
-              <SanpackLogo variant="currentColor" className="h-[22px]" />
+          <div className="flex min-h-16 items-center justify-between gap-4 px-4 md:min-h-20 md:px-6">
+            <Link href="/admin" aria-label="SANPACK — главная админ-панели" className="min-w-0 flex-1 text-[var(--sp-brand)]">
+              <SanpackLogo variant="currentColor" className="h-auto w-full max-w-[196px]" />
             </Link>
-            <span className="hidden rounded-md border border-[var(--sp-line)] bg-[var(--sp-surface)] px-2 py-1 font-compact text-[9px] font-bold uppercase tracking-[0.09em] text-[var(--sp-ink-tertiary)] md:inline-flex">Control</span>
             <details className="group relative md:hidden">
               <summary className="flex size-10 cursor-pointer list-none items-center justify-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)] marker:content-none" aria-label="Меню администратора">
                 <UserRound className="size-4" aria-hidden="true" />

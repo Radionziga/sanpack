@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, KeyRound, LoaderCircle, LockKeyhole, Mail, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, KeyRound, Layers3, LoaderCircle, LockKeyhole, Mail, ShoppingBag, TriangleAlert } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
 
@@ -12,6 +12,7 @@ export default function AdminLoginPage() {
   const { login, resetPassword, error: authError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [resetNotice, setResetNotice] = useState('');
@@ -27,7 +28,7 @@ export default function AdminLoginPage() {
       router.push('/admin');
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Не удалось войти. Проверьте данные и повторите попытку.');
+      setErrorMessage(error instanceof Error ? error.message : 'Не удалось войти. Проверьте данные и попробуйте снова.');
     } finally {
       setIsLoading(false);
     }
@@ -39,9 +40,9 @@ export default function AdminLoginPage() {
     setIsResetting(true);
     try {
       await resetPassword(email);
-      setResetNotice(`Письмо для смены пароля отправлено на ${email.trim().toLowerCase()}.`);
+      setResetNotice(`Ссылка для смены пароля отправлена на ${email.trim().toLowerCase()}.`);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Не удалось отправить письмо. Повторите попытку.');
+      setErrorMessage(error instanceof Error ? error.message : 'Не удалось отправить письмо. Попробуйте снова.');
     } finally {
       setIsResetting(false);
     }
@@ -55,17 +56,17 @@ export default function AdminLoginPage() {
         <section className="relative flex flex-col justify-between overflow-hidden bg-[var(--sp-brand-deep)] p-6 text-[var(--sp-on-brand-deep)] sm:p-8 md:p-10">
           <div className="relative z-10">
             <SanpackLogo variant="white" className="h-7" />
-            <p className="mt-4 max-w-xs text-sm leading-6 text-white/68">Управление каталогом, заявками и промо-материалами SANPACK.</p>
+            <p className="mt-4 max-w-xs text-sm leading-6 text-white/68">Всё необходимое для управления магазином в одном месте.</p>
           </div>
 
           <div className="relative z-10 mt-12 space-y-3 md:mt-0">
             <div className="flex items-center gap-3 border-t border-white/14 py-3">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-white/9"><ShieldCheck className="size-4" aria-hidden="true" /></span>
-              <div><p className="text-xs font-bold">Защищённая сессия</p><p className="mt-0.5 text-[11px] text-white/55">Вход через Firebase Authentication</p></div>
+              <span className="flex size-9 items-center justify-center rounded-lg bg-white/9"><Layers3 className="size-4" aria-hidden="true" /></span>
+              <div><p className="text-xs font-bold">Каталог и витрина</p><p className="mt-0.5 text-[11px] text-white/55">Обновляйте товары, категории и промо-материалы</p></div>
             </div>
             <div className="flex items-center gap-3 border-t border-white/14 py-3">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-white/9"><LockKeyhole className="size-4" aria-hidden="true" /></span>
-              <div><p className="text-xs font-bold">Контролируемые изменения</p><p className="mt-0.5 text-[11px] text-white/55">Ошибка записи никогда не считается успехом</p></div>
+              <span className="flex size-9 items-center justify-center rounded-lg bg-white/9"><ShoppingBag className="size-4" aria-hidden="true" /></span>
+              <div><p className="text-xs font-bold">Заказы и обращения</p><p className="mt-0.5 text-[11px] text-white/55">Просматривайте заявки и поддерживайте порядок в работе</p></div>
             </div>
           </div>
 
@@ -79,7 +80,7 @@ export default function AdminLoginPage() {
               <ArrowLeft className="size-4" aria-hidden="true" /> Вернуться на сайт
             </Link>
             <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)]">Вход в панель</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--sp-ink-secondary)]">Введите email и пароль аккаунта, созданного в Firebase Authentication.</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--sp-ink-secondary)]">Введите данные вашей учётной записи.</p>
 
             {visibleError && (
               <div className="mt-5 flex items-start gap-2 rounded-lg border border-red-300/40 bg-red-500/8 px-3 py-3 text-xs leading-5 text-[var(--sp-danger)]" role="alert">
@@ -106,20 +107,29 @@ export default function AdminLoginPage() {
                 Пароль
                 <span className="relative mt-1.5 block">
                   <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--sp-ink-muted)]" aria-hidden="true" />
-                  <input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-10 pr-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+                  <input type={isPasswordVisible ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-10 pr-12 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+                  <button
+                    type="button"
+                    onClick={() => setIsPasswordVisible((visible) => !visible)}
+                    aria-label={isPasswordVisible ? 'Скрыть пароль' : 'Показать пароль'}
+                    aria-pressed={isPasswordVisible}
+                    className="absolute right-1 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-md text-[var(--sp-ink-muted)] transition-colors hover:bg-[var(--sp-surface-muted)] hover:text-[var(--sp-ink)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--sp-brand)]"
+                  >
+                    {isPasswordVisible ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+                  </button>
                 </span>
               </label>
 
               <button type="submit" disabled={isLoading} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-4 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60">
                 {isLoading ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <LockKeyhole className="size-4" aria-hidden="true" />}
-                {isLoading ? 'Проверка доступа…' : 'Войти в панель'}
+                {isLoading ? 'Входим…' : 'Войти в панель'}
               </button>
               <button type="button" onClick={() => void handlePasswordReset()} disabled={isResetting || !email.trim()} className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[var(--sp-control-border)] px-4 font-compact text-xs font-bold text-[var(--sp-ink-secondary)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] disabled:cursor-not-allowed disabled:opacity-50">
-                {isResetting ? 'Отправка письма…' : 'Восстановить пароль'}
+                {isResetting ? 'Отправляем…' : 'Восстановить пароль'}
               </button>
             </form>
 
-            <p className="mt-5 text-[11px] leading-5 text-[var(--sp-ink-tertiary)]">Регистрация на сайте отключена. Новые аккаунты создаются владельцем проекта в Firebase.</p>
+            <p className="mt-5 text-[11px] leading-5 text-[var(--sp-ink-tertiary)]">Нет доступа к панели? Обратитесь к владельцу магазина.</p>
           </div>
         </section>
       </div>

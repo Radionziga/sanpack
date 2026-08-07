@@ -4,9 +4,11 @@ import React from 'react';
 import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { ChatBubbleLeftEllipsisIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export function CtaBanner() {
   const { t, language } = useLanguage();
+  const { contacts } = useSiteSettings();
   const copy = {
     ru: ['B2B-консультация SANPACK', 'Написать в Telegram'],
     uz: ['SANPACK B2B maslahati', 'Telegram orqali yozish'],
@@ -41,14 +43,14 @@ export function CtaBanner() {
               <ArrowRightIcon className="w-4 h-4" />
             </Link>
 
-            <a
-              href="https://t.me/sanpack_uz"
+            {contacts.telegram ? <a
+              href={contacts.telegram}
               target="_blank"
               rel="noreferrer"
               className="px-5 py-3.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-lg border border-white/20 transition-all backdrop-blur-sm"
             >
               {copy[1]}
-            </a>
+            </a> : null}
           </div>
         </div>
       </div>

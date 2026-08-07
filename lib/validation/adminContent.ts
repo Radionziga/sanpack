@@ -65,8 +65,27 @@ export const designSettingsSchema = z.object({
   fontPair: z.enum(['brand', 'modern', 'editorial', 'neutral']).optional(),
 }).strict();
 
+export const contactSettingsSchema = z.object({
+  phone1: z.string().trim().min(5, 'Укажите основной номер.').max(50),
+  phone2: z.string().trim().max(50),
+  email: z.union([z.string().trim().email('Проверьте email.'), z.literal('')]),
+  addressRu: z.string().trim().min(2, 'Укажите адрес.').max(500),
+  addressUz: z.string().trim().max(500),
+  addressEn: z.string().trim().max(500).optional(),
+  workingHoursRu: z.string().trim().min(2, 'Укажите график работы.').max(160),
+  workingHoursUz: z.string().trim().max(160),
+  workingHoursEn: z.string().trim().max(160).optional(),
+  telegram: z.union([z.string().trim().url('Укажите полную ссылку Telegram.'), z.literal('')]),
+  whatsapp: z.union([z.string().trim().url('Укажите полную ссылку WhatsApp.'), z.literal('')]),
+  cityRu: z.string().trim().min(2, 'Укажите город.').max(160),
+  cityUz: z.string().trim().max(160),
+  cityEn: z.string().trim().max(160).optional(),
+  mapIframe: z.union([z.string().trim().url('Вставьте ссылку из атрибута src карты.'), z.literal('')]).optional(),
+}).strict();
+
 export const settingsMutationSchema = z.object({
   design: designSettingsSchema.optional(),
+  contacts: contactSettingsSchema.optional(),
 }).strict();
 
 export function validateAdminResourceData(resource: string, data: unknown) {

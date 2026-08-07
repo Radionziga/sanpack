@@ -14,7 +14,13 @@ async function callTelegram<T>(token: string, method: string, body?: unknown) {
     cache: 'no-store',
     signal: AbortSignal.timeout(10_000),
   });
-  const result = await response.json() as TelegramResponse<T>;
+  const text = await response.text();
+  let result: TelegramResponse<T>;
+  try {
+    result = JSON.parse(text) as TelegramResponse<T>;
+  } catch {
+    throw new Error('Telegram вернул неполный ответ. Повторите попытку позже.');
+  }
   if (!response.ok || !result.ok) {
     throw new Error(result.description || `Telegram API rejected ${method}.`);
   }
@@ -42,4 +48,3 @@ export function configureTelegramMenu(token: string, webAppUrl: string) {
     },
   });
 }
-

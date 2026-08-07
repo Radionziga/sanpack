@@ -14,6 +14,7 @@ import {
 import type { UserRole } from '@/types';
 import { validateAdminResourceData } from '@/lib/validation/adminContent';
 import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
+import { firebaseAdminUnavailableMessage } from '@/lib/firebase/adminErrors';
 
 export const runtime = 'nodejs';
 
@@ -85,7 +86,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error(`Admin read failed for ${parsed.data}.`, error);
     return NextResponse.json(
-      { error: 'Не удалось загрузить данные из Firestore.' },
+      { error: firebaseAdminUnavailableMessage('данных', error) },
       { status: 503 }
     );
   }
@@ -193,7 +194,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Admin mutation failed.', error);
     return NextResponse.json(
-      { error: 'Firestore отклонил операцию. Изменения не сохранены.' },
+      { error: firebaseAdminUnavailableMessage('данных', error) },
       { status: 503 }
     );
   }

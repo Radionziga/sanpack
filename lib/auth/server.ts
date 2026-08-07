@@ -34,7 +34,11 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   if (!sessionCookie) return null;
 
   try {
-    const decoded = await getAdminAuth().verifySessionCookie(sessionCookie, true);
+    const isLocalIdToken = process.env.NODE_ENV !== 'production'
+      && sessionCookie.startsWith('local:');
+    const decoded = isLocalIdToken
+      ? await getAdminAuth().verifyIdToken(sessionCookie.slice('local:'.length), false)
+      : await getAdminAuth().verifySessionCookie(sessionCookie, true);
     return verifyAdminToken(decoded);
   } catch {
     return null;

@@ -3,8 +3,11 @@
 import Image from 'next/image';
 import { useId, useState } from 'react';
 import { ImagePlus, LoaderCircle, RotateCcw, Trash2, TriangleAlert } from 'lucide-react';
+import { ImageCropEditor } from '@/components/admin/ImageCropEditor';
+import { MAX_MEDIA_FILE_SIZE, type MediaKind } from '@/lib/media/presets';
+import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
-export type MediaKind = 'banner-desktop' | 'banner-mobile' | 'category';
+export type { MediaKind } from '@/lib/media/presets';
 
 export interface UploadedMedia {
   url: string;
@@ -28,10 +31,7 @@ export async function deleteUploadedMedia(path: string) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ path }),
   });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || 'Не удалось удалить изображение.');
-  }
+  await parseJsonResponse<{ success: boolean }>(response, 'Не удалось удалить изображение.');
 }
 
 export function MediaUploadField({
@@ -55,14 +55,14 @@ export function MediaUploadField({
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [details, setDetails] = useState<UploadedMedia | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const previewAspect = kind === 'banner-desktop'
     ? 'aspect-[24/7] sm:col-span-2 sm:w-full'
     : kind === 'banner-mobile'
       ? 'aspect-square'
       : 'aspect-[4/3]';
 
-  const upload = async (file?: File) => {
-    if (!file) return;
+  const upload = async (file: File) => {
     setError('');
     setIsUploading(true);
 
@@ -76,16 +76,30 @@ export function MediaUploadField({
         credentials: 'same-origin',
         body: formData,
       });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || 'Не удалось загрузить изображение.');
-      const media = body as UploadedMedia;
+      const media = await parseJsonResponse<UploadedMedia>(response, 'Не удалось загрузить изображение.');
       setDetails(media);
       onUploaded(media);
+      return true;
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Не удалось загрузить изображение.');
+      return false;
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const selectFile = (file?: File) => {
+    setError('');
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Выберите изображение в формате JPEG, PNG или WebP.');
+      return;
+    }
+    if (file.size === 0 || file.size > MAX_MEDIA_FILE_SIZE) {
+      setError('Размер файла должен быть меньше 15 МБ.');
+      return;
+    }
+    setPendingFile(file);
   };
 
   return (
@@ -97,8 +111,18 @@ export function MediaUploadField({
         <span className="text-[11px] text-[var(--sp-ink-tertiary)]">{recommendation}</span>
       </div>
 
-      <div className="grid gap-3 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:grid-cols-[148px_1fr]">
-        <div className={`relative overflow-hidden rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] ${previewAspect}`}>
+      {pendingFile ? (
+        <ImageCropEditor
+          file={pendingFile}
+          kind={kind}
+          onCancel={() => setPendingFile(null)}
+          onConfirm={async (file) => {
+            if (await upload(file)) setPendingFile(null);
+          }}
+        />
+      ) : (
+        <div className="grid gap-3 rounded-2xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:grid-cols-[148px_1fr]">
+          <div className={`relative overflow-hidden rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] ${previewAspect}`}>
           {value ? (
             <Image src={value} alt="Предпросмотр изображения" fill sizes="148px" className="object-contain" />
           ) : (
@@ -107,16 +131,16 @@ export function MediaUploadField({
               <span className="text-[10px]">Нет файла</span>
             </div>
           )}
-        </div>
+          </div>
 
-        <div className={`flex min-w-0 flex-col justify-center ${kind === 'banner-desktop' ? 'sm:col-span-2' : ''}`}>
+          <div className={`flex min-w-0 flex-col justify-center ${kind === 'banner-desktop' ? 'sm:col-span-2' : ''}`}>
           <input
             id={inputId}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             disabled={isUploading}
             onChange={(event) => {
-              void upload(event.target.files?.[0]);
+              selectFile(event.target.files?.[0]);
               event.currentTarget.value = '';
             }}
             className="sr-only"
@@ -148,7 +172,7 @@ export function MediaUploadField({
             </button>
           )}
           <p className="mt-2 text-[11px] leading-4 text-[var(--sp-ink-tertiary)]">
-            JPEG, PNG или WebP, до 15 МБ. Сервер проверяет пропорции, приводит макет к нужному размеру и сохраняет оптимизированный WebP.
+            JPEG, PNG или WebP, до 15 МБ. После выбора можно настроить кадр, положение и масштаб. Готовый файл сохраняется в WebP.
           </p>
           {details && (
             <p className="mt-1 text-[11px] text-[var(--sp-success)]" aria-live="polite">
@@ -162,8 +186,15 @@ export function MediaUploadField({
               {error}
             </p>
           )}
+          </div>
         </div>
-      </div>
+      )}
+      {pendingFile && error ? (
+        <p className="flex items-start gap-1.5 text-[11px] text-[var(--sp-danger)]" role="alert">
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -28,23 +28,31 @@ export async function POST(request: Request) {
 
   try {
     const body = requestSchema.parse(await request.json());
-    const decoded = await getAdminAuth().verifyIdToken(body.idToken, true);
+    const isLocalSession = process.env.NODE_ENV !== 'production'
+      && !process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const decoded = await getAdminAuth().verifyIdToken(body.idToken, !isLocalSession);
     const admin = await verifyAdminToken(decoded);
 
     if (!admin) {
       return NextResponse.json(
-        { error: 'У этой учетной записи нет доступа к панели SANPACK.' },
+        { error: 'Для этой учётной записи не открыт доступ к панели.' },
         { status: 403 }
       );
     }
 
-    const sessionCookie = await getAdminAuth().createSessionCookie(body.idToken, {
-      expiresIn: SESSION_MAX_AGE_MS,
-    });
+    // App Hosting provides credentials for a long-lived session cookie.
+    // Locally, keep the already verified short-lived ID token in an httpOnly
+    // cookie so sign-in works without copying a private service-account key.
+    const sessionCookie = isLocalSession
+      ? `local:${body.idToken}`
+      : await getAdminAuth().createSessionCookie(body.idToken, {
+          expiresIn: SESSION_MAX_AGE_MS,
+        });
+    const maxAge = isLocalSession ? 60 * 60 : SESSION_MAX_AGE_MS / 1000;
     const response = NextResponse.json({ admin });
 
     response.cookies.set(SESSION_COOKIE_NAME, sessionCookie, {
-      maxAge: SESSION_MAX_AGE_MS / 1000,
+      maxAge,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -52,9 +60,12 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch {
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Admin session creation failed.', error);
+    }
     return NextResponse.json(
-      { error: 'Не удалось создать защищенную сессию.' },
+      { error: 'Не удалось войти. Обновите страницу и попробуйте снова.' },
       { status: 401 }
     );
   }

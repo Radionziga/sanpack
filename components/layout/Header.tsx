@@ -27,6 +27,8 @@ import { MegaMenu } from '@/components/layout/MegaMenu';
 import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
 import { Category, Product } from '@/types';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
 
 export function Header({
   initialCategories = [],
@@ -36,6 +38,7 @@ export function Header({
   initialProducts?: Product[];
 } = {}) {
   const { language, t, getLocalizedText, fixText } = useLanguage();
+  const { contacts } = useSiteSettings();
   const copy = {
     ru: {
       city: 'Ташкент',
@@ -74,6 +77,10 @@ export function Header({
   const { itemCount } = useRequestCart();
   const { count: favCount } = useFavorites();
   const router = useRouter();
+  const city = localizedContact(contacts, 'city', language);
+  const workingHours = localizedContact(contacts, 'workingHours', language);
+  const address = localizedContact(contacts, 'address', language);
+  const phones = [contacts.phone1, contacts.phone2].filter(Boolean);
 
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
@@ -181,53 +188,51 @@ export function Header({
     <>
       <header className="w-full bg-[var(--sp-surface)] text-[var(--sp-ink)] relative z-30 font-sans">
         {/* Level 1: Top Utility Bar */}
-        <div className="bg-[#1C2520] text-slate-300 text-xs py-2 border-b border-slate-800/80">
+        <div className="border-b border-white/10 bg-[var(--sp-primary-strong)] py-2 text-xs text-[var(--sp-on-primary-strong)]">
           <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-4 text-slate-300">
+            <div className="flex items-center gap-4 opacity-85">
               <span className="flex items-center gap-1.5">
-                <MapPinIcon className="w-3.5 h-3.5 text-[var(--sp-brand)]" />
-                <span>{t('city')}: {copy.city}</span>
+                <MapPinIcon className="w-3.5 h-3.5 text-[var(--sp-accent)]" />
+                <span>{city}</span>
               </span>
-              <span className="hidden sm:flex items-center gap-1.5 border-l border-slate-700/70 pl-4">
-                <ClockIcon className="w-3.5 h-3.5 text-[var(--sp-brand)]" />
-                <span>{t('workingHours')}</span>
+              <span className="hidden items-center gap-1.5 border-l border-white/15 pl-4 sm:flex">
+                <ClockIcon className="w-3.5 h-3.5 text-[var(--sp-accent)]" />
+                <span>{workingHours}</span>
               </span>
             </div>
 
             <div className="flex items-center gap-4 ml-auto">
               <button
                 onClick={() => setIsCallbackOpen(true)}
-                className="text-[#DCE9AF] hover:text-white font-medium transition-colors underline underline-offset-2"
+                className="font-medium text-[var(--sp-accent)] underline underline-offset-2 transition-opacity hover:opacity-80"
               >
                 {t('callback')}
               </button>
-              <div className="hidden md:flex items-center gap-3 border-l border-slate-700/70 pl-4">
-                <a
-                  href="tel:+998998510506"
-                  className="hover:text-white transition-colors flex items-center gap-1 font-semibold"
-                >
-                  <PhoneIcon className="w-3.5 h-3.5 text-[var(--sp-brand)]" />
-                  <span>+998 99 851 05 06</span>
-                </a>
-                <span className="text-slate-600">|</span>
-                <a
-                  href="tel:+998992323999"
-                  className="hover:text-white transition-colors"
-                >
-                  +998 99 232 39 99
-                </a>
+              <div className="hidden items-center gap-3 border-l border-white/15 pl-4 md:flex">
+                {phones.map((phone, index) => (
+                  <React.Fragment key={phone}>
+                    {index > 0 ? <span className="h-4 w-px bg-white/15" aria-hidden="true" /> : null}
+                    <a
+                      href={contactPhoneHref(phone)}
+                      className="flex items-center gap-1.5 font-semibold transition-opacity hover:opacity-80"
+                    >
+                      {index === 0 ? <PhoneIcon className="size-3.5 text-[var(--sp-accent)]" aria-hidden="true" /> : null}
+                      <span>{phone}</span>
+                    </a>
+                  </React.Fragment>
+                ))}
               </div>
-              <div className="flex items-center gap-2 pl-2">
+              {contacts.telegram ? <div className="flex items-center gap-2 pl-2">
                 <a
-                  href="https://t.me/sanpack_uz"
+                  href={contacts.telegram}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-6 h-6 rounded-full bg-slate-800 hover:bg-[var(--sp-brand)] flex items-center justify-center text-white transition-colors"
+                  className="flex size-7 items-center justify-center rounded-md border border-white/15 bg-white/8 text-current transition-colors hover:bg-white/15"
                   title="Telegram"
                 >
                   <PaperAirplaneIcon className="w-3 h-3" />
                 </a>
-              </div>
+              </div> : null}
             </div>
           </div>
         </div>
@@ -245,7 +250,7 @@ export function Header({
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
-                className={`h-10 flex items-center gap-2 px-4 rounded-lg text-white font-bold text-xs transition-all shadow-2xs shrink-0 ${
+                className={`flex h-10 shrink-0 items-center gap-2 rounded-lg px-4 text-xs font-bold text-[var(--sp-on-brand)] transition-[background-color,opacity] ${
                   isMegaMenuOpen
                     ? 'bg-[var(--sp-brand-deep)]'
                     : 'bg-[var(--sp-brand)] hover:opacity-90'
@@ -268,7 +273,7 @@ export function Header({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('searchPlaceholder')}
-                    className="w-full h-10 pl-3.5 pr-11 rounded-lg bg-[var(--sp-control)] border border-[var(--sp-control-border)] text-[var(--sp-ink)] focus:border-[var(--sp-brand)] outline-none text-xs font-medium transition-all"
+                    className="h-10 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-11 text-xs font-medium text-[var(--sp-ink)] outline-none transition-colors placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)]"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {searchQuery ? (
@@ -278,14 +283,16 @@ export function Header({
                           setSearchQuery('');
                           setIsSearchOpen(false);
                         }}
-                        className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors"
+                        className="rounded-md p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
+                        aria-label="Очистить поиск"
                       >
                         <XMarkIcon className="w-3.5 h-3.5" />
                       </button>
                     ) : null}
                     <button
                       type="submit"
-                      className="p-1 text-slate-400 hover:text-[var(--sp-brand)] transition-colors"
+                      className="rounded-md p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
+                      aria-label="Найти"
                     >
                       <MagnifyingGlassIcon className="w-4 h-4" />
                     </button>
@@ -299,31 +306,31 @@ export function Header({
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 6 }}
-                      className="absolute top-full left-0 w-full mt-1.5 bg-white/95 backdrop-blur-xl rounded-lg shadow-2xl border border-slate-200 overflow-hidden z-50"
+                      className="absolute left-0 top-full z-50 mt-1.5 w-full overflow-hidden rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-raised)]"
                     >
-                      <div className="p-2 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3">
+                      <div className="border-b border-[var(--sp-line-soft)] px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--sp-ink-tertiary)]">
                         {fixText(`${copy.found} (${searchResults.length})`)}
                       </div>
-                      <ul className="divide-y divide-slate-100">
+                      <ul className="divide-y divide-[var(--sp-line-soft)]">
                         {searchResults.map((product) => (
                           <li key={product.id}>
                             <Link
                               href={`/product/${product.slug}`}
                               onClick={() => setIsSearchOpen(false)}
-                              className="flex items-center gap-3 p-2.5 hover:bg-[#F2F7F4] transition-colors group"
+                              className="group flex items-center gap-3 p-2.5 transition-colors hover:bg-[var(--sp-surface-inset)]"
                             >
                               <Image
                                 src={product.mainImage}
                                 alt={product.titleRu}
                                 width={36}
                                 height={36}
-                                className="w-9 h-9 object-cover rounded bg-slate-50 border border-slate-200"
+                                className="size-9 rounded-md border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] object-cover"
                               />
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)] truncate">
                                   {getLocalizedText(product.titleRu, product.titleUz, product.titleEn)}
                                 </p>
-                                <p className="text-[10px] text-slate-500">
+                                <p className="text-[10px] text-[var(--sp-ink-tertiary)]">
                                   {copy.sku}: {product.sku}
                                 </p>
                               </div>
@@ -346,7 +353,7 @@ export function Header({
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <Link
                 href="/request"
-                className="hidden lg:flex items-center gap-1.5 h-10 px-3.5 bg-[var(--sp-surface-inset)] hover:bg-[var(--sp-brand)] text-[var(--sp-brand)] hover:text-[var(--sp-on-brand)] text-xs font-bold rounded-lg transition-colors"
+                className="hidden h-10 items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3.5 text-xs font-bold text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] lg:flex"
               >
                 <SparklesIcon className="w-3.5 h-3.5" />
                 <span>{t('leaveRequest')}</span>
@@ -355,7 +362,7 @@ export function Header({
               {/* Favorites */}
               <Link
                 href="/favorites"
-                className="relative hidden sm:flex h-10 w-10 rounded-lg hover:bg-[var(--sp-surface-inset)] text-[var(--sp-ink-secondary)] hover:text-[var(--sp-brand)] transition-colors items-center justify-center shrink-0"
+                className="relative hidden size-10 shrink-0 items-center justify-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)] sm:flex"
                 title={t('favorites')}
               >
                 <HeartIcon className="w-5 h-5" />
@@ -363,7 +370,7 @@ export function Header({
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-[9px] font-bold flex items-center justify-center border-2 border-white"
+                    className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-[var(--sp-surface)] bg-[var(--sp-brand)] text-[9px] font-bold text-[var(--sp-on-brand)]"
                   >
                     {favCount}
                   </motion.span>
@@ -373,7 +380,7 @@ export function Header({
               {/* Request Cart */}
               <Link
                 href="/request"
-                className="relative hidden sm:flex h-10 px-3 rounded-lg bg-[var(--sp-surface-inset)] text-[var(--sp-brand)] hover:bg-[var(--sp-brand)] hover:text-[var(--sp-on-brand)] transition-colors items-center gap-1.5 group shrink-0"
+                className="group relative hidden h-10 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] sm:flex"
                 title={t('requestCart')}
               >
                 <ShoppingCartIcon className="w-5 h-5" />
@@ -384,14 +391,14 @@ export function Header({
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="w-4.5 h-4.5 rounded-full bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-[10px] font-bold flex items-center justify-center border border-white"
+                    className="flex size-[18px] items-center justify-center rounded-full bg-[var(--sp-brand)] text-[10px] font-bold text-[var(--sp-on-brand)]"
                   >
                     {itemCount}
                   </motion.span>
                 )}
               </Link>
 
-              <span className="hidden h-10 items-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[10px] font-bold text-[var(--sp-ink-tertiary)] sm:inline-flex">RU</span>
+              <span className="hidden h-10 items-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[10px] font-bold text-[var(--sp-ink-secondary)] sm:inline-flex">{language.toUpperCase()}</span>
 
               {/* Mobile Menu Button */}
               <button
@@ -414,32 +421,32 @@ export function Header({
         >
           <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs font-semibold text-[var(--sp-ink)]">
             <nav className="flex items-center gap-7">
-              <Link href="/" className="hover:text-[#0F6E43] transition-colors py-1">
+              <Link href="/" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
                 {t('home')}
               </Link>
               <Link href="/catalog" className="hover:text-[var(--sp-brand)] transition-colors py-1 text-[var(--sp-brand)] font-bold">
                 {t('catalog')}
               </Link>
-              <Link href="/about" className="hover:text-[#0F6E43] transition-colors py-1">
+              <Link href="/about" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
                 {t('about')}
               </Link>
-              <Link href="/clients" className="hover:text-[#0F6E43] transition-colors py-1">
+              <Link href="/clients" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
                 {t('clients')}
               </Link>
-              <Link href="/delivery" className="hover:text-[#0F6E43] transition-colors py-1">
+              <Link href="/delivery" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
                 {t('delivery')}
               </Link>
               <Link href="/branding" className="hover:text-[var(--sp-brand)] transition-colors py-1 text-[var(--sp-brand)] font-bold">
                 {t('branding')}
               </Link>
-              <Link href="/contacts" className="hover:text-[#0F6E43] transition-colors py-1">
+              <Link href="/contacts" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
                 {t('contacts')}
               </Link>
             </nav>
 
             <NextLink
               href="/admin/login"
-              className="text-[11px] text-slate-400 hover:text-slate-700 transition-colors font-medium"
+              className="text-[11px] font-medium text-[var(--sp-ink-tertiary)] transition-colors hover:text-[var(--sp-ink)]"
             >
               {copy.admin}
             </NextLink>
@@ -568,12 +575,12 @@ export function Header({
 
                 <div className="pt-4 border-t border-slate-100 space-y-3 text-xs text-slate-600">
                   <a
-                    href="tel:+998998510506"
+                    href={contactPhoneHref(contacts.phone1)}
                     className="block font-bold text-[var(--sp-brand)]"
                   >
-                    📞 +998 99 851 05 06
+                    <PhoneIcon className="mr-2 inline size-4" aria-hidden="true" />{contacts.phone1}
                   </a>
-                  <p>{fixText(`📍 ${copy.address}`)}</p>
+                  <p><MapPinIcon className="mr-2 inline size-4" aria-hidden="true" />{fixText(address)}</p>
                   <NextLink
                     href="/admin/login"
                     onClick={() => setIsMobileMenuOpen(false)}
