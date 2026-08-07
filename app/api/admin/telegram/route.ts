@@ -28,11 +28,11 @@ function telegramErrorMessage(error: unknown) {
   if (message.includes('TELEGRAM_CONFIG_ENCRYPTION_KEY')) {
     return 'Не настроено защищённое хранение токена. Обратитесь к владельцу проекта.';
   }
+  if (/chat not found|chat_id/i.test(message)) {
+    return 'Бот не может отправить сообщение в этот чат. Откройте бота в Telegram, нажмите «Start» и проверьте Chat ID.';
+  }
   if (/unauthorized|invalid token|not found/i.test(message)) {
     return 'Telegram не принял токен. Скопируйте его заново из BotFather без пробелов.';
-  }
-  if (/chat not found|chat_id/i.test(message)) {
-    return 'Указанный чат не найден. Сначала напишите боту, затем проверьте Chat ID.';
   }
   if (/button_url_invalid|wrong http url|https/i.test(message)) {
     return 'Telegram не принял адрес магазина. Используйте публичный HTTPS-адрес сайта.';
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         current.notifications.chatId,
         'SANPACK: тестовое уведомление доставлено. Интеграция работает.'
       );
-      return NextResponse.json({ success: true, message: 'Тестовое сообщение отправлено.' });
+      return NextResponse.json({ success: true, message: 'Тестовое сообщение доставлено. Уведомления о новых заказах готовы.' });
     }
 
     if (parsed.data.action === 'configure_storefront') {
@@ -94,7 +94,11 @@ export async function POST(request: Request) {
         decryptSecret(current.storefront.tokenEncrypted),
         current.storefront.webAppUrl
       );
-      return NextResponse.json({ success: true, message: 'Кнопка магазина настроена у бота.' });
+      const botName = current.storefront.botUsername ? ` @${current.storefront.botUsername}` : '';
+      return NextResponse.json({
+        success: true,
+        message: `Кнопка «Открыть магазин» добавлена в Telegram-бота${botName}.`,
+      });
     }
 
     const input = parsed.data.settings;
