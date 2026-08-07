@@ -15,6 +15,7 @@ const assetUrlSchema = z.union([
   z.string().url(),
   z.string().regex(/^\/(?!\/)/),
 ]);
+const buttonTextSchema = z.string().trim().max(80, 'Текст кнопки должен быть короче 80 символов.');
 
 const bannerFormSchema = z.object({
   titleRu: z.string().trim().min(1, 'Добавьте описание баннера на русском.').max(180),
@@ -24,9 +25,21 @@ const bannerFormSchema = z.object({
   imageDesktopPath: z.string(),
   imageMobile: z.union([assetUrlSchema, z.literal('')]),
   imageMobilePath: z.string(),
+  buttonTextRu: buttonTextSchema,
+  buttonTextUz: buttonTextSchema,
+  buttonTextEn: buttonTextSchema,
   link: z.union([z.string().url(), z.string().regex(/^\/(?!\/)/), z.literal('')]),
   sortOrder: z.number().int().min(0).max(100_000),
   active: z.boolean(),
+}).superRefine((values, context) => {
+  const hasButtonText = Boolean(values.buttonTextRu || values.buttonTextUz || values.buttonTextEn);
+  if (hasButtonText && !values.link) {
+    context.addIssue({
+      code: 'custom',
+      path: ['link'],
+      message: 'Добавьте ссылку для кнопки.',
+    });
+  }
 });
 
 type BannerForm = z.infer<typeof bannerFormSchema>;
@@ -39,7 +52,10 @@ const emptyBanner: BannerForm = {
   imageDesktopPath: '',
   imageMobile: '',
   imageMobilePath: '',
-  link: '',
+  buttonTextRu: 'Перейти в каталог',
+  buttonTextUz: 'Katalogni ko‘rish',
+  buttonTextEn: 'View catalog',
+  link: '/catalog',
   sortOrder: 1,
   active: true,
 };
@@ -53,6 +69,9 @@ function toFormValues(banner: Banner): BannerForm {
     imageDesktopPath: banner.imageDesktopPath || '',
     imageMobile: banner.imageMobile || '',
     imageMobilePath: banner.imageMobilePath || '',
+    buttonTextRu: banner.buttonTextRu || '',
+    buttonTextUz: banner.buttonTextUz || '',
+    buttonTextEn: banner.buttonTextEn || '',
     link: banner.link || '',
     sortOrder: banner.sortOrder,
     active: banner.active,
@@ -288,17 +307,38 @@ export default function AdminPromotionsPage() {
             setValue('imageMobilePath', '', { shouldDirty: true });
           }} />
 
-          <div className="grid gap-4 sm:grid-cols-[1fr_150px]">
-            <label className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
-              Ссылка при клике
-              <input {...register('link')} placeholder="/catalog или https://…" aria-invalid={Boolean(errors.link)} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
-              {errors.link && <span className="block font-normal text-[var(--sp-danger)]">Укажите внутренний путь или полный URL.</span>}
-            </label>
-            <label className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
-              Порядок
-              <input type="number" min="0" {...register('sortOrder', { valueAsNumber: true })} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
-            </label>
-          </div>
+          <fieldset className="space-y-4 border-t border-[var(--sp-line)] pt-5">
+            <legend className="font-compact text-sm font-bold text-[var(--sp-ink)]">Действие баннера</legend>
+            <p className="text-xs leading-5 text-[var(--sp-ink-tertiary)]">
+              Кнопка показывается на компьютерах. На телефоне весь баннер открывает указанную ссылку — без отдельной кнопки поверх изображения.
+            </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              {(['buttonTextRu', 'buttonTextUz', 'buttonTextEn'] as const).map((name, index) => (
+                <label key={name} className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
+                  Текст кнопки {['RU', 'UZ', 'EN'][index]}
+                  <input
+                    {...register(name)}
+                    maxLength={80}
+                    placeholder={['Перейти в каталог', 'Katalogni ko‘rish', 'View catalog'][index]}
+                    aria-invalid={Boolean(errors[name])}
+                    className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]"
+                  />
+                  {errors[name] && <span className="block font-normal text-[var(--sp-danger)]">{errors[name]?.message}</span>}
+                </label>
+              ))}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[1fr_150px]">
+              <label className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
+                Ссылка кнопки и мобильного баннера
+                <input {...register('link')} placeholder="/catalog или https://…" aria-invalid={Boolean(errors.link)} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+                {errors.link && <span className="block font-normal text-[var(--sp-danger)]">{errors.link.message || 'Укажите внутренний путь или полный URL.'}</span>}
+              </label>
+              <label className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
+                Порядок
+                <input type="number" min="0" {...register('sortOrder', { valueAsNumber: true })} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+              </label>
+            </div>
+          </fieldset>
 
           <label className="flex min-h-11 items-center gap-3 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 text-sm font-semibold text-[var(--sp-ink)]">
             <input type="checkbox" {...register('active')} className="size-4 accent-[var(--sp-brand)]" />

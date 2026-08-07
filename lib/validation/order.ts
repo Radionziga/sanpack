@@ -36,6 +36,17 @@ export const adminOrderUpdateSchema = z.object({
 }).strict();
 
 export const telegramSettingsMutationSchema = z.object({
+  login: z.object({
+    enabled: z.boolean(),
+    clientId: z.string().trim().regex(/^\d{5,24}$/, 'Client ID должен состоять из цифр.').optional().or(z.literal('')),
+    clientSecret: z.string().trim().min(16).max(500).optional().or(z.literal('')),
+    redirectUri: z.string().trim().url().refine(
+      (value) => value.startsWith('https://') || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(value),
+      'Для рабочего сайта нужен HTTPS-адрес.'
+    ).optional().or(z.literal('')),
+    requestPhone: z.boolean(),
+    allowBotMessages: z.boolean(),
+  }).strict(),
   storefront: z.object({
     enabled: z.boolean(),
     botUsername: z.string().trim().regex(/^[A-Za-z0-9_]{5,32}$/).optional().or(z.literal('')),

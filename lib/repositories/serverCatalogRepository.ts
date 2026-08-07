@@ -21,10 +21,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
 
 function isSeedFallbackEnabled() {
-  if (process.env.SANPACK_USE_SEED_DATA === 'true') return true;
-  if (process.env.SANPACK_USE_SEED_DATA === 'false') return false;
-  return !process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL.includes('localhost');
+  return process.env.SANPACK_USE_SEED_DATA === 'true';
 }
 
 async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
@@ -72,7 +69,7 @@ export const getPublicClients = unstable_cache(
 
 export const getPublicBanners = unstable_cache(
   () => readCollection<Banner>('banners', initialBanners),
-  ['public-banners-v1'],
+  ['public-banners-cta-v2'],
   { revalidate: 900, tags: ['banners'] }
 );
 

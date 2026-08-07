@@ -77,17 +77,26 @@ export function ImageCropEditor({
   }, [kind, targetRatio]);
 
   useEffect(() => {
+    let active = true;
     const objectUrl = URL.createObjectURL(file);
     const image = new Image();
     image.decoding = 'async';
     image.onload = () => {
+      if (!active) return;
       imageRef.current = image;
+      setLoadError('');
       setImageSize({ width: image.naturalWidth, height: image.naturalHeight });
     };
-    image.onerror = () => setLoadError('Файл не удалось открыть как изображение. Выберите другой файл.');
+    image.onerror = () => {
+      if (!active) return;
+      setLoadError('Файл не удалось открыть как изображение. Выберите другой файл.');
+    };
     image.src = objectUrl;
 
     return () => {
+      active = false;
+      image.onload = null;
+      image.onerror = null;
       imageRef.current = null;
       URL.revokeObjectURL(objectUrl);
     };

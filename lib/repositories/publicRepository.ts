@@ -7,7 +7,6 @@ import type {
   RequestOrder,
   SiteSettings,
 } from '@/types';
-import { getCustomerIdToken } from '@/lib/auth/customer';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
 async function read<T>(resource: string): Promise<T> {
@@ -36,21 +35,17 @@ export const PublicSanpackRepository = {
     items: Array<Pick<RequestOrder['items'][number], 'productId' | 'variantId' | 'quantity' | 'comment'>>;
     telegramInitData?: string;
   }): Promise<RequestOrder> {
-    const idToken = await getCustomerIdToken();
     const response = await fetch('/api/requests', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify(data),
     });
     return parseJsonResponse<RequestOrder>(response, 'Заявка не была сохранена.');
   },
   async getMyRequests(): Promise<RequestOrder[]> {
-    const idToken = await getCustomerIdToken();
     const response = await fetch('/api/requests', {
-      headers: { authorization: `Bearer ${idToken}` },
       cache: 'no-store',
     });
     return parseJsonResponse<RequestOrder[]>(response, 'Не удалось загрузить историю заявок.');

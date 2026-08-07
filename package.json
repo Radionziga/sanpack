@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "firebase:login": "gcloud auth application-default login && gcloud auth application-default set-quota-project stamply-4df8a",
+    "firebase:login": "gcloud auth login --update-adc --force && gcloud config set project stamply-4df8a && gcloud auth application-default set-quota-project stamply-4df8a",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "firebase": "^12.17.0",
     "firebase-admin": "^14.2.0",
+    "jose": "^6.2.8",
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
     "next": "^16.3.0",

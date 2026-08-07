@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
+import { getAdminDb } from '@/lib/firebase/admin';
+import { getCustomerSession } from '@/lib/auth/customerSession';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 import { checkoutRequestSchema } from '@/lib/validation/order';
 import { calculateOrderTotals, createOrderSnapshots } from '@/lib/orders/orderService';
@@ -14,26 +15,16 @@ import { notifyAboutNewOrder } from '@/lib/telegram/notifications';
 
 export const runtime = 'nodejs';
 
-async function requireCustomer(request: Request) {
-  const authorization = request.headers.get('authorization');
-  if (!authorization?.startsWith('Bearer ')) return null;
-  try {
-    return await getAdminAuth().verifyIdToken(authorization.slice(7), true);
-  } catch {
-    return null;
-  }
-}
-
-export async function GET(request: Request) {
-  const customer = await requireCustomer(request);
+export async function GET() {
+  const customer = await getCustomerSession();
   if (!customer) {
-    return NextResponse.json({ error: 'Сессия браузера недоступна.' }, { status: 401 });
+    return NextResponse.json({ error: 'Чтобы увидеть свои заявки, войдите через Telegram.' }, { status: 401 });
   }
 
   try {
     const snapshot = await getAdminDb()
       .collection('requests')
-      .where('customerUid', '==', customer.uid)
+      .where('customerUid', '==', customer.sub)
       .limit(100)
       .get();
     const orders = snapshot.docs
@@ -55,14 +46,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const customer = await requireCustomer(request);
-  if (!customer) {
-    return NextResponse.json(
-      { error: 'Не удалось создать безопасную сессию браузера. Обновите страницу.' },
-      { status: 401 }
-    );
-  }
-
   try {
     const parsed = checkoutRequestSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -72,14 +55,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const phoneNormalized = normalizeUzbekPhone(parsed.data.phone);
-    const items = await createOrderSnapshots(parsed.data.items);
-    const totals = calculateOrderTotals(items);
-    let telegramUser: RequestOrder['telegramUser'];
+    const customer = await getCustomerSession();
+    let telegramUser: RequestOrder['telegramUser'] = customer ? {
+      id: customer.telegramId,
+      username: customer.username,
+      firstName: customer.name,
+    } : undefined;
+
     if (parsed.data.telegramInitData) {
       const telegramSettings = await getTelegramPrivateSettings();
       if (!telegramSettings.storefront.enabled || !telegramSettings.storefront.tokenEncrypted) {
-        return NextResponse.json({ error: 'Telegram Mini App не настроен.' }, { status: 503 });
+        return NextResponse.json({ error: 'Telegram Mini App пока не настроен.' }, { status: 503 });
       }
       try {
         telegramUser = verifyTelegramInitData(
@@ -88,11 +74,22 @@ export async function POST(request: Request) {
         );
       } catch (error) {
         return NextResponse.json(
-          { error: error instanceof Error ? error.message : 'Не удалось проверить сессию Telegram.' },
+          { error: error instanceof Error ? error.message : 'Не удалось подтвердить вход через Telegram.' },
           { status: 401 }
         );
       }
     }
+
+    if (!customer && !telegramUser) {
+      return NextResponse.json(
+        { error: 'Чтобы оформить заявку, войдите через Telegram.' },
+        { status: 401 }
+      );
+    }
+
+    const phoneNormalized = normalizeUzbekPhone(parsed.data.phone);
+    const items = await createOrderSnapshots(parsed.data.items);
+    const totals = calculateOrderTotals(items);
     const document = getAdminDb().collection('requests').doc();
     const now = new Date().toISOString();
     const requestNumber = `ORD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
@@ -102,8 +99,8 @@ export async function POST(request: Request) {
       contactName: parsed.data.contactName,
       phone: formatUzbekPhone(phoneNormalized),
       phoneNormalized,
-      customerUid: customer.uid,
-      source: telegramUser ? 'telegram_mini_app' : 'web',
+      customerUid: customer?.sub || `telegram:${telegramUser?.id}`,
+      source: parsed.data.telegramInitData ? 'telegram_mini_app' : 'web',
       ...(telegramUser ? { telegramUser } : {}),
       items,
       originalItems: items,
@@ -128,10 +125,7 @@ export async function POST(request: Request) {
     try {
       const notification = await notifyAboutNewOrder(order);
       await document.update({
-        notification: {
-          ...notification,
-          attemptedAt: new Date().toISOString(),
-        },
+        notification: { ...notification, attemptedAt: new Date().toISOString() },
       });
     } catch (notificationError) {
       console.error('Order saved, but Telegram notification failed.', notificationError);

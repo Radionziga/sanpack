@@ -113,6 +113,7 @@ export function MediaUploadField({
 
       {pendingFile ? (
         <ImageCropEditor
+          key={`${pendingFile.name}:${pendingFile.size}:${pendingFile.lastModified}`}
           file={pendingFile}
           kind={kind}
           onCancel={() => setPendingFile(null)}

@@ -16,12 +16,15 @@ import {
   Tag,
   Layers,
   Sparkles,
+  RefreshCw,
+  TriangleAlert,
 } from 'lucide-react';
 
 export default function AdminAttributesPage() {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAttr, setEditingAttr] = useState<Attribute | null>(null);
 
@@ -50,13 +53,19 @@ export default function AdminAttributesPage() {
 
   async function loadData() {
     setLoading(true);
-    const [attrs, cats] = await Promise.all([
-      SanpackRepository.getAttributes(),
-      SanpackRepository.getCategories(),
-    ]);
-    setAttributes(attrs.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
-    setCategories(cats);
-    setLoading(false);
+    setLoadError('');
+    try {
+      const [attrs, cats] = await Promise.all([
+        SanpackRepository.getAttributes(),
+        SanpackRepository.getCategories(),
+      ]);
+      setAttributes(attrs.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
+      setCategories(cats);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить характеристики.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   function showToast(msg: string) {
@@ -176,6 +185,13 @@ export default function AdminAttributesPage() {
           </Button>
         )}
       />
+
+      {loadError ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-2"><TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />{loadError}</p>
+          <button type="button" onClick={() => void loadData()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 text-xs font-bold"><RefreshCw className="size-4" aria-hidden="true" />Повторить</button>
+        </div>
+      ) : null}
 
       {/* Attributes List */}
       <div className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">

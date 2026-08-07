@@ -156,7 +156,7 @@ export default function ContactSettingsPage() {
               <Field label="График · EN" error={errors.workingHoursEn?.message}><input {...register('workingHoursEn')} className={inputClass} /></Field>
             </div>
             <div className="mt-4">
-              <Field label="Ссылка на встроенную карту" hint="значение src из Google Maps" error={errors.mapIframe?.message}><input {...register('mapIframe')} className={inputClass} inputMode="url" placeholder="https://www.google.com/maps/embed?..." /></Field>
+              <Field label="Ссылка на карту в Яндекс Картах" hint="ссылка из конструктора карт — необязательно" error={errors.mapIframe?.message}><input {...register('mapIframe')} className={inputClass} inputMode="url" placeholder="https://yandex.uz/map-widget/v1/?..." /></Field>
             </div>
           </section>
 

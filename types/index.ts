@@ -369,6 +369,15 @@ export interface SiteSettings {
 }
 
 export interface TelegramPrivateSettings {
+  login: {
+    enabled: boolean;
+    clientId?: string;
+    clientSecretEncrypted?: string;
+    clientSecretLast4?: string;
+    redirectUri?: string;
+    requestPhone?: boolean;
+    allowBotMessages?: boolean;
+  };
   storefront: {
     enabled: boolean;
     botUsername?: string;

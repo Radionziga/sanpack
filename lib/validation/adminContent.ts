@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const optionalText = z.string().trim().max(500).optional();
+const optionalButtonText = z.string().trim().max(80).optional();
 const optionalUrl = z.union([
   z.string().trim().url(),
   z.string().trim().regex(/^\/(?!\/)/, 'Используйте внутренний путь или полный URL.'),
@@ -48,13 +49,22 @@ export const bannerMutationSchema = z.object({
   imageDesktopPath: z.string().trim().max(500).optional(),
   imageMobile: assetUrl.optional(),
   imageMobilePath: z.string().trim().max(500).optional(),
-  buttonTextRu: optionalText,
-  buttonTextUz: optionalText,
-  buttonTextEn: optionalText,
+  buttonTextRu: optionalButtonText,
+  buttonTextUz: optionalButtonText,
+  buttonTextEn: optionalButtonText,
   link: optionalUrl.default(''),
   sortOrder: z.number().int().min(0).max(100_000),
   active: z.boolean(),
-}).strict();
+}).strict().superRefine((values, context) => {
+  const hasButtonText = Boolean(values.buttonTextRu || values.buttonTextUz || values.buttonTextEn);
+  if (hasButtonText && !values.link) {
+    context.addIssue({
+      code: 'custom',
+      path: ['link'],
+      message: 'Добавьте ссылку для кнопки.',
+    });
+  }
+});
 
 export const designSettingsSchema = z.object({
   designVersion: z.literal(2).optional(),
@@ -80,7 +90,7 @@ export const contactSettingsSchema = z.object({
   cityRu: z.string().trim().min(2, 'Укажите город.').max(160),
   cityUz: z.string().trim().max(160),
   cityEn: z.string().trim().max(160).optional(),
-  mapIframe: z.union([z.string().trim().url('Вставьте ссылку из атрибута src карты.'), z.literal('')]).optional(),
+  mapIframe: z.union([z.string().trim().url('Вставьте полную ссылку на встроенную карту.'), z.literal('')]).optional(),
 }).strict();
 
 export const settingsMutationSchema = z.object({

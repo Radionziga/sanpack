@@ -138,7 +138,7 @@ export async function POST(request: Request) {
       batch.set(database.collection('settings').doc('global'), initialSiteSettings);
       await batch.commit();
       for (const name of ['products', 'categories', 'attributes', 'clients', 'banners', 'settings']) {
-        revalidateTag(name, 'max');
+        revalidateTag(name, { expire: 0 });
       }
       return NextResponse.json({
         success: true,
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
     const document = database.collection(mutation.resource).doc(mutation.id);
     if (mutation.action === 'delete') {
       await document.delete();
-      revalidateTag(mutation.resource, 'max');
+      revalidateTag(mutation.resource, { expire: 0 });
       return NextResponse.json({ success: true });
     }
 
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
       updatedBy: authorization.admin.uid,
     };
     await document.set(data, { merge: true });
-    revalidateTag(mutation.resource, 'max');
+    revalidateTag(mutation.resource, { expire: 0 });
     const saved = await document.get();
     return NextResponse.json({ id: saved.id, ...saved.data() });
   } catch (error) {

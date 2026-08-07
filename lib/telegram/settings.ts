@@ -4,6 +4,7 @@ import type { TelegramPrivateSettings } from '@/types';
 import { getAdminDb } from '@/lib/firebase/admin';
 
 export const defaultTelegramSettings: TelegramPrivateSettings = {
+  login: { enabled: false, requestPhone: false, allowBotMessages: false },
   storefront: { enabled: false },
   notifications: { enabled: false },
 };
@@ -15,6 +16,7 @@ export async function getTelegramPrivateSettings(): Promise<TelegramPrivateSetti
   return {
     ...defaultTelegramSettings,
     ...stored,
+    login: { ...defaultTelegramSettings.login, ...stored.login },
     storefront: { ...defaultTelegramSettings.storefront, ...stored.storefront },
     notifications: { ...defaultTelegramSettings.notifications, ...stored.notifications },
   };
@@ -22,6 +24,15 @@ export async function getTelegramPrivateSettings(): Promise<TelegramPrivateSetti
 
 export function toPublicAdminTelegramSettings(settings: TelegramPrivateSettings) {
   return {
+    login: {
+      enabled: settings.login.enabled,
+      clientId: settings.login.clientId || '',
+      redirectUri: settings.login.redirectUri || '',
+      requestPhone: Boolean(settings.login.requestPhone),
+      allowBotMessages: Boolean(settings.login.allowBotMessages),
+      clientSecretConfigured: Boolean(settings.login.clientSecretEncrypted),
+      clientSecretLast4: settings.login.clientSecretLast4 || '',
+    },
     storefront: {
       enabled: settings.storefront.enabled,
       botUsername: settings.storefront.botUsername || '',
@@ -37,4 +48,3 @@ export function toPublicAdminTelegramSettings(settings: TelegramPrivateSettings)
     },
   };
 }
-

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getImageProps } from 'next/image';
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import type { Banner, Language } from '@/types';
 import { Link } from '@/i18n/navigation';
 
@@ -39,6 +39,12 @@ function localizedTitle(banner: Banner, locale: Language) {
   return banner.titleRu;
 }
 
+function localizedButtonText(banner: Banner, locale: Language) {
+  if (locale === 'uz') return banner.buttonTextUz || banner.buttonTextRu || '';
+  if (locale === 'en') return banner.buttonTextEn || banner.buttonTextRu || '';
+  return banner.buttonTextRu || '';
+}
+
 function BannerImage({ banner, alt, priority }: { banner: Banner; alt: string; priority: boolean }) {
   const desktop = getImageProps({
     src: banner.imageDesktop,
@@ -66,7 +72,7 @@ function BannerImage({ banner, alt, priority }: { banner: Banner; alt: string; p
       <img
         {...desktop.props}
         alt={alt}
-        className="h-full w-full object-cover"
+        className={`h-full w-full ${banner.imageMobile ? 'object-cover' : 'object-contain md:object-cover'}`}
       />
     </picture>
   );
@@ -138,34 +144,52 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
       >
         {slides.map((banner, index) => {
           const title = localizedTitle(banner, locale);
-          const image = <BannerImage banner={banner} alt={title} priority={index === 0} />;
+          const buttonText = localizedButtonText(banner, locale);
+          const content = (
+            <>
+              <BannerImage banner={banner} alt={title} priority={index === 0} />
+              {banner.link && buttonText ? (
+                <span
+                  aria-hidden="true"
+                  className={`absolute left-[clamp(24px,4vw,64px)] hidden min-h-11 max-w-[min(360px,42%)] items-center gap-2 rounded-lg bg-[var(--sp-brand)] px-5 font-compact text-xs font-bold text-[var(--sp-on-brand)] shadow-[0_10px_24px_rgb(0_0_0/18%)] transition-[transform,background-color] duration-200 group-hover:-translate-y-0.5 group-hover:bg-[var(--sp-brand-deep)] md:inline-flex ${
+                    slides.length > 1
+                      ? 'bottom-[clamp(68px,18%,92px)]'
+                      : 'bottom-[clamp(28px,10%,52px)]'
+                  }`}
+                >
+                  <span className="truncate">{buttonText}</span>
+                  <ArrowRight className="size-4 shrink-0" />
+                </span>
+              ) : null}
+            </>
+          );
           return (
             <div
               key={banner.id}
               aria-hidden={index !== activeIndex}
-              className="aspect-square min-w-full bg-[var(--sp-surface-inset)] md:aspect-[24/7]"
+              className={`${banner.imageMobile ? 'aspect-square' : 'aspect-[24/10]'} min-w-full bg-[var(--sp-surface-inset)] md:aspect-[24/7]`}
             >
               {banner.link ? (
                 banner.link.startsWith('/') ? (
                   <Link
                     href={banner.link}
                     tabIndex={index === activeIndex ? 0 : -1}
-                    aria-label={title}
-                    className="block h-full w-full"
+                    aria-label={buttonText ? `${buttonText}: ${title}` : title}
+                    className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
                   >
-                    {image}
+                    {content}
                   </Link>
                 ) : (
                   <a
                     href={banner.link}
                     tabIndex={index === activeIndex ? 0 : -1}
-                    aria-label={title}
-                    className="block h-full w-full"
+                    aria-label={buttonText ? `${buttonText}: ${title}` : title}
+                    className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
                   >
-                    {image}
+                    {content}
                   </a>
                 )
-              ) : image}
+              ) : <BannerImage banner={banner} alt={title} priority={index === 0} />}
             </div>
           );
         })}

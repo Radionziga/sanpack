@@ -126,9 +126,11 @@ export default function ContactsPage() {
               <div className="relative flex h-80 w-full items-center justify-center overflow-hidden rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)]">
                 <iframe
                   title={`${company.name}: карта`}
-                  src={contacts.mapIframe || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2999.0123456789!2d69.212345!3d41.223456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDEzJzI0LjQiTiA2OcKwMTInNDQuNCJF!5e0!3m2!1sru!2s!4v1600000000000!5m2!1sru!2s'}
+                  src={contacts.mapIframe || 'https://yandex.uz/map-widget/v1/?ll=69.240073%2C41.299496&z=12'}
                   className="w-full h-full border-0"
                   loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
                 />
               </div>
             </div>

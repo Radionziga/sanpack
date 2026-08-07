@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import { Product, Category, Attribute } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert } from 'lucide-react';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,6 +13,7 @@ export default function AdminProductsPage() {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   // Edit/Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,15 +25,21 @@ export default function AdminProductsPage() {
 
   async function loadData() {
     setLoading(true);
-    const [p, c, a] = await Promise.all([
-      SanpackRepository.getProducts(),
-      SanpackRepository.getCategories(),
-      SanpackRepository.getAttributes(),
-    ]);
-    setProducts(p);
-    setCategories(c);
-    setAttributes(a);
-    setLoading(false);
+    setLoadError('');
+    try {
+      const [p, c, a] = await Promise.all([
+        SanpackRepository.getProducts(),
+        SanpackRepository.getCategories(),
+        SanpackRepository.getAttributes(),
+      ]);
+      setProducts(p);
+      setCategories(c);
+      setAttributes(a);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить каталог.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleOpenCreate = () => {
@@ -126,6 +133,13 @@ export default function AdminProductsPage() {
           <span>Добавить товар</span>
         </button>
       </div>
+
+      {loadError ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-2"><TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />{loadError}</p>
+          <button type="button" onClick={() => void loadData()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 text-xs font-bold"><RefreshCw className="size-4" aria-hidden="true" />Повторить</button>
+        </div>
+      ) : null}
 
       {/* Search & Stats */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-4">

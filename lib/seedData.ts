@@ -367,6 +367,7 @@ export const initialBanners: Banner[] = [
     imageMobile: '/promo/sanpack-supply-mobile.webp',
     buttonTextRu: 'Перейти в каталог',
     buttonTextUz: 'Katalogni ko‘rish',
+    buttonTextEn: 'View catalog',
     link: '/catalog',
     sortOrder: 1,
     active: true,

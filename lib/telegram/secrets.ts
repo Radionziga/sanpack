@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
-function getKey() {
+function getSecretMaterial() {
   const secret = process.env.TELEGRAM_CONFIG_ENCRYPTION_KEY
     || (process.env.NODE_ENV === 'development'
       ? `sanpack-local-development-key-${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local'}`
@@ -10,7 +10,18 @@ function getKey() {
   if (!secret || secret.length < 24) {
     throw new Error('TELEGRAM_CONFIG_ENCRYPTION_KEY is not configured.');
   }
-  return createHash('sha256').update(secret).digest();
+  return secret;
+}
+
+function getKey() {
+  return createHash('sha256').update(getSecretMaterial()).digest();
+}
+
+export function deriveTelegramKey(purpose: string) {
+  return createHash('sha256')
+    .update(`sanpack:${purpose}:`)
+    .update(getSecretMaterial())
+    .digest();
 }
 
 export function encryptSecret(value: string) {

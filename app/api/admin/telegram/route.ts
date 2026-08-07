@@ -98,6 +98,20 @@ export async function POST(request: Request) {
     }
 
     const input = parsed.data.settings;
+    let clientSecretEncrypted = current.login.clientSecretEncrypted;
+    let clientSecretLast4 = current.login.clientSecretLast4;
+    if (input.login.clientSecret) {
+      clientSecretEncrypted = encryptSecret(input.login.clientSecret);
+      clientSecretLast4 = input.login.clientSecret.slice(-4);
+    }
+
+    if (input.login.enabled && (!input.login.clientId || !clientSecretEncrypted || !input.login.redirectUri)) {
+      return NextResponse.json(
+        { error: 'Для входа через Telegram укажите Client ID, Client Secret и точный Redirect URI.' },
+        { status: 400 }
+      );
+    }
+
     let storefrontTokenEncrypted = current.storefront.tokenEncrypted;
     let storefrontTokenLast4 = current.storefront.tokenLast4;
     let botUsername = input.storefront.botUsername || current.storefront.botUsername;
@@ -124,6 +138,15 @@ export async function POST(request: Request) {
     }
 
     const settings = {
+      login: {
+        enabled: input.login.enabled,
+        clientId: input.login.clientId || '',
+        clientSecretEncrypted: clientSecretEncrypted || '',
+        clientSecretLast4: clientSecretLast4 || '',
+        redirectUri: input.login.redirectUri || '',
+        requestPhone: input.login.requestPhone,
+        allowBotMessages: input.login.allowBotMessages,
+      },
       storefront: {
         enabled: input.storefront.enabled,
         botUsername: botUsername || '',
