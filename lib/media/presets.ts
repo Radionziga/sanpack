@@ -11,7 +11,7 @@ export const mediaPresets = {
   'banner-mobile': {
     directory: 'media/banners',
     width: 960,
-    height: 960,
+    height: 540,
     quality: 88,
     label: 'Баннер для телефонов',
   },

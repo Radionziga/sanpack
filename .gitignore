@@ -4,6 +4,8 @@ coverage/
 .DS_Store
 *.log
 *.tsbuildinfo
+.playwright-cli/
+output/playwright/
 
 # Local skill-manager integrations (canonical skills live in .agents/skills).
 .claude/

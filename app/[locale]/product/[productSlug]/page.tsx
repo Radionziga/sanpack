@@ -29,6 +29,11 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import {
+  getOrderRuleSummary,
+  getProductOrderRule,
+  normalizeOrderQuantity,
+} from '@/lib/commerce/orderQuantities';
 
 export default function ProductDetailPage({
   params,
@@ -125,7 +130,7 @@ export default function ProductDetailPage({
       if (p) {
         setProduct(p);
         setSelectedVariant(p.variants[0] || null);
-        setQuantity(p.minimumOrder || 1);
+        setQuantity(getProductOrderRule(p).minimumQuantity);
 
         const related = all.filter((item) => item.categoryId === p.categoryId && item.id !== p.id);
         setRelatedProducts(related.slice(0, 4));
@@ -166,6 +171,8 @@ export default function ProductDetailPage({
   const description = getLocalizedText(product.descriptionRu, product.descriptionUz, product.descriptionEn);
   const favorited = isFavorite(product.id);
   const inCart = isInCart(product.id, selectedVariant?.id);
+  const orderRule = getProductOrderRule(product, language);
+  const orderSummary = getOrderRuleSummary(product, language);
 
   // Dynamic price computation considering wholesale tiers
   const activeTiers = selectedVariant?.wholesaleTiers || product.wholesaleTiers || [];
@@ -345,7 +352,7 @@ export default function ProductDetailPage({
                       : t('priceOnRequest')}
                   </span>
                   <span className="text-[11px] text-slate-500 block mt-1">
-                    {t('minOrder')} <strong className="text-[#222B35]">{product.minimumOrder} {product.salesUnit}</strong>
+                    {orderSummary}
                   </span>
                 </div>
 
@@ -356,19 +363,24 @@ export default function ProductDetailPage({
                   </label>
                   <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
                     <button
-                      onClick={() => setQuantity((q) => Math.max(product.minimumOrder || 1, q - 1))}
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.max(orderRule.minimumQuantity, q - orderRule.quantityStep))}
                       className="px-3.5 py-2.5 text-slate-600 hover:bg-slate-200 font-bold transition-colors"
                     >
                       -
                     </button>
                     <input
                       type="number"
+                      min={orderRule.minimumQuantity}
+                      step={orderRule.quantityStep}
                       value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={(e) => setQuantity(Number(e.target.value) || orderRule.minimumQuantity)}
+                      onBlur={() => setQuantity((current) => normalizeOrderQuantity(product, current))}
                       className="w-full text-center bg-transparent font-bold text-sm text-[#222B35] outline-none"
                     />
                     <button
-                      onClick={() => setQuantity((q) => q + 1)}
+                      type="button"
+                      onClick={() => setQuantity((q) => q + orderRule.quantityStep)}
                       className="px-3.5 py-2.5 text-slate-600 hover:bg-slate-200 font-bold transition-colors"
                     >
                       +

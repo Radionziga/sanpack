@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { RequestItem, Product, ProductVariant } from '@/types';
+import { normalizeOrderQuantity } from '@/lib/commerce/orderQuantities';
 
 interface RequestCartContextType {
   items: RequestItem[];
@@ -60,7 +61,11 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
 
       if (existingIdx !== -1) {
         const updated = [...prev];
-        updated[existingIdx].quantity += quantity;
+        const existing = updated[existingIdx];
+        existing.quantity = normalizeOrderQuantity(
+          existing.product || product,
+          existing.quantity + quantity
+        );
         if (comment) updated[existingIdx].comment = comment;
         return updated;
       }
@@ -76,7 +81,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         variantTitleUz: variant?.titleUz,
         variantTitleEn: variant?.titleEn,
         sku: variant?.sku || product.sku,
-        quantity: Math.max(quantity, product.minimumOrder || 1),
+        quantity: normalizeOrderQuantity(product, quantity),
         unit: product.salesUnit || 'шт',
         price: variant?.price || product.price,
         comment,
@@ -103,7 +108,12 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
     setItems((prev) =>
       prev.map((i) =>
         i.productId === productId && i.variantId === variantId
-          ? { ...i, quantity }
+          ? {
+              ...i,
+              quantity: i.product
+                ? normalizeOrderQuantity(i.product, quantity)
+                : Math.max(1, quantity),
+            }
           : i
       )
     );

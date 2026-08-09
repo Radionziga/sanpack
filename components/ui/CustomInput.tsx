@@ -28,39 +28,39 @@ export function CustomInput({
   return (
     <div className={`${fullWidth ? 'w-full' : ''}`}>
       {label && (
-        <label htmlFor={id} className="block text-xs font-bold text-[#222B35] mb-1.5">
+        <label htmlFor={id} className="admin-field-label mb-1.5 block">
           {label}
         </label>
       )}
 
       <div className="relative flex items-center">
         {leftIcon && (
-          <div className="absolute left-3.5 text-slate-400 pointer-events-none shrink-0">
+          <div className="pointer-events-none absolute left-3.5 shrink-0 text-[var(--sp-ink-tertiary)]">
             {leftIcon}
           </div>
         )}
 
         <input
           id={id}
-          className={`w-full bg-white border rounded-xl py-2.5 px-3.5 text-xs font-medium text-[#222B35] placeholder:text-slate-400 outline-none transition-all ${
+          className={`admin-control py-2.5 px-3.5 text-xs font-medium ${
             leftIcon ? 'pl-10' : ''
           } ${rightIcon ? 'pr-10' : ''} ${
             error
-              ? 'border-rose-500 focus:ring-2 focus:ring-rose-500/20'
-              : 'border-slate-200 hover:border-[#0F6E43]/40 focus:border-[#0F6E43] focus:ring-2 focus:ring-[#0F6E43]/15'
+              ? 'border-[var(--sp-danger)] focus:border-[var(--sp-danger)] focus:ring-[color-mix(in_srgb,var(--sp-danger)_16%,transparent)]'
+              : ''
           } ${className}`}
           {...props}
         />
 
         {rightIcon && (
-          <div className="absolute right-3.5 text-slate-400 shrink-0">{rightIcon}</div>
+          <div className="absolute right-3.5 shrink-0 text-[var(--sp-ink-tertiary)]">{rightIcon}</div>
         )}
       </div>
 
       {error ? (
-        <p className="mt-1 text-[11px] font-semibold text-rose-600">{error}</p>
+        <p className="mt-1 text-[11px] font-semibold text-[var(--sp-danger)]">{error}</p>
       ) : helperText ? (
-        <p className="mt-1 text-[11px] text-slate-500">{helperText}</p>
+        <p className="mt-1 text-[11px] text-[var(--sp-ink-tertiary)]">{helperText}</p>
       ) : null}
     </div>
   );

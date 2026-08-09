@@ -3,6 +3,7 @@ import 'server-only';
 import type { Product, ProductPriceMode, RequestItem } from '@/types';
 import type { CheckoutLineInput } from '@/lib/validation/order';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { getProductOrderRule, isValidOrderQuantity } from '@/lib/commerce/orderQuantities';
 
 function resolvePriceMode(product: Product, variantId?: string): ProductPriceMode {
   const variant = variantId
@@ -12,9 +13,10 @@ function resolvePriceMode(product: Product, variantId?: string): ProductPriceMod
 }
 
 function assertQuantity(product: Product, quantity: number) {
-  const minimum = product.minimumOrder || 1;
+  const rule = getProductOrderRule(product);
+  const minimum = rule.minimumQuantity;
   const maximum = product.maximumOrder;
-  const step = product.quantityStep || 1;
+  const step = rule.quantityStep;
 
   if (quantity < minimum) {
     throw new Error(`Минимальное количество для «${product.titleRu}»: ${minimum}.`);
@@ -22,8 +24,7 @@ function assertQuantity(product: Product, quantity: number) {
   if (maximum && quantity > maximum) {
     throw new Error(`Максимальное количество для «${product.titleRu}»: ${maximum}.`);
   }
-  const ratio = (quantity - minimum) / step;
-  if (Math.abs(ratio - Math.round(ratio)) > 1e-7) {
+  if (!isValidOrderQuantity(product, quantity)) {
     throw new Error(`Количество для «${product.titleRu}» должно изменяться с шагом ${step}.`);
   }
 }
@@ -100,4 +101,3 @@ export function calculateOrderTotals(items: RequestItem[], adjustment = 0) {
     total: Math.max(0, subtotal + adjustment),
   };
 }
-

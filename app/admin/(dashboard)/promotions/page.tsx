@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Eye, EyeOff, ImagePlus, Plus, Save, Trash2 } from 'lucide-react';
 import { MediaUploadField, deleteUploadedMedia } from '@/components/admin/MediaUploadField';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import type { Banner } from '@/types';
 
@@ -23,7 +24,7 @@ const bannerFormSchema = z.object({
   titleEn: z.string().trim().max(180),
   imageDesktop: assetUrlSchema,
   imageDesktopPath: z.string(),
-  imageMobile: z.union([assetUrlSchema, z.literal('')]),
+  imageMobile: assetUrlSchema,
   imageMobilePath: z.string(),
   buttonTextRu: buttonTextSchema,
   buttonTextUz: buttonTextSchema,
@@ -103,6 +104,12 @@ export default function AdminPromotionsPage() {
   const mobileImage = useWatch({ control, name: 'imageMobile' });
   const desktopPath = useWatch({ control, name: 'imageDesktopPath' });
   const mobilePath = useWatch({ control, name: 'imageMobilePath' });
+  const titleRu = useWatch({ control, name: 'titleRu' });
+  const titleUz = useWatch({ control, name: 'titleUz' });
+  const titleEn = useWatch({ control, name: 'titleEn' });
+  const buttonTextRu = useWatch({ control, name: 'buttonTextRu' });
+  const buttonTextUz = useWatch({ control, name: 'buttonTextUz' });
+  const buttonTextEn = useWatch({ control, name: 'buttonTextEn' });
 
   const persistedBanner = selectedId ? banners.find((banner) => banner.id === selectedId) : undefined;
   const cleanupStagedPath = async (path?: string, persistedPath?: string) => {
@@ -167,7 +174,7 @@ export default function AdminPromotionsPage() {
     setNotice('');
     const payload: Partial<Banner> = {
       ...values,
-      imageMobile: values.imageMobile || undefined,
+      imageMobile: values.imageMobile,
       imageMobilePath: values.imageMobilePath || undefined,
       imageDesktopPath: values.imageDesktopPath || undefined,
     };
@@ -214,7 +221,7 @@ export default function AdminPromotionsPage() {
   const activeCount = banners.filter((banner) => banner.active).length;
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-6">
+    <div className="admin-page mx-auto max-w-[1500px] space-y-6">
       <AdminPageHeader
         title="Промо-карусель"
         description="Один активный баннер показывается статично. Два и больше автоматически образуют карусель."
@@ -284,11 +291,22 @@ export default function AdminPromotionsPage() {
             {(['titleRu', 'titleUz', 'titleEn'] as const).map((name, index) => (
               <label key={name} className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
                 Описание {['RU', 'UZ', 'EN'][index]}{index < 2 ? ' *' : ''}
-                <input {...register(name)} aria-invalid={Boolean(errors[name])} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+                <input {...register(name)} aria-invalid={Boolean(errors[name])} className="admin-control mt-1.5 text-sm font-normal" />
                 {errors[name] && <span className="block font-normal text-[var(--sp-danger)]">{errors[name]?.message}</span>}
               </label>
             ))}
           </div>
+
+          <AiTranslateButton fields={[
+            {
+              key: 'description', label: 'Описание баннера', values: { ru: titleRu, uz: titleUz, en: titleEn },
+              onChange: (language, value) => setValue(`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`, value, { shouldDirty: true, shouldValidate: true }),
+            },
+            {
+              key: 'buttonText', label: 'Текст кнопки', values: { ru: buttonTextRu, uz: buttonTextUz, en: buttonTextEn },
+              onChange: (language, value) => setValue(`buttonText${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`, value, { shouldDirty: true, shouldValidate: true }),
+            },
+          ]} compact />
 
           <MediaUploadField kind="banner-desktop" label="Desktop-баннер *" recommendation="Рекомендуется 1920×560 px · 24:7" value={desktopImage} onUploaded={(media) => {
             void cleanupStagedPath(desktopPath, persistedBanner?.imageDesktopPath);
@@ -297,7 +315,7 @@ export default function AdminPromotionsPage() {
           }} />
           {errors.imageDesktop && <p className="text-xs text-[var(--sp-danger)]" role="alert">Загрузите desktop-баннер.</p>}
 
-          <MediaUploadField kind="banner-mobile" label="Мобильный баннер" recommendation="Рекомендуется 960×960 px · 1:1" value={mobileImage || undefined} optional onUploaded={(media) => {
+          <MediaUploadField kind="banner-mobile" label="Мобильный баннер *" recommendation="Отдельный горизонтальный макет 960×540 px · 16:9" value={mobileImage || undefined} onUploaded={(media) => {
             void cleanupStagedPath(mobilePath, persistedBanner?.imageMobilePath);
             setValue('imageMobile', media.url, { shouldValidate: true, shouldDirty: true });
             setValue('imageMobilePath', media.path, { shouldDirty: true });
@@ -306,6 +324,7 @@ export default function AdminPromotionsPage() {
             setValue('imageMobile', '', { shouldValidate: true, shouldDirty: true });
             setValue('imageMobilePath', '', { shouldDirty: true });
           }} />
+          {errors.imageMobile && <p className="text-xs text-[var(--sp-danger)]" role="alert">Загрузите отдельный мобильный баннер.</p>}
 
           <fieldset className="space-y-4 border-t border-[var(--sp-line)] pt-5">
             <legend className="font-compact text-sm font-bold text-[var(--sp-ink)]">Действие баннера</legend>
@@ -321,7 +340,7 @@ export default function AdminPromotionsPage() {
                     maxLength={80}
                     placeholder={['Перейти в каталог', 'Katalogni ko‘rish', 'View catalog'][index]}
                     aria-invalid={Boolean(errors[name])}
-                    className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]"
+                    className="admin-control mt-1.5 text-sm font-normal"
                   />
                   {errors[name] && <span className="block font-normal text-[var(--sp-danger)]">{errors[name]?.message}</span>}
                 </label>
@@ -330,12 +349,12 @@ export default function AdminPromotionsPage() {
             <div className="grid gap-4 sm:grid-cols-[1fr_150px]">
               <label className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
                 Ссылка кнопки и мобильного баннера
-                <input {...register('link')} placeholder="/catalog или https://…" aria-invalid={Boolean(errors.link)} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+                <input {...register('link')} placeholder="/catalog или https://…" aria-invalid={Boolean(errors.link)} className="admin-control mt-1.5 text-sm font-normal" />
                 {errors.link && <span className="block font-normal text-[var(--sp-danger)]">{errors.link.message || 'Укажите внутренний путь или полный URL.'}</span>}
               </label>
               <label className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
                 Порядок
-                <input type="number" min="0" {...register('sortOrder', { valueAsNumber: true })} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+                <input type="number" min="0" {...register('sortOrder', { valueAsNumber: true })} className="admin-control mt-1.5 text-sm font-normal" />
               </label>
             </div>
           </fieldset>

@@ -6,6 +6,9 @@ type StoredSiteSettings = Partial<SiteSettings> & {
   locale?: Partial<SiteSettings['locale']>;
   design?: Partial<SiteSettings['design']>;
   seo?: Partial<SiteSettings['seo']>;
+  modules?: {
+    bagDesigner?: Partial<NonNullable<NonNullable<SiteSettings['modules']>['bagDesigner']>>;
+  };
 };
 
 export function mergeSiteSettings(
@@ -22,5 +25,14 @@ export function mergeSiteSettings(
     locale: { ...defaults.locale, ...stored.locale },
     design: { ...defaults.design, ...stored.design },
     seo: { ...defaults.seo, ...stored.seo },
+    modules: {
+      ...defaults.modules,
+      ...stored.modules,
+      bagDesigner: {
+        enabled: stored.modules?.bagDesigner?.enabled
+          ?? defaults.modules?.bagDesigner?.enabled
+          ?? false,
+      },
+    },
   };
 }

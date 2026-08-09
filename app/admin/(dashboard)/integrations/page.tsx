@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Bot, CheckCircle2, ExternalLink, LogIn, Send, ShieldCheck } from 'lucide-react';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
+import { GeminiSettingsPanel } from '@/components/admin/GeminiSettingsPanel';
 
 interface TelegramAdminSettings {
   login: {
@@ -43,7 +44,7 @@ const emptySettings: TelegramAdminSettings = {
   notifications: { enabled: false, chatId: '', tokenConfigured: false, tokenLast4: '' },
 };
 
-const inputClass = 'mt-2 min-h-11 w-full rounded-lg border border-[var(--sp-line-strong)] bg-[var(--sp-control)] px-3 text-sm outline-none focus:border-[var(--sp-brand)]';
+const inputClass = 'admin-control mt-2 text-sm';
 
 function IntegrationToggle({
   checked,
@@ -167,9 +168,14 @@ export default function IntegrationsPage() {
   if (loading) return <p className="py-12 text-center text-sm text-[var(--sp-ink-tertiary)]">Загружаем настройки…</p>;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="admin-page mx-auto max-w-5xl space-y-6">
       <header className="border-b border-[var(--sp-line)] pb-5">
-        <h1 className="font-extended text-2xl font-bold tracking-[-0.025em]">Telegram</h1>
+        <h1 className="font-extended text-2xl font-bold tracking-[-0.025em]">Интеграции</h1>
+        <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">Подключайте внешние сервисы магазина. Секретные ключи доступны только серверу.</p>
+      </header>
+      <GeminiSettingsPanel />
+      <header className="border-b border-[var(--sp-line)] pb-5 pt-2">
+        <h2 className="font-extended text-xl font-bold tracking-[-0.02em]">Telegram</h2>
         <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">Вход покупателей, магазин внутри Telegram и уведомления о новых заявках настраиваются независимо.</p>
       </header>
       {error || notice ? <p role={error ? 'alert' : 'status'} className={`rounded-lg border px-4 py-3 text-sm ${error ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-400/30 bg-emerald-500/8 text-[var(--sp-success)]'}`}>{error || notice}</p> : null}

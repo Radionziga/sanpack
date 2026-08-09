@@ -59,7 +59,7 @@ function BannerImage({ banner, alt, priority }: { banner: Banner; alt: string; p
     src: banner.imageMobile || banner.imageDesktop,
     alt,
     width: 960,
-    height: 960,
+    height: 540,
     sizes: '100vw',
     priority,
     quality: 88,
@@ -72,7 +72,7 @@ function BannerImage({ banner, alt, priority }: { banner: Banner; alt: string; p
       <img
         {...desktop.props}
         alt={alt}
-        className={`h-full w-full ${banner.imageMobile ? 'object-cover' : 'object-contain md:object-cover'}`}
+        className="h-full w-full object-cover"
       />
     </picture>
   );
@@ -167,7 +167,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
             <div
               key={banner.id}
               aria-hidden={index !== activeIndex}
-              className={`${banner.imageMobile ? 'aspect-square' : 'aspect-[24/10]'} min-w-full bg-[var(--sp-surface-inset)] md:aspect-[24/7]`}
+              className="aspect-video min-w-full bg-[var(--sp-surface-inset)] md:aspect-[24/7]"
             >
               {banner.link ? (
                 banner.link.startsWith('/') ? (

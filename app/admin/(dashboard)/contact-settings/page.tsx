@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Clock3, Mail, MapPin, MessageCircle, Phone, Save } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AiTranslateButton, type TranslationLanguage } from '@/components/admin/AiTranslateButton';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import { contactSettingsSchema } from '@/lib/validation/adminContent';
 import type { SiteSettings } from '@/types';
@@ -32,7 +33,7 @@ function Field({
   );
 }
 
-const inputClass = 'min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3.5 text-sm text-[var(--sp-ink)] outline-none placeholder:text-[var(--sp-ink-muted)] focus:border-[var(--sp-brand)]';
+const inputClass = 'admin-control text-sm';
 
 export default function ContactSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,8 @@ export default function ContactSettingsPage() {
   const [pageError, setPageError] = useState('');
   const {
     register,
+    control,
+    setValue,
     reset,
     handleSubmit,
     formState: { errors, isSubmitting },
@@ -63,6 +66,18 @@ export default function ContactSettingsPage() {
       mapIframe: '',
     },
   });
+
+  const localizedContacts = useWatch({ control });
+
+  function setLocalizedContact(
+    base: 'city' | 'address' | 'workingHours',
+    language: TranslationLanguage,
+    value: string,
+  ) {
+    const suffix = language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En';
+    const field = `${base}${suffix}` as keyof ContactForm;
+    setValue(field, value, { shouldDirty: true, shouldValidate: true });
+  }
 
   useEffect(() => {
     let active = true;
@@ -91,7 +106,7 @@ export default function ContactSettingsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="admin-page mx-auto max-w-6xl space-y-6">
       <AdminPageHeader
         title="Контакты магазина"
         description="Единый источник адреса, телефонов, графика работы и ссылок на мессенджеры для всего сайта."
@@ -154,6 +169,40 @@ export default function ContactSettingsPage() {
               <Field label="График · RU" error={errors.workingHoursRu?.message}><div className="relative"><Clock3 className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[var(--sp-ink-muted)]" aria-hidden="true" /><input {...register('workingHoursRu')} className={`${inputClass} pl-10`} /></div></Field>
               <Field label="График · UZ" error={errors.workingHoursUz?.message}><input {...register('workingHoursUz')} className={inputClass} /></Field>
               <Field label="График · EN" error={errors.workingHoursEn?.message}><input {...register('workingHoursEn')} className={inputClass} /></Field>
+            </div>
+            <div className="mt-4">
+              <AiTranslateButton fields={[
+                {
+                  key: 'city',
+                  label: 'Город',
+                  values: {
+                    ru: localizedContacts.cityRu || '',
+                    uz: localizedContacts.cityUz || '',
+                    en: localizedContacts.cityEn || '',
+                  },
+                  onChange: (language, value) => setLocalizedContact('city', language, value),
+                },
+                {
+                  key: 'address',
+                  label: 'Адрес',
+                  values: {
+                    ru: localizedContacts.addressRu || '',
+                    uz: localizedContacts.addressUz || '',
+                    en: localizedContacts.addressEn || '',
+                  },
+                  onChange: (language, value) => setLocalizedContact('address', language, value),
+                },
+                {
+                  key: 'workingHours',
+                  label: 'График работы',
+                  values: {
+                    ru: localizedContacts.workingHoursRu || '',
+                    uz: localizedContacts.workingHoursUz || '',
+                    en: localizedContacts.workingHoursEn || '',
+                  },
+                  onChange: (language, value) => setLocalizedContact('workingHours', language, value),
+                },
+              ]} />
             </div>
             <div className="mt-4">
               <Field label="Ссылка на карту в Яндекс Картах" hint="ссылка из конструктора карт — необязательно" error={errors.mapIframe?.message}><input {...register('mapIframe')} className={inputClass} inputMode="url" placeholder="https://yandex.uz/map-widget/v1/?..." /></Field>

@@ -33,7 +33,7 @@ export function Badge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-lg tracking-tight select-none ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-[var(--radius-sm)] tracking-tight select-none ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
     >
       {icon && <span className="shrink-0">{icon}</span>}
       <span>{children}</span>

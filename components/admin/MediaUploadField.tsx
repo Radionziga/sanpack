@@ -122,7 +122,7 @@ export function MediaUploadField({
           }}
         />
       ) : (
-        <div className="grid gap-3 rounded-2xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:grid-cols-[148px_1fr]">
+        <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:grid-cols-[148px_1fr]">
           <div className={`relative overflow-hidden rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] ${previewAspect}`}>
           {value ? (
             <Image src={value} alt="Предпросмотр изображения" fill sizes="148px" className="object-contain" />

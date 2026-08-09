@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useRequestCart } from '@/context/RequestCartContext';
+import { getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { PublicSanpackRepository } from '@/lib/repositories/publicRepository';
 
 const CHECKOUT_DRAFT_KEY = 'sanpack-checkout-draft';
@@ -145,13 +146,18 @@ export default function RequestPage() {
                 <section className="rounded-[var(--sp-radius-lg)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 sm:p-6">
                   <div className="flex items-center justify-between border-b border-[var(--sp-line)] pb-4"><h2 className="font-extended text-lg font-bold">Товары <span className="text-[var(--sp-ink-tertiary)]">{items.length}</span></h2><button type="button" onClick={clearCart} className="text-xs font-bold text-[var(--sp-danger)]">Очистить</button></div>
                   <div className="divide-y divide-[var(--sp-line)]">
-                    {items.map((item) => (
+                    {items.map((item) => {
+                      const orderRule = item.product ? getProductOrderRule(item.product) : null;
+                      const quantityStep = orderRule?.quantityStep || 1;
+                      const orderSummary = item.product ? getOrderRuleSummary(item.product) : '';
+                      return (
                       <article key={`${item.productId}-${item.variantId || 'base'}`} className="grid grid-cols-[64px_minmax(0,1fr)] gap-3 py-4 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center">
                         <Image src={item.image || '/favicon.png'} alt="" width={72} height={72} sizes="72px" className="size-16 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] object-contain p-1 sm:size-[72px]" />
-                        <div className="min-w-0"><h3 className="text-sm font-bold leading-5">{item.productTitleRu}</h3>{item.variantTitleRu ? <p className="mt-1 text-xs text-[var(--sp-brand)]">{item.variantTitleRu}</p> : null}<p className="mt-1 font-mono text-[10px] text-[var(--sp-ink-tertiary)]">{item.sku}</p>{item.price !== undefined ? <p className="mt-2 text-xs font-bold">{formatMoney(item.price)} сум / {item.unit}</p> : <p className="mt-2 text-xs font-bold text-[var(--sp-brand)]">Цена по запросу</p>}</div>
-                        <div className="col-start-2 flex items-center justify-between gap-3 sm:col-start-auto"><div className="flex min-h-10 items-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-control)]"><button type="button" onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)} className="flex size-10 items-center justify-center" aria-label="Уменьшить количество"><Minus className="size-3.5" /></button><span className="min-w-14 text-center text-xs font-bold">{item.quantity} {item.unit}</span><button type="button" onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)} className="flex size-10 items-center justify-center" aria-label="Увеличить количество"><Plus className="size-3.5" /></button></div><button type="button" onClick={() => removeItem(item.productId, item.variantId)} className="flex size-10 items-center justify-center text-[var(--sp-danger)]" aria-label="Удалить товар"><Trash2 className="size-4" /></button></div>
+                        <div className="min-w-0"><h3 className="text-sm font-bold leading-5">{item.productTitleRu}</h3>{item.variantTitleRu ? <p className="mt-1 text-xs text-[var(--sp-brand)]">{item.variantTitleRu}</p> : null}<p className="mt-1 font-mono text-[10px] text-[var(--sp-ink-tertiary)]">{item.sku}</p>{item.price !== undefined ? <p className="mt-2 text-xs font-bold">{formatMoney(item.price)} сум / {item.unit}</p> : <p className="mt-2 text-xs font-bold text-[var(--sp-brand)]">Цена по запросу</p>}{orderSummary ? <p className="mt-1 max-w-md text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">{orderSummary}</p> : null}</div>
+                        <div className="col-start-2 flex items-center justify-between gap-3 sm:col-start-auto"><div className="flex min-h-10 items-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-control)]"><button type="button" onClick={() => updateQuantity(item.productId, item.quantity - quantityStep, item.variantId)} className="flex size-10 items-center justify-center" aria-label="Уменьшить количество"><Minus className="size-3.5" /></button><span className="min-w-14 text-center text-xs font-bold">{item.quantity} {item.unit}</span><button type="button" onClick={() => updateQuantity(item.productId, item.quantity + quantityStep, item.variantId)} className="flex size-10 items-center justify-center" aria-label="Увеличить количество"><Plus className="size-3.5" /></button></div><button type="button" onClick={() => removeItem(item.productId, item.variantId)} className="flex size-10 items-center justify-center text-[var(--sp-danger)]" aria-label="Удалить товар"><Trash2 className="size-4" /></button></div>
                       </article>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
 

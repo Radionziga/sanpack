@@ -143,7 +143,7 @@ export function Footer() {
                   href={contactPhoneHref(phone)}
                   className="flex items-center gap-2 font-semibold transition-colors hover:text-[var(--sp-accent)]"
                 >
-                  <Phone className="size-3.5 shrink-0 text-[var(--sp-accent)]" aria-hidden="true" />
+                  <Phone className="size-3.5 shrink-0 text-[#DCE9AF]" aria-hidden="true" />
                   <span>{phone}</span>
                 </a>
               ))}

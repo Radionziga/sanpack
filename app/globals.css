@@ -82,18 +82,262 @@
     font-family: var(--sp-font-heading);
     font-weight: 700;
     letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@layer components {
+  .admin-page {
+    width: 100%;
+    max-width: 1500px;
+    margin-inline: auto;
+  }
+
+  .admin-panel {
+    border: 1px solid var(--sp-line);
+    border-radius: var(--radius-lg);
+    background: var(--sp-surface);
+    box-shadow: 0 1px 0 rgb(21 27 24 / 2%);
+  }
+
+  .admin-panel-muted {
+    border: 1px solid var(--sp-line);
+    /* A muted panel is normally placed inside a primary panel. Its inset
+       radius follows the same concentric rule as the spacing around it. */
+    border-radius: var(--sp-radius-control-inner);
+    background: var(--sp-surface-inset);
+  }
+
+  .admin-section {
+    border-top: 1px solid var(--sp-line);
+    padding-top: 1.25rem;
+  }
+
+  .admin-section:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .admin-section-heading {
+    font-family: var(--sp-font-heading);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--sp-ink);
+  }
+
+  .admin-section-description {
+    margin-top: 0.25rem;
+    max-width: 46rem;
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: var(--sp-ink-tertiary);
+  }
+
+  .admin-field-label {
+    display: block;
+    font-family: var(--sp-font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--sp-ink);
+  }
+
+  .admin-control {
+    appearance: none;
+    box-sizing: border-box;
+    min-height: 2.75rem;
+    width: 100%;
+    border: 1px solid var(--sp-control-border) !important;
+    border-radius: var(--sp-radius-control);
+    background: var(--sp-control);
+    padding-inline: 0.75rem;
+    color: var(--sp-ink);
+    outline: none;
+    box-shadow: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  }
+
+  .admin-control:not(textarea) {
+    height: var(--admin-control-height, 2.75rem);
+  }
+
+  .admin-control::placeholder {
+    color: var(--sp-ink-muted);
+    opacity: 1;
+  }
+
+  textarea.admin-control {
+    padding-block: 0.75rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .admin-control:hover {
+    border-color: var(--sp-line-strong) !important;
+  }
+
+  .admin-control:focus,
+  .admin-control:focus-visible {
+    border-color: var(--sp-brand) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sp-brand) 12%, transparent);
+    outline: none;
+  }
+
+  .admin-control[aria-invalid='true'] {
+    border-color: color-mix(in srgb, var(--sp-danger) 70%, var(--sp-control-border)) !important;
+  }
+
+  .admin-control:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .admin-button-primary,
+  .admin-button-secondary,
+  .admin-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--sp-radius-control);
+    font-family: var(--sp-font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+    transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, opacity 160ms ease;
+  }
+
+  .admin-button-primary {
+    min-height: 2.75rem;
+    background: var(--sp-brand);
+    padding-inline: 1rem;
+    color: var(--sp-on-brand);
+  }
+
+  .admin-button-primary:hover {
+    background: var(--sp-brand-deep);
+  }
+
+  .admin-button-secondary {
+    min-height: 2.75rem;
+    border: 1px solid var(--sp-line);
+    background: var(--sp-surface);
+    padding-inline: 1rem;
+    color: var(--sp-ink-secondary);
+  }
+
+  .admin-button-secondary:hover {
+    border-color: var(--sp-line-strong);
+    background: var(--sp-surface-inset);
+    color: var(--sp-ink);
+  }
+
+  .admin-icon-button {
+    width: 2.5rem;
+    height: 2.5rem;
+    color: var(--sp-ink-tertiary);
+  }
+
+  .admin-icon-button:hover {
+    background: var(--sp-surface-inset);
+    color: var(--sp-ink);
+  }
+
+  .admin-table-wrap {
+    overflow: hidden;
+    border: 1px solid var(--sp-line);
+    border-radius: var(--radius-lg);
+    background: var(--sp-surface);
+  }
+
+  .admin-table-head {
+    border-bottom: 1px solid var(--sp-line);
+    background: var(--sp-surface-inset);
+    color: var(--sp-ink-tertiary);
+  }
+
+  .admin-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    overflow-y: auto;
+    background: rgb(8 16 12 / 62%);
+    backdrop-filter: blur(4px);
+  }
+
+  .admin-modal-card {
+    display: flex;
+    width: 100%;
+    max-height: calc(100dvh - 2rem);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--sp-line);
+    border-radius: var(--radius-lg);
+    background: var(--sp-surface);
+    box-shadow: 0 24px 80px rgb(8 16 12 / 28%);
+  }
+
+  .admin-modal-header,
+  .admin-modal-footer {
+    position: relative;
+    z-index: 2;
+    flex: none;
+    background: color-mix(in srgb, var(--sp-surface) 94%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .admin-modal-header {
+    border-bottom: 1px solid var(--sp-line);
+  }
+
+  .admin-modal-footer {
+    border-top: 1px solid var(--sp-line);
+  }
+
+  .admin-modal-body {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-modal-backdrop {
+    background: var(--sp-canvas);
+  }
+
+  .admin-modal-card {
+    min-height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 }
 
 [data-sanpack-theme] {
-  /* Concentric geometry: an outer surface gains no more radius than the
-     spacing around its child. At 0 px every level remains square. */
-  --radius-sm: max(0px, calc(var(--sp-radius) - 4px));
-  --radius-md: max(0px, calc(var(--sp-radius) - 2px));
+  /* One configurable radius for every standalone surface and control.
+     A smaller value is reserved exclusively for a child placed inside
+     another rounded surface: inner radius = outer radius - inset. */
+  --sp-radius-nested: max(0px, calc(var(--sp-radius) - 4px));
+  --radius-sm: var(--sp-radius-nested);
+  --radius-md: var(--sp-radius);
   --radius-lg: var(--sp-radius);
-  --radius-xl: calc(var(--sp-radius) + min(var(--sp-radius), 4px));
-  --radius-2xl: calc(var(--sp-radius) + min(var(--sp-radius), 8px));
-  --radius-3xl: calc(var(--sp-radius) + min(var(--sp-radius), 12px));
+  --radius-xl: var(--sp-radius);
+  --radius-2xl: var(--sp-radius);
+  --radius-3xl: var(--sp-radius);
+  /* Legacy aliases kept while older admin surfaces move to the shared scale. */
+  --sp-radius-sm: var(--sp-radius);
+  --sp-radius-md: var(--sp-radius);
+  --sp-radius-lg: var(--sp-radius);
+  --sp-radius-xl: var(--sp-radius);
+  --sp-radius-card: var(--sp-radius);
+  --sp-radius-control: var(--sp-radius);
+  --sp-radius-control-inner: var(--sp-radius-nested);
   color-scheme: light;
 }
 

@@ -9,6 +9,7 @@ const staticRoutes = [
   '/clients',
   '/delivery',
   '/branding',
+  '/bag-designer',
   '/contacts',
   '/privacy',
   '/terms',

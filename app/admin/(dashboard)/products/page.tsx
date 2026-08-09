@@ -5,7 +5,27 @@ import Image from 'next/image';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import { Product, Category, Attribute } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert } from 'lucide-react';
+import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
+
+const attributeLabels: Record<string, string> = {
+  material: 'Материал',
+  size: 'Размер',
+  weight: 'Вес',
+  volume: 'Объём',
+  color: 'Цвет',
+  brand: 'Бренд',
+  packaging_type: 'Тип упаковки',
+  horeca_category: 'Категория HoReCa',
+};
+
+function getAttributeLabel(key: string) {
+  if (attributeLabels[key]) return attributeLabels[key];
+  const readable = key.replace(/[_-]+/g, ' ').trim();
+  return readable ? readable.charAt(0).toUpperCase() + readable.slice(1) : 'Характеристика';
+}
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -14,6 +34,8 @@ export default function AdminProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Edit/Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,6 +44,20 @@ export default function AdminProductsPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !saving) setIsModalOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isModalOpen, saving]);
 
   async function loadData() {
     setLoading(true);
@@ -60,6 +96,16 @@ export default function AdminProductsPage() {
       images: ['https://picsum.photos/seed/sanpack-new-prod/800/800'],
       salesUnit: 'рулон',
       minimumOrder: 1,
+      quantityStep: 1,
+      orderPackaging: {
+        enabled: false,
+        nameRu: 'мешок',
+        nameUz: 'qop',
+        nameEn: 'bag',
+        unitsPerPackage: 20,
+        minimumPackages: 1,
+        packageStep: 1,
+      },
       showPrice: true,
       price: 15000,
       stockStatus: 'in_stock',
@@ -70,11 +116,24 @@ export default function AdminProductsPage() {
       newProduct: true,
       sortOrder: 10,
     });
+    setSaveError('');
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (p: Product) => {
-    setEditingProduct(p);
+    setEditingProduct({
+      ...p,
+      orderPackaging: p.orderPackaging || {
+        enabled: false,
+        nameRu: 'мешок',
+        nameUz: 'qop',
+        nameEn: 'bag',
+        unitsPerPackage: 20,
+        minimumPackages: 1,
+        packageStep: 1,
+      },
+    });
+    setSaveError('');
     setIsModalOpen(true);
   };
 
@@ -88,23 +147,34 @@ export default function AdminProductsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
+    setSaveError('');
+    setSaving(true);
 
-    if (!editingProduct.slug) {
-      editingProduct.slug = (editingProduct.titleRu || 'product')
+    const draft = {
+      ...editingProduct,
+      slug: editingProduct.slug || (editingProduct.titleRu || 'product')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-    }
+        .replace(/^-|-$/g, ''),
+    } as Partial<Product>;
+    const orderRule = getProductOrderRule(draft as Product);
+    draft.minimumOrder = orderRule.minimumQuantity;
+    draft.quantityStep = orderRule.quantityStep;
 
-    if (editingProduct.id) {
-      await SanpackRepository.updateProduct(editingProduct.id, editingProduct);
-    } else {
-      await SanpackRepository.createProduct(editingProduct as Omit<Product, 'id' | 'createdAt' | 'updatedAt'>);
+    try {
+      if (draft.id) {
+        await SanpackRepository.updateProduct(draft.id, draft);
+      } else {
+        await SanpackRepository.createProduct(draft as Omit<Product, 'id' | 'createdAt' | 'updatedAt'>);
+      }
+      setIsModalOpen(false);
+      setEditingProduct(null);
+      await loadData();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Товар не сохранён. Попробуйте ещё раз.');
+    } finally {
+      setSaving(false);
     }
-
-    setIsModalOpen(false);
-    setEditingProduct(null);
-    loadData();
   };
 
   const filteredProducts = products.filter(
@@ -112,27 +182,24 @@ export default function AdminProductsPage() {
       p.titleRu.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const editingOrderRule = editingProduct
+    ? getProductOrderRule(editingProduct as Product)
+    : null;
+  const editingOrderSummary = editingProduct
+    ? getOrderRuleSummary(editingProduct as Product)
+    : '';
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#18231E]">
-            Каталог товаров SANPACK
-          </h1>
-          <p className="text-xs text-[#68736D] mt-1">
-            Добавление, редактирование артикулов, цен и параметров
-          </p>
-        </div>
-
-        <button
-          onClick={handleOpenCreate}
-          className="px-5 py-2.5 bg-[#008348] hover:bg-[#006F3C] text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-md"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Добавить товар</span>
-        </button>
-      </div>
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
+        title="Товары"
+        description="Управляйте ассортиментом, ценами, упаковкой и характеристиками. Редактор открывается как отдельное рабочее пространство."
+        action={(
+          <button type="button" onClick={handleOpenCreate} className="admin-button-primary">
+            <Plus className="size-4" aria-hidden="true" /> Добавить товар
+          </button>
+        )}
+      />
 
       {loadError ? (
         <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between">
@@ -142,31 +209,31 @@ export default function AdminProductsPage() {
       ) : null}
 
       {/* Search & Stats */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+      <div className="admin-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full max-w-md flex-1">
+          <Search className="absolute left-3 top-3.5 size-4 text-[var(--sp-ink-muted)]" aria-hidden="true" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Поиск по названию или артикулу (SKU)..."
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#006F3C]"
+            className="admin-control pl-9 pr-3 text-xs"
           />
         </div>
 
-        <span className="text-xs font-bold text-[#006F3C]">
+        <span className="shrink-0 text-xs font-bold text-[var(--sp-brand)]">
           Всего товаров: {filteredProducts.length}
         </span>
       </div>
 
       {/* Products Table */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="admin-table-wrap">
         {loading ? (
-          <div className="p-8 text-center text-xs text-slate-400">Загрузка товаров...</div>
+          <div className="p-8 text-center text-xs text-[var(--sp-ink-tertiary)]">Загрузка товаров...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+              <thead className="admin-table-head font-bold">
                 <tr>
                   <th className="p-3.5">Фото</th>
                   <th className="p-3.5">Артикул / Название</th>
@@ -177,40 +244,41 @@ export default function AdminProductsPage() {
                   <th className="p-3.5 text-right">Действия</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[var(--sp-line-soft)]">
                 {filteredProducts.map((p) => {
                   const cat = categories.find((c) => c.id === p.categoryId);
+                  const orderSummary = getMinimumOrderLabel(p);
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50">
+                    <tr key={p.id} className="transition-colors hover:bg-[var(--sp-surface-inset)]">
                       <td className="p-3.5">
                         <Image
                           src={p.mainImage}
                           alt={p.titleRu}
                           width={40}
                           height={40}
-                          className="w-10 h-10 object-contain rounded-lg border bg-white p-1"
+                          className="size-10 rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface)] object-contain p-1"
                         />
                       </td>
                       <td className="p-3.5">
-                        <span className="font-bold text-[#18231E] block">{p.titleRu}</span>
-                        <span className="text-[10px] text-slate-400 font-mono">Арт: {p.sku}</span>
+                        <span className="block font-bold text-[var(--sp-ink)]">{p.titleRu}</span>
+                        <span className="font-mono text-[10px] text-[var(--sp-ink-tertiary)]">Арт: {p.sku}</span>
                       </td>
-                      <td className="p-3.5 font-semibold text-slate-600">
+                      <td className="p-3.5 font-semibold text-[var(--sp-ink-secondary)]">
                         {cat ? cat.titleRu : '—'}
                       </td>
-                      <td className="p-3.5 font-bold text-[#006F3C]">
+                      <td className="p-3.5 font-bold text-[var(--sp-brand)]">
                         {p.showPrice && p.price ? `${p.price.toLocaleString()} сум` : 'По запросу'}
-                        <span className="block text-[10px] text-slate-400 font-normal">
-                          за {p.salesUnit} (мин. {p.minimumOrder})
+                        <span className="block text-[10px] font-normal text-[var(--sp-ink-tertiary)]">
+                          {orderSummary}
                         </span>
                       </td>
                       <td className="p-3.5">
                         {p.ownProduction ? (
-                          <span className="px-2 py-0.5 rounded bg-[#EAF5EF] text-[#006F3C] font-bold text-[10px] flex items-center gap-1 w-fit">
+                          <span className="flex w-fit items-center gap-1 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] px-2 py-0.5 text-[10px] font-bold text-[var(--sp-brand)]">
                             <Factory className="w-3 h-3" /> SANPACK
                           </span>
                         ) : (
-                          <span className="text-[10px] text-slate-400">Импорт</span>
+                          <span className="text-[10px] text-[var(--sp-ink-tertiary)]">Импорт</span>
                         )}
                       </td>
                       <td className="p-3.5">
@@ -227,14 +295,14 @@ export default function AdminProductsPage() {
                       <td className="p-3.5 text-right space-x-2">
                         <button
                           onClick={() => handleOpenEdit(p)}
-                          className="p-1.5 bg-slate-100 hover:bg-[#006F3C] hover:text-white rounded-lg transition-colors text-slate-600"
+                          className="admin-icon-button size-9 hover:bg-[var(--sp-brand)] hover:text-[var(--sp-on-brand)]"
                           title="Редактировать"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(p.id)}
-                          className="p-1.5 bg-rose-50 hover:bg-rose-600 hover:text-white rounded-lg transition-colors text-rose-600"
+                          className="admin-icon-button size-9 text-[var(--sp-danger)] hover:bg-red-500/10 hover:text-[var(--sp-danger)]"
                           title="Удалить"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -251,25 +319,34 @@ export default function AdminProductsPage() {
 
       {/* Product Edit / Create Modal */}
       {isModalOpen && editingProduct && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="admin-modal-backdrop p-0 md:p-4" role="dialog" aria-modal="true" aria-label={editingProduct.id ? 'Редактирование товара' : 'Новый товар'}>
           <form
             onSubmit={handleSave}
-            className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-4 text-xs"
+            className="admin-modal-card mx-auto md:my-0 md:max-w-6xl text-xs"
           >
-            <div className="flex items-center justify-between pb-3 border-b">
-              <h3 className="font-bold text-base text-[#18231E]">
-                {editingProduct.id ? 'Редактирование товара' : 'Новый товар каталога'}
-              </h3>
+            <div className="admin-modal-header flex items-center justify-between gap-4 px-5 py-4 md:px-7">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--sp-brand)]">Каталог</p>
+                <h3 className="mt-1 text-lg font-bold text-[var(--sp-ink)]">
+                  {editingProduct.id ? 'Редактирование товара' : 'Новый товар'}
+                </h3>
+                <p className="mt-1 text-[11px] text-[var(--sp-ink-tertiary)]">Заполните обязательные данные, затем настройте продажу, описание и характеристики.</p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-slate-400"
+                className="admin-icon-button shrink-0"
+                aria-label="Закрыть редактор"
               >
-                <X className="w-5 h-5" />
+                <X className="size-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="admin-modal-body space-y-7 bg-[var(--sp-canvas)] px-5 py-6 md:px-7">
+            <section className="admin-panel p-5 md:p-6">
+              <h4 className="admin-section-heading">Основная информация</h4>
+              <p className="admin-section-description">Название, артикул, категория, цена и изображение, которые определяют товар в каталоге.</p>
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div>
                 <label className="font-bold block mb-1">Название (RU) *</label>
                 <input
@@ -277,7 +354,7 @@ export default function AdminProductsPage() {
                   required
                   value={editingProduct.titleRu || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleRu: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
+                  className="admin-control text-sm"
                 />
               </div>
 
@@ -288,7 +365,7 @@ export default function AdminProductsPage() {
                   required
                   value={editingProduct.titleUz || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleUz: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
+                  className="admin-control text-sm"
                 />
               </div>
 
@@ -298,7 +375,7 @@ export default function AdminProductsPage() {
                   type="text"
                   value={editingProduct.titleEn || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleEn: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
+                  className="admin-control text-sm"
                 />
               </div>
 
@@ -309,7 +386,7 @@ export default function AdminProductsPage() {
                   required
                   value={editingProduct.sku || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, sku: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-mono outline-none"
+                  className="admin-control font-mono text-sm"
                 />
               </div>
 
@@ -328,18 +405,7 @@ export default function AdminProductsPage() {
                   type="number"
                   value={editingProduct.price || 0}
                   onChange={(e) => setEditingProduct({ ...editingProduct, price: parseInt(e.target.value) || 0 })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold block mb-1">Единица измерения</label>
-                <input
-                  type="text"
-                  value={editingProduct.salesUnit || 'рулон'}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, salesUnit: e.target.value })}
-                  placeholder="рулон, шт, пачка"
-                  className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
+                  className="admin-control text-sm font-bold"
                 />
               </div>
 
@@ -355,7 +421,7 @@ export default function AdminProductsPage() {
                       images: [e.target.value],
                     })
                   }
-                  className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
+                  className="admin-control text-sm"
                 />
               </div>
 
@@ -377,15 +443,183 @@ export default function AdminProductsPage() {
                 />
               </div>
             </div>
+            </section>
 
-            {/* Checkboxes */}
-            <div className="flex items-center gap-6 pt-2">
+            <section className="admin-panel space-y-4 p-5 md:p-6">
+              <div className="flex flex-col gap-1 border-b border-[var(--sp-line)] pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                <div>
+                  <h4 className="text-sm font-bold text-[var(--sp-ink)]">Продажа и упаковка</h4>
+                  <p className="mt-1 max-w-xl text-[11px] leading-5 text-[var(--sp-ink-secondary)]">
+                    Укажите, за что установлена цена и каким количеством покупатель может оформить заказ.
+                  </p>
+                </div>
+                <span className="mt-2 text-[10px] font-semibold text-[var(--sp-brand)] sm:mt-0">
+                  Цена всегда считается за единицу продажи
+                </span>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <label className="font-bold text-[var(--sp-ink)]">
+                  Единица продажи
+                  <input
+                    type="text"
+                    required
+                    value={editingProduct.salesUnit || ''}
+                    onChange={(event) => setEditingProduct({ ...editingProduct, salesUnit: event.target.value })}
+                    placeholder="рулон, штука, кг"
+                    className="admin-control mt-1.5 font-normal"
+                  />
+                  <span className="mt-1 block text-[10px] font-normal leading-4 text-[var(--sp-ink-tertiary)]">
+                    Например, цена 20 000 сум за один рулон.
+                  </span>
+                </label>
+
+                <label className="font-bold text-[var(--sp-ink)]">
+                  Минимум, единиц
+                  <input
+                    type="number"
+                    min="0.001"
+                    step="any"
+                    disabled={editingProduct.orderPackaging?.enabled}
+                    value={editingProduct.minimumOrder || 1}
+                    onChange={(event) => setEditingProduct({ ...editingProduct, minimumOrder: Number(event.target.value) || 1 })}
+                    className="admin-control mt-1.5 font-normal"
+                  />
+                </label>
+
+                <label className="font-bold text-[var(--sp-ink)]">
+                  Шаг заказа, единиц
+                  <input
+                    type="number"
+                    min="0.001"
+                    step="any"
+                    disabled={editingProduct.orderPackaging?.enabled}
+                    value={editingProduct.quantityStep || 1}
+                    onChange={(event) => setEditingProduct({ ...editingProduct, quantityStep: Number(event.target.value) || 1 })}
+                    className="admin-control mt-1.5 font-normal"
+                  />
+                </label>
+              </div>
+
+              <label className="admin-panel-muted flex cursor-pointer items-start gap-3 p-3.5">
+                <input
+                  type="checkbox"
+                  checked={editingProduct.orderPackaging?.enabled || false}
+                  onChange={(event) => setEditingProduct({
+                    ...editingProduct,
+                    orderPackaging: {
+                      enabled: event.target.checked,
+                      nameRu: editingProduct.orderPackaging?.nameRu || 'мешок',
+                      nameUz: editingProduct.orderPackaging?.nameUz || 'qop',
+                      nameEn: editingProduct.orderPackaging?.nameEn || 'bag',
+                      unitsPerPackage: editingProduct.orderPackaging?.unitsPerPackage || 20,
+                      minimumPackages: editingProduct.orderPackaging?.minimumPackages || 1,
+                      packageStep: editingProduct.orderPackaging?.packageStep || 1,
+                    },
+                  })}
+                  className="mt-0.5 size-4 accent-[var(--sp-brand)]"
+                />
+                <span>
+                  <strong className="block text-xs text-[var(--sp-ink)]">Заказ только целыми внешними упаковками</strong>
+                  <span className="mt-1 block text-[10px] leading-4 text-[var(--sp-ink-secondary)]">
+                    Включите, если рулоны, пачки или штуки отпускаются только мешками, коробками или ящиками.
+                  </span>
+                </span>
+              </label>
+
+              {editingProduct.orderPackaging?.enabled ? (
+                <div className="space-y-4 border-l-2 border-[var(--sp-brand)] pl-4">
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    {(['Ru', 'Uz', 'En'] as const).map((suffix) => {
+                      const field = `name${suffix}` as const;
+                      return (
+                        <label key={field} className="font-bold text-[var(--sp-ink)]">
+                          Название упаковки ({suffix.toUpperCase()}){suffix === 'Ru' ? ' *' : ''}
+                          <input
+                            type="text"
+                            required={suffix === 'Ru'}
+                            value={editingProduct.orderPackaging?.[field] || ''}
+                            onChange={(event) => setEditingProduct({
+                              ...editingProduct,
+                              orderPackaging: {
+                                ...editingProduct.orderPackaging!,
+                                [field]: event.target.value,
+                              },
+                            })}
+                            placeholder={suffix === 'Ru' ? 'мешок, коробка, ящик' : ''}
+                            className="admin-control mt-1.5 font-normal"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <label className="font-bold text-[var(--sp-ink)]">
+                      Единиц в одной упаковке
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        required
+                        value={editingProduct.orderPackaging.unitsPerPackage}
+                        onChange={(event) => setEditingProduct({ ...editingProduct, orderPackaging: { ...editingProduct.orderPackaging!, unitsPerPackage: Math.max(1, Number(event.target.value) || 1) } })}
+                        className="admin-control mt-1.5 font-normal"
+                      />
+                    </label>
+                    <label className="font-bold text-[var(--sp-ink)]">
+                      Минимум упаковок
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        required
+                        value={editingProduct.orderPackaging.minimumPackages}
+                        onChange={(event) => setEditingProduct({ ...editingProduct, orderPackaging: { ...editingProduct.orderPackaging!, minimumPackages: Math.max(1, Number(event.target.value) || 1) } })}
+                        className="admin-control mt-1.5 font-normal"
+                      />
+                    </label>
+                    <label className="font-bold text-[var(--sp-ink)]">
+                      Шаг, упаковок
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        required
+                        value={editingProduct.orderPackaging.packageStep}
+                        onChange={(event) => setEditingProduct({ ...editingProduct, orderPackaging: { ...editingProduct.orderPackaging!, packageStep: Math.max(1, Number(event.target.value) || 1) } })}
+                        className="admin-control mt-1.5 font-normal"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : null}
+
+              {editingOrderRule ? (
+                <div className="rounded-[var(--sp-radius-sm)] border border-[color-mix(in_srgb,var(--sp-brand)_28%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-brand)_8%,var(--sp-surface))] p-3.5">
+                  <span className="block text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--sp-brand)]">Так увидит покупатель</span>
+                  <p className="mt-1.5 text-xs font-semibold leading-5 text-[var(--sp-ink)]">{editingOrderSummary}</p>
+                  {editingProduct.showPrice && editingProduct.price && editingOrderRule.packageEnabled ? (
+                    <p className="mt-1 text-[10px] text-[var(--sp-ink-secondary)]">
+                      Стоимость одной внешней упаковки: {(editingProduct.price * editingOrderRule.unitsPerPackage).toLocaleString('ru-RU')} сум.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </section>
+
+            <section className="admin-panel space-y-5 p-5 md:p-6">
+            <div>
+              <h4 className="admin-section-heading">Описание и размещение</h4>
+              <p className="admin-section-description">Отметьте нужные витрины и заполните тексты. Переводы можно подготовить автоматически.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-5">
               <label className="flex items-center gap-2 cursor-pointer font-bold">
                 <input
                   type="checkbox"
                   checked={editingProduct.ownProduction || false}
                   onChange={(e) => setEditingProduct({ ...editingProduct, ownProduction: e.target.checked })}
-                  className="accent-[#006F3C] w-4 h-4"
+                  className="size-4 accent-[var(--sp-brand)]"
                 />
                 <span>Собственное производство</span>
               </label>
@@ -395,30 +629,61 @@ export default function AdminProductsPage() {
                   type="checkbox"
                   checked={editingProduct.featured || false}
                   onChange={(e) => setEditingProduct({ ...editingProduct, featured: e.target.checked })}
-                  className="accent-[#006F3C] w-4 h-4"
+                  className="size-4 accent-[var(--sp-brand)]"
                 />
                 <span>Популярное на главной</span>
               </label>
             </div>
 
-            <div>
-              <label className="font-bold block mb-1">Краткое описание (RU)</label>
-              <textarea
-                rows={2}
-                value={editingProduct.shortDescriptionRu || ''}
-                onChange={(e) => setEditingProduct({ ...editingProduct, shortDescriptionRu: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-slate-200 outline-none"
-              />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {(['Ru', 'Uz', 'En'] as const).map((suffix) => {
+                const field = `shortDescription${suffix}` as const;
+                return (
+                  <label key={field} className="font-bold">
+                    Краткое описание ({suffix.toUpperCase()})
+                    <textarea rows={2} value={editingProduct[field] || ''} onChange={(event) => setEditingProduct({ ...editingProduct, [field]: event.target.value })} className="admin-control mt-1.5 font-normal" />
+                  </label>
+                );
+              })}
             </div>
 
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {(['Ru', 'Uz', 'En'] as const).map((suffix) => {
+                const field = `description${suffix}` as const;
+                return (
+                  <label key={field} className="font-bold">
+                    Полное описание ({suffix.toUpperCase()})
+                    <textarea rows={4} value={editingProduct[field] || ''} onChange={(event) => setEditingProduct({ ...editingProduct, [field]: event.target.value })} className="admin-control mt-1.5 font-normal" />
+                  </label>
+                );
+              })}
+            </div>
+
+            <AiTranslateButton fields={[
+              {
+                key: 'title', label: 'Название товара',
+                values: { ru: editingProduct.titleRu || '', uz: editingProduct.titleUz || '', en: editingProduct.titleEn || '' },
+                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value } : current),
+              },
+              {
+                key: 'shortDescription', label: 'Краткое описание',
+                values: { ru: editingProduct.shortDescriptionRu || '', uz: editingProduct.shortDescriptionUz || '', en: editingProduct.shortDescriptionEn || '' },
+                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`shortDescription${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value } : current),
+              },
+              {
+                key: 'description', label: 'Полное описание',
+                values: { ru: editingProduct.descriptionRu || '', uz: editingProduct.descriptionUz || '', en: editingProduct.descriptionEn || '' },
+                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value } : current),
+              },
+            ]} />
+            </section>
+
             {/* Dynamic Attributes Section */}
-            <div className="space-y-4 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4">
+            <section className="admin-panel space-y-5 p-5 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="font-bold text-xs text-[#18231E] block">
-                    Характеристики и Атрибуты товара (для фильтров)
-                  </label>
-                  <span className="text-[10px] text-slate-500">
+                  <h4 className="admin-section-heading">Характеристики и фильтры</h4>
+                  <span className="admin-section-description block">
                     Выберите из созданных атрибутов или введите своё произвольное значение
                   </span>
                 </div>
@@ -437,20 +702,19 @@ export default function AdminProductsPage() {
                   const rawVal = editingProduct.attributes?.[attr.key];
                   const currentValue = rawVal !== undefined && rawVal !== null ? String(rawVal) : '';
                   return (
-                    <div key={attr.id} className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                    <div key={attr.id} className="admin-panel-muted space-y-1.5 p-3">
                       <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-700 block">
+                        <label className="block text-[11px] font-bold text-[var(--sp-ink)]">
                           {attr.titleRu} {attr.unit ? `(${attr.unit})` : ''}
                         </label>
-                        <span className="text-[9px] font-mono text-slate-400">{attr.key}</span>
+                        <span className="text-[9px] text-[var(--sp-ink-tertiary)]">Для фильтра каталога</span>
                       </div>
 
                       {attr.type === 'select' && attr.options && attr.options.length > 0 ? (
                         <div className="space-y-1">
-                          <select
+                          <CustomSelect
                             value={attr.options.some((o) => o.value === currentValue) ? currentValue : currentValue ? '__custom__' : ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
+                            onChange={(val) => {
                               if (val !== '__custom__') {
                                 setEditingProduct({
                                   ...editingProduct,
@@ -461,16 +725,14 @@ export default function AdminProductsPage() {
                                 });
                               }
                             }}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs outline-none"
-                          >
-                            <option value="">-- Не выбрано --</option>
-                            {attr.options.map((opt) => (
-                              <option key={opt.value} value={opt.value}>
-                                {opt.labelRu}
-                              </option>
-                            ))}
-                            <option value="__custom__">Своё значение...</option>
-                          </select>
+                            options={[
+                              { value: '', label: 'Не выбрано' },
+                              ...attr.options.map((opt) => ({ value: opt.value, label: opt.labelRu })),
+                              { value: '__custom__', label: 'Своё значение…' },
+                            ]}
+                            size="sm"
+                            ariaLabel={attr.titleRu}
+                          />
 
                           {(!attr.options.some((o) => o.value === currentValue) || currentValue === '__custom__') && (
                             <input
@@ -486,7 +748,7 @@ export default function AdminProductsPage() {
                                 })
                               }
                               placeholder="Введите своё значение (например: 15 мкм)"
-                              className="w-full bg-white border border-[#006F3C]/40 rounded-lg p-1.5 text-xs outline-none font-semibold text-[#006F3C]"
+                              className="admin-control min-h-10 text-xs font-semibold text-[var(--sp-brand)]"
                             />
                           )}
                         </div>
@@ -504,7 +766,7 @@ export default function AdminProductsPage() {
                             })
                           }
                           placeholder={`Введите ${attr.titleRu.toLowerCase()}`}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs outline-none"
+                          className="admin-control min-h-10 text-xs"
                         />
                       )}
                     </div>
@@ -513,18 +775,18 @@ export default function AdminProductsPage() {
               </div>
 
               {/* Extra Custom Key-Value Attributes Adder */}
-              <div className="pt-2 border-t border-slate-200 space-y-2">
-                <label className="text-[11px] font-bold text-slate-700 block">
-                  Дополнительные индивидуальные атрибуты этого товара:
+              <div className="space-y-2 border-t border-[var(--sp-line)] pt-4">
+                <label className="block text-[11px] font-bold text-[var(--sp-ink)]">
+                  Дополнительные характеристики
                 </label>
                 
                 {/* List existing non-system attributes */}
                 {Object.entries(editingProduct.attributes || {})
                   .filter(([k]) => !attributes.some((a) => a.key === k))
                   .map(([customKey, customVal]) => (
-                    <div key={customKey} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200">
-                      <span className="font-mono text-xs font-bold text-slate-600 px-2 py-1 bg-slate-100 rounded">
-                        {customKey}:
+                    <div key={customKey} className="admin-panel-muted grid gap-2 p-3 sm:grid-cols-[10rem_minmax(0,1fr)_2.5rem] sm:items-center">
+                      <span className="text-xs font-bold text-[var(--sp-ink-secondary)]">
+                        {getAttributeLabel(customKey)}
                       </span>
                       <input
                         type="text"
@@ -538,7 +800,7 @@ export default function AdminProductsPage() {
                             },
                           })
                         }
-                        className="flex-1 text-xs border rounded p-1"
+                        className="admin-control min-h-10 flex-1 text-xs"
                       />
                       <button
                         type="button"
@@ -547,26 +809,27 @@ export default function AdminProductsPage() {
                           delete updated[customKey];
                           setEditingProduct({ ...editingProduct, attributes: updated });
                         }}
-                        className="text-rose-500 hover:text-rose-700 p-1 font-bold"
+                        className="admin-icon-button size-9 shrink-0 text-[var(--sp-danger)]"
+                        aria-label={`Удалить характеристику ${getAttributeLabel(customKey)}`}
                       >
-                        ×
+                        <X className="size-4" aria-hidden="true" />
                       </button>
                     </div>
                   ))}
 
                 {/* New Custom Attribute Inline Input */}
-                <div className="flex gap-2">
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
                   <input
                     id="new-custom-attr-key"
                     type="text"
-                    placeholder="Название атрибута (например: density)"
-                    className="w-1/2 bg-white border border-slate-200 rounded-lg p-2 text-xs outline-none"
+                    placeholder="Название, например «Плотность»"
+                    className="admin-control text-xs"
                   />
                   <input
                     id="new-custom-attr-val"
                     type="text"
                     placeholder="Значение (например: 100 г/м²)"
-                    className="w-1/2 bg-white border border-slate-200 rounded-lg p-2 text-xs outline-none"
+                    className="admin-control text-xs"
                   />
                   <button
                     type="button"
@@ -574,7 +837,7 @@ export default function AdminProductsPage() {
                       const keyEl = document.getElementById('new-custom-attr-key') as HTMLInputElement;
                       const valEl = document.getElementById('new-custom-attr-val') as HTMLInputElement;
                       if (keyEl && valEl && keyEl.value.trim() && valEl.value.trim()) {
-                        const cleanKey = keyEl.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+                        const cleanKey = keyEl.value.trim().toLowerCase().replace(/\s+/g, '_');
                         setEditingProduct({
                           ...editingProduct,
                           attributes: {
@@ -586,27 +849,37 @@ export default function AdminProductsPage() {
                         valEl.value = '';
                       }
                     }}
-                    className="bg-[#006F3C] text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-[#005830] transition-colors shrink-0"
+                    className="admin-button-primary shrink-0"
                   >
                     + Добавить
                   </button>
                 </div>
               </div>
+            </section>
+
+            {saveError ? (
+              <div role="alert" className="flex items-start gap-2 rounded-[var(--sp-radius-sm)] border border-red-300/60 bg-red-50 p-3 text-xs text-red-800">
+                <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <span>{saveError}</span>
+              </div>
+            ) : null}
             </div>
 
-            <div className="pt-4 border-t flex justify-end gap-2">
+            <div className="admin-modal-footer flex justify-end gap-2 px-5 py-4 md:px-7">
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-slate-100 rounded-xl font-bold text-slate-700"
+                className="admin-button-secondary disabled:opacity-50"
               >
                 Отмена
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-[#006F3C] text-white font-bold rounded-xl shadow-md"
+                disabled={saving}
+                className="admin-button-primary px-6 disabled:cursor-wait disabled:opacity-60"
               >
-                Сохранить товар
+                {saving ? 'Сохраняем…' : 'Сохранить товар'}
               </button>
             </div>
           </form>

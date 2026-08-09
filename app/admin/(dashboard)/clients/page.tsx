@@ -6,6 +6,7 @@ import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import { ClientPartner } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { Plus, Edit, Trash2, X, RefreshCw, TriangleAlert } from 'lucide-react';
 
 export default function AdminClientsPage() {
@@ -19,6 +20,13 @@ export default function AdminClientsPage() {
   useEffect(() => {
     loadClients();
   }, []);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [isModalOpen]);
 
   async function loadClients() {
     setLoading(true);
@@ -67,14 +75,14 @@ export default function AdminClientsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Клиенты и партнёры"
         description="Управляйте логотипами и брендами, которые показываются на главной странице."
         action={(
           <button
             onClick={handleCreate}
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--sp-brand)] px-4 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90"
+            className="admin-button-primary"
           >
             <Plus className="size-4" aria-hidden="true" />
             <span>Добавить партнёра</span>
@@ -93,7 +101,7 @@ export default function AdminClientsPage() {
         {clients.map((client) => (
           <div
             key={client.id}
-            className="flex flex-col justify-between space-y-3 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4"
+            className="admin-panel flex flex-col justify-between space-y-3 p-4"
           >
             <Image
               src={client.logo}
@@ -117,14 +125,14 @@ export default function AdminClientsPage() {
                   setIsModalOpen(true);
                 }}
                 aria-label={`Редактировать ${client.name}`}
-                className="flex size-9 items-center justify-center rounded-md text-[var(--sp-ink-tertiary)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
+                className="admin-icon-button"
               >
                 <Edit className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleDelete(client.id)}
                 aria-label={`Удалить ${client.name}`}
-                className="flex size-9 items-center justify-center rounded-md text-[var(--sp-ink-tertiary)] hover:bg-red-500/8 hover:text-[var(--sp-danger)]"
+                className="admin-icon-button text-[var(--sp-danger)]"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -134,10 +142,10 @@ export default function AdminClientsPage() {
       </div>
 
       {isModalOpen && editingClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="admin-modal-backdrop">
           <form
             onSubmit={handleSave}
-            className="w-full max-w-md space-y-4 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-6 text-xs shadow-[var(--sp-shadow-raised)]"
+            className="admin-modal-card mx-auto space-y-4 p-5 text-xs md:my-4 md:max-w-lg md:p-6"
           >
             <div className="flex items-center justify-between border-b border-[var(--sp-line)] pb-3">
               <h2 className="text-base font-bold text-[var(--sp-ink)]">Партнёр</h2>
@@ -145,7 +153,7 @@ export default function AdminClientsPage() {
                 type="button"
                 onClick={() => setIsModalOpen(false)}
                 aria-label="Закрыть"
-                className="flex size-9 items-center justify-center rounded-md text-[var(--sp-ink-tertiary)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
+                className="admin-icon-button"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -158,7 +166,7 @@ export default function AdminClientsPage() {
                 required
                 value={editingClient.name || ''}
                 onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
-                className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]"
+                className="admin-control mt-1.5 text-sm font-normal"
               />
             </div>
 
@@ -168,7 +176,7 @@ export default function AdminClientsPage() {
                 type="text"
                 value={editingClient.logo || ''}
                 onChange={(e) => setEditingClient({ ...editingClient, logo: e.target.value })}
-                className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]"
+                className="admin-control mt-1.5 text-sm font-normal"
               />
             </div>
 
@@ -186,17 +194,32 @@ export default function AdminClientsPage() {
               />
             </div>
 
+            <div className="grid gap-3">
+              {([['descriptionRu', 'Описание RU'], ['descriptionUz', 'Описание UZ'], ['descriptionEn', 'Описание EN']] as const).map(([field, label]) => (
+                <label key={field} className="font-bold">
+                  {label}
+                  <textarea rows={2} value={editingClient[field] || ''} onChange={(event) => setEditingClient({ ...editingClient, [field]: event.target.value })} className="admin-control mt-1.5 p-3 text-sm font-normal" />
+                </label>
+              ))}
+            </div>
+
+            <AiTranslateButton fields={[{
+              key: 'description', label: 'Описание партнёра',
+              values: { ru: editingClient.descriptionRu || '', uz: editingClient.descriptionUz || '', en: editingClient.descriptionEn || '' },
+              onChange: (language, value) => setEditingClient((current) => current ? { ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value } : current),
+            }]} compact />
+
             <div className="flex justify-end gap-2 border-t border-[var(--sp-line)] pt-4">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="inline-flex min-h-10 items-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-4 font-bold text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-surface-inset)]"
+                className="admin-button-secondary"
               >
                 Отмена
               </button>
               <button
                 type="submit"
-                className="inline-flex min-h-10 items-center rounded-lg bg-[var(--sp-brand)] px-5 font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90"
+                className="admin-button-primary"
               >
                 Сохранить
               </button>

@@ -18,6 +18,7 @@ import {
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 
 import { useToast } from '@/context/ToastContext';
+import { getMinimumOrderLabel, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 
 interface ProductCardProps {
   product: Product;
@@ -39,11 +40,13 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
   const shortDesc = getLocalizedText(product.shortDescriptionRu, product.shortDescriptionUz, product.shortDescriptionEn);
   const favorited = isFavorite(product.id);
   const inCart = isInCart(product.id);
+  const orderRule = getProductOrderRule(product, language);
+  const minimumOrderLabel = getMinimumOrderLabel(product, language);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addItem(product, product.variants?.[0], product.minimumOrder || 1);
+    addItem(product, product.variants?.[0], orderRule.minimumQuantity);
     showToast(copy[0], title);
   };
 
@@ -117,7 +120,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
                 : t('priceOnRequest')}
             </span>
             <span className="text-[11px] text-slate-400">
-              {t('minOrder')} {product.minimumOrder} {product.salesUnit}
+              {minimumOrderLabel}
             </span>
           </div>
 
@@ -257,7 +260,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
               : t('priceOnRequest')}
           </span>
           <span className="text-[10px] text-slate-400 block">
-            {t('minOrder')} {product.minimumOrder} {product.salesUnit}
+            {minimumOrderLabel}
           </span>
         </div>
 

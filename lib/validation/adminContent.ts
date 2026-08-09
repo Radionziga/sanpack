@@ -98,7 +98,46 @@ export const settingsMutationSchema = z.object({
   contacts: contactSettingsSchema.optional(),
 }).strict();
 
+const productOrderPackagingSchema = z.object({
+  enabled: z.boolean(),
+  nameRu: z.string().trim().max(80),
+  nameUz: z.string().trim().max(80).optional(),
+  nameEn: z.string().trim().max(80).optional(),
+  unitsPerPackage: z.number().int().min(1).max(1_000_000),
+  minimumPackages: z.number().int().min(1).max(1_000_000),
+  packageStep: z.number().int().min(1).max(1_000_000),
+}).strict().superRefine((values, context) => {
+  if (values.enabled && !values.nameRu) {
+    context.addIssue({
+      code: 'custom',
+      path: ['nameRu'],
+      message: 'Укажите название внешней упаковки.',
+    });
+  }
+});
+
+export const productMutationSchema = z.object({
+  salesUnit: z.string().trim().min(1).max(80).optional(),
+  minimumOrder: z.number().positive().max(1_000_000_000).optional(),
+  quantityStep: z.number().positive().max(1_000_000_000).optional(),
+  maximumOrder: z.number().positive().max(1_000_000_000).optional(),
+  orderPackaging: productOrderPackagingSchema.optional(),
+}).passthrough().superRefine((values, context) => {
+  if (
+    values.maximumOrder !== undefined &&
+    values.minimumOrder !== undefined &&
+    values.maximumOrder < values.minimumOrder
+  ) {
+    context.addIssue({
+      code: 'custom',
+      path: ['maximumOrder'],
+      message: 'Максимум не может быть меньше минимального заказа.',
+    });
+  }
+});
+
 export function validateAdminResourceData(resource: string, data: unknown) {
+  if (resource === 'products') return productMutationSchema.safeParse(data);
   if (resource === 'categories') return categoryMutationSchema.safeParse(data);
   if (resource === 'banners') return bannerMutationSchema.safeParse(data);
   if (resource === 'settings') return settingsMutationSchema.safeParse(data);

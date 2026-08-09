@@ -79,6 +79,16 @@ export interface ProductDocument {
   size?: string;
 }
 
+export interface ProductOrderPackaging {
+  enabled: boolean;
+  nameRu: string;
+  nameUz?: string;
+  nameEn?: string;
+  unitsPerPackage: number;
+  minimumPackages: number;
+  packageStep: number;
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -114,6 +124,7 @@ export interface Product {
   quantityStep?: number;
   maximumOrder?: number;
   catchWeight?: boolean;
+  orderPackaging?: ProductOrderPackaging;
   priceMode?: ProductPriceMode;
   availability?: ProductAvailability;
   featured: boolean;
@@ -366,6 +377,11 @@ export interface SiteSettings {
     defaultDescriptionUz: string;
     defaultDescriptionEn?: string;
   };
+  modules?: {
+    bagDesigner?: {
+      enabled: boolean;
+    };
+  };
 }
 
 export interface TelegramPrivateSettings {
@@ -391,6 +407,16 @@ export interface TelegramPrivateSettings {
     tokenLast4?: string;
     chatId?: string;
   };
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export interface GeminiPrivateSettings {
+  enabled: boolean;
+  model: string;
+  imageModel?: string;
+  apiKeyEncrypted?: string;
+  apiKeyLast4?: string;
   updatedAt?: string;
   updatedBy?: string;
 }

@@ -164,10 +164,10 @@ export default function CatalogPage() {
                 />
               </div>
 
-              <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
+              <div className="flex h-11 items-center border border-[var(--sp-line)] bg-[var(--sp-surface)] p-1 shadow-2xs rounded-[var(--sp-radius-control)]">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-lg transition-colors ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${
                     viewMode === 'grid'
                       ? 'bg-[#0F6E43] text-white'
                       : 'text-slate-400 hover:text-slate-700'
@@ -178,7 +178,7 @@ export default function CatalogPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-lg transition-colors ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${
                     viewMode === 'list'
                       ? 'bg-[#0F6E43] text-white'
                       : 'text-slate-400 hover:text-slate-700'

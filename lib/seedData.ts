@@ -47,6 +47,11 @@ export const initialSiteSettings: SiteSettings = {
     defaultDescriptionRu: 'Производство и оптовые поставки мусорных мешков, пакетов, перчаток, фольги, стрейч-пленки, бакалеи и полиграфии для ресторанов, отелей и бизнеса.',
     defaultDescriptionUz: 'Restoranlar, mehmonxonalar va biznes uchun chiqindi qoplari, paketlar, qo‘lqoplar, folga, strech plyonka va oziq-ovqat mahsulotlarini ulgurji yetkazib berish.',
   },
+  modules: {
+    bagDesigner: {
+      enabled: true,
+    },
+  },
 };
 
 export const initialCategories: Category[] = [

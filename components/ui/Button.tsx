@@ -25,28 +25,28 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    'inline-flex items-center justify-center font-bold transition-all duration-150 cursor-pointer select-none outline-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
+    'inline-flex items-center justify-center border font-bold transition-colors duration-150 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sp-brand)_18%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed';
 
   const sizeStyles = {
-    xs: 'h-8 px-3 text-xs gap-1.5 rounded-lg',
-    sm: 'h-9 px-3.5 text-xs gap-2 rounded-xl',
-    md: 'h-10 px-4 text-xs gap-2 rounded-xl',
-    lg: 'h-12 px-6 text-sm gap-2.5 rounded-xl',
+    xs: 'h-8 px-3 text-xs gap-1.5 rounded-[var(--sp-radius-control)]',
+    sm: 'h-9 px-3.5 text-xs gap-2 rounded-[var(--sp-radius-control)]',
+    md: 'h-10 px-4 text-xs gap-2 rounded-[var(--sp-radius-control)]',
+    lg: 'h-12 px-6 text-sm gap-2.5 rounded-[var(--sp-radius-control)]',
   };
 
   const variantStyles = {
     primary:
-      'bg-[#0F6E43] hover:bg-[#093E25] text-white shadow-md hover:shadow-lg focus:ring-2 focus:ring-[#0F6E43]/20',
+      'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:border-[var(--sp-brand-deep)] hover:bg-[var(--sp-brand-deep)]',
     secondary:
-      'bg-[#EAF5EF] hover:bg-[#D4EBE1] text-[#0F6E43] focus:ring-2 focus:ring-[#0F6E43]/15',
+      'border-[color-mix(in_srgb,var(--sp-brand)_20%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-brand)_9%,var(--sp-surface))] text-[var(--sp-brand)] hover:bg-[color-mix(in_srgb,var(--sp-brand)_14%,var(--sp-surface))]',
     outline:
-      'bg-white border border-slate-200 text-[#222B35] hover:border-[#0F6E43]/40 hover:bg-slate-50 focus:ring-2 focus:ring-[#0F6E43]/15 shadow-2xs',
+      'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] hover:border-[color-mix(in_srgb,var(--sp-brand)_38%,var(--sp-line))] hover:bg-[var(--sp-surface-muted)]',
     ghost:
-      'bg-transparent text-slate-700 hover:bg-slate-100 hover:text-[#0F6E43]',
+      'border-transparent bg-transparent text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-surface-muted)] hover:text-[var(--sp-brand)]',
     danger:
-      'bg-rose-600 hover:bg-rose-700 text-white shadow-md focus:ring-2 focus:ring-rose-500/20',
+      'border-[var(--sp-danger)] bg-[var(--sp-danger)] text-white hover:brightness-90',
     success:
-      'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md focus:ring-2 focus:ring-emerald-500/20',
+      'border-[var(--sp-success)] bg-[var(--sp-success)] text-white hover:brightness-90',
   };
 
   return (

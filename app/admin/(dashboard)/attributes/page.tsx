@@ -5,6 +5,7 @@ import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import { Attribute, Category, AttributeOption } from '@/types';
 import { Button, CustomInput, Badge, CustomSelect } from '@/components/ui';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import {
   SlidersHorizontal,
   Plus,
@@ -32,6 +33,7 @@ export default function AdminAttributesPage() {
   const [key, setKey] = useState('');
   const [titleRu, setTitleRu] = useState('');
   const [titleUz, setTitleUz] = useState('');
+  const [titleEn, setTitleEn] = useState('');
   const [type, setType] = useState<'select' | 'text' | 'number'>('select');
   const [unit, setUnit] = useState('');
   const [filterable, setFilterable] = useState(true);
@@ -44,12 +46,27 @@ export default function AdminAttributesPage() {
   const [newOptValue, setNewOptValue] = useState('');
   const [newOptRu, setNewOptRu] = useState('');
   const [newOptUz, setNewOptUz] = useState('');
+  const [newOptEn, setNewOptEn] = useState('');
 
   const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsModalOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isModalOpen]);
 
   async function loadData() {
     setLoading(true);
@@ -78,6 +95,7 @@ export default function AdminAttributesPage() {
     setKey('');
     setTitleRu('');
     setTitleUz('');
+    setTitleEn('');
     setType('select');
     setUnit('');
     setFilterable(true);
@@ -93,6 +111,7 @@ export default function AdminAttributesPage() {
     setKey(attr.key);
     setTitleRu(attr.titleRu);
     setTitleUz(attr.titleUz);
+    setTitleEn(attr.titleEn || '');
     setType((attr.type as any) || 'select');
     setUnit(attr.unit || '');
     setFilterable(attr.filterable);
@@ -109,11 +128,13 @@ export default function AdminAttributesPage() {
       value: newOptValue.trim(),
       labelRu: newOptRu.trim(),
       labelUz: newOptUz.trim() || newOptRu.trim(),
+      labelEn: newOptEn.trim() || undefined,
     };
     setOptions([...options, newOpt]);
     setNewOptValue('');
     setNewOptRu('');
     setNewOptUz('');
+    setNewOptEn('');
   };
 
   const handleRemoveOption = (index: number) => {
@@ -134,6 +155,7 @@ export default function AdminAttributesPage() {
       key: formattedKey,
       titleRu: titleRu.trim(),
       titleUz: titleUz.trim() || titleRu.trim(),
+      titleEn: titleEn.trim() || undefined,
       type,
       unit: unit.trim() || undefined,
       filterable,
@@ -161,10 +183,10 @@ export default function AdminAttributesPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-6 font-sans">
+    <div className="admin-page">
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed top-5 right-5 z-50 bg-[#18231E] text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border border-emerald-500/30 text-xs font-semibold animate-fade-in">
+        <div className="fixed right-5 top-5 z-50 flex items-center gap-2 rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--sp-success)_30%,transparent)] bg-[var(--sp-ink)] px-4 py-3 text-xs font-semibold text-[var(--sp-surface)] shadow-lg animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{notification}</span>
         </div>
@@ -194,21 +216,21 @@ export default function AdminAttributesPage() {
       ) : null}
 
       {/* Attributes List */}
-      <div className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">
+      <div className="admin-table-wrap">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-xs">
+          <div className="p-12 text-center text-xs text-[var(--sp-ink-tertiary)]">
             Загрузка списка характеристик...
           </div>
         ) : attributes.length === 0 ? (
           <div className="p-12 text-center space-y-3">
-            <Tag className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="text-sm font-semibold text-slate-600">Нет созданных атрибутов</p>
-            <p className="text-xs text-slate-400">Нажмите «Создать атрибут», чтобы добавить первый параметр фильтрации</p>
+            <Tag className="mx-auto h-10 w-10 text-[var(--sp-ink-tertiary)]" />
+            <p className="text-sm font-semibold text-[var(--sp-ink)]">Характеристик пока нет</p>
+            <p className="text-xs text-[var(--sp-ink-tertiary)]">Создайте первый параметр, который можно показывать в карточке и использовать в фильтрах.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-[#18231E]">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+            <table className="w-full text-left text-xs text-[var(--sp-ink)]">
+              <thead className="admin-table-head">
                 <tr>
                   <th className="py-3.5 px-5">Характеристика</th>
                   <th className="py-3.5 px-5">Ключ (ID)</th>
@@ -219,21 +241,21 @@ export default function AdminAttributesPage() {
                   <th className="py-3.5 px-5 text-right">Действия</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[var(--sp-line)]">
                 {attributes.map((attr) => {
                   const linkedCategoryNames = (attr.categoryIds || [])
                     .map((id) => categories.find((c) => c.id === id)?.titleRu)
                     .filter(Boolean);
 
                   return (
-                    <tr key={attr.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={attr.id} className="transition-colors hover:bg-[var(--sp-surface-muted)]">
                       <td className="py-4 px-5">
-                        <div className="font-bold text-[#18231E] text-sm">{attr.titleRu}</div>
-                        <div className="text-[11px] text-slate-400">{attr.titleUz}</div>
+                        <div className="text-sm font-bold text-[var(--sp-ink)]">{attr.titleRu}</div>
+                        <div className="text-[11px] text-[var(--sp-ink-tertiary)]">{attr.titleUz}</div>
                       </td>
 
-                      <td className="py-4 px-5 font-mono text-slate-500 font-semibold">
-                        <span className="bg-slate-100 px-2 py-1 rounded-md text-[11px] border border-slate-200">
+                      <td className="px-5 py-4 font-semibold text-[var(--sp-ink-secondary)]">
+                        <span className="rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface-muted)] px-2 py-1 text-[11px]">
                           {attr.key}
                         </span>
                       </td>
@@ -251,7 +273,7 @@ export default function AdminAttributesPage() {
                             {attr.options.slice(0, 4).map((opt) => (
                               <span
                                 key={opt.value}
-                                className="bg-[#EAF5EF] text-[#0F6E43] text-[10px] font-semibold px-2 py-0.5 rounded-md border border-[#0F6E43]/20"
+                                className="rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--sp-brand)_24%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-brand)_9%,var(--sp-surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--sp-brand)]"
                               >
                                 {opt.labelRu}
                               </span>
@@ -263,18 +285,18 @@ export default function AdminAttributesPage() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">Свободный ввод</span>
+                          <span className="italic text-[var(--sp-ink-tertiary)]">Свободный ввод</span>
                         )}
                       </td>
 
-                      <td className="py-4 px-5 text-slate-500">
+                      <td className="px-5 py-4 text-[var(--sp-ink-secondary)]">
                         {linkedCategoryNames.length > 0 ? (
-                          <span className="text-slate-700 font-medium line-clamp-1">
+                          <span className="line-clamp-1 font-medium text-[var(--sp-ink)]">
                             {linkedCategoryNames.join(', ')}
                           </span>
                         ) : (
-                          <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            Все категории (Глобальный)
+                          <span className="rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface-muted)] px-2 py-0.5 font-semibold text-[var(--sp-ink-secondary)]">
+                            Все категории
                           </span>
                         )}
                       </td>
@@ -294,14 +316,14 @@ export default function AdminAttributesPage() {
                       <td className="py-4 px-5 text-right space-x-2">
                         <button
                           onClick={() => handleOpenEditModal(attr)}
-                          className="p-2 text-slate-400 hover:text-[#006F3C] hover:bg-[#EAF5EF] rounded-xl transition-colors"
+                           className="admin-icon-button"
                           title="Редактировать"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteAttribute(attr.id, attr.titleRu)}
-                          className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors"
+                           className="admin-icon-button text-[var(--sp-danger)]"
                           title="Удалить"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -318,25 +340,26 @@ export default function AdminAttributesPage() {
 
       {/* Modal Form */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-200 space-y-6 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal-card mx-auto md:my-4 md:max-w-3xl">
+            <div className="admin-modal-header flex items-center justify-between gap-4 px-5 py-4 md:px-7">
               <div className="flex items-center gap-2">
-                <SlidersHorizontal className="w-5 h-5 text-[#006F3C]" />
-                <h3 className="text-lg font-bold text-[#18231E]">
+                <SlidersHorizontal className="h-5 w-5 text-[var(--sp-brand)]" />
+                <h3 className="text-lg font-bold text-[var(--sp-ink)]">
                   {editingAttr ? 'Редактирование характеристики' : 'Новая характеристика'}
                 </h3>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-xl"
+                className="admin-icon-button"
+                aria-label="Закрыть"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveAttribute} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleSaveAttribute} className="admin-modal-body space-y-6 px-5 py-6 md:px-7">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <CustomInput
                   label="Название RU"
                   value={titleRu}
@@ -350,15 +373,27 @@ export default function AdminAttributesPage() {
                   onChange={(e) => setTitleUz(e.target.value)}
                   placeholder="например: Qalinligi"
                 />
+                <CustomInput
+                  label="Название EN"
+                  value={titleEn}
+                  onChange={(e) => setTitleEn(e.target.value)}
+                  placeholder="for example: Thickness"
+                />
               </div>
+
+              <AiTranslateButton fields={[{
+                key: 'title', label: 'Название характеристики',
+                values: { ru: titleRu, uz: titleUz, en: titleEn },
+                onChange: (language, value) => language === 'ru' ? setTitleRu(value) : language === 'uz' ? setTitleUz(value) : setTitleEn(value),
+              }]} compact />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <CustomInput
-                  label="Системный ключ (slug / ID)"
+                  label="Короткое внутреннее имя"
                   value={key}
                   onChange={(e) => setKey(e.target.value)}
                   placeholder="например: thickness, weight"
-                  helperText="Латинскими буквами без пробелов"
+                  helperText="Например, weight или packaging_type. Покупатели это значение не увидят."
                   required
                 />
                 <CustomInput
@@ -370,7 +405,7 @@ export default function AdminAttributesPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-[#222B35]">
+                <label className="admin-field-label block">
                   Тип ввода информации
                 </label>
                 <CustomSelect
@@ -386,35 +421,48 @@ export default function AdminAttributesPage() {
 
               {/* Options Builder for Select type */}
               {type === 'select' && (
-                <div className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                  <h4 className="text-xs font-bold text-[#18231E] flex items-center gap-1.5">
-                    <Tag className="w-4 h-4 text-[#006F3C]" />
+                <div className="admin-panel-muted space-y-3 p-4">
+                  <h4 className="flex items-center gap-1.5 text-xs font-bold text-[var(--sp-ink)]">
+                    <Tag className="h-4 w-4 text-[var(--sp-brand)]" />
                     <span>Предопределённые варианты для фильтра</span>
                   </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                     <input
                       type="text"
                       placeholder="Значение (250 гр)"
                       value={newOptValue}
                       onChange={(e) => setNewOptValue(e.target.value)}
-                      className="bg-white border rounded-xl px-3 py-2 text-xs"
+                      className="admin-control text-xs"
                     />
                     <input
                       type="text"
                       placeholder="Подпись RU (250 гр)"
                       value={newOptRu}
                       onChange={(e) => setNewOptRu(e.target.value)}
-                      className="bg-white border rounded-xl px-3 py-2 text-xs"
+                      className="admin-control text-xs"
                     />
                     <input
                       type="text"
                       placeholder="Подпись UZ (250 gr)"
                       value={newOptUz}
                       onChange={(e) => setNewOptUz(e.target.value)}
-                      className="bg-white border rounded-xl px-3 py-2 text-xs"
+                      className="admin-control text-xs"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Подпись EN (250 g)"
+                      value={newOptEn}
+                      onChange={(e) => setNewOptEn(e.target.value)}
+                      className="admin-control text-xs"
                     />
                   </div>
+
+                  <AiTranslateButton fields={[{
+                    key: 'option', label: 'Подпись варианта',
+                    values: { ru: newOptRu, uz: newOptUz, en: newOptEn },
+                    onChange: (language, value) => language === 'ru' ? setNewOptRu(value) : language === 'uz' ? setNewOptUz(value) : setNewOptEn(value),
+                  }]} compact />
 
                   <Button
                     type="button"
@@ -433,15 +481,15 @@ export default function AdminAttributesPage() {
                       {options.map((opt, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                          className="flex items-center justify-between rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 py-2 text-xs"
                         >
-                          <div className="font-semibold text-slate-800">
-                            {opt.labelRu} <span className="text-slate-400 font-mono text-[10px]">({opt.value})</span>
+                          <div className="font-semibold text-[var(--sp-ink)]">
+                            {opt.labelRu} <span className="text-[10px] text-[var(--sp-ink-tertiary)]">({opt.value})</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveOption(idx)}
-                            className="text-rose-500 hover:text-rose-700 p-1"
+                            className="admin-icon-button text-[var(--sp-danger)]"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -454,12 +502,12 @@ export default function AdminAttributesPage() {
 
               {/* Toggles */}
               <div className="space-y-3 pt-2">
-                <label className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 bg-white cursor-pointer">
+                <label className="admin-panel-muted flex cursor-pointer items-center justify-between p-3">
                   <div>
-                    <span className="text-xs font-bold text-[#18231E] block">
+                    <span className="block text-xs font-bold text-[var(--sp-ink)]">
                       Отображать в фильтрах левого сайдбара
                     </span>
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-[var(--sp-ink-tertiary)]">
                       Пользователи смогут фильтровать каталог по этому параметру
                     </span>
                   </div>
@@ -467,18 +515,18 @@ export default function AdminAttributesPage() {
                     type="checkbox"
                     checked={filterable}
                     onChange={(e) => setFilterable(e.target.checked)}
-                    className="w-4 h-4 accent-[#006F3C] rounded-md"
+                    className="h-4 w-4 accent-[var(--sp-brand)]"
                   />
                 </label>
               </div>
 
               {/* Submit / Cancel */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="admin-modal-footer -mx-5 -mb-6 mt-6 flex justify-end gap-2 px-5 py-4 md:-mx-7 md:px-7">
                 <Button type="button" onClick={() => setIsModalOpen(false)} variant="ghost" size="md">
                   Отмена
                 </Button>
                 <Button type="submit" variant="primary" size="md">
-                  Сохранить атрибут
+                  Сохранить характеристику
                 </Button>
               </div>
             </form>

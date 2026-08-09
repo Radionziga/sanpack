@@ -45,11 +45,17 @@ const navigation = [
     ],
   },
   {
+    label: 'Модули',
+    items: [
+      { label: 'Конструктор пакета', href: '/admin/bag-designer', icon: Package },
+    ],
+  },
+  {
     label: 'Система',
     items: [
       { label: 'Внешний вид', href: '/admin/settings', icon: Settings2 },
       { label: 'Контакты магазина', href: '/admin/contact-settings', icon: ContactRound },
-      { label: 'Telegram', href: '/admin/integrations', icon: Bot },
+      { label: 'Интеграции', href: '/admin/integrations', icon: Bot },
       { label: 'Документы', href: '/admin/document-settings', icon: FileSpreadsheet },
     ],
   },

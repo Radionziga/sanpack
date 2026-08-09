@@ -189,7 +189,7 @@ export function ImageCropEditor({
   const canMoveY = Boolean(crop && imageSize && imageSize.height - crop.height > 0.5);
 
   return (
-    <section className="rounded-2xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:p-4" aria-labelledby="crop-editor-title">
+    <section className="rounded-[var(--radius-md)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:p-4" aria-labelledby="crop-editor-title">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div className="min-w-0">
           <h3 id="crop-editor-title" className="text-base font-bold text-[var(--sp-ink)]">Настройте область изображения</h3>

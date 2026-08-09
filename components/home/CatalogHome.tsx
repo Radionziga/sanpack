@@ -193,12 +193,14 @@ export function CatalogHome({
       </div>
 
       <section className="mx-auto max-w-7xl px-4 pb-12 pt-3 md:pb-16 md:pt-5">
-        <div className="relative overflow-hidden rounded-2xl bg-[var(--sp-cta-bg)] px-6 py-8 text-[var(--sp-cta-ink)] md:px-10 md:py-10">
+        <div className="relative overflow-hidden rounded-2xl bg-[var(--sp-cta-bg)] px-5 py-7 text-[var(--sp-cta-ink)] md:px-10 md:py-10">
           <div className="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_75%_20%,color-mix(in_srgb,var(--sp-cta-action)_22%,transparent),transparent_48%)]" />
           <div className="relative z-10 grid items-center gap-7 md:grid-cols-[1fr_auto]">
             <div className="max-w-2xl">
-              <div className="mb-3 flex items-center gap-2 text-[var(--sp-cta-action)]">
-                <FileText className="h-4 w-4" aria-hidden="true" />
+              <div className="mb-3 flex items-center gap-2 text-[var(--sp-cta-ink)]">
+                <span className="flex size-8 items-center justify-center rounded-md bg-[var(--sp-cta-ink)] text-[var(--sp-cta-bg)]">
+                  <FileText className="h-4 w-4" aria-hidden="true" />
+                </span>
                 <span className="font-compact text-[11px] font-bold uppercase tracking-[0.12em]">
                   {t('ctaEyebrow')}
                 </span>
@@ -206,14 +208,14 @@ export function CatalogHome({
               <h2 className="text-pretty font-extended text-2xl font-bold tracking-[-0.025em] md:text-3xl">
                 {t('ctaTitle')}
               </h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 opacity-70">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-[color-mix(in_srgb,var(--sp-cta-ink)_78%,transparent)]">
                 {t('ctaDescription')}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2.5 md:justify-end">
+            <div className="grid w-full gap-2.5 md:w-72 md:grid-cols-1">
               <Link
                 href="/request"
-                className="inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--sp-cta-action)] px-4 font-compact text-xs font-bold text-[var(--sp-cta-action-ink)] transition-opacity hover:opacity-[0.88]"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[var(--sp-cta-ink)] bg-[var(--sp-cta-ink)] px-5 font-compact text-xs font-bold text-[var(--sp-cta-bg)] transition-opacity hover:opacity-[0.88] md:min-h-11"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
                 {t('sendList')}
@@ -223,7 +225,7 @@ export function CatalogHome({
                   href={catalogPdfUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-current/20 px-4 font-compact text-xs font-bold transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--sp-cta-ink)_28%,transparent)] bg-[color-mix(in_srgb,var(--sp-cta-ink)_8%,transparent)] px-5 font-compact text-xs font-bold text-[var(--sp-cta-ink)] transition-colors hover:bg-[color-mix(in_srgb,var(--sp-cta-ink)_14%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-11"
                 >
                   <Download className="h-4 w-4" aria-hidden="true" />
                   {t('downloadCatalog')}
@@ -231,7 +233,7 @@ export function CatalogHome({
               )}
               <a
                 href={contactPhoneHref(contacts.phone1)}
-                className="inline-flex h-11 items-center gap-2 rounded-lg border border-current/20 px-4 font-compact text-xs font-bold transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--sp-cta-ink)_28%,transparent)] bg-[color-mix(in_srgb,var(--sp-cta-ink)_8%,transparent)] px-5 font-compact text-xs font-bold text-[var(--sp-cta-ink)] transition-colors hover:bg-[color-mix(in_srgb,var(--sp-cta-ink)_14%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-11"
               >
                 <PhoneCall className="h-4 w-4" aria-hidden="true" />
                 {t('callSales')}

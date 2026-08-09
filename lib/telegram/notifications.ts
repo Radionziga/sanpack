@@ -4,6 +4,8 @@ import type { RequestOrder } from '@/types';
 import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
 import { decryptSecret } from '@/lib/telegram/secrets';
 import { sendTelegramMessage } from '@/lib/telegram/api';
+import { BAG_TYPE_LABELS } from '@/lib/bag-designer/defaults';
+import type { BagDesignRequestRecord } from '@/lib/bag-designer/types';
 
 export async function notifyAboutNewOrder(order: RequestOrder) {
   const settings = await getTelegramPrivateSettings();
@@ -28,3 +30,25 @@ export async function notifyAboutNewOrder(order: RequestOrder) {
   return { delivered: true as const };
 }
 
+export async function notifyAboutBagDesignRequest(request: Partial<BagDesignRequestRecord>) {
+  const settings = await getTelegramPrivateSettings();
+  const { notifications } = settings;
+  if (!notifications.enabled || !notifications.tokenEncrypted || !notifications.chatId) {
+    return { delivered: false, reason: 'not_configured' as const };
+  }
+  const spec = request.spec;
+  const text = [
+    `Новая заявка на пакет ${request.number || ''}`,
+    `Клиент: ${request.contact?.name || '—'}`,
+    `Телефон: ${request.contact?.phone || '—'}`,
+    `Тип: ${spec?.bagType ? BAG_TYPE_LABELS[spec.bagType] : '—'}`,
+    `Размер: ${spec?.width || '—'} × ${spec?.height || '—'} см`,
+    `Тираж: ${Number(spec?.quantity || 0).toLocaleString('ru-RU')} шт.`,
+    '',
+    `AI-визуализация: ${request.aiMockupUrl || '—'}`,
+    `Технический макет: ${request.technicalPreviewUrl || '—'}`,
+    `Логотип: ${request.logoUrl || '—'}`,
+  ].join('\n');
+  await sendTelegramMessage(decryptSecret(notifications.tokenEncrypted), notifications.chatId, text);
+  return { delivered: true as const };
+}

@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Edit3, FolderTree, ImagePlus, Plus, Save, Trash2 } from 'lucide-react';
 import { MediaUploadField, deleteUploadedMedia } from '@/components/admin/MediaUploadField';
+import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import type { Category } from '@/types';
@@ -147,16 +149,16 @@ export default function AdminCategoriesPage() {
   const parentCategories = categories.filter((category) => !category.parentId && category.id !== editingCategory.id);
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-6">
-      <header className="flex flex-col justify-between gap-4 border-b border-[var(--sp-line)] pb-5 sm:flex-row sm:items-end">
-        <div>
-          <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)]">Категории каталога</h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-[var(--sp-ink-secondary)]">Управляйте структурой каталога и изображениями, которые покупатель видит на главной странице.</p>
-        </div>
-        <button type="button" onClick={startCreate} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-4 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90">
-          <Plus className="size-4" aria-hidden="true" /> Новая категория
-        </button>
-      </header>
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
+        title="Категории каталога"
+        description="Соберите понятное дерево каталога. Слева — структура, справа — содержимое выбранной категории."
+        action={(
+          <button type="button" onClick={startCreate} className="admin-button-primary">
+            <Plus className="size-4" aria-hidden="true" /> Новая категория
+          </button>
+        )}
+      />
 
       {(pageError || notice) && (
         <p className={`rounded-lg border px-4 py-3 text-sm ${pageError ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-500/30 bg-emerald-500/8 text-[var(--sp-success)]'}`} role={pageError ? 'alert' : 'status'}>
@@ -164,8 +166,8 @@ export default function AdminCategoriesPage() {
         </p>
       )}
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(300px,0.72fr)_minmax(520px,1.28fr)]">
-        <section className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">
+      <div className="grid items-start gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
+        <section className="admin-panel overflow-hidden lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto">
           <div className="flex items-center justify-between border-b border-[var(--sp-line)] px-4 py-3">
             <span className="font-compact text-xs font-bold text-[var(--sp-ink)]">Структура</span>
             <span className="text-[11px] text-[var(--sp-ink-tertiary)]">{categories.length} категорий</span>
@@ -183,17 +185,17 @@ export default function AdminCategoriesPage() {
               {categories.map((category) => (
                 <li key={category.id} className={category.parentId ? 'pl-5' : ''}>
                   <div className={`flex items-center gap-3 px-3 py-3 ${editingCategory.id === category.id ? 'bg-[var(--sp-surface-inset)]' : ''}`}>
-                    <div className="relative size-12 shrink-0 overflow-hidden rounded-md border border-[var(--sp-line)] bg-[var(--sp-surface-inset)]">
+                    <div className="relative size-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)]">
                       {category.image ? <Image src={category.image} alt="" fill sizes="48px" className="object-contain" /> : <ImagePlus className="absolute inset-0 m-auto size-4 text-[var(--sp-ink-muted)]" />}
                     </div>
                     <button type="button" onClick={() => selectCategory(category)} className="min-w-0 flex-1 text-left">
                       <span className="line-clamp-1 text-xs font-bold text-[var(--sp-ink)]">{category.titleRu}</span>
                       <span className="mt-1 block truncate font-mono text-[10px] text-[var(--sp-ink-tertiary)]">/{category.slug}</span>
                     </button>
-                    <button type="button" onClick={() => selectCategory(category)} aria-label={`Редактировать ${category.titleRu}`} className="flex size-9 items-center justify-center rounded-md text-[var(--sp-ink-tertiary)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]">
+                    <button type="button" onClick={() => selectCategory(category)} aria-label={`Редактировать ${category.titleRu}`} className="admin-icon-button size-9">
                       <Edit3 className="size-4" aria-hidden="true" />
                     </button>
-                    <button type="button" onClick={() => void removeCategory(category)} aria-label={`Удалить ${category.titleRu}`} className="flex size-9 items-center justify-center rounded-md text-[var(--sp-ink-tertiary)] hover:bg-red-500/8 hover:text-[var(--sp-danger)]">
+                    <button type="button" onClick={() => void removeCategory(category)} aria-label={`Удалить ${category.titleRu}`} className="admin-icon-button size-9 hover:bg-red-500/8 hover:text-[var(--sp-danger)]">
                       <Trash2 className="size-4" aria-hidden="true" />
                     </button>
                   </div>
@@ -203,29 +205,61 @@ export default function AdminCategoriesPage() {
           )}
         </section>
 
-        <form onSubmit={saveCategory} className="space-y-6 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6">
-          <div className="border-b border-[var(--sp-line)] pb-4">
+        <form onSubmit={saveCategory} className="admin-panel overflow-hidden">
+          <div className="border-b border-[var(--sp-line)] px-5 py-5 md:px-6">
             <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">{editingCategory.id ? 'Редактирование категории' : 'Новая категория'}</h2>
-            <p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">Изображение категории показывается в компактной витрине и не должно содержать мелкий текст.</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Сначала заполните основную информацию, затем изображение и правила публикации.</p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-7 p-5 md:p-6">
+          <section className="admin-section">
+            <div>
+              <h3 className="admin-section-heading">Название и описание</h3>
+              <p className="admin-section-description">Русская версия — основная. Узбекскую и английскую можно заполнить автоматически и затем отредактировать.</p>
+            </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
             {([
               ['titleRu', 'Название RU *'],
               ['titleUz', 'Название UZ *'],
               ['titleEn', 'Название EN'],
             ] as const).map(([field, label]) => (
-              <label key={field} className="text-xs font-bold text-[var(--sp-ink)]">
+              <label key={field} className="admin-field-label">
                 {label}
-                <input value={editingCategory[field] || ''} required={field !== 'titleEn'} onChange={(event) => setEditingCategory((current) => ({ ...current, [field]: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+                <input value={editingCategory[field] || ''} required={field !== 'titleEn'} onChange={(event) => setEditingCategory((current) => ({ ...current, [field]: event.target.value }))} className="admin-control mt-1.5 text-sm font-normal" />
               </label>
             ))}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-xs font-bold text-[var(--sp-ink)]">
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {([['descriptionRu', 'Описание RU'], ['descriptionUz', 'Описание UZ'], ['descriptionEn', 'Описание EN']] as const).map(([field, label]) => (
+              <label key={field} className="admin-field-label">
+                {label}
+                <textarea rows={3} value={editingCategory[field] || ''} onChange={(event) => setEditingCategory((current) => ({ ...current, [field]: event.target.value }))} className="admin-control mt-1.5 text-sm font-normal" />
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-4"><AiTranslateButton compact fields={[
+            {
+              key: 'title', label: 'Название категории',
+              values: { ru: editingCategory.titleRu || '', uz: editingCategory.titleUz || '', en: editingCategory.titleEn || '' },
+              onChange: (language, value) => setEditingCategory((current) => ({ ...current, [`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value })),
+            },
+            {
+              key: 'description', label: 'Описание категории',
+              values: { ru: editingCategory.descriptionRu || '', uz: editingCategory.descriptionUz || '', en: editingCategory.descriptionEn || '' },
+              onChange: (language, value) => setEditingCategory((current) => ({ ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value })),
+            },
+          ]} /></div>
+          </section>
+
+          <section className="admin-section">
+            <h3 className="admin-section-heading">Место в каталоге</h3>
+            <p className="admin-section-description">URL используется в адресе страницы, а родительская категория определяет вложенность.</p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="admin-field-label">
               URL категории *
-              <input value={editingCategory.slug || ''} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="odnorazovaya-upakovka" onChange={(event) => setEditingCategory((current) => ({ ...current, slug: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 font-mono text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+              <input value={editingCategory.slug || ''} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="odnorazovaya-upakovka" onChange={(event) => setEditingCategory((current) => ({ ...current, slug: event.target.value }))} className="admin-control mt-1.5 font-mono text-sm font-normal" />
               <span className="mt-1 block font-normal text-[var(--sp-ink-tertiary)]">Только латиница, цифры и дефисы.</span>
             </label>
             <CustomSelect label="Родительская категория" value={editingCategory.parentId || ''} onChange={(value) => setEditingCategory((current) => ({ ...current, parentId: value || null }))} options={[
@@ -233,7 +267,14 @@ export default function AdminCategoriesPage() {
               ...parentCategories.map((category) => ({ value: category.id, label: category.titleRu })),
             ]} />
           </div>
+          </section>
 
+          <section className="admin-section">
+          <div>
+            <h3 className="admin-section-heading">Изображение и публикация</h3>
+            <p className="admin-section-description">Картинка появится на главной витрине. Статус и порядок управляют показом категории.</p>
+          </div>
+          <div className="mt-4">
           <MediaUploadField kind="category" label="Изображение категории" recommendation="Рекомендуется 800×600 px · 4:3" value={editingCategory.image} optional onUploaded={(media) => {
             if (editingCategory.imagePath && editingCategory.imagePath !== persistedCategory?.imagePath) {
               void deleteUploadedMedia(editingCategory.imagePath).catch(() => undefined);
@@ -245,22 +286,25 @@ export default function AdminCategoriesPage() {
             }
             setEditingCategory((current) => ({ ...current, image: undefined, imagePath: undefined }));
           }} />
+          </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="sm:col-span-2">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
               <CustomSelect label="Статус" value={editingCategory.status || 'active'} onChange={(value) => setEditingCategory((current) => ({ ...current, status: value as Category['status'] }))} options={[
                 { value: 'active', label: 'Показывать на сайте' },
                 { value: 'hidden', label: 'Скрыть' },
               ]} />
             </div>
-            <label className="text-xs font-bold text-[var(--sp-ink)]">
+            <label className="admin-field-label">
               Порядок
-              <input type="number" min="0" value={editingCategory.sortOrder ?? 0} onChange={(event) => setEditingCategory((current) => ({ ...current, sortOrder: Number(event.target.value) }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+              <input type="number" min="0" value={editingCategory.sortOrder ?? 0} onChange={(event) => setEditingCategory((current) => ({ ...current, sortOrder: Number(event.target.value) }))} className="admin-control mt-1.5 text-sm font-normal" />
             </label>
           </div>
+          </section>
+          </div>
 
-          <div className="flex justify-end border-t border-[var(--sp-line)] pt-5">
-            <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-5 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60">
+          <div className="flex justify-end border-t border-[var(--sp-line)] bg-[var(--sp-surface)] px-5 py-4 md:px-6">
+            <button type="submit" disabled={saving} className="admin-button-primary px-5 disabled:cursor-wait disabled:opacity-60">
               <Save className="size-4" aria-hidden="true" /> {saving ? 'Сохранение…' : 'Сохранить категорию'}
             </button>
           </div>

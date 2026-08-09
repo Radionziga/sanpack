@@ -152,14 +152,6 @@ export default function CategoryDetailPage({
                 <span>{copy.filters}</span>
               </button>
 
-              <button
-                onClick={() => setIsMobileFilterOpen(true)}
-                className="lg:hidden px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2 shadow-2xs"
-              >
-                <Filter className="w-4 h-4 text-[#006F3C]" />
-                <span>{copy.filters}</span>
-              </button>
-
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400 font-medium hidden sm:inline">{t('sortBy')}</span>
                 <CustomSelect
@@ -178,10 +170,10 @@ export default function CategoryDetailPage({
                 />
               </div>
 
-              <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-xs">
+              <div className="flex h-11 items-center border border-[var(--sp-line)] bg-[var(--sp-surface)] p-1 shadow-xs rounded-[var(--sp-radius-control)]">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-lg transition-colors ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${
                     viewMode === 'grid'
                       ? 'bg-[#006F3C] text-white'
                       : 'text-slate-400 hover:text-slate-700'
@@ -191,7 +183,7 @@ export default function CategoryDetailPage({
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-lg transition-colors ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${
                     viewMode === 'list'
                       ? 'bg-[#006F3C] text-white'
                       : 'text-slate-400 hover:text-slate-700'

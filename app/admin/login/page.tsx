@@ -99,7 +99,7 @@ export default function AdminLoginPage() {
                 Email
                 <span className="relative mt-1.5 block">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--sp-ink-muted)]" aria-hidden="true" />
-                  <input type="email" required autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin@sanpack.uz" className="min-h-12 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-10 pr-3 text-sm font-normal text-[var(--sp-ink)] outline-none placeholder:text-[var(--sp-ink-muted)] focus:border-[var(--sp-brand)]" />
+                  <input type="email" required autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin@sanpack.uz" className="admin-control min-h-12 pl-10 pr-3 text-sm font-normal" />
                 </span>
               </label>
 
@@ -107,7 +107,7 @@ export default function AdminLoginPage() {
                 Пароль
                 <span className="relative mt-1.5 block">
                   <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--sp-ink-muted)]" aria-hidden="true" />
-                  <input type={isPasswordVisible ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-10 pr-12 text-sm font-normal text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]" />
+                  <input type={isPasswordVisible ? 'text' : 'password'} required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="admin-control min-h-12 pl-10 pr-12 text-sm font-normal" />
                   <button
                     type="button"
                     onClick={() => setIsPasswordVisible((visible) => !visible)}

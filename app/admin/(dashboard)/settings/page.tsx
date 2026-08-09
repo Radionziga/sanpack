@@ -100,7 +100,7 @@ function ColorField({
           <input
             {...inputProps}
             aria-invalid={Boolean(error)}
-            className="min-h-11 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-3 font-mono text-sm font-normal uppercase text-[var(--sp-ink)] outline-none focus:border-[var(--sp-brand)]"
+            className="admin-control font-mono text-sm font-normal uppercase"
           />
         </label>
       </div>
@@ -203,7 +203,7 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="admin-page mx-auto max-w-6xl space-y-6">
       <header className="border-b border-[var(--sp-line)] pb-5">
         <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)]">Внешний вид</h1>
         <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">
