@@ -67,6 +67,11 @@
     --sp-cta-action-ink: var(--sp-on-secondary);
     --sp-shadow-raised: 0 12px 32px rgb(21 27 24 / 7%);
     --sp-radius: 8px;
+    /* Safe defaults for overlays rendered outside the themed app shell.
+       Inside SanpackTheme these aliases resolve against its configured radius. */
+    --sp-radius-nested: max(0px, calc(var(--sp-radius) - 4px));
+    --sp-radius-control: var(--sp-radius);
+    --sp-radius-control-inner: var(--sp-radius-nested);
   }
 
   body {

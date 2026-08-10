@@ -50,6 +50,7 @@ export function CustomSelect({
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [position, setPosition] = useState<MenuPosition>({ top: 0, left: 0, width: 220, maxHeight: 240 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
@@ -95,6 +96,7 @@ export function CustomSelect({
       : direction === 'last'
         ? enabledIndexes.at(-1) ?? 0
         : (selectedIndex >= 0 && !options[selectedIndex]?.disabled ? selectedIndex : enabledIndexes[0]);
+    setPortalRoot(triggerRef.current?.closest<HTMLElement>('[data-sanpack-theme]') ?? document.body);
     setActiveIndex(nextIndex);
     setIsOpen(true);
     requestAnimationFrame(() => {
@@ -189,7 +191,7 @@ export function CustomSelect({
     ghost: 'bg-transparent text-[var(--sp-ink)] hover:bg-[var(--sp-surface-inset)] focus-visible:ring-2 focus-visible:ring-[var(--sp-brand-soft)]',
   };
 
-  const menu = isOpen && typeof document !== 'undefined' ? createPortal(
+  const menu = isOpen && portalRoot ? createPortal(
     <ul
       ref={menuRef}
       id={listboxId}
@@ -226,7 +228,7 @@ export function CustomSelect({
         );
       })}
     </ul>,
-    document.body,
+    portalRoot,
   ) : null;
 
   return (
