@@ -135,7 +135,7 @@ export function GeminiSettingsPanel() {
               type={showKey ? 'text' : 'password'}
               autoComplete="new-password"
               value={apiKey}
-              onChange={(event) => setApiKey(event.target.value.trim())}
+              onChange={(event) => setApiKey(event.target.value)}
               placeholder={settings.apiKeyConfigured ? `Сохранён ••••${settings.apiKeyLast4}` : 'Вставьте API-ключ'}
               className={`${inputClass} pl-10 pr-11`}
             />
@@ -157,10 +157,10 @@ export function GeminiSettingsPanel() {
           value={settings.imageModel}
           onChange={(value) => setSettings((current) => ({ ...current, imageModel: value }))}
           options={[
-            { value: 'gemini-3.1-flash-image', label: 'Gemini 3.1 Flash Image — рекомендуем' },
-            { value: 'gemini-3.1-flash-lite-image', label: 'Gemini 3.1 Flash-Lite Image' },
-            { value: 'gemini-3-pro-image', label: 'Gemini 3 Pro Image' },
-            { value: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image' },
+            { value: 'gemini-3.1-flash-image', label: 'Nano Banana 2 — Gemini 3.1 Flash Image' },
+            { value: 'gemini-3.1-flash-lite-image', label: 'Nano Banana 2 Lite — Gemini 3.1 Flash-Lite Image' },
+            { value: 'gemini-3-pro-image', label: 'Nano Banana Pro — Gemini 3 Pro Image' },
+            { value: 'gemini-2.5-flash-image', label: 'Nano Banana — Gemini 2.5 Flash Image' },
           ]}
         />
         <span className="mt-2 block font-normal leading-5 text-[var(--sp-ink-tertiary)]">Эта модель используется только для фотореалистичных макетов в конструкторе пакетов.</span>
@@ -168,6 +168,11 @@ export function GeminiSettingsPanel() {
       <p className="mt-3 text-xs leading-5 text-[var(--sp-ink-tertiary)]">
         Ключ хранится в зашифрованном виде на сервере и не попадает в браузер. Для обычных переводов рекомендуем Gemini 3.5 Flash-Lite: она быстрее и экономичнее.
       </p>
+      {settings.apiKeyConfigured ? (
+        <p className="mt-2 text-xs leading-5 text-[var(--sp-ink-tertiary)]">
+          Оставьте поле ключа пустым, чтобы сохранить текущий ключ. Введите новый ключ только для его замены.
+        </p>
+      ) : null}
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
         <button type="button" onClick={() => void refreshModels()} disabled={loadingModels || (!apiKey && !settings.apiKeyConfigured)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[var(--sp-line)] px-4 text-xs font-bold disabled:opacity-40">
           <RefreshCw className={`size-4 ${loadingModels ? 'animate-spin' : ''}`} />

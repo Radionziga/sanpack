@@ -28,7 +28,7 @@ export async function generateBagMockup({
 }) {
   const normalizedModel = model.replace(/^models\//, '');
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(normalizedModel)}:generateContent`,
+    `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(normalizedModel)}:generateContent`,
     {
       method: 'POST',
       headers: {
@@ -44,8 +44,10 @@ export async function generateBagMockup({
           ],
         }],
         generationConfig: {
-          responseModalities: ['TEXT', 'IMAGE'],
-          imageConfig: { aspectRatio: '4:5', imageSize: '1K' },
+          responseModalities: ['IMAGE'],
+          responseFormat: {
+            image: { aspectRatio: '4:5', imageSize: '1K' },
+          },
         },
       }),
       cache: 'no-store',

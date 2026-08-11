@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/auth/server';
-import { getAdminDb } from '@/lib/firebase/admin';
 import { decryptSecret, encryptSecret } from '@/lib/telegram/secrets';
 import { listGeminiTextModels, type GeminiModelOption } from '@/lib/gemini/api';
 import {
   getGeminiPrivateSettings,
+  saveGeminiPrivateSettings,
   toPublicAdminGeminiSettings,
 } from '@/lib/gemini/settings';
 
@@ -29,6 +29,9 @@ const actionSchema = z.discriminatedUnion('action', [
 
 function publicError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
+  if (/unable to authenticate data|unsupported state/i.test(message)) {
+    return 'Сохранённый ключ относится к другому окружению. Введите API-ключ ещё раз в этой версии сайта.';
+  }
   if (/api key|API_KEY_INVALID|permission|unauthenticated/i.test(message)) {
     return 'Gemini не принял API-ключ. Проверьте ключ и доступ к Gemini API.';
   }
@@ -112,7 +115,7 @@ export async function POST(request: Request) {
       updatedAt: new Date().toISOString(),
       updatedBy: admin.uid,
     };
-    await getAdminDb().collection('privateSettings').doc('gemini').set(settings);
+    await saveGeminiPrivateSettings(settings);
     return NextResponse.json({
       message: 'Gemini подключён. Переводы доступны в многоязычных формах.',
       settings: toPublicAdminGeminiSettings(settings),

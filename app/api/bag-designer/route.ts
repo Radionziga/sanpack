@@ -149,8 +149,20 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Bag designer operation failed.', error);
     const message = error instanceof Error ? error.message : '';
+    if (/unable to authenticate data|unsupported state/i.test(message)) {
+      return NextResponse.json({ error: 'Настройки визуализации нужно сохранить заново в этой версии сайта.' }, { status: 503 });
+    }
+    if (/api key|API_KEY_INVALID|permission|unauthenticated/i.test(message)) {
+      return NextResponse.json({ error: 'Сервис визуализации не принял API-ключ. Проверьте настройки Gemini в панели администратора.' }, { status: 503 });
+    }
+    if (/not found|not supported|model/i.test(message)) {
+      return NextResponse.json({ error: 'Выбранная модель визуализации сейчас недоступна. Выберите другую модель в настройках Gemini.' }, { status: 503 });
+    }
     if (/quota|resource.exhausted|rate limit/i.test(message)) {
       return NextResponse.json({ error: 'Сервис визуализации временно недоступен. Попробуйте ещё раз немного позже.' }, { status: 503 });
+    }
+    if (/timeout|aborted|fetch/i.test(message)) {
+      return NextResponse.json({ error: 'Создание визуализации заняло слишком много времени. Попробуйте ещё раз.' }, { status: 504 });
     }
     return NextResponse.json({ error: 'Не удалось завершить операцию. Изменения не применены.' }, { status: 503 });
   }
