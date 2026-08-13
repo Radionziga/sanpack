@@ -3,7 +3,6 @@
 import React from 'react';
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
-import { motion } from 'motion/react';
 import { Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
@@ -12,8 +11,6 @@ import {
   HeartIcon,
   ShoppingCartIcon,
   CheckIcon,
-  ShieldCheckIcon,
-  BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 
@@ -32,260 +29,208 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
     uz: ['Mahsulot arizaga qo‘shildi', 'Tanlanganlardan olib tashlandi', 'Tanlanganlarga qo‘shildi', 'so‘m'],
     en: ['Product added to quote', 'Removed from favorites', 'Added to favorites', 'UZS'],
   }[language];
+  const favoriteCopy = {
+    ru: ['Добавить в избранное', 'Убрать из избранного'],
+    uz: ['Tanlanganlarga qo‘shish', 'Tanlanganlardan olib tashlash'],
+    en: ['Add to favorites', 'Remove from favorites'],
+  }[language];
   const { addItem, isInCart } = useRequestCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { showToast } = useToast();
 
   const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
-  const shortDesc = getLocalizedText(product.shortDescriptionRu, product.shortDescriptionUz, product.shortDescriptionEn);
+  const shortDescription = getLocalizedText(
+    product.shortDescriptionRu,
+    product.shortDescriptionUz,
+    product.shortDescriptionEn,
+  ).trim();
+  const normalizedShortDescription = shortDescription.replace(/\s+/g, ' ').trim();
+  const isImportedCatalogCopy = /SANPACK\s+v1\.4/i.test(normalizedShortDescription);
+  const supportingText = (
+    normalizedShortDescription.toLocaleLowerCase() === title.trim().toLocaleLowerCase()
+    || isImportedCatalogCopy
+  )
+    ? ''
+    : normalizedShortDescription;
+  const visibleAttributes = Object.entries(product.attributes || {})
+    .filter(([, value]) => {
+      const normalizedValue = fixText(String(value)).trim();
+      return normalizedValue.length > 0 && normalizedValue.toLocaleLowerCase() !== 'sanpack';
+    })
+    .slice(0, 3);
   const favorited = isFavorite(product.id);
   const inCart = isInCart(product.id);
   const orderRule = getProductOrderRule(product, language);
   const minimumOrderLabel = getMinimumOrderLabel(product, language);
+  const price = product.showPrice && product.price
+    ? `${product.price.toLocaleString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US')} ${copy[3]}`
+    : t('priceOnRequest');
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAddToCart = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     addItem(product, product.variants?.[0], orderRule.minimumQuantity);
     showToast(copy[0], title);
   };
 
-  const handleToggleFav = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleToggleFavorite = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     toggleFavorite(product.id);
     showToast(favorited ? copy[1] : copy[2], title, 'info');
   };
 
+  const favoriteLabel = favorited ? favoriteCopy[1] : favoriteCopy[0];
+
   if (viewMode === 'list') {
     return (
-      <motion.div
-        whileHover={{ y: -2 }}
-        transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-        className="bg-[var(--sp-surface)] rounded-lg border border-[var(--sp-line)] p-4 hover:border-[var(--sp-line-strong)] transition-colors flex flex-col md:flex-row items-center gap-5 group"
-      >
-        <Link href={`/product/${product.slug}`} className="shrink-0 relative">
-          <Image
-            src={product.mainImage}
-            alt={title}
-            width={128}
-            height={128}
-            sizes="128px"
-            className="w-32 h-32 object-contain rounded-md bg-[var(--sp-surface)] p-2 group-hover:scale-105 transition-transform duration-300"
-          />
-          {product.ownProduction && (
-            <span className="absolute top-2 left-2 bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1">
-              <BuildingOffice2Icon className="w-3 h-3" /> SANPACK
-            </span>
-          )}
-        </Link>
+      <article className="group grid gap-4 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--sp-brand)_42%,var(--sp-line))] hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0 md:grid-cols-[168px_minmax(0,1fr)_auto] md:items-stretch">
+        <div className="relative">
+          <Link
+            href={`/product/${product.slug}`}
+            className="relative block aspect-[4/3] overflow-hidden rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] md:aspect-square"
+          >
+            <Image
+              src={product.mainImage}
+              alt={title}
+              fill
+              sizes="(max-width: 767px) 100vw, 168px"
+              className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            />
+          </Link>
+          <button
+            type="button"
+            onClick={handleToggleFavorite}
+            aria-label={favoriteLabel}
+            title={favoriteLabel}
+            className="absolute right-2.5 top-2.5 flex size-11 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] text-[var(--sp-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,border-color,transform] hover:border-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)] active:scale-[0.96] motion-reduce:active:scale-100"
+          >
+            {favorited ? <HeartSolidIcon className="size-5" /> : <HeartIcon className="size-5" />}
+          </button>
+        </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-mono text-slate-400">
-              {t('sku')} {product.sku}
-            </span>
-            <span className="text-slate-300">•</span>
-            <span className="text-[11px] text-[var(--sp-brand)] font-semibold flex items-center gap-1">
-              <ShieldCheckIcon className="w-3.5 h-3.5" />
-              {product.stockStatus === 'in_stock' ? t('inStock') : t('outOfStock')}
-            </span>
-          </div>
-
-          <Link href={`/product/${product.slug}`}>
-            <h3 className="text-sm font-semibold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)] transition-colors mb-1 line-clamp-1 tracking-tight">
+        <div className="flex min-w-0 flex-col py-1">
+          <Link href={`/product/${product.slug}`} className="w-fit max-w-full">
+            <h3 className="line-clamp-2 text-base font-semibold leading-snug tracking-tight text-[var(--sp-ink)] transition-colors group-hover:text-[var(--sp-brand)]">
               {title}
             </h3>
           </Link>
 
-          <p className="text-xs text-[var(--sp-ink-secondary)] line-clamp-2 mb-3 leading-relaxed">{shortDesc}</p>
+          {supportingText ? (
+            <p className="mt-1.5 line-clamp-2 max-w-2xl text-sm leading-relaxed text-[var(--sp-ink-secondary)]">
+              {supportingText}
+            </p>
+          ) : null}
 
-          <div className="flex flex-wrap gap-1.5 text-[11px] text-slate-600">
-            {Object.entries(product.attributes || {}).map(([key, val]) => (
-              <span
-                key={key}
-                className="bg-[var(--sp-surface-inset)] px-2 py-0.5 rounded font-medium border border-[var(--sp-line)]"
-              >
-                {fixText(String(val))}
-              </span>
-            ))}
-          </div>
+          {visibleAttributes.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-[var(--sp-ink-secondary)]">
+              {visibleAttributes.map(([key, value]) => (
+                <span
+                  key={key}
+                  className="rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] px-2.5 py-1 font-normal"
+                >
+                  {fixText(String(value))}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex flex-col items-end justify-between gap-3 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-5 w-full md:w-auto">
-          <div className="text-right">
-            <span className="text-base font-semibold text-[var(--sp-brand)] block tracking-tight">
-              {product.showPrice && product.price
-                ? `${product.price.toLocaleString()} ${copy[3]}`
-                : t('priceOnRequest')}
-            </span>
-            <span className="text-[11px] text-slate-400">
-              {minimumOrderLabel}
-            </span>
+        <div className="flex min-w-[188px] flex-col justify-end gap-4 border-t border-[var(--sp-line-soft)] pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+          <div>
+            <span className="block text-base font-semibold tracking-tight text-[var(--sp-brand)]">{price}</span>
+            <span className="mt-0.5 block text-xs text-[var(--sp-ink-muted)]">{minimumOrderLabel}</span>
           </div>
-
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={handleToggleFav}
-              className={`p-2 rounded-lg border transition-colors ${
-                favorited
-                  ? 'bg-rose-50 border-rose-200 text-rose-600'
-                  : 'border-slate-200 text-slate-400 hover:text-rose-500'
-              }`}
-            >
-              {favorited ? (
-                <HeartSolidIcon className="w-4 h-4 text-rose-600" />
-              ) : (
-                <HeartIcon className="w-4 h-4" />
-              )}
-            </motion.button>
-
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={handleAddToCart}
-              className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shadow-2xs ${
-                inCart
-                  ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
-                  : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:opacity-90'
-              }`}
-            >
-              {inCart ? (
-                <>
-                  <CheckIcon className="w-4 h-4" />
-                  <span>{t('inRequestCart')}</span>
-                </>
-              ) : (
-                <>
-                  <ShoppingCartIcon className="w-4 h-4" />
-                  <span>{t('addToRequest')}</span>
-                </>
-              )}
-            </motion.button>
-          </div>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 ${
+              inCart
+                ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
+                : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
+            }`}
+          >
+            {inCart ? <CheckIcon className="size-4" /> : <ShoppingCartIcon className="size-4" />}
+            <span>{inCart ? t('inRequestCart') : t('addToRequest')}</span>
+          </button>
         </div>
-      </motion.div>
+      </article>
     );
   }
 
-  // Grid mode
   return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-      className="bg-[var(--sp-surface)] rounded-lg border border-[var(--sp-line)] p-4 hover:border-[var(--sp-line-strong)] transition-colors flex flex-col justify-between group relative overflow-hidden"
-    >
-      <div>
-        {/* Top Badges */}
-        <div className="flex items-center justify-between gap-2 mb-2.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {product.ownProduction && (
-              <span className="bg-[var(--sp-surface-inset)] text-[var(--sp-brand)] text-[10px] font-semibold px-2 py-0.5 rounded border border-[var(--sp-line)] flex items-center gap-1">
-                <BuildingOffice2Icon className="w-3 h-3" /> SANPACK
-              </span>
-            )}
-            {product.newProduct && (
-              <span className="bg-amber-100 text-amber-800 text-[10px] font-semibold px-2 py-0.5 rounded">
-                NEW
-              </span>
-            )}
-          </div>
-
-          <motion.button
-            whileTap={{ scale: 0.88 }}
-            onClick={handleToggleFav}
-            className="p-1 text-slate-300 hover:text-rose-500 transition-colors"
-            title={t('favorites')}
-          >
-            {favorited ? (
-              <HeartSolidIcon className="w-4 h-4 text-rose-600" />
-            ) : (
-              <HeartIcon className="w-4 h-4" />
-            )}
-          </motion.button>
-        </div>
-
-        {/* Image Container */}
+    <article className="group flex h-full flex-col rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-1 hover:border-[color-mix(in_srgb,var(--sp-brand)_42%,var(--sp-line))] hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0">
+      <div className="relative">
         <Link
           href={`/product/${product.slug}`}
-          className="block relative aspect-square bg-[var(--sp-surface)] rounded-md p-2 mb-3 overflow-hidden"
+          className="relative block aspect-square overflow-hidden rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)]"
         >
           <Image
             src={product.mainImage}
             alt={title}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
-            className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
+            className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
           />
         </Link>
 
-        {/* SKU & Stock */}
-        <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1 font-medium">
-          <span>
-            {t('sku')} {product.sku}
-          </span>
-          <span className="text-[var(--sp-brand)] font-semibold">
-            {product.stockStatus === 'in_stock' ? t('inStock') : t('outOfStock')}
-          </span>
-        </div>
+        <button
+          type="button"
+          onClick={handleToggleFavorite}
+          aria-label={favoriteLabel}
+          title={favoriteLabel}
+          className="absolute right-2.5 top-2.5 flex size-11 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] text-[var(--sp-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,border-color,transform] hover:border-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)] active:scale-[0.96] motion-reduce:active:scale-100"
+        >
+          {favorited ? <HeartSolidIcon className="size-5" /> : <HeartIcon className="size-5" />}
+        </button>
+      </div>
 
-        {/* Product Title */}
-        <Link href={`/product/${product.slug}`}>
-          <h3 className="text-sm font-semibold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)] transition-colors mb-2 line-clamp-2 leading-snug tracking-tight">
+      <div className="flex flex-1 flex-col px-1 pb-1 pt-4">
+        <Link href={`/product/${product.slug}`} className="w-fit max-w-full">
+          <h3 className="line-clamp-2 text-base font-semibold leading-snug tracking-tight text-[var(--sp-ink)] transition-colors group-hover:text-[var(--sp-brand)]">
             {title}
           </h3>
         </Link>
 
-        {/* Attributes Preview Chips */}
-        <div className="flex flex-wrap gap-1 text-[10px] text-slate-600 mb-3">
-          {Object.entries(product.attributes || {})
-            .slice(0, 3)
-            .map(([key, val]) => (
+        {supportingText ? (
+          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-[var(--sp-ink-secondary)]">
+            {supportingText}
+          </p>
+        ) : null}
+
+        {visibleAttributes.length > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-[var(--sp-ink-secondary)]">
+            {visibleAttributes.map(([key, value]) => (
               <span
                 key={key}
-                className="bg-[var(--sp-surface-inset)] px-2 py-0.5 rounded font-medium text-[var(--sp-ink-secondary)] border border-[var(--sp-line)]"
+                className="rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] px-2.5 py-1 font-normal"
               >
-                {fixText(String(val))}
+                {fixText(String(value))}
               </span>
             ))}
+          </div>
+        ) : null}
+
+        <div className="mt-auto flex flex-col gap-3 border-t border-[var(--sp-line-soft)] pt-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <span className="block text-base font-semibold tracking-tight text-[var(--sp-brand)]">{price}</span>
+            <span className="mt-0.5 block text-xs text-[var(--sp-ink-muted)]">{minimumOrderLabel}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 sm:w-auto ${
+              inCart
+                ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
+                : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
+            }`}
+          >
+            {inCart ? <CheckIcon className="size-4" /> : <ShoppingCartIcon className="size-4" />}
+            <span>{inCart ? t('inRequestCart') : t('addToRequest')}</span>
+          </button>
         </div>
       </div>
-
-      {/* Footer Price & Add Button */}
-      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
-        <div>
-          <span className="text-sm font-semibold text-[var(--sp-brand)] block tracking-tight">
-            {product.showPrice && product.price
-              ? `${product.price.toLocaleString()} ${copy[3]}`
-              : t('priceOnRequest')}
-          </span>
-          <span className="text-[10px] text-slate-400 block">
-            {minimumOrderLabel}
-          </span>
-        </div>
-
-        <motion.button
-          whileTap={{ scale: 0.94 }}
-          onClick={handleAddToCart}
-          className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 shadow-2xs ${
-            inCart
-              ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
-              : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:opacity-90'
-          }`}
-        >
-          {inCart ? (
-            <>
-              <CheckIcon className="w-3.5 h-3.5" />
-              <span>{t('inRequestCart')}</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCartIcon className="w-3.5 h-3.5" />
-              <span>{t('addToRequest')}</span>
-            </>
-          )}
-        </motion.button>
-      </div>
-    </motion.div>
+    </article>
   );
 }

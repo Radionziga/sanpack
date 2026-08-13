@@ -215,13 +215,13 @@ export function CustomSelect({
             onPointerMove={() => !option.disabled && setActiveIndex(index)}
             onClick={() => selectOption(index)}
             onKeyDown={(event) => handleOptionKeyDown(event, index)}
-            className={`flex min-h-10 select-none items-center justify-between gap-3 px-3 py-2 text-xs outline-none transition-colors ${option.disabled ? 'cursor-not-allowed opacity-45' : 'cursor-pointer'} ${isSelected ? 'bg-[var(--sp-brand-soft)] font-bold text-[var(--sp-brand)]' : isActive ? 'bg-[var(--sp-surface-inset)] text-[var(--sp-ink)]' : 'text-[var(--sp-ink-secondary)]'}`}
+            className={`flex min-h-10 select-none items-center justify-between gap-3 px-3 py-2 text-xs outline-none transition-colors ${option.disabled ? 'cursor-not-allowed opacity-45' : 'cursor-pointer'} ${isSelected ? 'bg-[var(--sp-brand-soft)] font-semibold text-[var(--sp-brand)]' : isActive ? 'bg-[var(--sp-surface-inset)] text-[var(--sp-ink)]' : 'text-[var(--sp-ink-secondary)]'}`}
             style={{ borderRadius: 'var(--sp-radius-control-inner)' }}
           >
             <span className="flex min-w-0 items-center gap-2">
               {option.icon ? <span className="shrink-0 text-current">{option.icon}</span> : null}
               <span className="truncate">{option.label}</span>
-              {option.badge ? <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sp-ink-secondary)]">{option.badge}</span> : null}
+              {option.badge ? <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--sp-ink-secondary)]">{option.badge}</span> : null}
             </span>
             {isSelected ? <Check className="size-4 shrink-0" aria-hidden="true" /> : null}
           </li>
@@ -250,7 +250,7 @@ export function CustomSelect({
         <span className="flex min-w-0 items-center gap-2 truncate pr-1">
           {selectedOption?.icon ? <span className="shrink-0 text-[var(--sp-brand)]">{selectedOption.icon}</span> : null}
           <span className={`truncate ${selectedOption ? '' : 'text-[var(--sp-ink-muted)]'}`}>{selectedOption?.label || placeholder}</span>
-          {selectedOption?.badge ? <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--sp-brand)]">{selectedOption.badge}</span> : null}
+          {selectedOption?.badge ? <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--sp-brand)]">{selectedOption.badge}</span> : null}
         </span>
         <ChevronDown className={`size-4 shrink-0 text-[var(--sp-ink-muted)] transition-transform duration-150 ${isOpen ? 'rotate-180 text-[var(--sp-brand)]' : ''}`} aria-hidden="true" />
       </button>

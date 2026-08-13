@@ -100,43 +100,50 @@ export function CallbackModal({ isOpen, onClose }: CallbackModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="callback-modal-title"
+        className="relative w-full max-w-md rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] p-6 shadow-[var(--sp-shadow-raised)] animate-in fade-in zoom-in-95 duration-200 md:p-8"
+      >
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors"
+          aria-label={language === 'ru' ? 'Закрыть' : language === 'uz' ? 'Yopish' : 'Close'}
+          className="sp-icon-button absolute right-4 top-4 size-10"
         >
-          <X className="w-5 h-5" />
+          <X className="size-5" aria-hidden="true" />
         </button>
 
         {submitted ? (
           <div className="text-center py-6">
-            <CheckCircle className="w-16 h-16 text-[#006F3C] mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-[#18231E] mb-2">{copy.success}</h3>
-            <p className="text-slate-600 text-sm">
+            <CheckCircle className="mx-auto mb-4 size-14 text-[var(--sp-success)]" />
+            <h3 className="mb-2 text-xl font-bold text-[var(--sp-ink)]">{copy.success}</h3>
+            <p className="text-sm text-[var(--sp-ink-secondary)]">
               {copy.successText}
             </p>
           </div>
         ) : (
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#EAF5EF] flex items-center justify-center text-[#006F3C]">
-                <Phone className="w-5 h-5" />
+              <div className="flex size-10 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]">
+                <Phone className="size-5" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[#18231E]">{t('callback')}</h3>
-                <p className="text-xs text-[#68736D]">{copy.team}</p>
+                <h3 id="callback-modal-title" className="text-lg font-bold text-[var(--sp-ink)]">{t('callback')}</h3>
+                <p className="text-xs text-[var(--sp-ink-tertiary)]">{copy.team}</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 mb-6 bg-slate-50 p-3 rounded-lg flex items-center gap-2 border border-slate-100">
-              <Clock className="w-4 h-4 text-[#006F3C] shrink-0" />
+            <p className="mb-6 flex items-center gap-2 rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-3 text-xs text-[var(--sp-ink-secondary)]">
+              <Clock className="size-4 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" />
               <span>{copy.hours}</span>
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#18231E] mb-1">
+                <label className="mb-1 block text-xs font-medium text-[var(--sp-ink)]">
                   {copy.name} *
                 </label>
                 <input
@@ -144,13 +151,13 @@ export function CallbackModal({ isOpen, onClose }: CallbackModalProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={copy.namePlaceholder}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#006F3C] focus:ring-2 focus:ring-[#006F3C]/20 outline-none text-sm transition-all"
+                  className="min-h-12 w-full rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-4 text-sm outline-none transition-[border-color,box-shadow] focus:border-[var(--sp-brand)] focus:ring-2 focus:ring-[var(--sp-brand-soft)]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#18231E] mb-1">
+                <label className="mb-1 block text-xs font-medium text-[var(--sp-ink)]">
                   {copy.phone} *
                 </label>
                 <input
@@ -158,17 +165,17 @@ export function CallbackModal({ isOpen, onClose }: CallbackModalProps) {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+998 90 123 45 67"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#006F3C] focus:ring-2 focus:ring-[#006F3C]/20 outline-none text-sm transition-all"
+                  className="min-h-12 w-full rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)] px-4 text-sm outline-none transition-[border-color,box-shadow] focus:border-[var(--sp-brand)] focus:ring-2 focus:ring-[var(--sp-brand-soft)]"
                   required
                 />
               </div>
 
-              {error && <p className="text-xs text-red-600">{error}</p>}
+              {error && <p role="alert" className="rounded-[var(--sp-radius-control-inner)] bg-red-500/8 px-3 py-2 text-xs text-[var(--sp-danger)]">{error}</p>}
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 bg-[#008348] hover:bg-[#006F3C] text-white font-medium rounded-xl shadow-md transition-all active:scale-[0.99] text-sm"
+                className="min-h-12 w-full rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-medium text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-55"
               >
                 {isSubmitting ? copy.sending : copy.submit}
               </button>

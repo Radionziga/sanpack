@@ -45,19 +45,19 @@ async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
 
 export const getPublicProducts = unstable_cache(
   () => readCollection<Product>('products', initialProducts),
-  ['public-products-v1'],
+  ['public-products-v3-weight-variants-2026-08'],
   { revalidate: 300, tags: ['products'] }
 );
 
 export const getPublicCategories = unstable_cache(
   () => readCollection<Category>('categories', initialCategories),
-  ['public-categories-v1'],
+  ['public-categories-v2-price-list-2026-08'],
   { revalidate: 1800, tags: ['categories'] }
 );
 
 export const getPublicAttributes = unstable_cache(
   () => readCollection<Attribute>('attributes', initialAttributes),
-  ['public-attributes-v1'],
+  ['public-attributes-v2-price-list-2026-08'],
   { revalidate: 1800, tags: ['attributes'] }
 );
 

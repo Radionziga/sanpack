@@ -53,7 +53,7 @@ function ProductShelf({
         </div>
         <Link
           href="/catalog"
-          className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-bold text-[var(--sp-brand)] transition-opacity hover:opacity-75 sm:inline-flex"
+          className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-semibold text-[var(--sp-brand)] transition-opacity hover:opacity-75 sm:inline-flex"
         >
           {actionLabel}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -68,7 +68,7 @@ function ProductShelf({
 
       <Link
         href="/catalog"
-        className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[var(--sp-line-strong)] bg-[var(--sp-surface)] font-compact text-xs font-bold text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] sm:hidden"
+        className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line-strong)] bg-[var(--sp-surface)] font-compact text-xs font-semibold text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] sm:hidden"
       >
         {actionLabel}
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -128,7 +128,7 @@ export function CatalogHome({
             </div>
             <Link
               href="/catalog"
-              className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-bold text-[var(--sp-brand)] transition-opacity hover:opacity-75 sm:inline-flex"
+              className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-semibold text-[var(--sp-brand)] transition-opacity hover:opacity-75 sm:inline-flex"
             >
               {t('allCategories')}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -142,10 +142,10 @@ export function CatalogHome({
                   <Link
                     key={category.id}
                     href={`/catalog/${category.slug}`}
-                    className="group relative min-h-[176px] min-w-[184px] max-w-[184px] snap-start overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 transition-[border-color,box-shadow] hover:border-[var(--sp-line-strong)] hover:shadow-[var(--sp-shadow-raised)] md:min-h-[196px] md:min-w-[212px] md:max-w-[212px]"
+                    className="group relative min-h-[176px] min-w-[184px] max-w-[184px] snap-start overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[var(--sp-brand)] hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0 md:min-h-[196px] md:min-w-[212px] md:max-w-[212px]"
                   >
                     <div className="relative z-10 max-w-[85%]">
-                      <h3 className="line-clamp-2 font-compact text-sm font-bold leading-snug text-[var(--sp-ink)]">
+                      <h3 className="line-clamp-2 font-compact text-sm font-semibold leading-snug text-[var(--sp-ink)]">
                         {getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
                       </h3>
                       <p className="mt-1 text-[11px] text-[var(--sp-ink-tertiary)]">
@@ -170,7 +170,7 @@ export function CatalogHome({
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-[var(--sp-line-strong)] bg-[var(--sp-surface-inset)] px-6 py-10 text-center text-sm text-[var(--sp-ink-secondary)]">
+            <div className="rounded-[var(--sp-radius-card)] border border-dashed border-[var(--sp-line-strong)] bg-[var(--sp-surface-inset)] px-6 py-10 text-center text-sm text-[var(--sp-ink-secondary)]">
               {dataUnavailable ? t('errorDescription') : t('emptyCatalogDescription')}
             </div>
           )}
@@ -193,15 +193,15 @@ export function CatalogHome({
       </div>
 
       <section className="mx-auto max-w-7xl px-4 pb-12 pt-3 md:pb-16 md:pt-5">
-        <div className="relative overflow-hidden rounded-2xl bg-[var(--sp-cta-bg)] px-5 py-7 text-[var(--sp-cta-ink)] md:px-10 md:py-10">
+        <div className="relative overflow-hidden rounded-[var(--sp-radius-card)] border border-[color-mix(in_srgb,var(--sp-cta-ink)_14%,transparent)] bg-[var(--sp-cta-bg)] px-5 py-7 text-[var(--sp-cta-ink)] shadow-[var(--sp-shadow-soft)] md:px-10 md:py-10">
           <div className="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_75%_20%,color-mix(in_srgb,var(--sp-cta-action)_22%,transparent),transparent_48%)]" />
           <div className="relative z-10 grid items-center gap-7 md:grid-cols-[1fr_auto]">
             <div className="max-w-2xl">
               <div className="mb-3 flex items-center gap-2 text-[var(--sp-cta-ink)]">
-                <span className="flex size-8 items-center justify-center rounded-md bg-[var(--sp-cta-ink)] text-[var(--sp-cta-bg)]">
+                <span className="flex size-8 items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-cta-action)] text-[var(--sp-cta-action-ink)]">
                   <FileText className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <span className="font-compact text-[11px] font-bold uppercase tracking-[0.12em]">
+                <span className="font-compact text-[11px] font-semibold uppercase tracking-[0.12em]">
                   {t('ctaEyebrow')}
                 </span>
               </div>
@@ -212,10 +212,10 @@ export function CatalogHome({
                 {t('ctaDescription')}
               </p>
             </div>
-            <div className="grid w-full gap-2.5 md:w-72 md:grid-cols-1">
+            <div className="grid w-full gap-2.5 md:w-72">
               <Link
                 href="/request"
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[var(--sp-cta-ink)] bg-[var(--sp-cta-ink)] px-5 font-compact text-xs font-bold text-[var(--sp-cta-bg)] transition-opacity hover:opacity-[0.88] md:min-h-11"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-cta-ink)] bg-[var(--sp-cta-ink)] px-5 font-compact text-xs font-semibold text-[var(--sp-cta-bg)] transition-[background-color,border-color,color,transform] hover:border-[var(--sp-cta-action)] hover:bg-[var(--sp-cta-action)] hover:text-[var(--sp-cta-action-ink)] active:scale-[0.96] md:min-h-11"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
                 {t('sendList')}
@@ -225,7 +225,7 @@ export function CatalogHome({
                   href={catalogPdfUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--sp-cta-ink)_28%,transparent)] bg-[color-mix(in_srgb,var(--sp-cta-ink)_8%,transparent)] px-5 font-compact text-xs font-bold text-[var(--sp-cta-ink)] transition-colors hover:bg-[color-mix(in_srgb,var(--sp-cta-ink)_14%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-11"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-cta-ink)_28%,transparent)] bg-[color-mix(in_srgb,var(--sp-cta-ink)_8%,transparent)] px-5 font-compact text-xs font-medium text-[var(--sp-cta-ink)] transition-[background-color,border-color,transform] hover:border-[color-mix(in_srgb,var(--sp-cta-ink)_46%,transparent)] hover:bg-[color-mix(in_srgb,var(--sp-cta-ink)_14%,transparent)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-11"
                 >
                   <Download className="h-4 w-4" aria-hidden="true" />
                   {t('downloadCatalog')}
@@ -233,7 +233,7 @@ export function CatalogHome({
               )}
               <a
                 href={contactPhoneHref(contacts.phone1)}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--sp-cta-ink)_28%,transparent)] bg-[color-mix(in_srgb,var(--sp-cta-ink)_8%,transparent)] px-5 font-compact text-xs font-bold text-[var(--sp-cta-ink)] transition-colors hover:bg-[color-mix(in_srgb,var(--sp-cta-ink)_14%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-11"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-cta-ink)_28%,transparent)] bg-[color-mix(in_srgb,var(--sp-cta-ink)_8%,transparent)] px-5 font-compact text-xs font-medium text-[var(--sp-cta-ink)] transition-[background-color,border-color,transform] hover:border-[color-mix(in_srgb,var(--sp-cta-ink)_46%,transparent)] hover:bg-[color-mix(in_srgb,var(--sp-cta-ink)_14%,transparent)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 md:min-h-11"
               >
                 <PhoneCall className="h-4 w-4" aria-hidden="true" />
                 {t('callSales')}

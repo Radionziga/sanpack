@@ -25,7 +25,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    'inline-flex items-center justify-center border font-bold transition-colors duration-150 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sp-brand)_18%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center border font-semibold transition-colors duration-150 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--sp-brand)_18%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed';
 
   const sizeStyles = {
     xs: 'h-8 px-3 text-xs gap-1.5 rounded-[var(--sp-radius-control)]',

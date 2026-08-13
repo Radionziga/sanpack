@@ -72,14 +72,14 @@ export function FilterSidebar({
     inStockOnly || ownProductionOnly || activeAttributeCount > 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-5">
+    <div className="space-y-5 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 shadow-[var(--sp-shadow-soft)]">
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#18231E]">
-          <Filter className="w-4 h-4 text-[#006F3C]" />
+      <div className="flex items-center justify-between border-b border-[var(--sp-line-soft)] pb-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--sp-ink)]">
+          <Filter className="size-4 text-[var(--sp-brand)]" />
           <span>{t('filterTitle')}</span>
           {activeAttributeCount > 0 && (
-            <span className="bg-[#EAF5EF] text-[#006F3C] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#006F3C]/20">
+            <span className="rounded-[var(--sp-radius-control-inner)] border border-[color-mix(in_srgb,var(--sp-brand)_22%,var(--sp-line))] bg-[var(--sp-brand-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--sp-brand)]">
               {activeAttributeCount}
             </span>
           )}
@@ -98,27 +98,27 @@ export function FilterSidebar({
 
       {/* Quick Toggles */}
       <div className="space-y-2">
-        <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/80 cursor-pointer hover:bg-slate-100/80 transition-colors">
-          <span className="text-xs font-semibold text-[#18231E]">
+        <label className="flex cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5 transition-colors hover:border-[var(--sp-line)]">
+          <span className="text-xs font-medium text-[var(--sp-ink)]">
             {t('inStockOnly')}
           </span>
           <input
             type="checkbox"
             checked={inStockOnly}
             onChange={(e) => onInStockChange(e.target.checked)}
-            className="w-4 h-4 accent-[#006F3C] rounded-md cursor-pointer"
+            className="size-4 cursor-pointer accent-[var(--sp-brand)]"
           />
         </label>
 
-        <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/80 cursor-pointer hover:bg-slate-100/80 transition-colors">
-          <span className="text-xs font-semibold text-[#18231E]">
+        <label className="flex cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5 transition-colors hover:border-[var(--sp-line)]">
+          <span className="text-xs font-medium text-[var(--sp-ink)]">
             {t('ownProductionOnly')}
           </span>
           <input
             type="checkbox"
             checked={ownProductionOnly}
             onChange={(e) => onOwnProductionChange(e.target.checked)}
-            className="w-4 h-4 accent-[#006F3C] rounded-md cursor-pointer"
+            className="size-4 cursor-pointer accent-[var(--sp-brand)]"
           />
         </label>
       </div>
@@ -186,30 +186,30 @@ export function FilterSidebar({
           const hasMore = visibleOptions.length > INITIAL_LIMIT;
 
           return (
-            <div key={attr.id} className="border-t border-slate-100 pt-3">
+            <div key={attr.id} className="border-t border-[var(--sp-line-soft)] pt-3">
               {/* Accordion Group Header */}
               <button
                 type="button"
                 onClick={() => toggleGroupCollapse(attr.key)}
-                className="w-full flex items-center justify-between text-left py-1 text-xs font-bold text-[#18231E] hover:text-[#006F3C] transition-colors select-none group"
+                className="group flex w-full select-none items-center justify-between py-1 text-left text-xs font-semibold text-[var(--sp-ink)] transition-colors hover:text-[var(--sp-brand)]"
               >
                 <div className="flex items-center gap-2">
                   <span className="uppercase tracking-wider">
                     {getLocalizedText(attr.titleRu, attr.titleUz, attr.titleEn)}
                   </span>
                   {attr.unit && (
-                    <span className="text-[10px] text-slate-400 font-normal lowercase">
+                    <span className="text-[10px] font-normal lowercase text-[var(--sp-ink-muted)]">
                       ({attr.unit})
                     </span>
                   )}
                   {currentVals.length > 0 && (
-                    <span className="bg-[#006F3C] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shrink-0">
+                    <span className="flex min-h-4 min-w-4 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-1 text-[9px] font-semibold tabular-nums text-[var(--sp-on-brand)]">
                       {currentVals.length}
                     </span>
                   )}
                 </div>
 
-                <div className="text-slate-400 group-hover:text-[#006F3C] transition-transform duration-200">
+                <div className="text-[var(--sp-ink-muted)] transition-transform duration-200 group-hover:text-[var(--sp-brand)]">
                   {isCollapsed ? (
                     <ChevronDown className="w-4 h-4" />
                   ) : (
@@ -227,21 +227,21 @@ export function FilterSidebar({
                       <label
                         key={opt.value}
                         onClick={() => handleToggleValue(attr.key, opt.value)}
-                        className="flex items-center justify-between text-xs text-[#18231E] hover:text-[#006F3C] cursor-pointer select-none py-1 px-1 rounded-lg hover:bg-slate-50 transition-colors group"
+                        className="group flex cursor-pointer select-none items-center justify-between rounded-[var(--sp-radius-control-inner)] px-1 py-1 text-xs text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <div
-                            className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-all ${
+                            className={`flex size-4 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] border transition-colors ${
                               isSelected
-                                ? 'bg-[#006F3C] border-[#006F3C] text-white shadow-2xs'
-                                : 'border-slate-300 bg-white group-hover:border-[#006F3C]'
+                                ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)]'
+                                : 'border-[var(--sp-line-strong)] bg-[var(--sp-surface)] group-hover:border-[var(--sp-brand)]'
                             }`}
                           >
                             {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
                           <span
                             className={`truncate ${
-                              isSelected ? 'font-semibold text-[#006F3C]' : 'text-slate-700'
+                              isSelected ? 'font-semibold text-[var(--sp-brand)]' : 'text-[var(--sp-ink-secondary)]'
                             }`}
                           >
                             {getLocalizedText(opt.labelRu, opt.labelUz, opt.labelEn)}
@@ -249,7 +249,7 @@ export function FilterSidebar({
                         </div>
 
                         {opt.count > 0 && (
-                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full shrink-0">
+                          <span className="shrink-0 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--sp-ink-muted)]">
                             {opt.count}
                           </span>
                         )}
@@ -262,7 +262,7 @@ export function FilterSidebar({
                     <button
                       type="button"
                       onClick={() => toggleShowMore(attr.key)}
-                      className="text-[11px] font-semibold text-[#006F3C] hover:underline pt-1 block"
+                      className="block pt-1 text-[11px] font-medium text-[var(--sp-brand)] hover:underline"
                     >
                       {isShowMore
                         ? visibilityCopy.hide

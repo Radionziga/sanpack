@@ -524,10 +524,10 @@ export default function ProductDetailPage({
             {activeTab === 'specs' && (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  {Object.entries(product.attributes || {}).map(([k, v]) => (
-                    <div key={k} className="p-3 bg-slate-50 rounded-xl flex justify-between">
-                      <span className="text-slate-500 capitalize">{k}:</span>
-                      <span className="font-bold text-[#222B35]">{String(v)}</span>
+                  {visibleAttributes.map((attribute) => (
+                    <div key={attribute.key} className="p-3 bg-slate-50 rounded-xl flex justify-between gap-4">
+                      <span className="text-slate-500">{attribute.label}</span>
+                      <span className="text-right font-bold text-[#222B35]">{attribute.value}</span>
                     </div>
                   ))}
                 </div>

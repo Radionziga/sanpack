@@ -19,7 +19,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
   return (
     <div className="space-y-4">
       {/* Main Image Stage */}
-      <div className="relative aspect-square bg-white rounded-2xl p-6 border border-slate-200 overflow-hidden group">
+      <div className="group relative aspect-square overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-6">
         <Image
           src={activeImage}
           alt={title}
@@ -30,9 +30,11 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
         />
 
         <button
+          type="button"
           onClick={() => setIsZoomOpen(true)}
-          className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-white/80 hover:bg-white text-slate-700 shadow-md flex items-center justify-center transition-colors"
+          className="sp-icon-button absolute right-4 top-4 size-10 border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-soft)]"
           title={zoomTitle}
+          aria-label={zoomTitle}
         >
           <Maximize2 className="w-4 h-4" />
         </button>
@@ -43,12 +45,13 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
         <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
           {images.map((img, idx) => (
             <button
+              type="button"
               key={idx}
               onClick={() => setActiveImage(img)}
-              className={`relative w-16 h-16 rounded-xl border-2 p-1 bg-white overflow-hidden shrink-0 transition-all ${
+              className={`relative size-16 shrink-0 overflow-hidden rounded-[var(--sp-radius-control)] border bg-[var(--sp-surface)] p-1 transition-[border-color,opacity,transform] ${
                 activeImage === img
-                  ? 'border-[#006F3C] ring-2 ring-[#006F3C]/20 scale-105'
-                  : 'border-slate-200 opacity-70 hover:opacity-100'
+                  ? 'scale-[1.03] border-[var(--sp-brand)] ring-2 ring-[var(--sp-brand-soft)]'
+                  : 'border-[var(--sp-line)] opacity-70 hover:border-[var(--sp-line-strong)] hover:opacity-100'
               }`}
             >
               <Image
@@ -66,10 +69,12 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       {/* Modal Zoom */}
       {isZoomOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-2xl p-6 overflow-hidden">
+          <div role="dialog" aria-modal="true" aria-label={zoomTitle} className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] p-6">
             <button
+              type="button"
               onClick={() => setIsZoomOpen(false)}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"
+              aria-label={language === 'ru' ? 'Закрыть' : language === 'uz' ? 'Yopish' : 'Close'}
+              className="sp-icon-button absolute right-4 top-4 size-10 bg-[var(--sp-surface-inset)]"
             >
               <X className="w-5 h-5" />
             </button>

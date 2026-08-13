@@ -39,7 +39,7 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
   const parentCategories = categories.filter((c) => !c.parentId);
 
   return (
-    <div className="absolute top-full left-0 w-full bg-white border-b border-slate-200 shadow-xl z-40 animate-in slide-in-from-top-2 duration-200">
+    <div className="absolute left-0 top-full z-40 w-full animate-in border-b border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-raised)] duration-200 slide-in-from-top-2">
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {parentCategories.map((parent) => {
@@ -47,13 +47,13 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
             const subCategories = categories.filter((c) => c.parentId === parent.id);
 
             return (
-              <div key={parent.id} className="space-y-3 border-r border-slate-100 pr-4 last:border-0">
+              <div key={parent.id} className="space-y-3 border-r border-[var(--sp-line-soft)] pr-4 last:border-0">
                 <Link
                   href={`/catalog/${parent.slug}`}
                   onClick={onClose}
-                  className="flex items-center gap-2.5 text-base font-bold text-[#006F3C] hover:text-[#004F2B] group"
+                  className="group flex items-center gap-2.5 text-base font-semibold text-[var(--sp-brand)] hover:text-[var(--sp-brand-deep)]"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#EAF5EF] flex items-center justify-center group-hover:bg-[#006F3C] group-hover:text-white transition-colors">
+                  <div className="flex size-8 items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] transition-colors group-hover:bg-[var(--sp-brand)] group-hover:text-[var(--sp-on-brand)]">
                     <Icon className="w-4 h-4" />
                   </div>
                   <span>{getLocalizedText(parent.titleRu, parent.titleUz, parent.titleEn)}</span>
@@ -66,9 +66,9 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
                       <Link
                         href={`/catalog/${sub.slug}`}
                         onClick={onClose}
-                        className="text-xs text-[#68736D] hover:text-[#006F3C] hover:underline flex items-center gap-1.5 py-0.5 transition-colors"
+                        className="flex items-center gap-1.5 py-0.5 text-xs text-[var(--sp-ink-secondary)] transition-colors hover:text-[var(--sp-brand)] hover:underline"
                       >
-                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                        <span className="size-1 rounded-full bg-[var(--sp-line-strong)]"></span>
                         {getLocalizedText(sub.titleRu, sub.titleUz, sub.titleEn)}
                       </Link>
                     </li>
@@ -80,16 +80,16 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
         </div>
 
         {/* Promo banner strip inside mega menu */}
-        <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 bg-[#EAF5EF] p-4 rounded-xl">
+        <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-[var(--sp-radius-card)] border-t border-[var(--sp-line-soft)] bg-[var(--sp-brand-soft)] p-4 pt-4 md:flex-row">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#006F3C] text-white flex items-center justify-center font-bold text-lg">
+            <div className="flex size-10 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] text-lg font-semibold text-[var(--sp-on-brand)]">
               %
             </div>
             <div>
-              <p className="text-xs font-bold text-[#18231E]">
+              <p className="text-xs font-semibold text-[var(--sp-ink)]">
                 {copy[0]}
               </p>
-              <p className="text-[11px] text-[#68736D]">
+              <p className="text-[11px] text-[var(--sp-ink-secondary)]">
                 {copy[1]}
               </p>
             </div>
@@ -97,7 +97,7 @@ export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
           <Link
             href="/catalog"
             onClick={onClose}
-            className="px-4 py-2 bg-[#006F3C] hover:bg-[#004F2B] text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+            className="whitespace-nowrap rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 py-2 text-xs font-medium text-[var(--sp-on-brand)] transition-colors hover:bg-[var(--sp-brand-deep)]"
           >
             {copy[2]}
           </Link>

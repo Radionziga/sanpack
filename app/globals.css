@@ -83,6 +83,16 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Interactive affordance is part of the design system, not a browser
+     accident. Native buttons keep the arrow cursor unless we opt in. */
+  :where(a[href], button:not(:disabled), summary, select:not(:disabled), label[for], [role='button']:not([aria-disabled='true'])) {
+    cursor: pointer;
+  }
+
+  :where(button:disabled, select:disabled, [role='button'][aria-disabled='true']) {
+    cursor: not-allowed;
+  }
+
   h1, h2, h3, h4, h5, h6, .heading-font {
     font-family: var(--sp-font-heading);
     font-weight: 700;
@@ -212,6 +222,7 @@
     font-family: var(--sp-font-ui);
     font-size: 0.75rem;
     font-weight: 700;
+    cursor: pointer;
     transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, opacity 160ms ease;
   }
 
@@ -249,6 +260,25 @@
   .admin-icon-button:hover {
     background: var(--sp-surface-inset);
     color: var(--sp-ink);
+  }
+
+  .sp-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--sp-radius-control);
+    color: var(--sp-ink-tertiary);
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  }
+
+  .sp-icon-button:hover {
+    background: var(--sp-surface-inset);
+    color: var(--sp-ink);
+  }
+
+  .sp-icon-button:focus-visible {
+    outline: 2px solid var(--sp-focus);
+    outline-offset: 2px;
   }
 
   .admin-table-wrap {
@@ -478,5 +508,7 @@
 
 /* Smooth transition for hover effects */
 .transition-sanpack {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 0.2s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }

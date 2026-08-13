@@ -17,9 +17,9 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
   const parents = categories.filter((c) => !c.parentId);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-      <div className="flex items-center gap-2 text-base font-bold text-[#18231E] pb-3 mb-3 border-b border-slate-100">
-        <Folder className="w-5 h-5 text-[#006F3C]" />
+    <div className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 shadow-[var(--sp-shadow-soft)]">
+      <div className="mb-3 flex items-center gap-2 border-b border-[var(--sp-line-soft)] pb-3 text-base font-semibold text-[var(--sp-ink)]">
+        <Folder className="size-5 text-[var(--sp-brand)]" />
         <span>{t('adminCategories')} SANPACK</span>
       </div>
 
@@ -27,10 +27,10 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
         <li>
           <Link
             href="/catalog"
-            className={`block px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`block rounded-[var(--sp-radius-control)] px-3 py-2 text-xs font-semibold transition-colors ${
               !activeSlug
-                ? 'bg-[#006F3C] text-white shadow-xs'
-                : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)]'
+                : 'text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-surface-inset)]'
             }`}
           >
             {t('allCategories')}
@@ -46,12 +46,12 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
             <li key={parent.id} className="space-y-1">
               <Link
                 href={`/catalog/${parent.slug}`}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center justify-between rounded-[var(--sp-radius-control)] px-3 py-2 text-xs font-semibold transition-colors ${
                   isParentActive
-                    ? 'bg-[#006F3C] text-white'
+                    ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'
                     : hasActiveChild
-                    ? 'bg-[#EAF5EF] text-[#006F3C]'
-                    : 'text-[#18231E] hover:bg-slate-100'
+                    ? 'bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]'
+                    : 'text-[var(--sp-ink)] hover:bg-[var(--sp-surface-inset)]'
                 }`}
               >
                 <span>{getLocalizedText(parent.titleRu, parent.titleUz, parent.titleEn)}</span>
@@ -59,17 +59,17 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
               </Link>
 
               {subs.length > 0 && (
-                <ul className="pl-4 space-y-1 border-l-2 border-slate-100 ml-3">
+                <ul className="ml-3 space-y-1 border-l-2 border-[var(--sp-line-soft)] pl-4">
                   {subs.map((sub) => {
                     const isChildActive = sub.slug === activeSlug;
                     return (
                       <li key={sub.id}>
                         <Link
                           href={`/catalog/${sub.slug}`}
-                          className={`block px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+                          className={`block rounded-[var(--sp-radius-control-inner)] px-2.5 py-1.5 text-xs transition-colors ${
                             isChildActive
-                              ? 'bg-[#006F3C] text-white font-bold'
-                              : 'text-[#68736D] hover:text-[#006F3C] hover:bg-slate-50'
+                              ? 'bg-[var(--sp-brand)] font-semibold text-[var(--sp-on-brand)]'
+                              : 'text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]'
                           }`}
                         >
                           {getLocalizedText(sub.titleRu, sub.titleUz, sub.titleEn)}

@@ -136,7 +136,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
       aria-roledescription={slides.length > 1 ? 'carousel' : undefined}
       onMouseEnter={() => setIsHoverPaused(true)}
       onMouseLeave={() => setIsHoverPaused(false)}
-      className="relative overflow-hidden rounded-2xl border border-[var(--sp-line)] bg-[var(--sp-surface)]"
+      className="relative overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)]"
     >
       <div
         className="flex transition-transform duration-500 ease-out motion-reduce:transition-none"
@@ -151,7 +151,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
               {banner.link && buttonText ? (
                 <span
                   aria-hidden="true"
-                  className={`absolute left-[clamp(24px,4vw,64px)] hidden min-h-11 max-w-[min(360px,42%)] items-center gap-2 rounded-lg bg-[var(--sp-brand)] px-5 font-compact text-xs font-bold text-[var(--sp-on-brand)] shadow-[0_10px_24px_rgb(0_0_0/18%)] transition-[transform,background-color] duration-200 group-hover:-translate-y-0.5 group-hover:bg-[var(--sp-brand-deep)] md:inline-flex ${
+                  className={`absolute left-[clamp(24px,4vw,64px)] hidden min-h-11 max-w-[min(360px,42%)] items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 font-compact text-xs font-semibold text-[var(--sp-on-brand)] shadow-[0_10px_24px_rgb(0_0_0/18%)] transition-[transform,background-color] duration-200 group-hover:-translate-y-0.5 group-hover:bg-[var(--sp-brand-deep)] md:inline-flex ${
                     slides.length > 1
                       ? 'bottom-[clamp(68px,18%,92px)]'
                       : 'bottom-[clamp(28px,10%,52px)]'
@@ -201,7 +201,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
             type="button"
             onClick={() => move(-1)}
             aria-label={copy.previous}
-            className="absolute left-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:left-4"
+            className="absolute left-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-[var(--sp-radius-control)] border border-white/30 bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:left-4"
           >
             <ChevronLeft className="size-5" aria-hidden="true" />
           </button>
@@ -209,7 +209,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
             type="button"
             onClick={() => move(1)}
             aria-label={copy.next}
-            className="absolute right-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:right-4"
+            className="absolute right-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-[var(--sp-radius-control)] border border-white/30 bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55 md:right-4"
           >
             <ChevronRight className="size-5" aria-hidden="true" />
           </button>
@@ -218,7 +218,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
             onClick={togglePlayback}
             aria-label={isUserPaused ? copy.play : copy.pause}
             aria-pressed={isUserPaused}
-            className="absolute bottom-3 left-3 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border border-white/30 bg-black/45 px-3 font-compact text-[10px] font-bold text-white backdrop-blur-sm transition-colors hover:bg-black/65 md:bottom-4 md:left-4"
+            className="absolute bottom-3 left-3 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] border border-white/30 bg-black/45 px-3 font-compact text-[10px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/65 md:bottom-4 md:left-4"
           >
             {isUserPaused ? <Play className="size-3.5" aria-hidden="true" /> : <Pause className="size-3.5" aria-hidden="true" />}
             {isUserPaused ? copy.play : copy.pause}

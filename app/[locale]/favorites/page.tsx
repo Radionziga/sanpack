@@ -52,7 +52,7 @@ export default function FavoritesPage() {
           {favProducts.length > 0 && (
             <button
               onClick={clearFavorites}
-              className="flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-[var(--sp-danger)] transition-colors hover:bg-red-500/8"
+              className="flex min-h-10 items-center gap-1.5 rounded-[var(--sp-radius-control)] px-3 text-xs font-medium text-[var(--sp-danger)] transition-colors hover:bg-red-500/8"
             >
               <Trash2 className="w-4 h-4" />
               <span>{copy.clear}</span>
@@ -63,12 +63,12 @@ export default function FavoritesPage() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-80 bg-slate-200 animate-pulse rounded-2xl" />
+              <div key={i} className="h-80 animate-pulse rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)]" />
             ))}
           </div>
         ) : favProducts.length === 0 ? (
-          <div className="flex min-h-[360px] w-full flex-col items-center justify-center rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] px-6 py-12 text-center">
-            <div className="flex size-14 items-center justify-center rounded-full bg-[var(--sp-surface-inset)] text-[var(--sp-ink-muted)]">
+          <div className="flex min-h-[360px] w-full flex-col items-center justify-center rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-6 py-12 text-center">
+            <div className="flex size-14 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] text-[var(--sp-brand)]">
               <Heart className="size-7" aria-hidden="true" />
             </div>
             <h2 className="mt-5 text-lg font-bold text-[var(--sp-ink)]">{copy.emptyTitle}</h2>
@@ -77,7 +77,7 @@ export default function FavoritesPage() {
             </p>
             <Link
               href="/catalog"
-              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--sp-brand)] px-5 font-compact text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90"
+              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 font-compact text-xs font-medium text-[var(--sp-on-brand)] transition-opacity hover:opacity-90"
             >
               {t('goToCatalog')}
             </Link>

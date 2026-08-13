@@ -18,6 +18,7 @@ import {
   ChevronDownIcon,
   PaperAirplaneIcon,
   SparklesIcon,
+  DocumentTextIcon,
   HomeIcon,
   Squares2X2Icon,
   InformationCircleIcon,
@@ -36,6 +37,7 @@ import { Category, Product } from '@/types';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 export function Header({
   initialCategories = [],
@@ -233,7 +235,7 @@ export function Header({
               <button
                 type="button"
                 onClick={() => setIsCallbackOpen(true)}
-                className="inline-flex min-h-8 items-center rounded-md border border-[color-mix(in_srgb,var(--sp-on-primary-strong)_24%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_9%,transparent)] px-2.5 font-semibold text-current transition-colors hover:bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_15%,transparent)]"
+                className="inline-flex min-h-8 items-center rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-primary-strong)_24%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_9%,transparent)] px-2.5 font-medium text-current transition-colors hover:bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_15%,transparent)]"
               >
                 {t('callback')}
               </button>
@@ -243,7 +245,7 @@ export function Header({
                     {index > 0 ? <span className="h-4 w-px bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_20%,transparent)]" aria-hidden="true" /> : null}
                     <a
                       href={contactPhoneHref(phone)}
-                      className="flex items-center gap-1.5 font-semibold transition-opacity hover:opacity-80"
+                      className="flex items-center gap-1.5 font-medium transition-opacity hover:opacity-80"
                     >
                       {index === 0 ? <PhoneIcon className="size-4 text-current" aria-hidden="true" /> : null}
                       <span>{phone}</span>
@@ -256,7 +258,7 @@ export function Header({
                   href={contacts.telegram}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex size-9 items-center justify-center rounded-md border border-[color-mix(in_srgb,var(--sp-on-primary-strong)_24%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_9%,transparent)] text-current transition-colors hover:bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_15%,transparent)]"
+                  className="flex size-9 items-center justify-center rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-primary-strong)_24%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_9%,transparent)] text-current transition-colors hover:bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_15%,transparent)]"
                   title="Telegram"
                   aria-label="Telegram"
                 >
@@ -280,7 +282,7 @@ export function Header({
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
-                className={`flex h-10 shrink-0 items-center gap-2 rounded-lg px-4 text-xs font-bold text-[var(--sp-on-brand)] transition-[background-color,opacity] ${
+                className={`flex h-10 shrink-0 items-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-xs font-semibold text-[var(--sp-on-brand)] transition-[background-color,opacity] ${
                   isMegaMenuOpen
                     ? 'bg-[var(--sp-brand-deep)]'
                     : 'bg-[var(--sp-brand)] hover:opacity-90'
@@ -303,7 +305,7 @@ export function Header({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('searchPlaceholder')}
-                    className="h-10 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-11 text-xs font-medium text-[var(--sp-ink)] outline-none transition-colors placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)]"
+                    className="h-10 w-full rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-11 text-xs font-medium text-[var(--sp-ink)] outline-none transition-colors placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)]"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {searchQuery ? (
@@ -313,7 +315,7 @@ export function Header({
                           setSearchQuery('');
                           setIsSearchOpen(false);
                         }}
-                        className="rounded-md p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
+                        className="rounded-[var(--sp-radius-control-inner)] p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
                         aria-label="Очистить поиск"
                       >
                         <XMarkIcon className="w-3.5 h-3.5" />
@@ -321,7 +323,7 @@ export function Header({
                     ) : null}
                     <button
                       type="submit"
-                      className="rounded-md p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
+                      className="rounded-[var(--sp-radius-control-inner)] p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
                       aria-label="Найти"
                     >
                       <MagnifyingGlassIcon className="w-4 h-4" />
@@ -336,9 +338,9 @@ export function Header({
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 6 }}
-                      className="absolute left-0 top-full z-50 mt-1.5 w-full overflow-hidden rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-raised)]"
+                      className="absolute left-0 top-full z-50 mt-1.5 w-full overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-raised)]"
                     >
-                      <div className="border-b border-[var(--sp-line-soft)] px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--sp-ink-tertiary)]">
+                      <div className="border-b border-[var(--sp-line-soft)] px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--sp-ink-tertiary)]">
                         {fixText(`${copy.found} (${searchResults.length})`)}
                       </div>
                       <ul className="divide-y divide-[var(--sp-line-soft)]">
@@ -354,17 +356,17 @@ export function Header({
                                 alt={product.titleRu}
                                 width={36}
                                 height={36}
-                                className="size-9 rounded-md border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] object-cover"
+                                className="size-9 rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] object-cover"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)] truncate">
+                                <p className="truncate text-xs font-semibold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)]">
                                   {getLocalizedText(product.titleRu, product.titleUz, product.titleEn)}
                                 </p>
                                 <p className="text-[10px] text-[var(--sp-ink-tertiary)]">
                                   {copy.sku}: {product.sku}
                                 </p>
                               </div>
-                              <span className="text-xs font-bold text-[var(--sp-brand)] whitespace-nowrap">
+                              <span className="whitespace-nowrap text-xs font-semibold text-[var(--sp-brand)]">
                                 {product.showPrice && product.price
                                   ? `${product.price.toLocaleString()} ${copy.currency}`
                                   : t('priceOnRequest')}
@@ -383,16 +385,16 @@ export function Header({
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <Link
                 href="/request"
-                className="hidden h-10 items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3.5 text-xs font-bold text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] lg:flex"
+                className="hidden h-10 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3.5 text-xs font-semibold text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] lg:flex"
               >
-                <SparklesIcon className="w-3.5 h-3.5" />
+                <DocumentTextIcon className="size-4" aria-hidden="true" />
                 <span>{t('leaveRequest')}</span>
               </Link>
 
               {/* Favorites */}
               <Link
                 href="/favorites"
-                className="relative hidden size-10 shrink-0 items-center justify-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)] sm:flex"
+                className="relative hidden size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand-deep)] sm:flex"
                 title={t('favorites')}
               >
                 <HeartIcon className="w-5 h-5" />
@@ -400,7 +402,7 @@ export function Header({
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-[var(--sp-surface)] bg-[var(--sp-brand)] text-[9px] font-bold text-[var(--sp-on-brand)]"
+                    className="absolute -right-1 -top-1 flex min-h-4 min-w-4 items-center justify-center rounded-[var(--sp-radius-control-inner)] border-2 border-[var(--sp-surface)] bg-[var(--sp-brand)] px-1 text-[9px] font-semibold tabular-nums text-[var(--sp-on-brand)]"
                   >
                     {favCount}
                   </motion.span>
@@ -410,25 +412,26 @@ export function Header({
               {/* Request Cart */}
               <Link
                 href="/request"
-                className="group relative hidden h-10 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] sm:flex"
+                className="group relative hidden h-10 shrink-0 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] sm:flex"
                 title={t('requestCart')}
               >
                 <ShoppingCartIcon className="w-5 h-5" />
-                <span className="hidden xl:inline text-xs font-bold">
+                <span className="hidden text-xs font-semibold xl:inline">
                   {t('requestCart')}
                 </span>
                 {itemCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="flex size-[18px] items-center justify-center rounded-full bg-[var(--sp-brand)] text-[10px] font-bold text-[var(--sp-on-brand)]"
+                    className="flex min-h-[18px] min-w-[18px] items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-1 text-[10px] font-semibold tabular-nums text-[var(--sp-on-brand)]"
                   >
                     {itemCount}
                   </motion.span>
                 )}
               </Link>
 
-              <span className="hidden h-10 items-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[10px] font-bold text-[var(--sp-ink-secondary)] sm:inline-flex">{language.toUpperCase()}</span>
+              <LanguageSwitcher className="hidden md:block" />
+              <LanguageSwitcher className="md:hidden" />
 
               {/* Mobile Menu Button */}
               <button
@@ -438,7 +441,7 @@ export function Header({
                 aria-label={isMobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-navigation"
-                className="flex size-11 items-center justify-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] md:hidden"
+                className="flex size-11 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] md:hidden"
               >
                 {isMobileMenuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
               </button>
@@ -459,7 +462,7 @@ export function Header({
               <Link href="/" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
                 {t('home')}
               </Link>
-              <Link href="/catalog" className="hover:text-[var(--sp-brand)] transition-colors py-1 text-[var(--sp-brand)] font-bold">
+              <Link href="/catalog" className="py-1 font-semibold text-[var(--sp-brand)] transition-colors hover:text-[var(--sp-brand-deep)]">
                 {t('catalog')}
               </Link>
               <Link href="/about" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
@@ -471,10 +474,10 @@ export function Header({
               <Link href="/delivery" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
                 {t('delivery')}
               </Link>
-              <Link href="/branding" className="hover:text-[var(--sp-brand)] transition-colors py-1 text-[var(--sp-brand)] font-bold">
+              <Link href="/branding" className="py-1 font-semibold text-[var(--sp-brand)] transition-colors hover:text-[var(--sp-brand-deep)]">
                 {t('branding')}
               </Link>
-              {bagDesignerEnabled ? <Link href="/bag-designer" className="py-1 font-bold text-[var(--sp-brand)] transition-colors hover:text-[var(--sp-brand-deep)]">
+              {bagDesignerEnabled ? <Link href="/bag-designer" className="py-1 font-semibold text-[var(--sp-brand)] transition-colors hover:text-[var(--sp-brand-deep)]">
                 {copy.bagDesigner}
               </Link> : null}
               <Link href="/contacts" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
@@ -533,7 +536,7 @@ export function Header({
                       type="button"
                       onClick={() => setIsMobileMenuOpen(false)}
                       aria-label="Закрыть меню"
-                      className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--sp-line)] text-[var(--sp-ink-secondary)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)]"
+                      className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] text-[var(--sp-ink-secondary)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)]"
                     >
                       <XMarkIcon className="size-6" aria-hidden="true" />
                     </button>
@@ -548,9 +551,9 @@ export function Header({
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={copy.search}
-                        className="min-h-12 w-full rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-12 text-sm text-[var(--sp-ink)] outline-none placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)]"
+                        className="min-h-12 w-full rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-12 text-sm text-[var(--sp-ink)] outline-none placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)]"
                       />
-                      <button type="submit" aria-label="Найти" className="absolute right-1 top-1 flex size-10 items-center justify-center rounded-md text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]">
+                      <button type="submit" aria-label="Найти" className="absolute right-1 top-1 flex size-10 items-center justify-center rounded-[var(--sp-radius-control-inner)] text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]">
                         <MagnifyingGlassIcon className="size-5" aria-hidden="true" />
                       </button>
                     </form>
@@ -559,7 +562,7 @@ export function Header({
                       <Link
                         href="/catalog"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] px-3 font-bold text-[var(--sp-brand)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] px-3 font-semibold text-[var(--sp-brand)]"
                       >
                         <Squares2X2Icon className="size-5 shrink-0" aria-hidden="true" />
                         <span>{copy.catalog}</span>
@@ -567,68 +570,68 @@ export function Header({
                       <Link
                         href="/favorites"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
                       >
-                        <HeartIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />
+                        <HeartIcon className="size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" />
                         <span className="flex-1">{t('favorites')}</span>
-                        {favCount > 0 ? <span className="min-w-6 rounded-md bg-[var(--sp-brand)] px-1.5 py-0.5 text-center text-[10px] text-[var(--sp-on-brand)]">{favCount}</span> : null}
+                        {favCount > 0 ? <span className="min-w-6 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-1.5 py-0.5 text-center text-[10px] font-medium tabular-nums text-[var(--sp-on-brand)]">{favCount}</span> : null}
                       </Link>
                       <Link
                         href="/request"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
                       >
-                        <ShoppingCartIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />
+                        <ShoppingCartIcon className="size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" />
                         <span className="flex-1">{t('requestCart')}</span>
-                        {itemCount > 0 ? <span className="min-w-6 rounded-md bg-[var(--sp-brand)] px-1.5 py-0.5 text-center text-[10px] text-[var(--sp-on-brand)]">{itemCount}</span> : null}
+                        {itemCount > 0 ? <span className="min-w-6 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-1.5 py-0.5 text-center text-[10px] font-medium tabular-nums text-[var(--sp-on-brand)]">{itemCount}</span> : null}
                       </Link>
                       <div className="my-2 h-px bg-[var(--sp-line)]" aria-hidden="true" />
                       <Link
                         href="/"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
                       >
                         <HomeIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('home')}
                       </Link>
                       <Link
                         href="/about"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
                       >
                         <InformationCircleIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('about')}
                       </Link>
                       <Link
                         href="/clients"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
                       >
                         <UserGroupIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('clients')}
                       </Link>
                       <Link
                         href="/delivery"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
                       >
                         <TruckIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('delivery')}
                       </Link>
                       <Link
                         href="/branding"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
                       >
                         <PaintBrushIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('branding')}
                       </Link>
                       {bagDesignerEnabled ? <Link
                         href="/bag-designer"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg bg-[color-mix(in_srgb,var(--sp-brand)_8%,var(--sp-surface))] px-3 font-bold text-[var(--sp-brand)] transition-colors hover:bg-[var(--sp-brand-soft)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] px-3 font-semibold text-[var(--sp-brand)] transition-colors hover:bg-[color-mix(in_srgb,var(--sp-brand)_14%,var(--sp-surface))]"
                       >
                         <SparklesIcon className="size-5 shrink-0" aria-hidden="true" />{copy.bagDesigner}
                       </Link> : null}
                       <Link
                         href="/contacts"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-lg px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
                       >
                         <PhoneIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('contacts')}
                       </Link>
@@ -639,7 +642,7 @@ export function Header({
                 <div className="space-y-2 border-t border-[var(--sp-line)] pt-4 text-xs text-[var(--sp-ink-secondary)]">
                   <a
                     href={contactPhoneHref(contacts.phone1)}
-                    className="flex min-h-11 items-center gap-2 rounded-lg px-2 font-bold text-[var(--sp-brand)] transition-colors hover:bg-[var(--sp-surface-inset)]"
+                    className="flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] px-2 font-semibold text-[var(--sp-brand)] transition-colors hover:bg-[var(--sp-surface-inset)]"
                   >
                     <PhoneIcon className="size-4" aria-hidden="true" />{contacts.phone1}
                   </a>
@@ -647,7 +650,7 @@ export function Header({
                   <NextLink
                     href="/admin/login"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
+                    className="flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] px-2 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
                   >
                     <ShieldCheckIcon className="size-4" aria-hidden="true" />{copy.adminPanel}
                   </NextLink>

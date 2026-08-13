@@ -145,10 +145,11 @@ export default function CategoryDetailPage({
 
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => setIsMobileFilterOpen(true)}
-                className="lg:hidden px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2 shadow-xs"
+                className="flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-4 text-xs font-semibold text-[var(--sp-ink-secondary)] shadow-[var(--sp-shadow-soft)] lg:hidden"
               >
-                <Filter className="w-4 h-4 text-[#006F3C]" />
+                <Filter className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
                 <span>{copy.filters}</span>
               </button>
 
@@ -172,20 +173,22 @@ export default function CategoryDetailPage({
 
               <div className="flex h-11 items-center border border-[var(--sp-line)] bg-[var(--sp-surface)] p-1 shadow-xs rounded-[var(--sp-radius-control)]">
                 <button
+                  type="button"
                   onClick={() => setViewMode('grid')}
                   className={`flex h-9 w-9 items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${
                     viewMode === 'grid'
-                      ? 'bg-[#006F3C] text-white'
+                      ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'
                       : 'text-slate-400 hover:text-slate-700'
                   }`}
                 >
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => setViewMode('list')}
                   className={`flex h-9 w-9 items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${
                     viewMode === 'list'
-                      ? 'bg-[#006F3C] text-white'
+                      ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'
                       : 'text-slate-400 hover:text-slate-700'
                   }`}
                 >
@@ -225,8 +228,9 @@ export default function CategoryDetailPage({
                     {copy.empty}
                   </h3>
                   <button
+                    type="button"
                     onClick={handleResetFilters}
-                    className="px-5 py-2.5 bg-[#006F3C] text-white font-bold text-xs rounded-xl shadow-md"
+                    className="rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 py-2.5 text-xs font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)]"
                   >
                     {copy.reset}
                   </button>
@@ -252,11 +256,11 @@ export default function CategoryDetailPage({
       {/* Mobile Filters Drawer */}
       {isMobileFilterOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 lg:hidden">
-          <div className="fixed top-0 right-0 w-4/5 max-w-md h-full bg-white shadow-2xl p-6 overflow-y-auto space-y-6">
-            <div className="flex items-center justify-between border-b pb-4">
-              <h3 className="font-bold text-lg text-[#18231E]">{copy.filters}</h3>
-              <button onClick={() => setIsMobileFilterOpen(false)} className="p-2 text-slate-400">
-                <X className="w-6 h-6" />
+          <div className="fixed right-0 top-0 h-full w-4/5 max-w-md space-y-6 overflow-y-auto bg-[var(--sp-surface)] p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--sp-line)] pb-4">
+              <h3 className="text-lg font-bold text-[var(--sp-ink)]">{copy.filters}</h3>
+              <button type="button" onClick={() => setIsMobileFilterOpen(false)} className="sp-icon-button size-10" aria-label="Закрыть фильтры">
+                <X className="size-5" aria-hidden="true" />
               </button>
             </div>
 
@@ -273,8 +277,9 @@ export default function CategoryDetailPage({
             />
 
             <button
+              type="button"
               onClick={() => setIsMobileFilterOpen(false)}
-              className="w-full py-3 bg-[#006F3C] text-white font-bold rounded-xl text-xs shadow-md"
+              className="w-full rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] py-3 text-xs font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)]"
             >
               {copy.show} ({filteredProducts.length})
             </button>

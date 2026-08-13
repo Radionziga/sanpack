@@ -111,43 +111,44 @@ export default function CatalogPage() {
   }, [products, selectedFilters, inStockOnly, ownProductionOnly, sortBy]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header />
 
       <main className="flex-1 py-8">
         <div className="max-w-7xl mx-auto px-4">
           {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-xs text-slate-500 mb-6 font-medium">
-            <Link href="/" className="hover:text-[#0F6E43] transition-colors">
+          <nav className="mb-6 flex items-center gap-2 text-xs font-medium text-[var(--sp-ink-tertiary)]">
+            <Link href="/" className="transition-colors hover:text-[var(--sp-brand)]">
               {t('home')}
             </Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-[#222B35] font-bold">{t('catalog')}</span>
+            <span className="font-semibold text-[var(--sp-ink)]">{t('catalog')}</span>
           </nav>
 
           {/* Header Title Bar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#222B35] tracking-tight">
+              <h1 className="text-2xl font-bold tracking-tight text-[var(--sp-ink)] sm:text-3xl">
                 {t('catalog')} SANPACK
               </h1>
-              <p className="text-xs text-[#5C6A75] mt-1">
-                {t('foundItems')} <span className="font-bold text-[#0F6E43]">{filteredProducts.length}</span>
+              <p className="mt-1 text-xs text-[var(--sp-ink-secondary)]">
+                {t('foundItems')} <span className="font-semibold tabular-nums text-[var(--sp-brand)]">{filteredProducts.length}</span>
               </p>
             </div>
 
             {/* Sorting & View Mode Controls */}
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => setIsMobileFilterOpen(true)}
-                className="lg:hidden px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2 shadow-2xs"
+                className="flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-4 text-xs font-semibold text-[var(--sp-ink-secondary)] shadow-[var(--sp-shadow-soft)] lg:hidden"
               >
-                <Filter className="w-4 h-4 text-[#0F6E43]" />
+                <Filter className="size-4 text-[var(--sp-brand)]" />
                 <span>{t('filterTitle')}</span>
               </button>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium hidden sm:inline">{t('sortBy')}</span>
+                <span className="hidden text-xs font-medium text-[var(--sp-ink-muted)] sm:inline">{t('sortBy')}</span>
                 <CustomSelect
                   value={sortBy}
                   onChange={setSortBy}
@@ -166,22 +167,24 @@ export default function CatalogPage() {
 
               <div className="flex h-11 items-center border border-[var(--sp-line)] bg-[var(--sp-surface)] p-1 shadow-2xs rounded-[var(--sp-radius-control)]">
                 <button
+                  type="button"
                   onClick={() => setViewMode('grid')}
                   className={`flex h-9 w-9 items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${
                     viewMode === 'grid'
-                      ? 'bg-[#0F6E43] text-white'
-                      : 'text-slate-400 hover:text-slate-700'
+                      ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'
+                      : 'text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]'
                   }`}
                   title={t('viewGrid')}
                 >
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => setViewMode('list')}
                   className={`flex h-9 w-9 items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${
                     viewMode === 'list'
-                      ? 'bg-[#0F6E43] text-white'
-                      : 'text-slate-400 hover:text-slate-700'
+                      ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'
+                      : 'text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]'
                   }`}
                   title={t('viewList')}
                 >
@@ -214,21 +217,22 @@ export default function CatalogPage() {
             <div className="lg:col-span-9 space-y-6">
               {/* Active Filter Chips */}
               {(inStockOnly || ownProductionOnly || Object.values(selectedFilters).some((a) => a.length > 0)) && (
-                <div className="flex flex-wrap items-center gap-2 bg-white p-3 rounded-2xl border border-slate-200">
-                  <span className="text-xs text-slate-400 font-medium">{copy.active}:</span>
+                <div className="flex flex-wrap items-center gap-2 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3">
+                  <span className="text-xs font-medium text-[var(--sp-ink-muted)]">{copy.active}:</span>
                   {inStockOnly && (
-                    <span className="bg-[#EAF5EF] text-[#0F6E43] text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-[#0F6E43]/20">
+                    <button type="button" onClick={() => setInStockOnly(false)} aria-label={`${copy.stock}: удалить фильтр`} className="flex items-center gap-1.5 rounded-[var(--sp-radius-control-inner)] border border-[color-mix(in_srgb,var(--sp-brand)_22%,var(--sp-line))] bg-[var(--sp-brand-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-brand)] transition-colors hover:bg-[color-mix(in_srgb,var(--sp-brand)_15%,var(--sp-surface))]">
                       {copy.stock}
-                      <X className="w-3 h-3 cursor-pointer" onClick={() => setInStockOnly(false)} />
-                    </span>
+                      <X className="size-3" aria-hidden="true" />
+                    </button>
                   )}
                   {ownProductionOnly && (
-                    <span className="bg-[#EAF5EF] text-[#0F6E43] text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-[#0F6E43]/20">
+                    <button type="button" onClick={() => setOwnProductionOnly(false)} aria-label={`${copy.own}: удалить фильтр`} className="flex items-center gap-1.5 rounded-[var(--sp-radius-control-inner)] border border-[color-mix(in_srgb,var(--sp-brand)_22%,var(--sp-line))] bg-[var(--sp-brand-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-brand)] transition-colors hover:bg-[color-mix(in_srgb,var(--sp-brand)_15%,var(--sp-surface))]">
                       {copy.own}
-                      <X className="w-3 h-3 cursor-pointer" onClick={() => setOwnProductionOnly(false)} />
-                    </span>
+                      <X className="size-3" aria-hidden="true" />
+                    </button>
                   )}
                   <button
+                    type="button"
                     onClick={handleResetFilters}
                     className="text-xs text-rose-600 hover:underline ml-auto font-semibold flex items-center gap-1"
                   >
@@ -241,23 +245,24 @@ export default function CatalogPage() {
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-80 bg-slate-200 animate-pulse rounded-2xl" />
+                    <div key={i} className="h-80 animate-pulse rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)]" />
                   ))}
                 </div>
               ) : filteredProducts.length === 0 ? (
-                <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-2xl font-bold">
+                <div className="space-y-4 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-12 text-center">
+                  <div className="mx-auto flex size-16 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] text-2xl text-[var(--sp-ink-muted)]">
                     🔍
                   </div>
-                  <h3 className="text-lg font-bold text-[#222B35]">
+                  <h3 className="text-lg font-bold text-[var(--sp-ink)]">
                     {copy.empty}
                   </h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  <p className="mx-auto max-w-sm text-xs text-[var(--sp-ink-secondary)]">
                     {copy.emptyText}
                   </p>
                   <button
+                    type="button"
                     onClick={handleResetFilters}
-                    className="px-5 py-2.5 bg-[#0F6E43] text-white font-bold text-xs rounded-xl shadow-2xs"
+                    className="rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 py-2.5 text-xs font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)]"
                   >
                     {copy.resetAll}
                   </button>
@@ -283,11 +288,11 @@ export default function CatalogPage() {
       {/* Mobile Filters Drawer */}
       {isMobileFilterOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 lg:hidden">
-          <div className="fixed top-0 right-0 w-4/5 max-w-md h-full bg-white shadow-2xl p-6 overflow-y-auto space-y-6">
-            <div className="flex items-center justify-between border-b pb-4">
-              <h3 className="font-bold text-lg text-[#222B35]">{t('filterTitle')}</h3>
-              <button onClick={() => setIsMobileFilterOpen(false)} className="p-2 text-slate-400">
-                <X className="w-6 h-6" />
+          <div className="fixed right-0 top-0 h-full w-4/5 max-w-md space-y-6 overflow-y-auto bg-[var(--sp-surface)] p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--sp-line)] pb-4">
+              <h3 className="text-lg font-bold text-[var(--sp-ink)]">{t('filterTitle')}</h3>
+              <button type="button" onClick={() => setIsMobileFilterOpen(false)} className="sp-icon-button size-10" aria-label="Закрыть фильтры">
+                <X className="size-5" aria-hidden="true" />
               </button>
             </div>
 
@@ -304,8 +309,9 @@ export default function CatalogPage() {
             />
 
             <button
+              type="button"
               onClick={() => setIsMobileFilterOpen(false)}
-              className="w-full py-3 bg-[#0F6E43] text-white font-bold rounded-xl text-xs"
+              className="w-full rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] py-3 text-xs font-semibold text-[var(--sp-on-brand)]"
             >
               {copy.show} ({filteredProducts.length})
             </button>
