@@ -17,7 +17,7 @@ const allowedFormats = new Set(['jpeg', 'png', 'webp']);
 const mediaKindSchema = z.enum(Object.keys(mediaPresets) as [keyof typeof mediaPresets, ...(keyof typeof mediaPresets)[]]);
 const deleteSchema = z.object({
   path: z.string().trim().min(1).max(500).refine(
-    (path) => path.startsWith('media/banners/') || path.startsWith('media/categories/'),
+    (path) => path.startsWith('media/banners/') || path.startsWith('media/categories/') || path.startsWith('media/products/'),
     'Недопустимый путь файла.'
   ),
 }).strict();

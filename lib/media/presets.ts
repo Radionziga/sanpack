@@ -22,6 +22,13 @@ export const mediaPresets = {
     quality: 86,
     label: 'Изображение категории',
   },
+  product: {
+    directory: 'media/products',
+    width: 1200,
+    height: 1200,
+    quality: 88,
+    label: 'Изображение товара',
+  },
 } as const;
 
 export type MediaKind = keyof typeof mediaPresets;

@@ -91,7 +91,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
             className="relative block aspect-[4/3] overflow-hidden rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] md:aspect-square"
           >
             <Image
-              src={product.mainImage}
+              src={product.mainImage || '/catalog/product-placeholder.svg'}
               alt={title}
               fill
               sizes="(max-width: 767px) 100vw, 168px"
@@ -166,7 +166,7 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
           className="relative block aspect-square overflow-hidden rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)]"
         >
           <Image
-            src={product.mainImage}
+            src={product.mainImage || '/catalog/product-placeholder.svg'}
             alt={title}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"

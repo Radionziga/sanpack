@@ -109,6 +109,7 @@ export interface Product {
   descriptionEn?: string;
   images: string[];
   mainImage: string;
+  mainImagePath?: string;
   attributes: Record<string, string | number | boolean | string[]>;
   variants: ProductVariant[];
   price?: number;

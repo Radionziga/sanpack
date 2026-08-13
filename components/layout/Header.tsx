@@ -352,7 +352,7 @@ export function Header({
                               className="group flex items-center gap-3 p-2.5 transition-colors hover:bg-[var(--sp-surface-inset)]"
                             >
                               <Image
-                                src={product.mainImage}
+                                src={product.mainImage || '/catalog/product-placeholder.svg'}
                                 alt={product.titleRu}
                                 width={36}
                                 height={36}

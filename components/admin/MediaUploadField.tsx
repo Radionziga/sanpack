@@ -60,7 +60,9 @@ export function MediaUploadField({
     ? 'aspect-[24/7] sm:col-span-2 sm:w-full'
     : kind === 'banner-mobile'
       ? 'aspect-square'
-      : 'aspect-[4/3]';
+      : kind === 'product'
+        ? 'aspect-square'
+        : 'aspect-[4/3]';
 
   const upload = async (file: File) => {
     setError('');

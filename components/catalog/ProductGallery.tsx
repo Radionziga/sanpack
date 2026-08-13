@@ -13,7 +13,7 @@ interface ProductGalleryProps {
 export function ProductGallery({ images, title }: ProductGalleryProps) {
   const { language } = useLanguage();
   const zoomTitle = { ru: 'Увеличить', uz: 'Kattalashtirish', en: 'Enlarge image' }[language];
-  const [activeImage, setActiveImage] = useState(images[0] || 'https://picsum.photos/800/800');
+  const [activeImage, setActiveImage] = useState(images[0] || '/catalog/product-placeholder.svg');
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
   return (

@@ -7,6 +7,7 @@ import { Product, Category, Attribute } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { deleteUploadedMedia, MediaUploadField } from '@/components/admin/MediaUploadField';
 import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert } from 'lucide-react';
 import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 
@@ -49,7 +50,19 @@ export default function AdminProductsPage() {
     if (!isModalOpen) return;
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !saving) setIsModalOpen(false);
+      if (event.key !== 'Escape' || saving) return;
+      const stagedPath = editingProduct?.mainImagePath;
+      const persistedPath = editingProduct?.id
+        ? products.find((product) => product.id === editingProduct.id)?.mainImagePath
+        : undefined;
+      if (stagedPath && stagedPath !== persistedPath) {
+        void deleteUploadedMedia(stagedPath).catch((error) => {
+          console.warn('Could not remove staged product image.', error);
+        });
+      }
+      setIsModalOpen(false);
+      setEditingProduct(null);
+      setSaveError('');
     };
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', closeOnEscape);
@@ -57,7 +70,7 @@ export default function AdminProductsPage() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', closeOnEscape);
     };
-  }, [isModalOpen, saving]);
+  }, [isModalOpen, saving, editingProduct, products]);
 
   async function loadData() {
     setLoading(true);
@@ -92,8 +105,8 @@ export default function AdminProductsPage() {
       descriptionRu: '',
       descriptionUz: '',
       descriptionEn: '',
-      mainImage: 'https://picsum.photos/seed/sanpack-new-prod/800/800',
-      images: ['https://picsum.photos/seed/sanpack-new-prod/800/800'],
+      mainImage: '',
+      images: [],
       salesUnit: 'рулон',
       minimumOrder: 1,
       quantityStep: 1,
@@ -137,9 +150,37 @@ export default function AdminProductsPage() {
     setIsModalOpen(true);
   };
 
+  const getPersistedProduct = () => (
+    editingProduct?.id ? products.find((product) => product.id === editingProduct.id) : undefined
+  );
+
+  const cleanupStagedImage = () => {
+    const stagedPath = editingProduct?.mainImagePath;
+    const persistedPath = getPersistedProduct()?.mainImagePath;
+    if (stagedPath && stagedPath !== persistedPath) {
+      void deleteUploadedMedia(stagedPath).catch((error) => {
+        console.warn('Could not remove staged product image.', error);
+      });
+    }
+  };
+
+  const closeEditor = () => {
+    if (saving) return;
+    cleanupStagedImage();
+    setIsModalOpen(false);
+    setEditingProduct(null);
+    setSaveError('');
+  };
+
   const handleDelete = async (id: string) => {
     if (confirm('Вы действительно хотите удалить этот товар из каталога?')) {
+      const product = products.find((item) => item.id === id);
       await SanpackRepository.deleteProduct(id);
+      if (product?.mainImagePath) {
+        await deleteUploadedMedia(product.mainImagePath).catch((error) => {
+          console.warn('Could not remove product image.', error);
+        });
+      }
       loadData();
     }
   };
@@ -160,12 +201,28 @@ export default function AdminProductsPage() {
     const orderRule = getProductOrderRule(draft as Product);
     draft.minimumOrder = orderRule.minimumQuantity;
     draft.quantityStep = orderRule.quantityStep;
+    draft.images = draft.mainImage
+      ? [
+          draft.mainImage,
+          ...(draft.images || []).filter(
+            (image) => image && image !== draft.mainImage,
+          ),
+        ]
+      : [];
+    const previousProduct = draft.id
+      ? products.find((product) => product.id === draft.id)
+      : undefined;
 
     try {
       if (draft.id) {
         await SanpackRepository.updateProduct(draft.id, draft);
       } else {
         await SanpackRepository.createProduct(draft as Omit<Product, 'id' | 'createdAt' | 'updatedAt'>);
+      }
+      if (previousProduct?.mainImagePath && previousProduct.mainImagePath !== draft.mainImagePath) {
+        await deleteUploadedMedia(previousProduct.mainImagePath).catch((error) => {
+          console.warn('Could not remove replaced product image.', error);
+        });
       }
       setIsModalOpen(false);
       setEditingProduct(null);
@@ -252,7 +309,7 @@ export default function AdminProductsPage() {
                     <tr key={p.id} className="transition-colors hover:bg-[var(--sp-surface-inset)]">
                       <td className="p-3.5">
                         <Image
-                          src={p.mainImage}
+                          src={p.mainImage || '/catalog/product-placeholder.svg'}
                           alt={p.titleRu}
                           width={40}
                           height={40}
@@ -334,7 +391,7 @@ export default function AdminProductsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeEditor}
                 className="admin-icon-button shrink-0"
                 aria-label="Закрыть редактор"
               >
@@ -410,22 +467,6 @@ export default function AdminProductsPage() {
               </div>
 
               <div>
-                <label className="font-bold block mb-1">URL главного изображения</label>
-                <input
-                  type="text"
-                  value={editingProduct.mainImage || ''}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      mainImage: e.target.value,
-                      images: [e.target.value],
-                    })
-                  }
-                  className="admin-control text-sm"
-                />
-              </div>
-
-              <div>
                 <CustomSelect
                   label="Статус склада"
                   value={editingProduct.stockStatus || 'in_stock'}
@@ -442,6 +483,46 @@ export default function AdminProductsPage() {
                   ]}
                 />
               </div>
+            </div>
+
+            <div className="mt-5 border-t border-[var(--sp-line)] pt-5">
+              <MediaUploadField
+                kind="product"
+                label="Фотография товара"
+                recommendation="Рекомендуется 1200×1200 px · 1:1"
+                value={editingProduct.mainImage || undefined}
+                optional
+                onUploaded={(media) => {
+                  const persistedPath = getPersistedProduct()?.mainImagePath;
+                  const stagedPath = editingProduct.mainImagePath;
+                  if (stagedPath && stagedPath !== persistedPath && stagedPath !== media.path) {
+                    void deleteUploadedMedia(stagedPath).catch((error) => {
+                      console.warn('Could not remove previous staged product image.', error);
+                    });
+                  }
+                  setEditingProduct({
+                    ...editingProduct,
+                    mainImage: media.url,
+                    mainImagePath: media.path,
+                    images: [media.url],
+                  });
+                }}
+                onClear={() => {
+                  const persistedPath = getPersistedProduct()?.mainImagePath;
+                  const stagedPath = editingProduct.mainImagePath;
+                  if (stagedPath && stagedPath !== persistedPath) {
+                    void deleteUploadedMedia(stagedPath).catch((error) => {
+                      console.warn('Could not remove staged product image.', error);
+                    });
+                  }
+                  setEditingProduct({
+                    ...editingProduct,
+                    mainImage: '',
+                    mainImagePath: undefined,
+                    images: [],
+                  });
+                }}
+              />
             </div>
             </section>
 
@@ -869,7 +950,7 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeEditor}
                 className="admin-button-secondary disabled:opacity-50"
               >
                 Отмена
