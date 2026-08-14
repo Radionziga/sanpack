@@ -108,6 +108,8 @@ export interface Product {
   descriptionUz: string;
   descriptionEn?: string;
   images: string[];
+  /** Firebase Storage paths aligned with managed product images when available. */
+  imagePaths?: string[];
   mainImage: string;
   mainImagePath?: string;
   attributes: Record<string, string | number | boolean | string[]>;

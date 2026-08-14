@@ -53,9 +53,11 @@ export const priceList2026Categories: Category[] = [
   { id: 'cat-groats', parentId: 'cat-food', slug: 'krupy-i-bobovye', titleRu: 'Крупы и бобовые', titleUz: 'Yorma va dukkaklilar', titleEn: 'Grains and pulses', image: PLACEHOLDER_IMAGE, icon: 'Wheat', status: 'active', sortOrder: 25 },
   { id: 'cat-oils', parentId: 'cat-food', slug: 'rastitelnye-masla', titleRu: 'Растительные и фритюрные масла', titleUz: 'O‘simlik va fritür moylari', titleEn: 'Cooking and frying oils', image: PLACEHOLDER_IMAGE, icon: 'Bottle', status: 'active', sortOrder: 26 },
   { id: 'cat-fruits', parentId: 'cat-food', slug: 'frukty', titleRu: 'Фрукты', titleUz: 'Mevalar', titleEn: 'Fruit', image: PLACEHOLDER_IMAGE, icon: 'Apple', status: 'active', sortOrder: 27 },
-  { id: 'cat-greens', parentId: 'cat-food', slug: 'svezhaya-zelen', titleRu: 'Свежая зелень Novagreen', titleUz: 'Novagreen yangi ko‘katlari', titleEn: 'Fresh Novagreen greens', image: PLACEHOLDER_IMAGE, icon: 'Leaf', status: 'active', sortOrder: 28 },
-  { id: 'cat-microgreens', parentId: 'cat-food', slug: 'mikrozelen', titleRu: 'Микрозелень', titleUz: 'Mikroko‘katlar', titleEn: 'Microgreens', image: PLACEHOLDER_IMAGE, icon: 'Sprout', status: 'active', sortOrder: 29 },
-  { id: 'cat-dairy', parentId: 'cat-food', slug: 'molochnaya-produktsiya', titleRu: 'Молочная продукция', titleUz: 'Sut mahsulotlari', titleEn: 'Dairy products', image: PLACEHOLDER_IMAGE, icon: 'Milk', status: 'active', sortOrder: 30 },
+  { id: 'cat-berries', parentId: 'cat-food', slug: 'yagody', titleRu: 'Ягоды', titleUz: 'Rezavorlar', titleEn: 'Berries', image: PLACEHOLDER_IMAGE, icon: 'Cherry', status: 'active', sortOrder: 28 },
+  { id: 'cat-vegetables', parentId: 'cat-food', slug: 'ovoshchi', titleRu: 'Овощи', titleUz: 'Sabzavotlar', titleEn: 'Vegetables', image: PLACEHOLDER_IMAGE, icon: 'Carrot', status: 'active', sortOrder: 29 },
+  { id: 'cat-greens', parentId: 'cat-food', slug: 'svezhaya-zelen', titleRu: 'Свежая зелень Novagreen', titleUz: 'Novagreen yangi ko‘katlari', titleEn: 'Fresh Novagreen greens', image: PLACEHOLDER_IMAGE, icon: 'Leaf', status: 'active', sortOrder: 30 },
+  { id: 'cat-microgreens', parentId: 'cat-food', slug: 'mikrozelen', titleRu: 'Микрозелень', titleUz: 'Mikroko‘katlar', titleEn: 'Microgreens', image: PLACEHOLDER_IMAGE, icon: 'Sprout', status: 'active', sortOrder: 31 },
+  { id: 'cat-dairy', parentId: 'cat-food', slug: 'molochnaya-produktsiya', titleRu: 'Молочная продукция', titleUz: 'Sut mahsulotlari', titleEn: 'Dairy products', image: PLACEHOLDER_IMAGE, icon: 'Milk', status: 'active', sortOrder: 32 },
 ];
 
 export const priceList2026Attributes: Attribute[] = [
@@ -174,6 +176,44 @@ const produce: PriceRow[] = [
   row('FR-004', 'cat-fruits', 'Киви чилийский', 65000, 'кг', 'kilogram', { origin: 'Чили' }),
   row('FR-005', 'cat-fruits', 'Грейпфрут африканский', 34000, 'кг', 'kilogram', { origin: 'Африка' }),
   row('FR-006', 'cat-fruits', 'Банан эквадорский', 23000, 'кг', 'kilogram', { origin: 'Эквадор' }),
+  row('FR-007', 'cat-fruits', 'Авокадо гладкий', 18000, 'кг', 'kilogram', { product_type: 'гладкий' }),
+  row('FR-008', 'cat-fruits', 'Авокадо Хасс', 16000, 'кг', 'kilogram', { grade: 'Hass' }),
+  row('FR-009', 'cat-fruits', 'Ананас (Китай)', 46200, 'кг', 'kilogram', { origin: 'Китай' }),
+  row('FR-010', 'cat-fruits', 'Лимон (Китай)', 37000, 'кг', 'kilogram', { origin: 'Китай' }),
+  row('FR-011', 'cat-fruits', 'Лимон местный', 90000, 'кг', 'kilogram', { origin: 'Узбекистан' }),
+  row('FR-012', 'cat-fruits', 'Лайм', 88440, 'кг', 'kilogram'),
+  row('FR-013', 'cat-fruits', 'Киви (Китай)', 27720, 'кг', 'kilogram', { origin: 'Китай' }),
+  row('FR-014', 'cat-fruits', 'Маракуйя (Китай)', 17160, 'кг', 'kilogram', { origin: 'Китай' }),
+  row('FR-015', 'cat-fruits', 'Маракуйя (Таиланд)', 92400, 'кг', 'kilogram', { origin: 'Таиланд' }),
+  row('FR-016', 'cat-fruits', 'Манго жёлтый мини', 26400, 'кг', 'kilogram', { product_type: 'жёлтый мини' }),
+  row('FR-017', 'cat-fruits', 'Манго (Перу)', 171600, 'кг', 'kilogram', { origin: 'Перу' }),
+  row('FR-018', 'cat-fruits', 'Персик белый', 23760, 'кг', 'kilogram', { product_type: 'белый' }),
+  row('FR-019', 'cat-fruits', 'Яблоко Granny Smith', 48000, 'кг', 'kilogram', { grade: 'Granny Smith' }),
+  row('FR-020', 'cat-fruits', 'Яблоко Салтанат', 22440, 'кг', 'kilogram', { grade: 'Салтанат' }),
+  row('FR-021', 'cat-fruits', 'Виноград Shine Muscat', 145200, 'кг', 'kilogram', { grade: 'Shine Muscat' }),
+  row('FR-022', 'cat-fruits', 'Виноград Ризамат', 36960, 'кг', 'kilogram', { grade: 'Ризамат' }),
+
+  row('BR-001', 'cat-berries', 'Голубика, 500 г', 171600, 'упаковка', 'pack', { weight: '500 г' }),
+  row('BR-002', 'cat-berries', 'Голубика, 125 г', 36300, 'упаковка', 'pack', { weight: '125 г' }),
+  row('BR-003', 'cat-berries', 'Ежевика, 125 г', 66000, 'упаковка', 'pack', { weight: '125 г' }),
+  row('BR-004', 'cat-berries', 'Смородина, 125 г', 99000, 'упаковка', 'pack', { weight: '125 г' }),
+  row('BR-005', 'cat-berries', 'Физалис, 125 г', 66000, 'упаковка', 'pack', { weight: '125 г' }),
+  row('BR-006', 'cat-berries', 'Малина, 125 г', 66000, 'упаковка', 'pack', { weight: '125 г' }),
+  row('BR-007', 'cat-berries', 'Клубника', 60720, 'кг', 'kilogram'),
+
+  row('VG-001', 'cat-vegetables', 'Капуста пекинская', 15000, 'кг', 'kilogram'),
+  row('VG-002', 'cat-vegetables', 'Морковь', 13500, 'кг', 'kilogram'),
+  row('VG-003', 'cat-vegetables', 'Лук репчатый', 6000, 'кг', 'kilogram'),
+  row('VG-004', 'cat-vegetables', 'Картофель', 8500, 'кг', 'kilogram'),
+  row('VG-005', 'cat-vegetables', 'Томат Pink Paradise', 26400, 'кг', 'kilogram', { grade: 'Pink Paradise' }),
+  row('VG-006', 'cat-vegetables', 'Томат красный', 13200, 'кг', 'kilogram', { product_type: 'красный' }),
+  row('VG-007', 'cat-vegetables', 'Огурцы Рава', 14000, 'кг', 'kilogram', { grade: 'Рава' }),
+  row('VG-008', 'cat-vegetables', 'Огурцы Орзу', 13200, 'кг', 'kilogram', { grade: 'Орзу' }),
+  row('VG-009', 'cat-vegetables', 'Имбирь', 51480, 'кг', 'kilogram'),
+  row('VG-010', 'cat-vegetables', 'Перец «Светофор»', 46200, 'кг', 'kilogram', { product_type: 'ассорти красный, жёлтый и зелёный' }),
+  row('VG-011', 'cat-vegetables', 'Чеснок очищенный', 33000, 'кг', 'kilogram', { product_type: 'очищенный' }),
+  row('VG-012', 'cat-vegetables', 'Шампиньоны', 53000, 'кг', 'kilogram'),
+  row('VG-013', 'cat-vegetables', 'Спаржа', 290400, 'кг', 'kilogram'),
 
   row('GN-001', 'cat-greens', 'Салат Айсберг Novagreen, 500 г', 31700, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
   row('GN-002', 'cat-greens', 'Латук Novagreen, 500 г', 33000, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
@@ -344,6 +384,6 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
   };
 });
 
-if (priceList2026Products.length !== 130) {
-  throw new Error(`Ожидалось 130 товаров из пяти прайс-листов с объединёнными весовыми вариантами, получено ${priceList2026Products.length}.`);
+if (priceList2026Products.length !== 166) {
+  throw new Error(`Ожидалось 166 товаров из прайс-листов с объединёнными весовыми вариантами, получено ${priceList2026Products.length}.`);
 }

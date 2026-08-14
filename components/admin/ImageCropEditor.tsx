@@ -189,7 +189,7 @@ export function ImageCropEditor({
   const canMoveY = Boolean(crop && imageSize && imageSize.height - crop.height > 0.5);
 
   return (
-    <section className="rounded-[var(--radius-md)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:p-4" aria-labelledby="crop-editor-title">
+    <section className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:p-4" aria-labelledby="crop-editor-title">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div className="min-w-0">
           <h3 id="crop-editor-title" className="text-base font-bold text-[var(--sp-ink)]">Настройте область изображения</h3>
@@ -197,12 +197,12 @@ export function ImageCropEditor({
             Перетаскивайте изображение внутри рамки и меняйте масштаб. На сайте будет видна ровно эта область — {preset.width}×{preset.height} px.
           </p>
         </div>
-        <span className="shrink-0 rounded-md border border-[var(--sp-line)] bg-[var(--sp-surface)] px-2.5 py-1 text-[11px] font-semibold text-[var(--sp-ink-secondary)]">
+        <span className="shrink-0 rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-2.5 py-1 text-[11px] font-semibold text-[var(--sp-ink-secondary)]">
           {preset.label}
         </span>
       </div>
 
-      <div className="relative mt-4 overflow-hidden rounded-lg border border-black/10 bg-[var(--sp-surface)] shadow-sm dark:border-white/10">
+      <div className="relative mt-4 overflow-hidden rounded-[var(--sp-radius-control)] border border-black/10 bg-[var(--sp-surface)] shadow-sm dark:border-white/10">
         {imageSize ? (
           <>
             <canvas
@@ -236,7 +236,7 @@ export function ImageCropEditor({
               <div className="absolute inset-y-0 right-1/3 w-px bg-white/40 shadow-[1px_0_0_rgb(0_0_0/18%)]" />
               <div className="absolute inset-x-0 top-1/3 h-px bg-white/40 shadow-[0_1px_0_rgb(0_0_0/18%)]" />
               <div className="absolute inset-x-0 bottom-1/3 h-px bg-white/40 shadow-[0_1px_0_rgb(0_0_0/18%)]" />
-              <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-md bg-black/65 px-2.5 py-1.5 text-[11px] font-semibold text-white">
+              <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-[var(--sp-radius-control-inner)] bg-black/65 px-2.5 py-1.5 text-[11px] font-semibold text-white">
                 <Move className="size-3.5" /> Перетащите изображение
               </span>
             </div>
@@ -249,7 +249,7 @@ export function ImageCropEditor({
       </div>
 
       {qualityWarning ? (
-        <p className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2.5 text-xs leading-5 text-amber-800" role="status">
+        <p className="mt-3 flex items-start gap-2 rounded-[var(--sp-radius-control)] border border-amber-500/25 bg-amber-500/8 px-3 py-2.5 text-xs leading-5 text-amber-800" role="status">
           <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           Исходник {imageSize?.width}×{imageSize?.height} px меньше рекомендуемого размера. Его можно использовать, но на большом экране детализация может быть ниже.
         </p>
@@ -277,10 +277,10 @@ export function ImageCropEditor({
       </div>
 
       <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--sp-line)] pt-4 sm:flex-row sm:justify-end">
-        <button type="button" onClick={onCancel} disabled={isExporting} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[var(--sp-control-border)] bg-[var(--sp-surface)] px-4 text-xs font-bold text-[var(--sp-ink-secondary)] transition-colors hover:text-[var(--sp-ink)] disabled:opacity-50">
+        <button type="button" onClick={onCancel} disabled={isExporting} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-surface)] px-4 text-xs font-bold text-[var(--sp-ink-secondary)] transition-colors hover:text-[var(--sp-ink)] disabled:opacity-50">
           <X className="size-4" aria-hidden="true" /> Отмена
         </button>
-        <button type="button" onClick={() => void applyCrop()} disabled={!imageSize || isExporting} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-5 text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90 active:scale-[0.96] disabled:cursor-wait disabled:opacity-50">
+        <button type="button" onClick={() => void applyCrop()} disabled={!imageSize || isExporting} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90 active:scale-[0.96] disabled:cursor-wait disabled:opacity-50">
           {isExporting ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Check className="size-4" aria-hidden="true" />}
           {isExporting ? 'Подготовка…' : 'Применить и загрузить'}
         </button>

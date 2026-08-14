@@ -8,7 +8,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { deleteUploadedMedia, MediaUploadField } from '@/components/admin/MediaUploadField';
-import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star } from 'lucide-react';
 import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 
 const attributeLabels: Record<string, string> = {
@@ -26,6 +26,58 @@ function getAttributeLabel(key: string) {
   if (attributeLabels[key]) return attributeLabels[key];
   const readable = key.replace(/[_-]+/g, ' ').trim();
   return readable ? readable.charAt(0).toUpperCase() + readable.slice(1) : 'Характеристика';
+}
+
+interface ProductMediaAsset {
+  url: string;
+  path?: string;
+}
+
+function getProductMedia(product?: Partial<Product> | null): ProductMediaAsset[] {
+  if (!product) return [];
+  const orderedUrls = [product.mainImage, ...(product.images || [])].filter(
+    (url): url is string => Boolean(url),
+  );
+  const uniqueUrls = [...new Set(orderedUrls)];
+
+  return uniqueUrls.map((url) => {
+    const index = product.images?.indexOf(url) ?? -1;
+    if (url === product.mainImage) {
+      return {
+        url,
+        path: product.mainImagePath || (index >= 0 ? product.imagePaths?.[index] : undefined),
+      };
+    }
+    return {
+      url,
+      path: index >= 0 ? product.imagePaths?.[index] || undefined : undefined,
+    };
+  });
+}
+
+function withProductMedia(
+  product: Partial<Product>,
+  assets: ProductMediaAsset[],
+): Partial<Product> {
+  const uniqueAssets = assets.filter(
+    (asset, index) => asset.url && assets.findIndex((candidate) => candidate.url === asset.url) === index,
+  );
+  const main = uniqueAssets[0];
+  return {
+    ...product,
+    mainImage: main?.url || '',
+    mainImagePath: main?.path,
+    images: uniqueAssets.map((asset) => asset.url),
+    imagePaths: uniqueAssets.map((asset) => asset.path || ''),
+  };
+}
+
+function getManagedMediaPaths(product?: Partial<Product> | null) {
+  return new Set(
+    getProductMedia(product)
+      .map((asset) => asset.path)
+      .filter((path): path is string => Boolean(path)),
+  );
 }
 
 export default function AdminProductsPage() {
@@ -51,14 +103,16 @@ export default function AdminProductsPage() {
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || saving) return;
-      const stagedPath = editingProduct?.mainImagePath;
-      const persistedPath = editingProduct?.id
-        ? products.find((product) => product.id === editingProduct.id)?.mainImagePath
+      const persistedProduct = editingProduct?.id
+        ? products.find((product) => product.id === editingProduct.id)
         : undefined;
-      if (stagedPath && stagedPath !== persistedPath) {
-        void deleteUploadedMedia(stagedPath).catch((error) => {
-          console.warn('Could not remove staged product image.', error);
-        });
+      const persistedPaths = getManagedMediaPaths(persistedProduct);
+      for (const stagedPath of getManagedMediaPaths(editingProduct)) {
+        if (!persistedPaths.has(stagedPath)) {
+          void deleteUploadedMedia(stagedPath).catch((error) => {
+            console.warn('Could not remove staged product image.', error);
+          });
+        }
       }
       setIsModalOpen(false);
       setEditingProduct(null);
@@ -107,6 +161,7 @@ export default function AdminProductsPage() {
       descriptionEn: '',
       mainImage: '',
       images: [],
+      imagePaths: [],
       salesUnit: 'рулон',
       minimumOrder: 1,
       quantityStep: 1,
@@ -155,12 +210,13 @@ export default function AdminProductsPage() {
   );
 
   const cleanupStagedImage = () => {
-    const stagedPath = editingProduct?.mainImagePath;
-    const persistedPath = getPersistedProduct()?.mainImagePath;
-    if (stagedPath && stagedPath !== persistedPath) {
-      void deleteUploadedMedia(stagedPath).catch((error) => {
-        console.warn('Could not remove staged product image.', error);
-      });
+    const persistedPaths = getManagedMediaPaths(getPersistedProduct());
+    for (const stagedPath of getManagedMediaPaths(editingProduct || undefined)) {
+      if (!persistedPaths.has(stagedPath)) {
+        void deleteUploadedMedia(stagedPath).catch((error) => {
+          console.warn('Could not remove staged product image.', error);
+        });
+      }
     }
   };
 
@@ -176,8 +232,8 @@ export default function AdminProductsPage() {
     if (confirm('Вы действительно хотите удалить этот товар из каталога?')) {
       const product = products.find((item) => item.id === id);
       await SanpackRepository.deleteProduct(id);
-      if (product?.mainImagePath) {
-        await deleteUploadedMedia(product.mainImagePath).catch((error) => {
+      for (const path of getManagedMediaPaths(product)) {
+        await deleteUploadedMedia(path).catch((error) => {
           console.warn('Could not remove product image.', error);
         });
       }
@@ -191,7 +247,7 @@ export default function AdminProductsPage() {
     setSaveError('');
     setSaving(true);
 
-    const draft = {
+    let draft = {
       ...editingProduct,
       slug: editingProduct.slug || (editingProduct.titleRu || 'product')
         .toLowerCase()
@@ -201,14 +257,7 @@ export default function AdminProductsPage() {
     const orderRule = getProductOrderRule(draft as Product);
     draft.minimumOrder = orderRule.minimumQuantity;
     draft.quantityStep = orderRule.quantityStep;
-    draft.images = draft.mainImage
-      ? [
-          draft.mainImage,
-          ...(draft.images || []).filter(
-            (image) => image && image !== draft.mainImage,
-          ),
-        ]
-      : [];
+    draft = withProductMedia(draft, getProductMedia(draft));
     const previousProduct = draft.id
       ? products.find((product) => product.id === draft.id)
       : undefined;
@@ -219,10 +268,13 @@ export default function AdminProductsPage() {
       } else {
         await SanpackRepository.createProduct(draft as Omit<Product, 'id' | 'createdAt' | 'updatedAt'>);
       }
-      if (previousProduct?.mainImagePath && previousProduct.mainImagePath !== draft.mainImagePath) {
-        await deleteUploadedMedia(previousProduct.mainImagePath).catch((error) => {
-          console.warn('Could not remove replaced product image.', error);
-        });
+      const draftPaths = getManagedMediaPaths(draft);
+      for (const previousPath of getManagedMediaPaths(previousProduct)) {
+        if (!draftPaths.has(previousPath)) {
+          await deleteUploadedMedia(previousPath).catch((error) => {
+            console.warn('Could not remove replaced product image.', error);
+          });
+        }
       }
       setIsModalOpen(false);
       setEditingProduct(null);
@@ -245,6 +297,10 @@ export default function AdminProductsPage() {
   const editingOrderSummary = editingProduct
     ? getOrderRuleSummary(editingProduct as Product)
     : '';
+  const editingMediaAssets = getProductMedia(editingProduct || undefined);
+  const editingCategory = categories.find((category) => category.id === editingProduct?.categoryId);
+  const editingBrand = editingProduct?.brandName
+    || (typeof editingProduct?.attributes?.brand === 'string' ? editingProduct.attributes.brand : '');
 
   return (
     <div className="admin-page space-y-6">
@@ -485,42 +541,82 @@ export default function AdminProductsPage() {
               </div>
             </div>
 
-            <div className="mt-5 border-t border-[var(--sp-line)] pt-5">
+            <div className="mt-5 space-y-4 border-t border-[var(--sp-line)] pt-5">
+              <div>
+                <h4 className="text-sm font-bold text-[var(--sp-ink)]">Изображения товара</h4>
+                <p className="mt-1 text-[11px] leading-5 text-[var(--sp-ink-secondary)]">
+                  Первое изображение показывается в каталоге. Можно загрузить несколько фотографий или создать новый вариант с помощью ИИ.
+                </p>
+              </div>
+
+              {editingMediaAssets.length ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {editingMediaAssets.map((asset, index) => (
+                    <article key={`${asset.url}:${index}`} className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-2.5">
+                      <div className="relative aspect-square overflow-hidden rounded-[var(--sp-radius-control)] bg-white">
+                        <Image src={asset.url} alt={`Изображение товара ${index + 1}`} fill sizes="260px" className="object-contain" />
+                        {index === 0 ? (
+                          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+                            <Star className="size-3" aria-hidden="true" /> Главное
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => {
+                            const reordered = [asset, ...editingMediaAssets.filter((_, assetIndex) => assetIndex !== index)];
+                            setEditingProduct(withProductMedia(editingProduct, reordered));
+                          }}
+                          className="admin-button-secondary min-h-9 px-2 text-[10px] disabled:cursor-default disabled:opacity-45"
+                        >
+                          <Star className="size-3.5" aria-hidden="true" /> Главная
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const persistedPaths = getManagedMediaPaths(getPersistedProduct());
+                            if (asset.path && !persistedPaths.has(asset.path)) {
+                              void deleteUploadedMedia(asset.path).catch((error) => {
+                                console.warn('Could not remove staged product image.', error);
+                              });
+                            }
+                            setEditingProduct(withProductMedia(
+                              editingProduct,
+                              editingMediaAssets.filter((_, assetIndex) => assetIndex !== index),
+                            ));
+                          }}
+                          className="admin-button-secondary min-h-9 px-2 text-[10px] text-[var(--sp-danger)]"
+                        >
+                          <Trash2 className="size-3.5" aria-hidden="true" /> Удалить
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-[var(--sp-radius-card)] border border-dashed border-[var(--sp-line-strong)] bg-[var(--sp-surface-inset)] px-4 py-5 text-center text-xs text-[var(--sp-ink-tertiary)]">
+                  У товара пока нет изображения. Загрузите файл или создайте нейтральную фотографию товара.
+                </div>
+              )}
+
               <MediaUploadField
                 kind="product"
-                label="Фотография товара"
-                recommendation="Рекомендуется 1200×1200 px · 1:1"
-                value={editingProduct.mainImage || undefined}
-                optional
-                onUploaded={(media) => {
-                  const persistedPath = getPersistedProduct()?.mainImagePath;
-                  const stagedPath = editingProduct.mainImagePath;
-                  if (stagedPath && stagedPath !== persistedPath && stagedPath !== media.path) {
-                    void deleteUploadedMedia(stagedPath).catch((error) => {
-                      console.warn('Could not remove previous staged product image.', error);
-                    });
-                  }
-                  setEditingProduct({
-                    ...editingProduct,
-                    mainImage: media.url,
-                    mainImagePath: media.path,
-                    images: [media.url],
-                  });
+                label="Добавить изображение"
+                recommendation="Квадрат 1:1 · готовый файл сохраняется в WebP"
+                aiContext={{
+                  title: editingProduct.titleRu || '',
+                  category: editingCategory?.titleRu || '',
+                  brand: editingBrand,
+                  description: editingProduct.descriptionRu || editingProduct.shortDescriptionRu || '',
+                  attributes: editingProduct.attributes || {},
                 }}
-                onClear={() => {
-                  const persistedPath = getPersistedProduct()?.mainImagePath;
-                  const stagedPath = editingProduct.mainImagePath;
-                  if (stagedPath && stagedPath !== persistedPath) {
-                    void deleteUploadedMedia(stagedPath).catch((error) => {
-                      console.warn('Could not remove staged product image.', error);
-                    });
-                  }
-                  setEditingProduct({
-                    ...editingProduct,
-                    mainImage: '',
-                    mainImagePath: undefined,
-                    images: [],
-                  });
+                onUploaded={(media) => {
+                  setEditingProduct(withProductMedia(editingProduct, [
+                    ...editingMediaAssets,
+                    { url: media.url, path: media.path },
+                  ]));
                 }}
               />
             </div>

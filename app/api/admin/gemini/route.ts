@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/auth/server';
 import { decryptSecret, encryptSecret } from '@/lib/telegram/secrets';
-import { listGeminiTextModels, type GeminiModelOption } from '@/lib/gemini/api';
+import {
+  geminiImageModelIds,
+  listGeminiImageModels,
+  listGeminiTextModels,
+  type GeminiModelOption,
+} from '@/lib/gemini/api';
 import {
   getGeminiPrivateSettings,
   saveGeminiPrivateSettings,
@@ -17,7 +22,10 @@ const actionSchema = z.discriminatedUnion('action', [
     settings: z.object({
       enabled: z.boolean(),
       model: z.string().trim().min(1).max(160),
-      imageModel: z.enum(['gemini-3.1-flash-lite-image', 'gemini-3.1-flash-image', 'gemini-3-pro-image', 'gemini-2.5-flash-image']),
+      imageModel: z.string().trim().refine(
+        (model) => geminiImageModelIds.includes(model),
+        'Выберите модель, которая поддерживает создание изображений.',
+      ),
       apiKey: z.string().trim().max(500).optional().default(''),
     }).strict(),
   }).strict(),
@@ -50,10 +58,15 @@ export async function GET() {
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
     const settings = await getGeminiPrivateSettings();
     let models: GeminiModelOption[] = [];
+    let imageModels: GeminiModelOption[] = [];
     let modelsWarning = '';
     if (settings.apiKeyEncrypted) {
       try {
-        models = await listGeminiTextModels(decryptSecret(settings.apiKeyEncrypted));
+        const apiKey = decryptSecret(settings.apiKeyEncrypted);
+        [models, imageModels] = await Promise.all([
+          listGeminiTextModels(apiKey),
+          listGeminiImageModels(apiKey),
+        ]);
       } catch (error) {
         console.error('Gemini model list loading failed.', error);
         modelsWarning = publicError(error);
@@ -62,6 +75,7 @@ export async function GET() {
     return NextResponse.json({
       settings: toPublicAdminGeminiSettings(settings),
       models,
+      imageModels,
       modelsWarning,
     });
   } catch (error) {
@@ -86,7 +100,11 @@ export async function POST(request: Request) {
       const apiKey = data.apiKey
         || (current.apiKeyEncrypted ? decryptSecret(current.apiKeyEncrypted) : '');
       if (!apiKey) return NextResponse.json({ error: 'Сначала добавьте API-ключ Gemini.' }, { status: 400 });
-      return NextResponse.json({ models: await listGeminiTextModels(apiKey) });
+      const [models, imageModels] = await Promise.all([
+        listGeminiTextModels(apiKey),
+        listGeminiImageModels(apiKey),
+      ]);
+      return NextResponse.json({ models, imageModels });
     }
 
     const apiKey = data.settings.apiKey
@@ -95,9 +113,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Добавьте API-ключ Gemini.' }, { status: 400 });
     }
 
-    const models = await listGeminiTextModels(apiKey);
+    const [models, imageModels] = await Promise.all([
+      listGeminiTextModels(apiKey),
+      listGeminiImageModels(apiKey),
+    ]);
     if (!models.some((model) => model.id === data.settings.model)) {
       return NextResponse.json({ error: 'Выбранная модель недоступна для этого API-ключа.' }, { status: 400 });
+    }
+    if (!imageModels.some((model) => model.id === data.settings.imageModel)) {
+      return NextResponse.json({ error: 'Выбранная модель не поддерживает создание изображений для этого API-ключа.' }, { status: 400 });
     }
 
     const apiKeyEncrypted = data.settings.apiKey
@@ -117,9 +141,10 @@ export async function POST(request: Request) {
     };
     await saveGeminiPrivateSettings(settings);
     return NextResponse.json({
-      message: 'Gemini подключён. Переводы доступны в многоязычных формах.',
+      message: 'Gemini подключён. Переводы и создание товарных изображений доступны в админ-панели.',
       settings: toPublicAdminGeminiSettings(settings),
       models,
+      imageModels,
       modelsWarning: '',
     });
   } catch (error) {
