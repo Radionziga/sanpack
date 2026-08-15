@@ -44,3 +44,13 @@ export function decryptSecret(value: string) {
     decipher.final(),
   ]).toString('utf8');
 }
+
+export function canDecryptSecret(value?: string) {
+  if (!value) return false;
+  try {
+    decryptSecret(value);
+    return true;
+  } catch {
+    return false;
+  }
+}

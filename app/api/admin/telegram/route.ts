@@ -28,6 +28,9 @@ function telegramErrorMessage(error: unknown) {
   if (message.includes('TELEGRAM_CONFIG_ENCRYPTION_KEY')) {
     return 'Не настроено защищённое хранение токена. Обратитесь к владельцу проекта.';
   }
+  if (/Unsupported state|unable to authenticate data|unsupported format/i.test(message)) {
+    return 'Сохранённый секрет больше недоступен. Введите токен или секрет повторно и сохраните настройки.';
+  }
   if (/chat not found|chat_id/i.test(message)) {
     return 'Бот не может отправить сообщение в этот чат. Откройте бота в Telegram, нажмите «Start» и проверьте Chat ID.';
   }
@@ -41,6 +44,15 @@ function telegramErrorMessage(error: unknown) {
     return 'Не удалось связаться с Telegram. Проверьте интернет и повторите попытку.';
   }
   return 'Настройки не сохранены. Проверьте введённые данные и попробуйте ещё раз.';
+}
+
+function telegramErrorStatus(error: unknown) {
+  if (isFirebaseAdminCredentialError(error)) return 503;
+  const message = error instanceof Error ? error.message : String(error);
+  if (/Unsupported state|unable to authenticate data|unsupported format/i.test(message)) return 409;
+  if (/chat not found|chat_id|unauthorized|invalid token|not found|button_url_invalid|wrong http url|https/i.test(message)) return 400;
+  if (/TELEGRAM_CONFIG_ENCRYPTION_KEY|fetch failed|timeout|aborted|неполный ответ/i.test(message)) return 503;
+  return 500;
 }
 
 async function requireAdmin() {
@@ -176,6 +188,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Telegram settings operation failed.', error);
     const message = telegramErrorMessage(error);
-    return NextResponse.json({ error: message }, { status: 503 });
+    return NextResponse.json({ error: message }, { status: telegramErrorStatus(error) });
   }
 }
