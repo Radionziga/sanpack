@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { createPublicSiteUrl } from '@/lib/http/publicSiteUrl';
 import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
+import { canDecryptSecret } from '@/lib/telegram/secrets';
 import {
   buildTelegramAuthorizationUrl,
   createTelegramLoginAttempt,
@@ -15,10 +17,9 @@ function safeReturnTo(value: string | null) {
   return value;
 }
 
-function withAuthError(request: Request, returnTo: string, reason: string) {
-  const url = new URL(returnTo, request.url);
+function withAuthError(request: Request, returnTo: string) {
+  const url = createPublicSiteUrl(returnTo, request.url);
   url.searchParams.set('telegramAuth', 'error');
-  url.searchParams.set('reason', reason);
   return NextResponse.redirect(url);
 }
 
@@ -27,8 +28,8 @@ export async function GET(request: Request) {
   try {
     const settings = await getTelegramPrivateSettings();
     const login = settings.login;
-    if (!login.enabled || !login.clientId || !login.clientSecretEncrypted || !login.redirectUri) {
-      return withAuthError(request, returnTo, 'not_configured');
+    if (!login.enabled || !login.clientId || !canDecryptSecret(login.clientSecretEncrypted) || !login.redirectUri) {
+      return withAuthError(request, returnTo);
     }
 
     const attempt = createTelegramLoginAttempt(returnTo);
@@ -56,7 +57,6 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     console.error('Telegram login could not start.', error);
-    return withAuthError(request, returnTo, 'unavailable');
+    return withAuthError(request, returnTo);
   }
 }
-

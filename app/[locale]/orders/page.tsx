@@ -19,9 +19,20 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const currentUrl = new URL(window.location.href);
+    const telegramAuthFailed = currentUrl.searchParams.get('telegramAuth') === 'error';
+    if (currentUrl.searchParams.has('telegramAuth') || currentUrl.searchParams.has('reason')) {
+      currentUrl.searchParams.delete('telegramAuth');
+      currentUrl.searchParams.delete('reason');
+      window.history.replaceState(null, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+    }
+
     fetch('/api/auth/customer', { cache: 'no-store' })
       .then((response) => response.json())
       .then(async (status: { authenticated: boolean; customer: { name?: string } | null }) => {
+        if (telegramAuthFailed) {
+          setError('Не удалось войти через Telegram. Попробуйте ещё раз. Если ошибка повторится, сообщите менеджеру.');
+        }
         setAuthenticated(status.authenticated);
         setCustomerName(status.customer?.name || '');
         if (status.authenticated) setOrders(await PublicSanpackRepository.getMyRequests());

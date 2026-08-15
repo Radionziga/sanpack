@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { createPublicSiteUrl } from '@/lib/http/publicSiteUrl';
 import {
   createCustomerSessionToken,
   CUSTOMER_SESSION_COOKIE_NAME,
   CUSTOMER_SESSION_MAX_AGE_SECONDS,
 } from '@/lib/auth/customerSession';
-import { decryptSecret } from '@/lib/telegram/secrets';
+import { canDecryptSecret, decryptSecret } from '@/lib/telegram/secrets';
 import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
 import {
   exchangeTelegramCode,
@@ -16,10 +17,9 @@ import {
 
 export const runtime = 'nodejs';
 
-function finish(request: Request, returnTo: string, status: 'success' | 'error', reason?: string) {
-  const url = new URL(returnTo, request.url);
+function finish(request: Request, returnTo: string, status: 'success' | 'error') {
+  const url = createPublicSiteUrl(returnTo, request.url);
   url.searchParams.set('telegramAuth', status);
-  if (reason) url.searchParams.set('reason', reason);
   const response = NextResponse.redirect(url);
   response.cookies.set(TELEGRAM_LOGIN_FLOW_COOKIE_NAME, '', {
     expires: new Date(0),
@@ -42,23 +42,24 @@ export async function GET(request: Request) {
   const returnTo = flow?.returnTo || '/ru/request';
 
   if (!flow || url.searchParams.get('state') !== flow.state) {
-    return finish(request, returnTo, 'error', 'invalid_state');
+    return finish(request, returnTo, 'error');
   }
   const code = url.searchParams.get('code');
   if (!code || url.searchParams.has('error')) {
-    return finish(request, returnTo, 'error', 'cancelled');
+    return finish(request, returnTo, 'error');
   }
 
   try {
     const settings = await getTelegramPrivateSettings();
     const login = settings.login;
-    if (!login.enabled || !login.clientId || !login.clientSecretEncrypted || !login.redirectUri) {
-      return finish(request, returnTo, 'error', 'not_configured');
+    const encryptedClientSecret = login.clientSecretEncrypted;
+    if (!login.enabled || !login.clientId || !encryptedClientSecret || !canDecryptSecret(encryptedClientSecret) || !login.redirectUri) {
+      return finish(request, returnTo, 'error');
     }
     const tokens = await exchangeTelegramCode({
       code,
       clientId: login.clientId,
-      clientSecret: decryptSecret(login.clientSecretEncrypted),
+      clientSecret: decryptSecret(encryptedClientSecret),
       redirectUri: login.redirectUri,
       codeVerifier: flow.codeVerifier,
     });
@@ -100,7 +101,6 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     console.error('Telegram login callback failed.', error);
-    return finish(request, returnTo, 'error', 'verification_failed');
+    return finish(request, returnTo, 'error');
   }
 }
-
