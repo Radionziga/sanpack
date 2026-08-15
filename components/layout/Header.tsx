@@ -248,7 +248,7 @@ export function Header({
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 md:gap-4">
             {/* Logo */}
             <Link href="/" className="flex h-10 min-w-0 shrink-0 items-center" aria-label="SANPACK — на главную">
-              <SanpackLogo variant="green" className="h-3 max-w-[124px] sm:h-4 sm:max-w-[164px] md:h-7 md:max-w-none lg:h-8" />
+              <SanpackLogo variant="green" className="h-5 sm:h-6 md:h-7 lg:h-8" />
             </Link>
 
             {/* Catalog Button & Global Search Bar */}
