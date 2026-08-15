@@ -91,10 +91,12 @@ export default async function ProductSeoLayout({
     description,
     image: product.images,
     sku: product.sku,
-    brand: {
-      '@type': 'Brand',
-      name: product.brandName || 'SANPACK',
-    },
+    brand: product.brandName
+      ? {
+          '@type': 'Brand',
+          name: product.brandName,
+        }
+      : undefined,
     offers: product.showPrice && product.price
       ? {
           '@type': 'Offer',

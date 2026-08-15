@@ -16,6 +16,10 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 
 import { useToast } from '@/context/ToastContext';
 import { getMinimumOrderLabel, getProductOrderRule } from '@/lib/commerce/orderQuantities';
+import {
+  formatMoney,
+  getProductSupportingText,
+} from '@/lib/catalog/productPresentation';
 
 interface ProductCardProps {
   product: Product;
@@ -23,11 +27,11 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
-  const { t, getLocalizedText, fixText, language } = useLanguage();
+  const { t, getLocalizedText, language } = useLanguage();
   const copy = {
-    ru: ['Товар добавлен в заявку', 'Удалено из избранного', 'Добавлено в избранное', 'сум'],
-    uz: ['Mahsulot arizaga qo‘shildi', 'Tanlanganlardan olib tashlandi', 'Tanlanganlarga qo‘shildi', 'so‘m'],
-    en: ['Product added to quote', 'Removed from favorites', 'Added to favorites', 'UZS'],
+    ru: ['Товар добавлен в заявку', 'Удалено из избранного', 'Добавлено в избранное'],
+    uz: ['Mahsulot arizaga qo‘shildi', 'Tanlanganlardan olib tashlandi', 'Tanlanganlarga qo‘shildi'],
+    en: ['Product added to quote', 'Removed from favorites', 'Added to favorites'],
   }[language];
   const favoriteCopy = {
     ru: ['Добавить в избранное', 'Убрать из избранного'],
@@ -39,31 +43,13 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
   const { showToast } = useToast();
 
   const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
-  const shortDescription = getLocalizedText(
-    product.shortDescriptionRu,
-    product.shortDescriptionUz,
-    product.shortDescriptionEn,
-  ).trim();
-  const normalizedShortDescription = shortDescription.replace(/\s+/g, ' ').trim();
-  const isImportedCatalogCopy = /SANPACK\s+v1\.4/i.test(normalizedShortDescription);
-  const supportingText = (
-    normalizedShortDescription.toLocaleLowerCase() === title.trim().toLocaleLowerCase()
-    || isImportedCatalogCopy
-  )
-    ? ''
-    : normalizedShortDescription;
-  const visibleAttributes = Object.entries(product.attributes || {})
-    .filter(([, value]) => {
-      const normalizedValue = fixText(String(value)).trim();
-      return normalizedValue.length > 0 && normalizedValue.toLocaleLowerCase() !== 'sanpack';
-    })
-    .slice(0, 3);
+  const supportingText = getProductSupportingText(product, language);
   const favorited = isFavorite(product.id);
   const inCart = isInCart(product.id);
   const orderRule = getProductOrderRule(product, language);
   const minimumOrderLabel = getMinimumOrderLabel(product, language);
   const price = product.showPrice && product.price
-    ? `${product.price.toLocaleString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US')} ${copy[3]}`
+    ? formatMoney(product.price, language, product.currency)
     : t('priceOnRequest');
 
   const handleAddToCart = (event: React.MouseEvent) => {
@@ -122,18 +108,6 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
             </p>
           ) : null}
 
-          {visibleAttributes.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-[var(--sp-ink-secondary)]">
-              {visibleAttributes.map(([key, value]) => (
-                <span
-                  key={key}
-                  className="rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] px-2.5 py-1 font-normal"
-                >
-                  {fixText(String(value))}
-                </span>
-              ))}
-            </div>
-          ) : null}
         </div>
 
         <div className="flex min-w-[188px] flex-col justify-end gap-4 border-t border-[var(--sp-line-soft)] pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
@@ -198,18 +172,6 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
           </p>
         ) : null}
 
-        {visibleAttributes.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-[var(--sp-ink-secondary)]">
-            {visibleAttributes.map(([key, value]) => (
-              <span
-                key={key}
-                className="rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] px-2.5 py-1 font-normal"
-              >
-                {fixText(String(value))}
-              </span>
-            ))}
-          </div>
-        ) : null}
 
         <div className="mt-auto flex flex-col gap-3 border-t border-[var(--sp-line-soft)] pt-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">

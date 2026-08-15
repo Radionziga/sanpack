@@ -1,4 +1,5 @@
 import type { Language, Product } from '@/types';
+import { formatProductQuantity, formatQuantity } from '@/lib/catalog/productPresentation';
 
 const EPSILON = 1e-7;
 
@@ -86,35 +87,42 @@ export function isValidOrderQuantity(product: Product, quantity: number) {
 
 export function getOrderRuleSummary(product: Product, language: Language = 'ru') {
   const rule = getProductOrderRule(product, language);
+  const minimumQuantity = formatProductQuantity(product, rule.minimumQuantity, language);
+  const quantityStep = formatProductQuantity(product, rule.quantityStep, language);
   if (!rule.packageEnabled) {
     const copy = {
-      ru: `Минимум ${rule.minimumQuantity} ${rule.salesUnit}; шаг — ${rule.quantityStep} ${rule.salesUnit}.`,
-      uz: `Minimum ${rule.minimumQuantity} ${rule.salesUnit}; qadam — ${rule.quantityStep} ${rule.salesUnit}.`,
-      en: `Minimum ${rule.minimumQuantity} ${rule.salesUnit}; step — ${rule.quantityStep} ${rule.salesUnit}.`,
+      ru: `Минимум ${minimumQuantity}; шаг — ${quantityStep}.`,
+      uz: `Minimum ${minimumQuantity}; qadam — ${quantityStep}.`,
+      en: `Minimum ${minimumQuantity}; step — ${quantityStep}.`,
     };
     return copy[language];
   }
 
+  const onePackage = formatQuantity(1, rule.packageName, language);
+  const minimumPackages = formatQuantity(rule.minimumPackages, rule.packageName, language);
+  const unitsPerPackage = formatProductQuantity(product, rule.unitsPerPackage, language);
   const copy = {
-    ru: `Цена за 1 ${rule.salesUnit}. В 1 ${rule.packageName} — ${rule.unitsPerPackage} ${rule.salesUnit}. Минимум ${rule.minimumPackages} ${rule.packageName} (${rule.minimumQuantity} ${rule.salesUnit}).`,
-    uz: `Narx 1 ${rule.salesUnit} uchun. 1 ${rule.packageName}da — ${rule.unitsPerPackage} ${rule.salesUnit}. Minimum ${rule.minimumPackages} ${rule.packageName} (${rule.minimumQuantity} ${rule.salesUnit}).`,
-    en: `Price per 1 ${rule.salesUnit}. 1 ${rule.packageName} contains ${rule.unitsPerPackage} ${rule.salesUnit}. Minimum ${rule.minimumPackages} ${rule.packageName} (${rule.minimumQuantity} ${rule.salesUnit}).`,
+    ru: `Внешняя упаковка — ${onePackage}, в ней ${unitsPerPackage}. Минимум ${minimumPackages} (${minimumQuantity}).`,
+    uz: `Tashqi qadoq — ${onePackage}, unda ${unitsPerPackage}. Minimum ${minimumPackages} (${minimumQuantity}).`,
+    en: `Outer package: ${onePackage}, containing ${unitsPerPackage}. Minimum ${minimumPackages} (${minimumQuantity}).`,
   };
   return copy[language];
 }
 
 export function getMinimumOrderLabel(product: Product, language: Language = 'ru') {
   const rule = getProductOrderRule(product, language);
+  const minimumQuantity = formatProductQuantity(product, rule.minimumQuantity, language);
   if (!rule.packageEnabled) {
     return {
-      ru: `Мин. ${rule.minimumQuantity} ${rule.salesUnit}`,
-      uz: `Min. ${rule.minimumQuantity} ${rule.salesUnit}`,
-      en: `Min. ${rule.minimumQuantity} ${rule.salesUnit}`,
+      ru: `Мин. ${minimumQuantity}`,
+      uz: `Min. ${minimumQuantity}`,
+      en: `Min. ${minimumQuantity}`,
     }[language];
   }
+  const minimumPackages = formatQuantity(rule.minimumPackages, rule.packageName, language);
   return {
-    ru: `Мин. ${rule.minimumPackages} ${rule.packageName} · ${rule.minimumQuantity} ${rule.salesUnit}`,
-    uz: `Min. ${rule.minimumPackages} ${rule.packageName} · ${rule.minimumQuantity} ${rule.salesUnit}`,
-    en: `Min. ${rule.minimumPackages} ${rule.packageName} · ${rule.minimumQuantity} ${rule.salesUnit}`,
+    ru: `Мин. ${minimumPackages} · ${minimumQuantity}`,
+    uz: `Min. ${minimumPackages} · ${minimumQuantity}`,
+    en: `Min. ${minimumPackages} · ${minimumQuantity}`,
   }[language];
 }

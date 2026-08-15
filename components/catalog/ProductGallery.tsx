@@ -24,7 +24,8 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
           src={activeImage}
           alt={title}
           fill
-          priority
+          loading="eager"
+          fetchPriority="high"
           sizes="(min-width: 1024px) 45vw, 90vw"
           className="object-contain p-6 transition-transform duration-300 group-hover:scale-105"
         />

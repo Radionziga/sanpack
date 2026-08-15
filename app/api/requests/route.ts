@@ -63,28 +63,18 @@ export async function POST(request: Request) {
     } : undefined;
 
     if (parsed.data.telegramInitData) {
-      const telegramSettings = await getTelegramPrivateSettings();
-      if (!telegramSettings.storefront.enabled || !telegramSettings.storefront.tokenEncrypted) {
-        return NextResponse.json({ error: 'Telegram Mini App пока не настроен.' }, { status: 503 });
-      }
       try {
+        const telegramSettings = await getTelegramPrivateSettings();
+        if (!telegramSettings.storefront.enabled || !telegramSettings.storefront.tokenEncrypted) {
+          throw new Error('Telegram Mini App is not configured.');
+        }
         telegramUser = verifyTelegramInitData(
           parsed.data.telegramInitData,
           decryptSecret(telegramSettings.storefront.tokenEncrypted)
         );
-      } catch (error) {
-        return NextResponse.json(
-          { error: error instanceof Error ? error.message : 'Не удалось подтвердить вход через Telegram.' },
-          { status: 401 }
-        );
+      } catch {
+        console.warn('Telegram Mini App identity could not be verified; guest checkout was used.');
       }
-    }
-
-    if (!customer && !telegramUser) {
-      return NextResponse.json(
-        { error: 'Чтобы оформить заявку, войдите через Telegram.' },
-        { status: 401 }
-      );
     }
 
     const phoneNormalized = normalizeUzbekPhone(parsed.data.phone);
@@ -99,8 +89,8 @@ export async function POST(request: Request) {
       contactName: parsed.data.contactName,
       phone: formatUzbekPhone(phoneNormalized),
       phoneNormalized,
-      customerUid: customer?.sub || `telegram:${telegramUser?.id}`,
-      source: parsed.data.telegramInitData ? 'telegram_mini_app' : 'web',
+      customerUid: customer?.sub || (telegramUser ? `telegram:${telegramUser.id}` : `phone:${phoneNormalized}`),
+      source: telegramUser ? 'telegram_mini_app' : 'web',
       ...(telegramUser ? { telegramUser } : {}),
       items,
       originalItems: items,

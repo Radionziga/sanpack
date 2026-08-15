@@ -39,8 +39,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Col 1: SANPACK Info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block">
-              <SanpackLogo variant="white" className="h-8" />
+            <Link href="/" className="inline-block max-w-full" aria-label="SANPACK — на главную">
+              <SanpackLogo variant="white" className="h-6 sm:h-8" />
             </Link>
             <p className="max-w-sm text-xs leading-relaxed text-[color-mix(in_srgb,var(--sp-on-brand)_78%,transparent)]">
               {t('footerDesc')}

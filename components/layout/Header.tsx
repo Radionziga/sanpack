@@ -273,8 +273,8 @@ export function Header({
         <div className="border-b border-[var(--sp-line)] py-3">
           <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-3 md:gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 shrink-0 h-10">
-              <SanpackLogo variant="green" className="h-7 sm:h-8" />
+            <Link href="/" className="flex h-10 min-w-0 shrink-0 items-center" aria-label="SANPACK — на главную">
+              <SanpackLogo variant="green" className="h-3.5 sm:h-7 lg:h-8" />
             </Link>
 
             {/* Catalog Button & Global Search Bar */}
