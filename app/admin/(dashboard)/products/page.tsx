@@ -7,6 +7,7 @@ import { Product, Category, Attribute } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { ProductVariantsEditor } from '@/components/admin/ProductVariantsEditor';
 import { deleteUploadedMedia, MediaUploadField } from '@/components/admin/MediaUploadField';
 import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star } from 'lucide-react';
 import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
@@ -784,6 +785,13 @@ export default function AdminProductsPage() {
                 </div>
               ) : null}
             </section>
+
+            <ProductVariantsEditor
+              key={editingProduct.id || 'new-product'}
+              initialVariants={editingProduct.variants || []}
+              currency={editingProduct.currency || 'UZS'}
+              onChange={(variants) => setEditingProduct((current) => current ? { ...current, variants } : current)}
+            />
 
             <section className="admin-panel space-y-5 p-5 md:p-6">
             <div>

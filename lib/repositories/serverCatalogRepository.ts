@@ -45,7 +45,7 @@ async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
 
 export const getPublicProducts = unstable_cache(
   () => readCollection<Product>('products', initialProducts),
-  ['public-products-v3-weight-variants-2026-08'],
+  ['public-products-v4-required-variant-selection-2026-08'],
   { revalidate: 300, tags: ['products'] }
 );
 

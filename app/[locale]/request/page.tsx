@@ -385,7 +385,7 @@ export default function RequestPage() {
 
                   <div className="mt-5">
                     <label htmlFor="checkout-name" className="block text-xs font-medium">{copy.name}</label>
-                    <div className={`mt-2 flex min-h-12 items-center gap-2 rounded-[var(--sp-radius-control)] border bg-[var(--sp-control)] px-3 transition-[border-color,outline-color] focus-within:border-[var(--sp-brand)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--sp-focus)] ${fieldErrors.name ? 'border-[var(--sp-danger)]' : 'border-[var(--sp-line-strong)]'}`}>
+                    <div className={`mt-2 flex min-h-12 items-center gap-2 rounded-[var(--sp-radius-control)] border bg-[var(--sp-control)] px-3 transition-[border-color,box-shadow] focus-within:border-[var(--sp-brand)] focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--sp-brand)_18%,transparent)] ${fieldErrors.name ? 'border-[var(--sp-danger)]' : 'border-[var(--sp-line-strong)]'}`}>
                       <User className="size-4 shrink-0 text-[var(--sp-ink-muted)]" aria-hidden="true" />
                       <input
                         ref={nameInputRef}
@@ -404,7 +404,7 @@ export default function RequestPage() {
                         autoComplete="name"
                         aria-invalid={fieldErrors.name ? true : undefined}
                         aria-describedby={fieldErrors.name ? 'checkout-name-error' : undefined}
-                        className="min-w-0 w-full bg-transparent py-3 text-base focus-visible:!outline-none"
+                        className="sp-field-input min-w-0 w-full bg-transparent py-3 text-base"
                         placeholder={copy.namePlaceholder}
                       />
                     </div>
@@ -413,7 +413,7 @@ export default function RequestPage() {
 
                   <div className="mt-4">
                     <label htmlFor="checkout-phone" className="block text-xs font-medium">{copy.phone}</label>
-                    <div className={`mt-2 flex min-h-12 items-center gap-2 rounded-[var(--sp-radius-control)] border bg-[var(--sp-control)] px-3 transition-[border-color,outline-color] focus-within:border-[var(--sp-brand)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--sp-focus)] ${fieldErrors.phone ? 'border-[var(--sp-danger)]' : 'border-[var(--sp-line-strong)]'}`}>
+                    <div className={`mt-2 flex min-h-12 items-center gap-2 rounded-[var(--sp-radius-control)] border bg-[var(--sp-control)] px-3 transition-[border-color,box-shadow] focus-within:border-[var(--sp-brand)] focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--sp-brand)_18%,transparent)] ${fieldErrors.phone ? 'border-[var(--sp-danger)]' : 'border-[var(--sp-line-strong)]'}`}>
                       <Phone className="size-4 shrink-0 text-[var(--sp-ink-muted)]" aria-hidden="true" />
                       <input
                         ref={phoneInputRef}
@@ -432,7 +432,7 @@ export default function RequestPage() {
                         autoComplete="tel"
                         aria-invalid={fieldErrors.phone ? true : undefined}
                         aria-describedby={fieldErrors.phone ? 'checkout-phone-error' : undefined}
-                        className="min-w-0 w-full bg-transparent py-3 text-base focus-visible:!outline-none"
+                        className="sp-field-input min-w-0 w-full bg-transparent py-3 text-base"
                         placeholder={copy.phonePlaceholder}
                       />
                     </div>
@@ -477,9 +477,9 @@ export default function RequestPage() {
                     {items.map((item) => {
                       const title = getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn);
                       const variantTitle = getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn);
-                      const orderRule = item.product ? getProductOrderRule(item.product, language) : null;
+                      const orderRule = item.product ? getProductOrderRule(item.product, language, item.variant) : null;
                       const quantityStep = orderRule?.quantityStep || 1;
-                      const orderSummary = item.product ? getOrderRuleSummary(item.product, language) : '';
+                      const orderSummary = item.product ? getOrderRuleSummary(item.product, language, item.variant) : '';
                       const quantityText = item.product
                         ? formatProductQuantity(item.product, item.quantity, language)
                         : `${item.quantity} ${item.unit}`;

@@ -55,6 +55,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
     quantity: number = 1,
     comment?: string
   ) => {
+    if (product.variants?.length && !variant) return;
     setItems((prev) => {
       const existingIdx = prev.findIndex(
         (i) => i.productId === product.id && i.variantId === (variant?.id || undefined)
@@ -65,7 +66,8 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         const existing = updated[existingIdx];
         existing.quantity = normalizeOrderQuantity(
           existing.product || product,
-          existing.quantity + quantity
+          existing.quantity + quantity,
+          existing.variant || variant,
         );
         if (comment) updated[existingIdx].comment = comment;
         return updated;
@@ -82,7 +84,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         variantTitleUz: variant?.titleUz,
         variantTitleEn: variant?.titleEn,
         sku: variant?.sku || product.sku,
-        quantity: normalizeOrderQuantity(product, quantity),
+        quantity: normalizeOrderQuantity(product, quantity, variant),
         unit: product.salesUnit || 'шт',
         price: variant?.price || product.price,
         comment,
@@ -112,7 +114,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
           ? {
               ...i,
               quantity: i.product
-                ? normalizeOrderQuantity(i.product, quantity)
+                ? normalizeOrderQuantity(i.product, quantity, i.variant)
                 : Math.max(1, quantity),
             }
           : i

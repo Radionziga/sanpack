@@ -81,6 +81,7 @@ export default function ProductDetailPage({
       noDescription: 'Описание пока не добавлено. Уточните детали у менеджера.',
       decrease: 'Уменьшить количество',
       increase: 'Увеличить количество',
+      selectVariant: 'Сначала выберите вариант',
     },
     uz: {
       notFound: 'Mahsulot topilmadi',
@@ -107,6 +108,7 @@ export default function ProductDetailPage({
       noDescription: 'Mahsulot tavsifi hali qo‘shilmagan. Tafsilotlarni menejerdan aniqlashtiring.',
       decrease: 'Miqdorni kamaytirish',
       increase: 'Miqdorni oshirish',
+      selectVariant: 'Avval variantni tanlang',
     },
     en: {
       notFound: 'Product not found',
@@ -133,6 +135,7 @@ export default function ProductDetailPage({
       noDescription: 'A product description has not been added yet. Ask a manager for details.',
       decrease: 'Decrease quantity',
       increase: 'Increase quantity',
+      selectVariant: 'Choose a variant first',
     },
   }[language];
   const { addItem, isInCart } = useRequestCart();
@@ -170,7 +173,7 @@ export default function ProductDetailPage({
           return;
         }
 
-        setSelectedVariant(loadedProduct.variants[0] || null);
+        setSelectedVariant(null);
         setQuantity(getProductOrderRule(loadedProduct).minimumQuantity);
         const related = all.filter(
           (item) => item.categoryId === loadedProduct.categoryId && item.id !== loadedProduct.id,
@@ -237,13 +240,18 @@ export default function ProductDetailPage({
   const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
   const description = getProductDescriptionText(product, language);
   const favorited = isFavorite(product.id);
+  const variantRequired = Boolean(product.variants?.length && !selectedVariant);
   const inCart = isInCart(product.id, selectedVariant?.id);
-  const orderRule = getProductOrderRule(product, language);
-  const orderSummary = getOrderRuleSummary(product, language);
+  const orderRule = getProductOrderRule(product, language, selectedVariant || undefined);
+  const orderSummary = getOrderRuleSummary(product, language, selectedVariant || undefined);
 
   // Dynamic price computation considering wholesale tiers
   const activeTiers = selectedVariant?.wholesaleTiers || product.wholesaleTiers || [];
-  let unitPrice = selectedVariant?.price || product.price || 0;
+  const variantStartingPrice = product.variants
+    ?.map((variant) => variant.price)
+    .filter((price): price is number => typeof price === 'number' && price > 0)
+    .sort((left, right) => left - right)[0];
+  let unitPrice = selectedVariant?.price || variantStartingPrice || product.price || 0;
 
   if (activeTiers.length > 0) {
     // Find matching tier
@@ -265,10 +273,19 @@ export default function ProductDetailPage({
   const keyAttributes = visibleAttributes.slice(0, 4);
   const priceLabel = getProductPriceLabel(product, language);
   const managerSku = selectedVariant?.sku || product.sku;
+  const galleryImages = [selectedVariant?.image, ...(product.images || [])]
+    .filter((image): image is string => Boolean(image))
+    .filter((image, index, images) => images.indexOf(image) === index);
   const quantityLabel = t('quantity').replace(/:\s*$/, '');
 
   const handleAddToCart = () => {
+    if (variantRequired) return;
     addItem(product, selectedVariant || undefined, quantity);
+  };
+
+  const handleSelectVariant = (variant: ProductVariant) => {
+    setSelectedVariant(variant);
+    setQuantity(getProductOrderRule(product, language, variant).minimumQuantity);
   };
 
   return (
@@ -298,7 +315,7 @@ export default function ProductDetailPage({
           <div className="mb-8 grid grid-cols-1 gap-5 lg:mb-12 lg:grid-cols-12 lg:gap-8">
             {/* Col 1: Gallery */}
             <div className="order-1 lg:order-none lg:col-span-5">
-              <ProductGallery images={product.images} title={title} />
+              <ProductGallery images={galleryImages} title={title} />
             </div>
 
             {/* Col 3: Sticky Commercial Action Box */}
@@ -310,7 +327,7 @@ export default function ProductDetailPage({
                   </span>
                   <span className="block break-words text-2xl font-bold tracking-tight text-[var(--sp-brand)]">
                     {product.showPrice && unitPrice > 0
-                      ? formatMoney(unitPrice, language, product.currency)
+                      ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(unitPrice, language, product.currency)}`
                       : t('priceOnRequest')}
                   </span>
                   <span className="mt-1 block text-[11px] leading-5 text-[var(--sp-ink-secondary)]">
@@ -331,7 +348,7 @@ export default function ProductDetailPage({
                           <button
                             key={variant.id}
                             type="button"
-                            onClick={() => setSelectedVariant(variant)}
+                            onClick={() => handleSelectVariant(variant)}
                             aria-pressed={isSelected}
                             className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-[var(--sp-radius-control)] border p-3 text-left text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${
                               isSelected
@@ -339,12 +356,24 @@ export default function ProductDetailPage({
                                 : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)] hover:border-[var(--sp-line-strong)]'
                             }`}
                           >
-                            <span>{getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn)}</span>
+                            <span className="min-w-0">
+                              <span className="block">{getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn)}</span>
+                              {product.showPrice && variant.price ? (
+                                <span className="mt-0.5 block text-[10px] font-medium tabular-nums text-[var(--sp-ink-tertiary)]">
+                                  {formatMoney(variant.price, language, product.currency)}
+                                </span>
+                              ) : null}
+                            </span>
                             {isSelected ? <Check className="size-4 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" /> : null}
                           </button>
                         );
                       })}
                     </div>
+                    {variantRequired ? (
+                      <p id="variant-selection-hint" className="text-[11px] leading-5 text-[var(--sp-ink-secondary)]" aria-live="polite">
+                        {copy.selectVariant}
+                      </p>
+                    ) : null}
                   </div>
                 )}
 
@@ -389,7 +418,7 @@ export default function ProductDetailPage({
                 </div>
 
                 {/* Price Total Calculation */}
-                {product.showPrice && unitPrice > 0 && (
+                {product.showPrice && unitPrice > 0 && !variantRequired && (
                   <div className="flex items-center justify-between gap-3 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-brand)_22%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-brand)_8%,var(--sp-surface))] p-3 text-xs">
                     <span className="flex items-center gap-1 font-medium text-[var(--sp-ink-secondary)]">
                       <Calculator className="w-3.5 h-3.5 text-[var(--sp-brand)]" /> {copy.total}:
@@ -404,15 +433,22 @@ export default function ProductDetailPage({
                 <div className="space-y-2 pt-1">
                   <motion.button
                     type="button"
+                    disabled={variantRequired}
+                    aria-describedby={variantRequired ? 'variant-selection-hint' : undefined}
                     whileTap={{ scale: 0.97 }}
                     onClick={handleAddToCart}
-                    className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-raised)] transition-colors ${
-                      inCart
+                    className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-raised)] transition-colors disabled:cursor-not-allowed disabled:bg-[var(--sp-control)] disabled:text-[var(--sp-ink-tertiary)] disabled:shadow-none ${
+                      inCart && !variantRequired
                         ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
                         : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
                     }`}
                   >
-                    {inCart ? (
+                    {variantRequired ? (
+                      <>
+                        <ShoppingCart className="w-4 h-4" aria-hidden="true" />
+                        <span>{copy.selectVariant}</span>
+                      </>
+                    ) : inCart ? (
                       <>
                         <Check className="w-4 h-4" aria-hidden="true" />
                         <span>{copy.added}</span>
@@ -727,17 +763,20 @@ export default function ProductDetailPage({
             <div className="min-w-0 flex-1" aria-live="polite">
               <span className="block truncate text-[10px] font-medium text-[var(--sp-ink-tertiary)]">{product.showPrice && unitPrice > 0 ? copy.total : priceLabel}</span>
               <span className="block truncate text-base font-bold tabular-nums text-[var(--sp-brand)]">
-                {product.showPrice && unitPrice > 0 ? formatMoney(totalPrice, language, product.currency) : t('priceOnRequest')}
+                {product.showPrice && unitPrice > 0
+                  ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(variantRequired ? unitPrice : totalPrice, language, product.currency)}`
+                  : t('priceOnRequest')}
               </span>
             </div>
             <motion.button
               type="button"
+              disabled={variantRequired}
               whileTap={{ scale: 0.97 }}
               onClick={handleAddToCart}
-              className={`flex min-h-12 min-w-[9.75rem] cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${inCart ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]' : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'}`}
+              className={`flex min-h-12 min-w-[9.75rem] cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] disabled:cursor-not-allowed disabled:bg-[var(--sp-control)] disabled:text-[var(--sp-ink-tertiary)] disabled:shadow-none ${inCart && !variantRequired ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]' : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'}`}
             >
-              {inCart ? <Check className="size-4" aria-hidden="true" /> : <ShoppingCart className="size-4" aria-hidden="true" />}
-              <span>{inCart ? copy.inRequest : t('addToRequest')}</span>
+              {inCart && !variantRequired ? <Check className="size-4" aria-hidden="true" /> : <ShoppingCart className="size-4" aria-hidden="true" />}
+              <span>{variantRequired ? copy.selectVariant : inCart ? copy.inRequest : t('addToRequest')}</span>
             </motion.button>
           </div>
         </div>

@@ -12,3 +12,11 @@ output/playwright/
 agent/
 .env*
 !.env.example
+
+# Scratch and build artifacts
+artifacts/
+tmp/
+outputs/
+.codex-logs/
+.codex-runtime/
+

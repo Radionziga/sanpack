@@ -1,0 +1,63 @@
+{
+  "packageName": "product-image-batch-2026-08-15",
+  "mappings": [
+    { "fileName": "SP-BF-001.webp", "skus": ["SP-BF-001"] },
+    { "fileName": "SP-BF-002.webp", "skus": ["SP-BF-002"] },
+    { "fileName": "SP-BF-003.webp", "skus": ["SP-BF-003"] },
+    { "fileName": "SP-BF-004.webp", "skus": ["SP-BF-004"] },
+    { "fileName": "SP-BF-005.webp", "skus": ["SP-BF-005"] },
+    { "fileName": "SP-BF-006.webp", "skus": ["SP-BF-006"] },
+    { "fileName": "SP-BF-007.webp", "skus": ["SP-BF-007"] },
+    { "fileName": "SP-BF-008.webp", "skus": ["SP-BF-008"] },
+    { "fileName": "SP-BF-009.webp", "skus": ["SP-BF-009"] },
+    { "fileName": "SP-BF-010.webp", "skus": ["SP-BF-010"] },
+    { "fileName": "SP-BF-011.webp", "skus": ["SP-BF-011"] },
+    { "fileName": "SP-BF-012.webp", "skus": ["SP-BF-012"] },
+    { "fileName": "SP-CH-001.webp", "skus": ["SP-CH-001"] },
+    { "fileName": "SP-CH-002.webp", "skus": ["SP-CH-002"] },
+    { "fileName": "SP-CH-003.webp", "skus": ["SP-CH-003"] },
+    { "fileName": "SP-CH-004.webp", "skus": ["SP-CH-004"] },
+    { "fileName": "SP-CH-005.webp", "skus": ["SP-CH-005"] },
+    { "fileName": "SP-CH-006.webp", "skus": ["SP-CH-006"] },
+    { "fileName": "SP-CH-007.webp", "skus": ["SP-CH-007"] },
+    { "fileName": "SP-CH-008.webp", "skus": ["SP-CH-008"] },
+    { "fileName": "SP-CH-009.webp", "skus": ["SP-CH-009"] },
+    { "fileName": "SP-EG-001.webp", "skus": ["SP-EG-001"] },
+    { "fileName": "SP-CL-001.webp", "skus": ["SP-CL-001"] },
+    { "fileName": "SP-CL-002.webp", "skus": ["SP-CL-002"] },
+    { "fileName": "SP-CL-004.webp", "skus": ["SP-CL-004"] },
+    { "fileName": "SP-CL-005-SP-CL-006.webp", "skus": ["SP-CL-005", "SP-CL-006"] },
+    { "fileName": "SP-OI-002.webp", "skus": ["SP-OI-002"] },
+    { "fileName": "SP-FP-004.webp", "skus": ["SP-FP-004"] },
+    { "fileName": "SP-GL-001.webp", "skus": ["SP-GL-001"] },
+    { "fileName": "SP-GL-002-SP-GL-003.webp", "skus": ["SP-GL-002", "SP-GL-003"] },
+    { "fileName": "SP-GL-004.webp", "skus": ["SP-GL-004"] },
+    { "fileName": "SP-GN-001.webp", "skus": ["SP-GN-001"] },
+    { "fileName": "SP-GN-002.webp", "skus": ["SP-GN-002"] },
+    { "fileName": "SP-GN-004.webp", "skus": ["SP-GN-004"] },
+    { "fileName": "SP-GN-006.webp", "skus": ["SP-GN-006"] },
+    { "fileName": "SP-GN-008.webp", "skus": ["SP-GN-008"] },
+    { "fileName": "SP-GN-010.webp", "skus": ["SP-GN-010"] }
+  ],
+  "skipped": [],
+  "needsReview": [
+    {
+      "sku": "SP-DA-011",
+      "title": "Сыр Камамбер Schonfeld, 500 г",
+      "fileName": "СЫР.jpg",
+      "reason": "На фотографии указано 125 г, а товар в каталоге имеет вес 500 г."
+    },
+    {
+      "sku": "SP-GN-003",
+      "title": "Салат Романо Novagreen, 500 г",
+      "fileName": "Растр (3).png",
+      "reason": "На фотографии указано 800 г, а товар в каталоге имеет вес 500 г."
+    },
+    {
+      "sku": "SP-GN-009",
+      "title": "Кейл Novagreen, 500 г",
+      "fileName": "Растр.png",
+      "reason": "На фотографии указано 100 г, а товар в каталоге имеет вес 500 г."
+    }
+  ]
+}

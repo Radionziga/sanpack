@@ -1,4 +1,4 @@
-import type { Language, Product } from '@/types';
+import type { Language, Product, ProductVariant } from '@/types';
 import { formatProductQuantity, formatQuantity } from '@/lib/catalog/productPresentation';
 
 const EPSILON = 1e-7;
@@ -33,7 +33,8 @@ export interface ProductOrderRule {
 
 export function getProductOrderRule(
   product: Product,
-  language: Language = 'ru'
+  language: Language = 'ru',
+  variant?: ProductVariant,
 ): ProductOrderRule {
   const packaging = product.orderPackaging;
   const packageEnabled = Boolean(
@@ -60,15 +61,19 @@ export function getProductOrderRule(
     packageStep,
     minimumQuantity: packageEnabled
       ? unitsPerPackage * minimumPackages
-      : positiveNumber(product.minimumOrder, 1),
+      : positiveNumber(variant?.minQuantity ?? variant?.minOrder ?? product.minimumOrder, 1),
     quantityStep: packageEnabled
       ? unitsPerPackage * packageStep
-      : positiveNumber(product.quantityStep, 1),
+      : positiveNumber(variant?.quantityStep ?? product.quantityStep, 1),
   };
 }
 
-export function normalizeOrderQuantity(product: Product, requestedQuantity: number) {
-  const rule = getProductOrderRule(product);
+export function normalizeOrderQuantity(
+  product: Product,
+  requestedQuantity: number,
+  variant?: ProductVariant,
+) {
+  const rule = getProductOrderRule(product, 'ru', variant);
   if (!Number.isFinite(requestedQuantity)) return rule.minimumQuantity;
   if (requestedQuantity <= rule.minimumQuantity) return rule.minimumQuantity;
 
@@ -78,15 +83,23 @@ export function normalizeOrderQuantity(product: Product, requestedQuantity: numb
   return rule.minimumQuantity + Math.max(0, steps) * rule.quantityStep;
 }
 
-export function isValidOrderQuantity(product: Product, quantity: number) {
-  const rule = getProductOrderRule(product);
+export function isValidOrderQuantity(
+  product: Product,
+  quantity: number,
+  variant?: ProductVariant,
+) {
+  const rule = getProductOrderRule(product, 'ru', variant);
   if (!Number.isFinite(quantity) || quantity < rule.minimumQuantity) return false;
   const ratio = (quantity - rule.minimumQuantity) / rule.quantityStep;
   return Math.abs(ratio - Math.round(ratio)) <= EPSILON;
 }
 
-export function getOrderRuleSummary(product: Product, language: Language = 'ru') {
-  const rule = getProductOrderRule(product, language);
+export function getOrderRuleSummary(
+  product: Product,
+  language: Language = 'ru',
+  variant?: ProductVariant,
+) {
+  const rule = getProductOrderRule(product, language, variant);
   const minimumQuantity = formatProductQuantity(product, rule.minimumQuantity, language);
   const quantityStep = formatProductQuantity(product, rule.quantityStep, language);
   if (!rule.packageEnabled) {
@@ -109,8 +122,12 @@ export function getOrderRuleSummary(product: Product, language: Language = 'ru')
   return copy[language];
 }
 
-export function getMinimumOrderLabel(product: Product, language: Language = 'ru') {
-  const rule = getProductOrderRule(product, language);
+export function getMinimumOrderLabel(
+  product: Product,
+  language: Language = 'ru',
+  variant?: ProductVariant,
+) {
+  const rule = getProductOrderRule(product, language, variant);
   const minimumQuantity = formatProductQuantity(product, rule.minimumQuantity, language);
   if (!rule.packageEnabled) {
     return {

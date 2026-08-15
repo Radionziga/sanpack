@@ -8,6 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import {
+  AdjustmentsHorizontalIcon,
   HeartIcon,
   ShoppingCartIcon,
   CheckIcon,
@@ -17,7 +18,7 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { useToast } from '@/context/ToastContext';
 import { getMinimumOrderLabel, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import {
-  formatMoney,
+  getProductCatalogPriceText,
   getProductSupportingText,
 } from '@/lib/catalog/productPresentation';
 
@@ -40,9 +41,14 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
     en: ['Add to favorites', 'Remove from favorites'],
   }[language];
   const compactActionCopy = {
-    ru: { add: 'В заявку', added: 'Добавлено' },
-    uz: { add: 'Arizaga', added: 'Qo‘shildi' },
-    en: { add: 'Add', added: 'Added' },
+    ru: { add: 'В заявку', added: 'Добавлено', choose: 'Выбрать' },
+    uz: { add: 'Arizaga', added: 'Qo‘shildi', choose: 'Tanlash' },
+    en: { add: 'Add', added: 'Added', choose: 'Choose' },
+  }[language];
+  const chooseVariantCopy = {
+    ru: 'Выбрать вариант',
+    uz: 'Variantni tanlash',
+    en: 'Choose variant',
   }[language];
   const { addItem, isInCart } = useRequestCart();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -51,17 +57,17 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
   const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
   const supportingText = getProductSupportingText(product, language);
   const favorited = isFavorite(product.id);
+  const hasVariants = Boolean(product.variants?.length);
   const inCart = isInCart(product.id);
   const orderRule = getProductOrderRule(product, language);
   const minimumOrderLabel = getMinimumOrderLabel(product, language);
-  const price = product.showPrice && product.price
-    ? formatMoney(product.price, language, product.currency)
-    : t('priceOnRequest');
+  const price = getProductCatalogPriceText(product, language);
 
   const handleAddToCart = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    addItem(product, product.variants?.[0], orderRule.minimumQuantity);
+    if (hasVariants) return;
+    addItem(product, undefined, orderRule.minimumQuantity);
     showToast(copy[0], title);
   };
 
@@ -122,18 +128,28 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
             <span className="block text-base font-semibold tracking-tight text-[var(--sp-brand)]">{price}</span>
             <span className="mt-0.5 block text-xs text-[var(--sp-ink-muted)]">{minimumOrderLabel}</span>
           </div>
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className={`flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 ${
-              inCart
-                ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
-                : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
-            }`}
-          >
-            {inCart ? <CheckIcon className="size-4" /> : <ShoppingCartIcon className="size-4" />}
-            <span>{inCart ? t('inRequestCart') : t('addToRequest')}</span>
-          </button>
+          {hasVariants ? (
+            <Link
+              href={`/product/${product.slug}`}
+              className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100"
+            >
+              <AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />
+              <span>{chooseVariantCopy}</span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className={`flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 ${
+                inCart
+                  ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
+                  : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
+              }`}
+            >
+              {inCart ? <CheckIcon className="size-4" /> : <ShoppingCartIcon className="size-4" />}
+              <span>{inCart ? t('inRequestCart') : t('addToRequest')}</span>
+            </button>
+          )}
         </div>
       </article>
     );
@@ -187,19 +203,30 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
             <span className="mt-0.5 block text-[11px] leading-snug text-[var(--sp-ink-muted)] sm:text-xs">{minimumOrderLabel}</span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className={`flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] px-2 text-xs font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm lg:w-auto ${
-              inCart
-                ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
-                : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
-            }`}
-          >
-            {inCart ? <CheckIcon className="size-4" /> : <ShoppingCartIcon className="size-4" />}
-            <span className="sm:hidden">{inCart ? compactActionCopy.added : compactActionCopy.add}</span>
-            <span className="hidden sm:inline">{inCart ? t('inRequestCart') : t('addToRequest')}</span>
-          </button>
+          {hasVariants ? (
+            <Link
+              href={`/product/${product.slug}`}
+              className="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-2 text-xs font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm lg:w-auto"
+            >
+              <AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />
+              <span className="sm:hidden">{compactActionCopy.choose}</span>
+              <span className="hidden sm:inline">{chooseVariantCopy}</span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className={`flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] px-2 text-xs font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm lg:w-auto ${
+                inCart
+                  ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
+                  : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
+              }`}
+            >
+              {inCart ? <CheckIcon className="size-4" /> : <ShoppingCartIcon className="size-4" />}
+              <span className="sm:hidden">{inCart ? compactActionCopy.added : compactActionCopy.add}</span>
+              <span className="hidden sm:inline">{inCart ? t('inRequestCart') : t('addToRequest')}</span>
+            </button>
+          )}
         </div>
       </div>
     </article>

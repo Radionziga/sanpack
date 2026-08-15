@@ -558,3 +558,25 @@ export function getProductPriceLabel(product: Product, language: Language) {
   if (language === 'uz') return unit ? `${unit} uchun narx` : 'Narx';
   return unit ? `Цена за ${unit}` : 'Цена';
 }
+
+export function getProductCatalogPriceText(product: Product, language: Language) {
+  const priceOnRequest = {
+    ru: 'Цена по запросу',
+    uz: 'Narx so‘rov bo‘yicha',
+    en: 'Price on request',
+  }[language];
+  if (!product.showPrice) return priceOnRequest;
+
+  const variantPrices = (product.variants || [])
+    .map((variant) => variant.price)
+    .filter((price): price is number => typeof price === 'number' && price > 0);
+  if (product.variants?.length) {
+    if (!variantPrices.length) return priceOnRequest;
+    const from = { ru: 'от', uz: 'dan', en: 'from' }[language];
+    return `${from} ${formatMoney(Math.min(...variantPrices), language, product.currency)}`;
+  }
+
+  return product.price && product.price > 0
+    ? formatMoney(product.price, language, product.currency)
+    : priceOnRequest;
+}

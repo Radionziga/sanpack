@@ -116,12 +116,58 @@ const productOrderPackagingSchema = z.object({
   }
 });
 
+const wholesaleTierSchema = z.object({
+  minQuantity: z.number().positive().max(1_000_000_000),
+  price: z.number().nonnegative().max(1_000_000_000_000),
+  nameRu: z.string().trim().max(160).optional(),
+  nameUz: z.string().trim().max(160).optional(),
+  nameEn: z.string().trim().max(160).optional(),
+}).strict();
+
+export const productVariantSchema = z.object({
+  id: z.string().trim().min(1).max(160),
+  sku: z.string().trim().min(1).max(160),
+  titleRu: z.string().trim().min(1).max(160),
+  titleUz: z.string().trim().min(1).max(160),
+  titleEn: z.string().trim().max(160).optional(),
+  price: z.number().nonnegative().max(1_000_000_000_000).optional(),
+  oldPrice: z.number().nonnegative().max(1_000_000_000_000).optional(),
+  wholesaleTiers: z.array(wholesaleTierSchema).max(100).optional(),
+  stockStatus: z.enum(['in_stock', 'out_of_stock', 'on_order', 'temporarily_unavailable', 'discontinued']),
+  stockQuantity: z.number().nonnegative().max(1_000_000_000).optional(),
+  attributes: z.record(z.string().trim().min(1).max(160), z.string().trim().max(500)),
+  image: optionalUrl,
+  minOrder: z.number().positive().max(1_000_000_000).optional(),
+  priceMode: z.enum(['fixed', 'from', 'request']).optional(),
+  availability: z.enum(['in_stock', 'on_order', 'unavailable', 'informational']).optional(),
+  quantityStep: z.number().positive().max(1_000_000_000).optional(),
+  minQuantity: z.number().positive().max(1_000_000_000).optional(),
+  maxQuantity: z.number().positive().max(1_000_000_000).optional(),
+}).strict().superRefine((values, context) => {
+  if (Object.keys(values.attributes).length > 30) {
+    context.addIssue({
+      code: 'custom',
+      path: ['attributes'],
+      message: 'У одного варианта может быть не более 30 характеристик.',
+    });
+  }
+  const minimum = values.minQuantity ?? values.minOrder;
+  if (minimum !== undefined && values.maxQuantity !== undefined && values.maxQuantity < minimum) {
+    context.addIssue({
+      code: 'custom',
+      path: ['maxQuantity'],
+      message: 'Максимум не может быть меньше минимального количества.',
+    });
+  }
+});
+
 export const productMutationSchema = z.object({
   salesUnit: z.string().trim().min(1).max(80).optional(),
   minimumOrder: z.number().positive().max(1_000_000_000).optional(),
   quantityStep: z.number().positive().max(1_000_000_000).optional(),
   maximumOrder: z.number().positive().max(1_000_000_000).optional(),
   orderPackaging: productOrderPackagingSchema.optional(),
+  variants: z.array(productVariantSchema).max(100).optional(),
 }).passthrough().superRefine((values, context) => {
   if (
     values.maximumOrder !== undefined &&
@@ -133,6 +179,27 @@ export const productMutationSchema = z.object({
       path: ['maximumOrder'],
       message: 'Максимум не может быть меньше минимального заказа.',
     });
+  }
+
+  const variantIds = new Set<string>();
+  const variantSkus = new Set<string>();
+  for (const [index, variant] of (values.variants || []).entries()) {
+    if (variantIds.has(variant.id)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['variants', index, 'id'],
+        message: 'У каждого варианта должен быть уникальный идентификатор.',
+      });
+    }
+    if (variantSkus.has(variant.sku.toLocaleLowerCase())) {
+      context.addIssue({
+        code: 'custom',
+        path: ['variants', index, 'sku'],
+        message: 'Артикулы вариантов не должны повторяться.',
+      });
+    }
+    variantIds.add(variant.id);
+    variantSkus.add(variant.sku.toLocaleLowerCase());
   }
 });
 

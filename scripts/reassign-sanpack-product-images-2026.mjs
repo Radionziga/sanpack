@@ -11,10 +11,19 @@ import { priceList2026Products } from '../lib/catalog/sanpackPriceLists2026.ts';
 
 const EXPECTED_PROJECT = 'stamply-4df8a';
 const EXPECTED_BUCKET = 'stamply-4df8a.firebasestorage.app';
+const manifestFlagIndex = process.argv.indexOf('--manifest');
+const manifestPath = manifestFlagIndex >= 0 ? process.argv[manifestFlagIndex + 1] : '';
+if (manifestFlagIndex >= 0 && !manifestPath) throw new Error('После --manifest нужно указать путь к JSON-файлу.');
+const manifest = manifestPath ? JSON.parse(await readFile(path.resolve(manifestPath), 'utf8')) : null;
+const packageName = manifest?.packageName || 'catalog-products-2026-08';
+if (!/^[a-z0-9][a-z0-9-]*$/.test(packageName)) throw new Error(`Недопустимое имя пакета: ${packageName}`);
+const batchMode = Boolean(manifest);
 const SOURCE_DIR = process.env.SANPACK_IMAGE_DIR || 'C:\\Users\\Радион\\Desktop\\ТОвары';
 const OLD_PREFIX = 'media/products/catalog-v1-6/';
-const NEW_PREFIX = 'media/products/catalog-products-2026-08/';
-const REPORT_DIR = path.resolve('tmp', 'new-product-images');
+const NEW_PREFIX = `media/products/${packageName}/`;
+const REPORT_DIR = batchMode
+  ? path.resolve('tmp', 'product-image-batches', packageName)
+  : path.resolve('tmp', 'new-product-images');
 const OPTIMIZED_DIR = path.join(REPORT_DIR, 'optimized');
 const apply = process.argv.includes('--apply');
 const mappingOnly = process.argv.includes('--mapping-only');
@@ -32,6 +41,7 @@ function assign(fileName, skus, reviewReason = '') {
 }
 
 // Упаковка и расходные материалы: здесь используются изображения с читаемой маркировкой.
+if (!manifest) {
 assign('sanpack_trash_bag_roll_6.jpg', ['SP-TB-001']);
 assign('sanpack_trash_bag_roll_3.jpg', ['SP-TB-002']);
 assign('sanpack_trash_bag_roll_4.jpg', ['SP-TB-003']);
@@ -117,20 +127,51 @@ assign('product-7.jpg', ['SP-DA-008']);
 assign('product-4.jpg', ['SP-DA-009']);
 assign('product-13.jpg', ['SP-DA-010']);
 assign('product-10.jpg', ['SP-DA-013']);
+} else {
+  if (!Array.isArray(manifest.mappings) || manifest.mappings.length === 0) {
+    throw new Error('Manifest должен содержать непустой массив mappings.');
+  }
+  for (const mapping of manifest.mappings) {
+    if (!mapping?.fileName || !Array.isArray(mapping.skus) || mapping.skus.length === 0) {
+      throw new Error('Каждое сопоставление manifest должно содержать fileName и непустой массив skus.');
+    }
+    assign(mapping.fileName, mapping.skus, mapping.reviewReason || '');
+  }
+}
 
 const productsBySku = new Map(priceList2026Products.map((product) => [product.sku, product]));
 const unknownSkus = [...filesBySku.keys()].filter((sku) => !productsBySku.has(sku));
 if (unknownSkus.length) throw new Error(`В карте есть неизвестные SKU: ${unknownSkus.join(', ')}`);
+
+const targetProducts = batchMode
+  ? priceList2026Products.filter((product) => filesBySku.has(product.sku))
+  : priceList2026Products;
 
 function summary(product, extra = {}) {
   return { sku: product.sku, title: product.titleRu, ...extra };
 }
 
 function reportData(uniqueFiles) {
-  const matched = priceList2026Products.filter((p) => filesBySku.has(p.sku)).map((p) => summary(p, { fileName: filesBySku.get(p.sku) }));
-  const unmatched = priceList2026Products.filter((p) => !filesBySku.has(p.sku)).map((p) => summary(p));
-  const needsReview = priceList2026Products.filter((p) => reviewsBySku.has(p.sku)).map((p) => summary(p, { fileName: filesBySku.get(p.sku), reason: reviewsBySku.get(p.sku) }));
-  return { matched, unmatched, needsReview, totals: { products: priceList2026Products.length, matched: matched.length, unmatched: unmatched.length, needsReview: needsReview.length, uniqueImages: uniqueFiles.length } };
+  const matched = targetProducts.map((product) => summary(product, { fileName: filesBySku.get(product.sku) }));
+  const unmatched = batchMode
+    ? (manifest.skipped || [])
+    : priceList2026Products.filter((product) => !filesBySku.has(product.sku)).map((product) => summary(product));
+  const mappedReviews = targetProducts
+    .filter((product) => reviewsBySku.has(product.sku))
+    .map((product) => summary(product, { fileName: filesBySku.get(product.sku), reason: reviewsBySku.get(product.sku) }));
+  const needsReview = [...mappedReviews, ...(manifest?.needsReview || [])];
+  return {
+    matched,
+    unmatched,
+    needsReview,
+    totals: {
+      products: batchMode ? targetProducts.length : priceList2026Products.length,
+      matched: matched.length,
+      unmatched: unmatched.length,
+      needsReview: needsReview.length,
+      uniqueImages: uniqueFiles.length,
+    },
+  };
 }
 
 if (mappingOnly) {
@@ -154,18 +195,50 @@ async function saveJson(fileName, value) {
 async function validateFiles() {
   const uniqueFiles = [...new Set(filesBySku.values())];
   const missing = [];
+  const invalid = [];
+  const inspections = [];
   for (const fileName of uniqueFiles) {
-    try { await readFile(path.join(SOURCE_DIR, fileName)); } catch { missing.push(fileName); }
+    try {
+      const source = await readFile(path.join(SOURCE_DIR, fileName));
+      const metadata = await sharp(source).metadata();
+      if (!['jpeg', 'png', 'webp'].includes(metadata.format || '') || !metadata.width || !metadata.height) {
+        invalid.push(`${fileName}: неподдерживаемый формат или отсутствуют размеры`);
+        continue;
+      }
+      const { data, info } = await sharp(source)
+        .flatten({ background: '#ffffff' })
+        .resize(64, 64, { fit: 'fill' })
+        .removeAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      let borderPixels = 0;
+      let nearWhitePixels = 0;
+      for (let y = 0; y < info.height; y += 1) {
+        for (let x = 0; x < info.width; x += 1) {
+          if (x !== 0 && y !== 0 && x !== info.width - 1 && y !== info.height - 1) continue;
+          borderPixels += 1;
+          const offset = (y * info.width + x) * info.channels;
+          if (data[offset] >= 245 && data[offset + 1] >= 245 && data[offset + 2] >= 245) nearWhitePixels += 1;
+        }
+      }
+      const whiteBorderRatio = Number((nearWhitePixels / borderPixels).toFixed(3));
+      inspections.push({ fileName, format: metadata.format, width: metadata.width, height: metadata.height, whiteBorderRatio });
+      if (whiteBorderRatio < 0.9) invalid.push(`${fileName}: фон по краям не является белым (${whiteBorderRatio})`);
+    } catch {
+      missing.push(fileName);
+    }
   }
   if (missing.length) throw new Error(`Не найдены исходные изображения: ${missing.join(', ')}`);
-  return uniqueFiles;
+  if (invalid.length) throw new Error(`Проверку изображений не прошли: ${invalid.join('; ')}`);
+  return { uniqueFiles, inspections };
 }
 
-async function prepareImage(fileName) {
+async function prepareImage(fileName, sku = '') {
   const source = await readFile(path.join(SOURCE_DIR, fileName));
   const hash = createHash('sha256').update(source).digest('hex').slice(0, 24);
-  const destination = `${NEW_PREFIX}${hash}.webp`;
-  const localPath = path.join(OPTIMIZED_DIR, `${hash}.webp`);
+  const outputName = batchMode ? sku.toLowerCase() : hash;
+  const destination = `${NEW_PREFIX}${outputName}.webp`;
+  const localPath = path.join(OPTIMIZED_DIR, `${outputName}.webp`);
   await mkdir(OPTIMIZED_DIR, { recursive: true });
   await sharp(source)
     .rotate()
@@ -173,7 +246,8 @@ async function prepareImage(fileName) {
     .flatten({ background: '#ffffff' })
     .webp({ quality: 90, effort: 5, smartSubsample: true })
     .toFile(localPath);
-  return { fileName, destination, localPath };
+  const optimized = await readFile(localPath);
+  return { fileName, sku, destination, localPath, sha256: createHash('sha256').update(optimized).digest('hex') };
 }
 
 async function uploadImage(image) {
@@ -182,6 +256,13 @@ async function uploadImage(image) {
   let created = false;
   let token;
   if (exists) {
+    if (batchMode) {
+      const [remote] = await storageFile.download();
+      const remoteSha256 = createHash('sha256').update(remote).digest('hex');
+      if (remoteSha256 !== image.sha256) {
+        throw new Error(`Storage уже содержит другой файл по детерминированному пути ${image.destination}.`);
+      }
+    }
     const [metadata] = await storageFile.getMetadata();
     token = metadata.metadata?.firebaseStorageDownloadTokens?.split(',')[0];
   }
@@ -214,7 +295,7 @@ let backup = [];
 let databaseUpdated = false;
 
 try {
-  const uniqueFiles = await validateFiles();
+  const { uniqueFiles, inspections } = await validateFiles();
   const snapshot = await db.collection('products').get();
   const documentsBySku = new Map(snapshot.docs.map((doc) => [doc.data().sku, doc]));
   const missingSkus = [...productsBySku.keys()].filter((sku) => !documentsBySku.has(sku));
@@ -223,13 +304,49 @@ try {
     throw new Error(`Каталог изменился: в базе ${snapshot.size}, ожидалось ${priceList2026Products.length}; нет: ${missingSkus.join(', ') || '—'}; лишние: ${extraSkus.join(', ') || '—'}.`);
   }
 
-  const report = { generatedAt: new Date().toISOString(), projectId, apply, sourceDirectory: SOURCE_DIR, oldPrefix: OLD_PREFIX, newPrefix: NEW_PREFIX, ...reportData(uniqueFiles) };
+  const currentTargetState = [];
+  if (batchMode) {
+    for (const product of targetProducts) {
+      const document = documentsBySku.get(product.sku).data();
+      const expectedPath = `${NEW_PREFIX}${product.sku.toLowerCase()}.webp`;
+      const [storageExists] = await bucket.file(expectedPath).exists();
+      currentTargetState.push({
+        sku: product.sku,
+        title: product.titleRu,
+        expectedPath,
+        firestoreVerified: document.mainImagePath === expectedPath
+          && Boolean(document.mainImage)
+          && document.images?.[0] === document.mainImage,
+        storageVerified: storageExists,
+      });
+    }
+  }
+  const missingImageProducts = snapshot.docs
+    .map((document) => document.data())
+    .filter((product) => !product.mainImage || !product.mainImagePath || !Array.isArray(product.images) || product.images.length === 0)
+    .map((product) => summary(productsBySku.get(product.sku) || { sku: product.sku, titleRu: product.titleRu || product.title?.ru || '' }))
+    .sort((left, right) => left.sku.localeCompare(right.sku));
+
+  const report = {
+    generatedAt: new Date().toISOString(),
+    projectId,
+    apply,
+    batchMode,
+    manifestPath: manifestPath ? path.resolve(manifestPath) : null,
+    sourceDirectory: SOURCE_DIR,
+    oldPrefix: OLD_PREFIX,
+    newPrefix: NEW_PREFIX,
+    inspections,
+    currentTargetState,
+    missingImageProducts,
+    ...reportData(uniqueFiles),
+  };
   const reportPath = await saveJson('replacement-report.json', report);
   console.log(JSON.stringify({ reportPath, ...report.totals }, null, 2));
   if (!apply) {
     console.log('Проверочный прогон завершён. Для применения добавьте --apply.');
   } else {
-    backup = priceList2026Products.map(({ sku }) => {
+    backup = targetProducts.map(({ sku }) => {
       const doc = documentsBySku.get(sku);
       const data = doc.data();
       return { id: doc.id, sku, mainImage: data.mainImage, mainImagePath: data.mainImagePath, images: data.images, updatedAt: data.updatedAt };
@@ -237,14 +354,18 @@ try {
     const backupPath = await saveJson(`replacement-backup-${Date.now()}.json`, backup);
 
     const prepared = [];
-    for (const fileName of uniqueFiles) prepared.push(await prepareImage(fileName));
+    if (batchMode) {
+      for (const { sku } of targetProducts) prepared.push(await prepareImage(filesBySku.get(sku), sku));
+    } else {
+      for (const fileName of uniqueFiles) prepared.push(await prepareImage(fileName));
+    }
     for (const image of prepared) uploaded.push(await uploadImage(image));
-    const uploadsByFile = new Map(uploaded.map((entry) => [entry.fileName, entry]));
+    const uploadsByKey = new Map(uploaded.map((entry) => [batchMode ? entry.sku : entry.fileName, entry]));
     const updatedAt = new Date().toISOString();
-    const operations = priceList2026Products.map(({ sku }) => {
+    const operations = targetProducts.map(({ sku }) => {
       const fileName = filesBySku.get(sku);
       if (!fileName) return { ref: documentsBySku.get(sku).ref, data: { mainImage: FieldValue.delete(), mainImagePath: FieldValue.delete(), images: [], updatedAt } };
-      const image = uploadsByFile.get(fileName);
+      const image = uploadsByKey.get(batchMode ? sku : fileName);
       return { ref: documentsBySku.get(sku).ref, data: { mainImage: image.url, mainImagePath: image.destination, images: [image.url], updatedAt } };
     });
     await commitInChunks(operations);
@@ -252,15 +373,28 @@ try {
 
     const verified = await db.collection('products').get();
     const verifiedBySku = new Map(verified.docs.map((doc) => [doc.data().sku, doc.data()]));
-    const invalid = priceList2026Products.filter(({ sku }) => {
+    const invalid = targetProducts.filter(({ sku }) => {
       const actual = verifiedBySku.get(sku);
       const fileName = filesBySku.get(sku);
       if (!fileName) return Boolean(actual?.mainImage || actual?.mainImagePath || (actual?.images?.length ?? 0));
-      const expected = uploadsByFile.get(fileName);
+      const expected = uploadsByKey.get(batchMode ? sku : fileName);
       return actual?.mainImage !== expected.url || actual?.mainImagePath !== expected.destination || actual?.images?.[0] !== expected.url;
     });
     if (invalid.length) throw new Error(`Проверку не прошли SKU: ${invalid.map((p) => p.sku).join(', ')}`);
 
+    if (batchMode) {
+      databaseUpdated = false;
+      console.log(JSON.stringify({
+        success: true,
+        updatedProducts: operations.length,
+        uploadedImages: uploaded.filter((entry) => entry.created).length,
+        reusedImages: uploaded.filter((entry) => !entry.created).length,
+        deletedOldImages: 0,
+        backupPath,
+        reportPath,
+        verifiedSkus: targetProducts.map((product) => product.sku),
+      }, null, 2));
+    } else {
     // The new links are already verified at this point. Cleanup is best-effort:
     // a transient Storage error must not roll the database back to files that
     // may already have been removed during the same cleanup pass.
@@ -292,6 +426,7 @@ try {
     }
 
     console.log(JSON.stringify({ success: true, updatedProducts: operations.length, matchedProducts: filesBySku.size, clearedProducts: priceList2026Products.length - filesBySku.size, uploadedUniqueImages: uploaded.filter((entry) => entry.created).length, reusedUniqueImages: uploaded.filter((entry) => !entry.created).length, deletedOldImages, deletedOrphans, cleanupErrors, backupPath, reportPath }, null, 2));
+    }
   }
 } catch (error) {
   if (databaseUpdated && backup.length) {

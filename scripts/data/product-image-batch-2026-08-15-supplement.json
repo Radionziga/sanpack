@@ -1,0 +1,34 @@
+{
+  "packageName": "product-image-batch-2026-08-15-supplement",
+  "mappings": [
+    {
+      "fileName": "SP-DA-004-SP-DA-005.webp",
+      "skus": ["SP-DA-004"],
+      "reviewReason": "Владелец магазина подтвердил использование одной фотографии Svalya для вариантов 25 кг и 1 кг; второй SKU теперь хранится внутри варианта товара."
+    },
+    {
+      "fileName": "SP-DA-011.webp",
+      "skus": ["SP-DA-011"],
+      "reviewReason": "Владелец магазина подтвердил фотографию Camembert как изображение товара 500 г."
+    },
+    {
+      "fileName": "SP-DA-012.webp",
+      "skus": ["SP-DA-012"],
+      "reviewReason": "Владелец магазина подтвердил фотографию Brie как изображение товара 500 г."
+    },
+    {
+      "fileName": "SP-GN-009.webp",
+      "skus": ["SP-GN-009"],
+      "reviewReason": "Владелец магазина подтвердил фотографию кейла для товара 500 г."
+    },
+    {
+      "fileName": "SP-GN-003.webp",
+      "skus": ["SP-GN-003"],
+      "reviewReason": "Владелец магазина подтвердил фотографию салата Романо независимо от веса на исходной упаковке."
+    },
+    { "fileName": "SP-GN-029.webp", "skus": ["SP-GN-029"] },
+    { "fileName": "SP-PB-001.webp", "skus": ["SP-PB-001"] }
+  ],
+  "skipped": [],
+  "needsReview": []
+}

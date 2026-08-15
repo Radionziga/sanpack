@@ -16,6 +16,7 @@ type PriceRow = {
   ownProduction?: boolean;
   variants?: Array<{
     id: string;
+    sku?: string;
     label: string;
     price: number;
     attributes: Record<string, string>;
@@ -112,8 +113,21 @@ const packaging: PriceRow[] = [
   row('CL-002', 'cat-cleaning', 'Губки для мытья посуды, 3 шт.', 7500, 'упаковка', 'pack', { units_per_pack: 3, packs_per_sack: '40' }),
   row('CL-003', 'cat-cleaning', 'Цветные тряпки для столов, 3 шт.', 7500, 'упаковка', 'pack', { units_per_pack: 3, packs_per_sack: '10/120' }),
   row('CL-004', 'cat-cleaning', 'Корейская губка, 1 шт.', 5700, 'упаковка', 'pack', { units_per_pack: 1, packs_per_sack: '60' }),
-  row('CL-005', 'cat-cleaning', 'Половая тряпка из микрофибры 70×70 см', 30000, 'штука', 'piece', { size: '70×70 см', units_per_pack: 1, packs_per_sack: '25' }),
-  row('CL-006', 'cat-cleaning', 'Половая тряпка из микрофибры 90×60 см', 34000, 'штука', 'piece', { size: '90×60 см', units_per_pack: 1, packs_per_sack: '25' }),
+  row(
+    'CL-005',
+    'cat-cleaning',
+    'Половая тряпка из микрофибры',
+    30000,
+    'штука',
+    'piece',
+    { size: '70×70 см / 90×60 см', units_per_pack: 1, packs_per_sack: '25' },
+    {
+      variants: [
+        { id: '70x70-cm', sku: 'SP-CL-005', label: '70×70 см', price: 30000, attributes: { size: '70×70 см' } },
+        { id: '90x60-cm', sku: 'SP-CL-006', label: '90×60 см', price: 34000, attributes: { size: '90×60 см' } },
+      ],
+    },
+  ),
 
   row('PG-001', 'cat-paper-goods', 'Рулонные салфетки, 2 слоя, 2 рулона', 19900, 'упаковка', 'pack', { units_per_pack: 2, packs_per_sack: '24', product_type: '2 слоя' }),
   row('PG-002', 'cat-paper-goods', 'Салфетки V 19,5×10,5 см, 150 шт.', 3825, 'упаковка', 'pack', { size: '19,5×10,5 см', units_per_pack: 150, packs_per_sack: '24' }),
@@ -279,8 +293,22 @@ const dairy: PriceRow[] = [
   row('DA-001', 'cat-dairy', 'Сливочное масло Fin, 500 г', 95000, 'упаковка', 'pack', { weight: '500 г', product_type: 'сливочное масло' }, { brandName: 'Fin' }),
   row('DA-002', 'cat-dairy', 'Сливочное масло Valio, 1 кг', 180000, 'упаковка', 'pack', { weight: '1 кг', product_type: 'сливочное масло' }, { brandName: 'Valio' }),
   row('DA-003', 'cat-dairy', 'Сливочное масло Valio, 500 г', 95000, 'упаковка', 'pack', { weight: '500 г', product_type: 'сливочное масло' }, { brandName: 'Valio' }),
-  row('DA-004', 'cat-dairy', 'Сливочное масло Svalya, 25 кг', 3625000, 'упаковка', 'pack', { weight: '25 кг', price_per_kg: 145000, product_type: 'сливочное масло' }, { brandName: 'Svalya' }),
-  row('DA-005', 'cat-dairy', 'Сливочное масло Svalya, 1 кг', 165000, 'упаковка', 'pack', { weight: '1 кг', product_type: 'сливочное масло' }, { brandName: 'Svalya' }),
+  row(
+    'DA-004',
+    'cat-dairy',
+    'Сливочное масло Svalya',
+    165000,
+    'упаковка',
+    'pack',
+    { weight: '1 кг / 25 кг', product_type: 'сливочное масло' },
+    {
+      brandName: 'Svalya',
+      variants: [
+        { id: '1-kg', sku: 'SP-DA-005', label: '1 кг', price: 165000, attributes: { weight: '1 кг' } },
+        { id: '25-kg', sku: 'SP-DA-004', label: '25 кг', price: 3625000, attributes: { weight: '25 кг', price_per_kg: '145000' } },
+      ],
+    },
+  ),
   row('DA-006', 'cat-dairy', 'Сыр Viola Cheese Burger, 8 ломтиков', 25000, 'упаковка', 'pack', { units_per_pack: 8, product_type: 'сыр ломтиками' }, { brandName: 'Viola' }),
   row('DA-007', 'cat-dairy', 'Сыр Viola Creamy, 8 ломтиков', 25000, 'упаковка', 'pack', { units_per_pack: 8, product_type: 'сыр ломтиками' }, { brandName: 'Viola' }),
   row('DA-008', 'cat-dairy', 'Сливочный сыр Viola, 400 г', 54000, 'упаковка', 'pack', { weight: '400 г', product_type: 'сливочный сыр' }, { brandName: 'Viola' }),
@@ -348,7 +376,7 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
     },
     variants: (entry.variants ?? []).map((variant) => ({
       id: `${entry.code.toLowerCase()}-${variant.id}`,
-      sku: `SP-${entry.code}-${variant.id.toUpperCase()}`,
+      sku: variant.sku || `SP-${entry.code}-${variant.id.toUpperCase()}`,
       titleRu: variant.label,
       titleUz: variant.label,
       titleEn: variant.label,
@@ -384,6 +412,6 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
   };
 });
 
-if (priceList2026Products.length !== 166) {
-  throw new Error(`Ожидалось 166 товаров из прайс-листов с объединёнными весовыми вариантами, получено ${priceList2026Products.length}.`);
+if (priceList2026Products.length !== 164) {
+  throw new Error(`Ожидалось 164 товара из прайс-листов с объединёнными весовыми вариантами, получено ${priceList2026Products.length}.`);
 }

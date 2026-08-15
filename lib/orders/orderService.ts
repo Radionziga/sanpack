@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { Product, ProductPriceMode, RequestItem } from '@/types';
+import type { Product, ProductPriceMode, ProductVariant, RequestItem } from '@/types';
 import type { CheckoutLineInput } from '@/lib/validation/order';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
@@ -13,10 +13,10 @@ function resolvePriceMode(product: Product, variantId?: string): ProductPriceMod
   return variant?.priceMode ?? product.priceMode ?? (product.showPrice ? 'fixed' : 'request');
 }
 
-function assertQuantity(product: Product, quantity: number) {
-  const rule = getProductOrderRule(product);
+function assertQuantity(product: Product, quantity: number, variant?: ProductVariant) {
+  const rule = getProductOrderRule(product, 'ru', variant);
   const minimum = rule.minimumQuantity;
-  const maximum = product.maximumOrder;
+  const maximum = variant?.maxQuantity ?? product.maximumOrder;
   const step = rule.quantityStep;
 
   if (quantity < minimum) {
@@ -25,7 +25,7 @@ function assertQuantity(product: Product, quantity: number) {
   if (maximum && quantity > maximum) {
     throw new Error(`Максимальное количество для «${product.titleRu}»: ${maximum}.`);
   }
-  if (!isValidOrderQuantity(product, quantity)) {
+  if (!isValidOrderQuantity(product, quantity, variant)) {
     throw new Error(`Количество для «${product.titleRu}» должно изменяться с шагом ${step}.`);
   }
 }
@@ -55,6 +55,9 @@ export async function createOrderSnapshots(lines: CheckoutLineInput[]) {
     const variant = line.variantId
       ? product.variants?.find((candidate) => candidate.id === line.variantId)
       : undefined;
+    if (product.variants?.length && !line.variantId) {
+      throw new Error(`Выберите вариант товара «${product.titleRu}».`);
+    }
     if (line.variantId && !variant) {
       throw new Error(`Выбранный вариант «${product.titleRu}» больше недоступен.`);
     }
@@ -63,7 +66,7 @@ export async function createOrderSnapshots(lines: CheckoutLineInput[]) {
     if (priceMode === 'informational') {
       throw new Error(`Товар «${product.titleRu}» нельзя добавить в заявку.`);
     }
-    assertQuantity(product, line.quantity);
+    assertQuantity(product, line.quantity, variant);
 
     const price = variant?.price ?? product.price;
     const lineTotal = price === undefined ? undefined : price * line.quantity;

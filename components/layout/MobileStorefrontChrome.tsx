@@ -379,7 +379,7 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
                         value={searchQuery}
                         onChange={(event) => setSearchQuery(event.target.value)}
                         placeholder={copy.searchPlaceholder}
-                        className="min-w-0 flex-1 bg-transparent py-3 text-base text-[var(--sp-ink)] outline-none placeholder:text-[var(--sp-ink-muted)] focus-visible:!outline-none"
+                        className="sp-field-input min-w-0 flex-1 bg-transparent py-3 text-base text-[var(--sp-ink)] placeholder:text-[var(--sp-ink-muted)]"
                       />
                       {searchQuery ? (
                         <button

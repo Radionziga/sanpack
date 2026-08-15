@@ -427,6 +427,17 @@
   outline-offset: 2px;
 }
 
+/* Composite fields draw one focus indicator on their rounded shell. */
+.sp-field-input,
+.sp-field-input:focus,
+.sp-field-input:focus-visible {
+  appearance: none;
+  border: 0;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Compatibility bridge while legacy catalog surfaces move to semantic tokens. */
 [data-sanpack-theme] [class~="text-[#0F6E43]"] {
   color: var(--sp-brand) !important;
