@@ -8,6 +8,7 @@ import {
   FolderTree,
   Globe,
   ImageIcon,
+  Images,
   LayoutDashboard,
   LogOut,
   Package,
@@ -40,6 +41,7 @@ const navigation = [
   {
     label: 'Материалы',
     items: [
+      { label: 'Медиафайлы', href: '/admin/media', icon: Images },
       { label: 'Промо-карусель', href: '/admin/promotions', icon: ImageIcon },
       { label: 'Клиенты и партнёры', href: '/admin/clients', icon: Users },
     ],
