@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/auth/server';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
 import { adminOrderUpdateSchema, orderStatusSchema } from '@/lib/validation/order';
 import { calculateOrderTotals, createOrderSnapshots } from '@/lib/orders/orderService';
 import { formatUzbekPhone, normalizeUzbekPhone } from '@/lib/orders/phone';
@@ -67,7 +68,7 @@ export async function PATCH(
         const base = existing || newSnapshots[newIndex++];
         if (!base) throw new Error('Не удалось собрать позицию заказа.');
         const price = line.unitPrice ?? base.price;
-        return {
+        return omitUndefinedFields({
           ...base,
           lineId: base.lineId || crypto.randomUUID(),
           quantity: line.quantity,
@@ -75,7 +76,7 @@ export async function PATCH(
           price,
           priceMode: price === undefined ? 'request' : 'fixed',
           lineTotal: price === undefined ? undefined : price * line.quantity,
-        };
+        });
       });
       const totals = calculateOrderTotals(items, input.adjustment);
       const revision = (initial.revision || 1) + 1;
@@ -113,4 +114,3 @@ export async function PATCH(
     );
   }
 }
-

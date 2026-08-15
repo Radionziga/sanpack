@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
 import { getCustomerSession } from '@/lib/auth/customerSession';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 import { checkoutRequestSchema } from '@/lib/validation/order';
@@ -56,11 +57,11 @@ export async function POST(request: Request) {
     }
 
     const customer = await getCustomerSession();
-    let telegramUser: RequestOrder['telegramUser'] = customer ? {
+    let telegramUser: RequestOrder['telegramUser'] = customer ? omitUndefinedFields({
       id: customer.telegramId,
       username: customer.username,
       firstName: customer.name,
-    } : undefined;
+    }) : undefined;
 
     if (parsed.data.telegramInitData) {
       try {
@@ -68,9 +69,11 @@ export async function POST(request: Request) {
         if (!telegramSettings.storefront.enabled || !telegramSettings.storefront.tokenEncrypted) {
           throw new Error('Telegram Mini App is not configured.');
         }
-        telegramUser = verifyTelegramInitData(
-          parsed.data.telegramInitData,
-          decryptSecret(telegramSettings.storefront.tokenEncrypted)
+        telegramUser = omitUndefinedFields(
+          verifyTelegramInitData(
+            parsed.data.telegramInitData,
+            decryptSecret(telegramSettings.storefront.tokenEncrypted)
+          )
         );
       } catch {
         console.warn('Telegram Mini App identity could not be verified; guest checkout was used.');
@@ -83,7 +86,7 @@ export async function POST(request: Request) {
     const document = getAdminDb().collection('requests').doc();
     const now = new Date().toISOString();
     const requestNumber = `ORD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-    const order: RequestOrder & { serverCreatedAt: FieldValue } = {
+    const order: RequestOrder = {
       id: document.id,
       requestNumber,
       contactName: parsed.data.contactName,
@@ -108,10 +111,12 @@ export async function POST(request: Request) {
       }],
       createdAt: now,
       updatedAt: now,
-      serverCreatedAt: FieldValue.serverTimestamp(),
     };
 
-    await document.create(order);
+    await document.create({
+      ...order,
+      serverCreatedAt: FieldValue.serverTimestamp(),
+    });
     try {
       const notification = await notifyAboutNewOrder(order);
       await document.update({

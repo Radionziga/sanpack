@@ -3,6 +3,7 @@ import 'server-only';
 import type { Product, ProductPriceMode, RequestItem } from '@/types';
 import type { CheckoutLineInput } from '@/lib/validation/order';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
 import { getProductOrderRule, isValidOrderQuantity } from '@/lib/commerce/orderQuantities';
 
 function resolvePriceMode(product: Product, variantId?: string): ProductPriceMode {
@@ -67,7 +68,7 @@ export async function createOrderSnapshots(lines: CheckoutLineInput[]) {
     const price = variant?.price ?? product.price;
     const lineTotal = price === undefined ? undefined : price * line.quantity;
 
-    return {
+    return omitUndefinedFields({
       lineId: crypto.randomUUID(),
       productId: product.id,
       productTitleRu: product.titleRu,
@@ -86,7 +87,7 @@ export async function createOrderSnapshots(lines: CheckoutLineInput[]) {
       lineTotal,
       comment: line.comment,
       image: variant?.image || product.mainImage,
-    };
+    });
   });
 }
 
