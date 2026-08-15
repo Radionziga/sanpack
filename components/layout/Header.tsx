@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import NextLink from 'next/link';
-import { Link } from '@/i18n/navigation';
-import { useRouter } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   MapPinIcon,
@@ -17,15 +16,7 @@ import {
   XMarkIcon,
   ChevronDownIcon,
   PaperAirplaneIcon,
-  SparklesIcon,
   DocumentTextIcon,
-  HomeIcon,
-  Squares2X2Icon,
-  InformationCircleIcon,
-  UserGroupIcon,
-  TruckIcon,
-  PaintBrushIcon,
-  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
@@ -38,6 +29,7 @@ import { SanpackLogo } from '@/components/ui/SanpackLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { useMobileStorefrontChrome } from '@/components/layout/MobileStorefrontChrome';
 
 export function Header({
   initialCategories = [],
@@ -90,18 +82,15 @@ export function Header({
   }[language];
   const { itemCount } = useRequestCart();
   const { count: favCount } = useFavorites();
+  const { openSearch } = useMobileStorefrontChrome();
   const router = useRouter();
   const city = localizedContact(contacts, 'city', language);
   const workingHours = localizedContact(contacts, 'workingHours', language);
-  const address = localizedContact(contacts, 'address', language);
   const phones = [contacts.phone1, contacts.phone2].filter(Boolean);
 
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
-  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
-  const mobileMenuCloseRef = useRef<HTMLButtonElement>(null);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -174,7 +163,6 @@ export function Header({
       } else if (e.key === 'Escape') {
         setIsSearchOpen(false);
         setIsMegaMenuOpen(false);
-        setIsMobileMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -192,33 +180,19 @@ export function Header({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (!isMobileMenuOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    const menuTrigger = mobileMenuButtonRef.current;
-    document.body.style.overflow = 'hidden';
-    const frame = window.requestAnimationFrame(() => mobileMenuCloseRef.current?.focus());
-    return () => {
-      window.cancelAnimationFrame(frame);
-      document.body.style.overflow = previousOverflow;
-      menuTrigger?.focus();
-    };
-  }, [isMobileMenuOpen]);
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setIsSearchOpen(false);
-      setIsMobileMenuOpen(false);
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push({ pathname: '/search', query: { q: searchQuery.trim() } });
     }
   };
 
   return (
     <>
-      <header className="w-full bg-[var(--sp-surface)] text-[var(--sp-ink)] relative z-30 font-sans">
+      <header className="sticky top-0 z-30 w-full bg-[var(--sp-surface)] font-sans text-[var(--sp-ink)] md:relative">
         {/* Level 1: Top Utility Bar */}
-        <div className="border-b border-[color-mix(in_srgb,var(--sp-on-primary-strong)_16%,transparent)] bg-[var(--sp-primary-strong)] py-1.5 text-[11px] text-[var(--sp-on-primary-strong)] sm:py-2 sm:text-xs">
+        <div className="hidden border-b border-[color-mix(in_srgb,var(--sp-on-primary-strong)_16%,transparent)] bg-[var(--sp-primary-strong)] py-2 text-xs text-[var(--sp-on-primary-strong)] md:block">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4">
             <div className="flex min-w-0 items-center gap-4">
               <span className="flex min-w-0 items-center gap-1.5 font-medium">
@@ -270,11 +244,11 @@ export function Header({
         </div>
 
         {/* Level 2: Main Header */}
-        <div className="border-b border-[var(--sp-line)] py-3">
-          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-3 md:gap-4">
+        <div className="border-b border-[var(--sp-line)] py-2 md:py-3">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 md:gap-4">
             {/* Logo */}
             <Link href="/" className="flex h-10 min-w-0 shrink-0 items-center" aria-label="SANPACK — на главную">
-              <SanpackLogo variant="green" className="h-3.5 sm:h-7 lg:h-8" />
+              <SanpackLogo variant="green" className="h-3 max-w-[124px] sm:h-4 sm:max-w-[164px] md:h-7 md:max-w-none lg:h-8" />
             </Link>
 
             {/* Catalog Button & Global Search Bar */}
@@ -305,7 +279,7 @@ export function Header({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('searchPlaceholder')}
-                    className="h-10 w-full rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-11 text-xs font-medium text-[var(--sp-ink)] outline-none transition-colors placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)]"
+                    className="h-10 w-full rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-11 text-xs font-medium text-[var(--sp-ink)] outline-none transition-colors placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)] focus-visible:!outline-none"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {searchQuery ? (
@@ -382,7 +356,7 @@ export function Header({
             </div>
 
             {/* Actions: Request, Favorites, Request Cart, Lang */}
-            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <div className="flex shrink-0 items-center gap-1 md:gap-2">
               <Link
                 href="/request"
                 className="hidden h-10 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3.5 text-xs font-semibold text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] lg:flex"
@@ -394,7 +368,7 @@ export function Header({
               {/* Favorites */}
               <Link
                 href="/favorites"
-                className="relative hidden size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand-deep)] sm:flex"
+                className="relative hidden size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand-deep)] md:flex"
                 title={t('favorites')}
               >
                 <HeartIcon className="w-5 h-5" />
@@ -412,7 +386,7 @@ export function Header({
               {/* Request Cart */}
               <Link
                 href="/request"
-                className="group relative hidden h-10 shrink-0 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] sm:flex"
+                className="group relative hidden h-10 shrink-0 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] md:flex"
                 title={t('requestCart')}
               >
                 <ShoppingCartIcon className="w-5 h-5" />
@@ -431,19 +405,16 @@ export function Header({
               </Link>
 
               <LanguageSwitcher className="hidden md:block" />
-              <LanguageSwitcher className="md:hidden" />
 
-              {/* Mobile Menu Button */}
+              {/* Mobile search entry point. Secondary navigation lives in the bottom bar. */}
               <button
-                ref={mobileMenuButtonRef}
                 type="button"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label={isMobileMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
-                aria-expanded={isMobileMenuOpen}
-                aria-controls="mobile-navigation"
-                className="flex size-11 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] md:hidden"
+                onClick={openSearch}
+                aria-label={t('searchBtn')}
+                aria-haspopup="dialog"
+                className="sp-icon-button flex size-11 items-center justify-center border border-[var(--sp-line)] bg-[var(--sp-surface)] md:hidden"
               >
-                {isMobileMenuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
+                <MagnifyingGlassIcon className="size-5" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -501,164 +472,6 @@ export function Header({
           categories={categories}
         />
 
-        {/* Mobile Slideout Sidebar Drawer */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-50 md:hidden">
-              <motion.button
-                type="button"
-                aria-label="Закрыть меню"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-2xs"
-              />
-              <motion.aside
-                id="mobile-navigation"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="mobile-navigation-title"
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
-                className="absolute right-0 top-0 flex h-full w-[min(90vw,380px)] flex-col justify-between overflow-y-auto border-l border-[var(--sp-line)] bg-[var(--sp-surface)] px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] shadow-[-18px_0_45px_rgb(0_0_0/18%)]"
-              >
-                <div>
-                  <div className="flex min-h-14 items-center justify-between gap-4 border-b border-[var(--sp-line)] pb-3">
-                    <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="min-w-0 text-[var(--sp-brand)]">
-                      <SanpackLogo variant="currentColor" className="h-7 max-w-[210px]" />
-                      <span id="mobile-navigation-title" className="sr-only">SANPACK</span>
-                    </Link>
-                    <button
-                      ref={mobileMenuCloseRef}
-                      type="button"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      aria-label="Закрыть меню"
-                      className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] text-[var(--sp-ink-secondary)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)]"
-                    >
-                      <XMarkIcon className="size-6" aria-hidden="true" />
-                    </button>
-                  </div>
-
-                  <div className="py-5">
-                    <form onSubmit={handleSearchSubmit} className="relative mb-5">
-                      <label htmlFor="mobile-catalog-search" className="sr-only">{copy.search}</label>
-                      <input
-                        id="mobile-catalog-search"
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={copy.search}
-                        className="min-h-12 w-full rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-12 text-sm text-[var(--sp-ink)] outline-none placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)]"
-                      />
-                      <button type="submit" aria-label="Найти" className="absolute right-1 top-1 flex size-10 items-center justify-center rounded-[var(--sp-radius-control-inner)] text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]">
-                        <MagnifyingGlassIcon className="size-5" aria-hidden="true" />
-                      </button>
-                    </form>
-
-                    <nav className="space-y-1 text-sm font-semibold text-[var(--sp-ink)]" aria-label="Основная навигация">
-                      <Link
-                        href="/catalog"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] px-3 font-semibold text-[var(--sp-brand)]"
-                      >
-                        <Squares2X2Icon className="size-5 shrink-0" aria-hidden="true" />
-                        <span>{copy.catalog}</span>
-                      </Link>
-                      <Link
-                        href="/favorites"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                      >
-                        <HeartIcon className="size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" />
-                        <span className="flex-1">{t('favorites')}</span>
-                        {favCount > 0 ? <span className="min-w-6 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-1.5 py-0.5 text-center text-[10px] font-medium tabular-nums text-[var(--sp-on-brand)]">{favCount}</span> : null}
-                      </Link>
-                      <Link
-                        href="/request"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                      >
-                        <ShoppingCartIcon className="size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" />
-                        <span className="flex-1">{t('requestCart')}</span>
-                        {itemCount > 0 ? <span className="min-w-6 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-1.5 py-0.5 text-center text-[10px] font-medium tabular-nums text-[var(--sp-on-brand)]">{itemCount}</span> : null}
-                      </Link>
-                      <div className="my-2 h-px bg-[var(--sp-line)]" aria-hidden="true" />
-                      <Link
-                        href="/"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                      >
-                        <HomeIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('home')}
-                      </Link>
-                      <Link
-                        href="/about"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                      >
-                        <InformationCircleIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('about')}
-                      </Link>
-                      <Link
-                        href="/clients"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                      >
-                        <UserGroupIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('clients')}
-                      </Link>
-                      <Link
-                        href="/delivery"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                      >
-                        <TruckIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('delivery')}
-                      </Link>
-                      <Link
-                        href="/branding"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                      >
-                        <PaintBrushIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('branding')}
-                      </Link>
-                      {bagDesignerEnabled ? <Link
-                        href="/bag-designer"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] px-3 font-semibold text-[var(--sp-brand)] transition-colors hover:bg-[color-mix(in_srgb,var(--sp-brand)_14%,var(--sp-surface))]"
-                      >
-                        <SparklesIcon className="size-5 shrink-0" aria-hidden="true" />{copy.bagDesigner}
-                      </Link> : null}
-                      <Link
-                        href="/contacts"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex min-h-12 items-center gap-3 rounded-[var(--sp-radius-control)] px-3 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                      >
-                        <PhoneIcon className="size-5 shrink-0 text-[var(--sp-ink-secondary)]" aria-hidden="true" />{t('contacts')}
-                      </Link>
-                    </nav>
-                  </div>
-                </div>
-
-                <div className="space-y-2 border-t border-[var(--sp-line)] pt-4 text-xs text-[var(--sp-ink-secondary)]">
-                  <a
-                    href={contactPhoneHref(contacts.phone1)}
-                    className="flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] px-2 font-semibold text-[var(--sp-brand)] transition-colors hover:bg-[var(--sp-surface-inset)]"
-                  >
-                    <PhoneIcon className="size-4" aria-hidden="true" />{contacts.phone1}
-                  </a>
-                  <p className="flex items-start gap-2 px-2 py-2"><MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><span>{fixText(address)}</span></p>
-                  <NextLink
-                    href="/admin/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] px-2 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
-                  >
-                    <ShieldCheckIcon className="size-4" aria-hidden="true" />{copy.adminPanel}
-                  </NextLink>
-                </div>
-              </motion.aside>
-            </div>
-          )}
-        </AnimatePresence>
       </header>
 
       {/* Callback Modal */}

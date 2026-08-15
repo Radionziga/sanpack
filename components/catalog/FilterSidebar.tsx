@@ -15,6 +15,8 @@ interface FilterSidebarProps {
   ownProductionOnly: boolean;
   onOwnProductionChange: (val: boolean) => void;
   onReset: () => void;
+  embedded?: boolean;
+  hideHeader?: boolean;
 }
 
 export function FilterSidebar({
@@ -27,6 +29,8 @@ export function FilterSidebar({
   ownProductionOnly,
   onOwnProductionChange,
   onReset,
+  embedded = false,
+  hideHeader = false,
 }: FilterSidebarProps) {
   const { t, getLocalizedText, language } = useLanguage();
   const visibilityCopy = {
@@ -72,9 +76,9 @@ export function FilterSidebar({
     inStockOnly || ownProductionOnly || activeAttributeCount > 0;
 
   return (
-    <div className="space-y-5 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 shadow-[var(--sp-shadow-soft)]">
+    <div className={embedded ? 'space-y-5' : 'space-y-5 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 shadow-[var(--sp-shadow-soft)]'}>
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between border-b border-[var(--sp-line-soft)] pb-3">
+      {!hideHeader ? <div className="flex items-center justify-between border-b border-[var(--sp-line-soft)] pb-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-[var(--sp-ink)]">
           <Filter className="size-4 text-[var(--sp-brand)]" />
           <span>{t('filterTitle')}</span>
@@ -94,7 +98,7 @@ export function FilterSidebar({
             <span>{t('resetFilters')}</span>
           </button>
         )}
-      </div>
+      </div> : null}
 
       {/* Quick Toggles */}
       <div className="space-y-2">

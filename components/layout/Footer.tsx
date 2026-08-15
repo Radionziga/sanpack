@@ -34,7 +34,7 @@ export function Footer() {
   const phones = [contacts.phone1, contacts.phone2].filter(Boolean);
 
   return (
-    <footer className="bg-[var(--sp-brand)] text-[var(--sp-on-brand)] text-xs border-t border-[var(--sp-brand-deep)] pt-12 pb-8">
+    <footer className="border-t border-[var(--sp-brand-deep)] bg-[var(--sp-brand)] pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+2rem)] pt-12 text-xs text-[var(--sp-on-brand)] md:pb-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Col 1: SANPACK Info */}

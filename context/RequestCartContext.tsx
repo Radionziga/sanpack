@@ -11,6 +11,7 @@ interface RequestCartContextType {
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
   updateComment: (productId: string, comment: string, variantId?: string) => void;
   clearCart: () => void;
+  isHydrated: boolean;
   itemCount: number;
   totalAmount: number;
   isInCart: (productId: string, variantId?: string) => boolean;
@@ -149,6 +150,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         updateQuantity,
         updateComment,
         clearCart,
+        isHydrated,
         itemCount,
         totalAmount,
         isInCart,

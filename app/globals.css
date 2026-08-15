@@ -67,6 +67,7 @@
     --sp-cta-action-ink: var(--sp-on-secondary);
     --sp-shadow-raised: 0 12px 32px rgb(21 27 24 / 7%);
     --sp-radius: 8px;
+    --sp-mobile-nav-height: 4rem;
     /* Safe defaults for overlays rendered outside the themed app shell.
        Inside SanpackTheme these aliases resolve against its configured radius. */
     --sp-radius-nested: max(0px, calc(var(--sp-radius) - 4px));
@@ -102,6 +103,12 @@
 
   p {
     text-wrap: pretty;
+  }
+}
+
+@media (max-width: 767px) {
+  html {
+    scroll-padding-bottom: calc(var(--sp-mobile-nav-height) + env(safe-area-inset-bottom) + 1rem);
   }
 }
 

@@ -9,7 +9,7 @@ import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories
 import { Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { pageCopy } from '@/lib/i18n/pageCopy';
-import { Search } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
 
 function SearchResultsContent() {
   const searchParams = useSearchParams();
@@ -19,58 +19,84 @@ function SearchResultsContent() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const stateCopy = {
+    ru: { error: 'Не удалось выполнить поиск', errorText: 'Проверьте соединение и попробуйте ещё раз.', retry: 'Попробовать снова' },
+    uz: { error: 'Qidiruvni bajarib bo‘lmadi', errorText: 'Internet aloqasini tekshirib, qayta urinib ko‘ring.', retry: 'Qayta urinish' },
+    en: { error: 'Search is unavailable', errorText: 'Check your connection and try again.', retry: 'Try again' },
+  }[language];
 
   useEffect(() => {
     async function executeSearch() {
       setLoading(true);
-      const all = await SanpackRepository.getProducts();
-      if (!query.trim()) {
+      setError(false);
+      try {
+        const all = await SanpackRepository.getProducts();
+        if (!query.trim()) {
+          setProducts([]);
+        } else {
+          const q = query.toLowerCase();
+          const res = all.filter(
+            (p) =>
+              p.titleRu.toLowerCase().includes(q) ||
+              p.titleUz.toLowerCase().includes(q) ||
+              p.titleEn?.toLowerCase().includes(q) ||
+              p.sku.toLowerCase().includes(q) ||
+              p.shortDescriptionRu.toLowerCase().includes(q)
+          );
+          setProducts(res);
+        }
+      } catch {
         setProducts([]);
-      } else {
-        const q = query.toLowerCase();
-        const res = all.filter(
-          (p) =>
-            p.titleRu.toLowerCase().includes(q) ||
-            p.titleUz.toLowerCase().includes(q) ||
-            p.sku.toLowerCase().includes(q) ||
-            p.shortDescriptionRu.toLowerCase().includes(q)
-        );
-        setProducts(res);
+        setError(true);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
-    executeSearch();
-  }, [query]);
+    void executeSearch();
+  }, [attempt, query]);
 
   return (
-    <main className="flex-1 py-10 max-w-7xl mx-auto px-4 w-full">
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#18231E]">
+    <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-8 pt-5 md:py-10">
+      <div className="mb-5 md:mb-8">
+        <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl">
           {copy.title}: &ldquo;{query}&rdquo;
         </h1>
-        <p className="text-xs text-[#68736D] mt-1">
-          {t('foundItems')} <span className="font-bold text-[#006F3C]">{products.length}</span>
+        <p className="mt-1.5 text-xs text-[var(--sp-ink-secondary)]">
+          {t('foundItems')} <span className="font-semibold tabular-nums text-[var(--sp-brand)]">{products.length}</span>
         </p>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4" aria-hidden="true">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-80 bg-slate-200 animate-pulse rounded-2xl" />
+            <div key={i} className="overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] p-2 sm:p-3">
+              <div className="aspect-square animate-pulse rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)]" />
+              <div className="mt-3 h-3.5 w-4/5 animate-pulse rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)]" />
+              <div className="mt-5 h-10 animate-pulse rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)]" />
+            </div>
           ))}
         </div>
+      ) : error ? (
+        <div className="mx-auto max-w-md py-12 text-center" role="alert">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] text-[var(--sp-brand)]"><RefreshCw className="size-6" aria-hidden="true" /></div>
+          <h2 className="mt-5 font-extended text-xl font-bold text-[var(--sp-ink)]">{stateCopy.error}</h2>
+          <p className="mt-2 text-sm text-[var(--sp-ink-secondary)]">{stateCopy.errorText}</p>
+          <button type="button" onClick={() => setAttempt((current) => current + 1)} className="mt-5 min-h-11 cursor-pointer rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)]">{stateCopy.retry}</button>
+        </div>
       ) : products.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 max-w-md mx-auto">
-          <Search className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-base font-bold text-[#18231E]">{copy.emptyTitle}</h3>
-          <p className="text-xs text-slate-500">
+        <div className="mx-auto max-w-md py-12 text-center">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] text-[var(--sp-ink-muted)]"><Search className="size-6" aria-hidden="true" /></div>
+          <h2 className="mt-5 font-extended text-xl font-bold text-[var(--sp-ink)]">{copy.emptyTitle}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--sp-ink-secondary)]">
             {copy.emptyText}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
+          {products.map((p, index) => (
+            <ProductCard key={p.id} product={p} eagerImage={index < 2} />
           ))}
         </div>
       )}

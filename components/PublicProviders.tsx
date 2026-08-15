@@ -6,6 +6,7 @@ import { FavoritesProvider } from '@/context/FavoritesContext';
 import { RequestCartProvider } from '@/context/RequestCartContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { SiteSettingsProvider } from '@/context/SiteSettingsContext';
+import { MobileStorefrontChrome } from '@/components/layout/MobileStorefrontChrome';
 
 export function PublicProviders({
   children,
@@ -21,7 +22,9 @@ export function PublicProviders({
       <LanguageProvider initialLanguage={locale}>
         <FavoritesProvider>
           <RequestCartProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              <MobileStorefrontChrome>{children}</MobileStorefrontChrome>
+            </ToastProvider>
           </RequestCartProvider>
         </FavoritesProvider>
       </LanguageProvider>

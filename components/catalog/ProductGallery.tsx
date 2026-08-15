@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Maximize2, X } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -13,13 +13,46 @@ interface ProductGalleryProps {
 export function ProductGallery({ images, title }: ProductGalleryProps) {
   const { language } = useLanguage();
   const zoomTitle = { ru: 'Увеличить', uz: 'Kattalashtirish', en: 'Enlarge image' }[language];
+  const closeTitle = { ru: 'Закрыть', uz: 'Yopish', en: 'Close' }[language];
   const [activeImage, setActiveImage] = useState(images[0] || '/catalog/product-placeholder.svg');
   const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const zoomTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isZoomOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const zoomTrigger = zoomTriggerRef.current;
+    document.body.style.overflow = 'hidden';
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsZoomOpen(false);
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        closeButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      window.requestAnimationFrame(() => zoomTrigger?.focus());
+    };
+  }, [isZoomOpen]);
 
   return (
     <div className="space-y-4">
       {/* Main Image Stage */}
-      <div className="group relative aspect-square overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-6">
+      <div className="group relative aspect-square overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] sm:border sm:border-[var(--sp-line)]">
         <Image
           src={activeImage}
           alt={title}
@@ -27,17 +60,20 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
           loading="eager"
           fetchPriority="high"
           sizes="(min-width: 1024px) 45vw, 90vw"
-          className="object-contain p-6 transition-transform duration-300 group-hover:scale-105"
+          className="object-contain p-3 transition-transform duration-300 motion-reduce:transition-none sm:p-6 md:group-hover:scale-[1.025]"
         />
 
         <button
+          ref={zoomTriggerRef}
           type="button"
           onClick={() => setIsZoomOpen(true)}
-          className="sp-icon-button absolute right-4 top-4 size-10 border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-soft)]"
+          aria-haspopup="dialog"
+          aria-expanded={isZoomOpen}
+          className="sp-icon-button absolute right-3 top-3 size-11 cursor-pointer border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-soft)] sm:right-4 sm:top-4"
           title={zoomTitle}
           aria-label={zoomTitle}
         >
-          <Maximize2 className="w-4 h-4" />
+          <Maximize2 className="size-4" aria-hidden="true" />
         </button>
       </div>
 
@@ -49,7 +85,9 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
               type="button"
               key={idx}
               onClick={() => setActiveImage(img)}
-              className={`relative size-16 shrink-0 overflow-hidden rounded-[var(--sp-radius-control)] border bg-[var(--sp-surface)] p-1 transition-[border-color,opacity,transform] ${
+              aria-label={`${title} — ${idx + 1}`}
+              aria-pressed={activeImage === img}
+              className={`relative size-16 shrink-0 cursor-pointer overflow-hidden rounded-[var(--sp-radius-control)] border bg-[var(--sp-surface)] p-1 transition-[border-color,opacity,transform] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${
                 activeImage === img
                   ? 'scale-[1.03] border-[var(--sp-brand)] ring-2 ring-[var(--sp-brand-soft)]'
                   : 'border-[var(--sp-line)] opacity-70 hover:border-[var(--sp-line-strong)] hover:opacity-100'
@@ -69,24 +107,38 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
 
       {/* Modal Zoom */}
       {isZoomOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div role="dialog" aria-modal="true" aria-label={zoomTitle} className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] p-6">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center sm:p-4">
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setIsZoomOpen(false)}
+            aria-label={closeTitle}
+            className="absolute inset-0 cursor-pointer bg-black/80 backdrop-blur-sm"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={zoomTitle}
+            className="relative flex h-full w-full items-center justify-center bg-[var(--sp-surface-raised)] p-4 pt-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] sm:h-[min(90dvh,900px)] sm:max-w-5xl sm:rounded-[var(--sp-radius-card)] sm:border sm:border-[var(--sp-line)] sm:p-8"
+          >
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={() => setIsZoomOpen(false)}
-              aria-label={language === 'ru' ? 'Закрыть' : language === 'uz' ? 'Yopish' : 'Close'}
-              className="sp-icon-button absolute right-4 top-4 size-10 bg-[var(--sp-surface-inset)]"
+              aria-label={closeTitle}
+              className="sp-icon-button absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-10 size-11 cursor-pointer border border-[var(--sp-line)] bg-[var(--sp-surface)] shadow-[var(--sp-shadow-soft)] sm:right-4 sm:top-4"
             >
-              <X className="w-5 h-5" />
+              <X className="size-5" aria-hidden="true" />
             </button>
-            <Image
-              src={activeImage}
-              alt={title}
-              width={1200}
-              height={1200}
-              sizes="90vw"
-              className="max-w-full max-h-[80vh] w-auto h-auto object-contain mx-auto"
-            />
+            <div className="relative h-full w-full">
+              <Image
+                src={activeImage}
+                alt={title}
+                fill
+                sizes="(min-width: 640px) 90vw, 100vw"
+                className="object-contain"
+              />
+            </div>
           </div>
         </div>
       )}
