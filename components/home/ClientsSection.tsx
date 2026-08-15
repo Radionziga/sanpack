@@ -41,13 +41,13 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
       : clients.filter((c) => c.category === filter);
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-[var(--sp-surface)]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E293B]">
+          <h2 className="font-extended text-2xl sm:text-3xl font-bold text-[var(--sp-ink)]">
             {t('clientsTitle')}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 mt-2">
+          <p className="text-xs sm:text-sm text-[var(--sp-ink-secondary)] mt-2">
             {copy.subtitle}
           </p>
         </div>
@@ -58,10 +58,10 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
             <button
               key={cat.id}
               onClick={() => setFilter(cat.id)}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-4 py-2 rounded-[var(--sp-radius-control)] text-xs font-semibold transition-all ${
                 filter === cat.id
-                  ? 'bg-[#0F6E43] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-xs'
+                  : 'bg-[var(--sp-surface-inset)] text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-line)]/50 hover:text-[var(--sp-ink)]'
               }`}
             >
               {cat.label}
@@ -74,7 +74,7 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
           {filteredClients.map((client) => (
             <div
               key={client.id}
-              className="bg-[#F8FAFC] rounded-lg p-4 border border-slate-200/80 hover:bg-white hover:shadow-md hover:border-[#0F6E43] transition-all flex flex-col items-center justify-center text-center group h-32"
+              className="bg-[var(--sp-surface-inset)] rounded-[var(--sp-radius)] p-4 border border-[var(--sp-line)] hover:bg-[var(--sp-surface)] hover:shadow-md hover:border-[var(--sp-brand)] transition-all flex flex-col items-center justify-center text-center group h-32"
             >
               <Image
                 src={client.logo}
@@ -84,11 +84,11 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
                 sizes="160px"
                 className="w-full h-12 object-contain grayscale group-hover:grayscale-0 transition-all opacity-80 group-hover:opacity-100"
               />
-              <span className="text-[11px] font-semibold text-[#1E293B] mt-2 line-clamp-1">
+              <span className="text-[11px] font-semibold text-[var(--sp-ink)] mt-2 line-clamp-1">
                 {client.name}
               </span>
               {client.descriptionRu && (
-                <span className="text-[10px] text-slate-500 line-clamp-1">
+                <span className="text-[10px] text-[var(--sp-ink-tertiary)] line-clamp-1">
                   {getLocalizedText(client.descriptionRu, client.descriptionUz, client.descriptionEn)}
                 </span>
               )}

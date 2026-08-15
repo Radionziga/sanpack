@@ -7,7 +7,12 @@ import { getAdminSession } from '@/lib/auth/server';
 import { getAdminStorage } from '@/lib/firebase/admin';
 import { firebaseAdminUnavailableMessage } from '@/lib/firebase/adminErrors';
 import { MAX_MEDIA_FILE_SIZE, mediaPresets } from '@/lib/media/presets';
-import { deleteMediaFileWithSafety, getAllMediaLibrary, uploadSingleMediaFile } from '@/lib/media/storageService';
+import {
+  deleteBatchMediaFilesWithSafety,
+  deleteMediaFileWithSafety,
+  getAllMediaLibrary,
+  uploadSingleMediaFile,
+} from '@/lib/media/storageService';
 
 export const runtime = 'nodejs';
 
@@ -24,10 +29,16 @@ const allowedFormats = new Set(['jpeg', 'png', 'webp', 'svg', 'gif']);
 
 const mediaKindSchema = z.enum(Object.keys(mediaPresets) as [keyof typeof mediaPresets, ...(keyof typeof mediaPresets)[]]);
 
-const deleteSchema = z.object({
-  path: z.string().trim().min(1).max(500),
-  force: z.boolean().optional().default(false),
-}).strict();
+const deleteSchema = z.union([
+  z.object({
+    path: z.string().trim().min(1).max(500),
+    force: z.boolean().optional().default(false),
+  }),
+  z.object({
+    paths: z.array(z.string().trim().min(1).max(500)).min(1).max(200),
+    force: z.boolean().optional().default(false),
+  }),
+]);
 
 async function authorizeMediaRead() {
   const admin = await getAdminSession();
@@ -183,10 +194,21 @@ export async function DELETE(request: Request) {
 
   const parsed = deleteSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Некорректный путь.' }, { status: 400 });
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Некорректные параметры удаления.' }, { status: 400 });
   }
 
   try {
+    // 1. Batch deletion
+    if ('paths' in parsed.data) {
+      const result = await deleteBatchMediaFilesWithSafety({
+        paths: parsed.data.paths,
+        force: parsed.data.force,
+      });
+
+      return NextResponse.json(result);
+    }
+
+    // 2. Single deletion
     const result = await deleteMediaFileWithSafety({
       path: parsed.data.path,
       force: parsed.data.force,

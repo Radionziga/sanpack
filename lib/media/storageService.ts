@@ -219,3 +219,57 @@ export async function deleteMediaFileWithSafety({
   await bucket.file(path).delete({ ignoreNotFound: true });
   return { success: true };
 }
+
+export interface BatchDeleteResult {
+  deleted: string[];
+  skippedInUse: Array<{ path: string; usage: ReturnType<typeof lookupMediaUsage> }>;
+  failed: Array<{ path: string; error: string }>;
+}
+
+export async function deleteBatchMediaFilesWithSafety({
+  paths,
+  force = false,
+}: {
+  paths: string[];
+  force?: boolean;
+}): Promise<BatchDeleteResult> {
+  const bucket = getAdminStorage().bucket();
+  const db = getAdminDb();
+
+  const uniquePaths = Array.from(new Set(paths.map((p) => p.trim()).filter(Boolean)));
+  const result: BatchDeleteResult = {
+    deleted: [],
+    skippedInUse: [],
+    failed: [],
+  };
+
+  if (uniquePaths.length === 0) {
+    return result;
+  }
+
+  // Build usage index once for the entire batch if safety check is requested
+  const usageIndex = !force ? await buildSiteMediaUsageIndex(db) : null;
+
+  for (const path of uniquePaths) {
+    try {
+      if (!force && usageIndex) {
+        const usage = lookupMediaUsage(usageIndex, path);
+        if (usage.isUsed) {
+          result.skippedInUse.push({ path, usage });
+          continue;
+        }
+      }
+
+      await bucket.file(path).delete({ ignoreNotFound: true });
+      result.deleted.push(path);
+    } catch (err) {
+      console.error(`Failed to delete media file ${path}:`, err);
+      result.failed.push({
+        path,
+        error: err instanceof Error ? err.message : 'Не удалось удалить файл',
+      });
+    }
+  }
+
+  return result;
+}

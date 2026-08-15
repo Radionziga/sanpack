@@ -3,15 +3,32 @@
 import React from 'react';
 
 interface SanpackLogoProps {
+  src?: string;
   variant?: 'green' | 'white' | 'accent' | 'currentColor' | 'dark';
   className?: string;
   showSubtitle?: boolean;
 }
 
 export function SanpackLogo({
+  src,
   variant = 'green',
   className = 'h-7',
 }: SanpackLogoProps) {
+  // If a custom logo file URL is provided (e.g. uploaded SVG or PNG in settings),
+  // render it directly without any CSS color tinting or filtering
+  if (src) {
+    return (
+      <div className="inline-flex items-center select-none shrink-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt="SANPACK Distribution"
+          className={`${className} w-auto max-w-full object-contain`}
+        />
+      </div>
+    );
+  }
+
   // Determine fill colors for the two distinct brand layers:
   // Layer 1: "SANPACK" wordmark
   // Layer 2: "DISTRIBUTION" wordmark

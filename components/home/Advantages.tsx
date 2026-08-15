@@ -65,13 +65,13 @@ export function Advantages() {
   ];
 
   return (
-    <section className="py-14 bg-white border-y border-slate-200/80">
+    <section className="py-14 bg-[var(--sp-surface)] border-y border-[var(--sp-line)]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#222B35] tracking-tight">
+          <h2 className="font-extended text-2xl sm:text-3xl font-bold text-[var(--sp-ink)] tracking-tight">
             {t('advantagesTitle')}
           </h2>
-          <p className="text-xs sm:text-sm text-[#5C6A75] mt-1.5">
+          <p className="text-xs sm:text-sm text-[var(--sp-ink-secondary)] mt-1.5">
             {fixText(copy.subtitle)}
           </p>
         </div>
@@ -82,15 +82,15 @@ export function Advantages() {
             return (
               <div
                 key={idx}
-                className="p-5 rounded-lg bg-[#F8FAFC] border border-slate-200 hover:bg-[#F2F7F4] hover:border-[#0F6E43]/30 transition-all duration-300 group"
+                className="p-5 rounded-[var(--sp-radius)] bg-[var(--sp-surface-inset)] border border-[var(--sp-line)] hover:bg-[var(--sp-surface)] hover:border-[var(--sp-brand)]/40 hover:shadow-md transition-all duration-300 group"
               >
-                <div className="w-10 h-10 rounded-md bg-white text-[#0F6E43] flex items-center justify-center shadow-2xs mb-3 group-hover:bg-[#0F6E43] group-hover:text-white transition-colors">
+                <div className="w-10 h-10 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface)] text-[var(--sp-brand)] flex items-center justify-center shadow-2xs mb-3 group-hover:bg-[var(--sp-brand)] group-hover:text-[var(--sp-on-brand)] transition-colors">
                   <Icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-sm font-bold text-[#222B35] mb-1.5 tracking-tight">
+                <h3 className="text-sm font-bold text-[var(--sp-ink)] mb-1.5 tracking-tight font-extended">
                   {fixText(adv.title)}
                 </h3>
-                <p className="text-xs text-[#5C6A75] leading-relaxed">
+                <p className="text-xs text-[var(--sp-ink-secondary)] leading-relaxed">
                   {fixText(adv.desc)}
                 </p>
               </div>

@@ -16,9 +16,18 @@ interface MediaCardProps {
   viewMode: 'grid' | 'compact' | 'table';
   onClick: () => void;
   onDelete: () => void;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
-export function MediaCard({ file, viewMode, onClick, onDelete }: MediaCardProps) {
+export function MediaCard({
+  file,
+  viewMode,
+  onClick,
+  onDelete,
+  isSelected = false,
+  onToggleSelect,
+}: MediaCardProps) {
   const [copied, setCopied] = useState(false);
 
   function copyUrl(e: React.MouseEvent) {
@@ -69,8 +78,20 @@ export function MediaCard({ file, viewMode, onClick, onDelete }: MediaCardProps)
     return (
       <tr
         onClick={onClick}
-        className="group cursor-pointer border-b border-[var(--sp-line)] hover:bg-[var(--sp-surface-inset)] transition-colors text-xs"
+        className={`group cursor-pointer border-b border-[var(--sp-line)] transition-colors text-xs ${
+          isSelected ? 'bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))]' : 'hover:bg-[var(--sp-surface-inset)]'
+        }`}
       >
+        <td className="p-3 w-10 text-center" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect?.()}
+            aria-label={`Выбрать ${file.name}`}
+            className="size-4 rounded accent-[var(--sp-brand)] cursor-pointer"
+          />
+        </td>
+
         <td className="p-3 w-12">
           <div className="relative size-10 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] overflow-hidden flex items-center justify-center shrink-0">
             {isRasterOrSvg ? (
@@ -156,7 +177,11 @@ export function MediaCard({ file, viewMode, onClick, onDelete }: MediaCardProps)
     return (
       <div
         onClick={onClick}
-        className="group relative cursor-pointer overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-2 transition-all hover:border-[var(--sp-brand)] hover:shadow-md"
+        className={`group relative cursor-pointer overflow-hidden rounded-xl border p-2 transition-all hover:shadow-md ${
+          isSelected
+            ? 'border-[var(--sp-brand)] bg-[color-mix(in_srgb,var(--sp-brand)_8%,var(--sp-surface))] ring-2 ring-[var(--sp-brand)]'
+            : 'border-[var(--sp-line)] bg-[var(--sp-surface)] hover:border-[var(--sp-brand)]'
+        }`}
       >
         <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-[var(--sp-surface-inset)] flex items-center justify-center">
           {/* Subtle checker pattern */}
@@ -173,6 +198,22 @@ export function MediaCard({ file, viewMode, onClick, onDelete }: MediaCardProps)
           ) : (
             <FileText className="size-8 text-[var(--sp-ink-tertiary)]" />
           )}
+
+          {/* Top-left Checkbox */}
+          <div
+            className={`absolute top-1.5 left-1.5 z-10 transition-opacity ${
+              isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect?.()}
+              aria-label={`Выбрать ${file.name}`}
+              className="size-4 rounded accent-[var(--sp-brand)] cursor-pointer shadow-sm"
+            />
+          </div>
 
           {/* Top-right Status Dot */}
           <div className="absolute top-1.5 right-1.5">
@@ -201,7 +242,11 @@ export function MediaCard({ file, viewMode, onClick, onDelete }: MediaCardProps)
   return (
     <div
       onClick={onClick}
-      className="group relative flex flex-col cursor-pointer overflow-hidden rounded-2xl border border-[var(--sp-line)] bg-[var(--sp-surface)] transition-all duration-200 hover:border-[var(--sp-brand)] hover:shadow-lg hover:-translate-y-0.5"
+      className={`group relative flex flex-col cursor-pointer overflow-hidden rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
+        isSelected
+          ? 'border-[var(--sp-brand)] bg-[color-mix(in_srgb,var(--sp-brand)_6%,var(--sp-surface))] ring-2 ring-[var(--sp-brand)]'
+          : 'border-[var(--sp-line)] bg-[var(--sp-surface)] hover:border-[var(--sp-brand)]'
+      }`}
     >
       {/* Visual Thumbnail Frame */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--sp-surface-inset)] flex items-center justify-center border-b border-[var(--sp-line)]">
@@ -223,8 +268,22 @@ export function MediaCard({ file, viewMode, onClick, onDelete }: MediaCardProps)
           </div>
         )}
 
-        {/* Top Floating Badges */}
-        <div className="absolute top-2 left-2 flex items-center gap-1.5">
+        {/* Top Floating Badges & Checkbox */}
+        <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+          <div
+            className={`flex items-center justify-center rounded-lg bg-[var(--sp-surface)]/90 backdrop-blur-md p-1 shadow-sm border border-[var(--sp-line)] transition-opacity ${
+              isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect?.()}
+              aria-label={`Выбрать ${file.name}`}
+              className="size-4 rounded accent-[var(--sp-brand)] cursor-pointer"
+            />
+          </div>
           <span className="rounded-lg bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold uppercase text-white shadow-sm">
             {ext}
           </span>

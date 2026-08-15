@@ -103,13 +103,13 @@ export function BusinessSegments() {
   ];
 
   return (
-    <section className="py-14 bg-[#F8FAFC]">
+    <section className="py-14 bg-[var(--sp-surface-inset)]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#222B35] tracking-tight">
+          <h2 className="font-extended text-2xl sm:text-3xl font-bold text-[var(--sp-ink)] tracking-tight">
             {t('forBusinessTitle')}
           </h2>
-          <p className="text-xs sm:text-sm text-[#5C6A75] mt-1.5">
+          <p className="text-xs sm:text-sm text-[var(--sp-ink-secondary)] mt-1.5">
             {fixText(copy.subtitle)}
           </p>
         </div>
@@ -121,28 +121,28 @@ export function BusinessSegments() {
               <Link
                 key={idx}
                 href={seg.link}
-                className="bg-white rounded-lg p-5 border border-slate-200 hover:shadow-lg hover:border-[#0F6E43] transition-all group flex flex-col justify-between"
+                className="bg-[var(--sp-surface)] rounded-[var(--sp-radius)] p-5 border border-[var(--sp-line)] hover:shadow-lg hover:border-[var(--sp-brand)] transition-all group flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3.5">
-                    <div className="w-10 h-10 rounded-md bg-[#EAF5EF] text-[#0F6E43] flex items-center justify-center group-hover:bg-[#0F6E43] group-hover:text-white transition-colors">
+                    <div className="w-10 h-10 rounded-[var(--sp-radius-control)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] text-[var(--sp-brand)] flex items-center justify-center group-hover:bg-[var(--sp-brand)] group-hover:text-[var(--sp-on-brand)] transition-colors">
                       <Icon className="w-5 h-5" />
                     </div>
-                    <span className="text-[10px] font-bold text-[#0F6E43] bg-[#EAF5EF] px-2 py-0.5 rounded uppercase">
+                    <span className="text-[10px] font-bold text-[var(--sp-brand)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] px-2 py-0.5 rounded-[var(--sp-radius-control)] uppercase">
                       {seg.badge}
                     </span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-[#222B35] group-hover:text-[#0F6E43] transition-colors mb-1.5 tracking-tight">
+                  <h3 className="font-extended text-sm font-bold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)] transition-colors mb-1.5 tracking-tight">
                     {fixText(seg.title)}
                   </h3>
 
-                  <p className="text-xs text-[#5C6A75] leading-relaxed mb-3">
+                  <p className="text-xs text-[var(--sp-ink-secondary)] leading-relaxed mb-3">
                     {fixText(seg.desc)}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F6E43] group-hover:translate-x-1 transition-transform">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--sp-brand)] group-hover:translate-x-1 transition-transform">
                   <span>{fixText(copy.action)}</span>
                   <ArrowRightIcon className="w-3.5 h-3.5" />
                 </div>

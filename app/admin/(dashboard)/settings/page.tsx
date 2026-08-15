@@ -6,15 +6,17 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch, type UseFormRegisterReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Check, Moon, Palette, Save, Sun, Type } from 'lucide-react';
+import { Check, Image as ImageIcon, Loader2, Moon, Palette, RotateCcw, Save, Sun, Type, Upload } from 'lucide-react';
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import { accessibleForeground, contrastRatio, normalizeHex } from '@/lib/theme/colors';
+import { SanpackLogo } from '@/components/ui/SanpackLogo';
 import type { SiteSettings } from '@/types';
 
 const DEFAULT_PRIMARY = '#0F6E43';
 const DEFAULT_SECONDARY = '#DCE9AF';
 
 const settingsFormSchema = z.object({
+  logo: z.string().optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
   borderRadius: z.number().int().min(0).max(32),
@@ -132,6 +134,7 @@ export default function AdminSettingsPage() {
     mode: 'onSubmit',
     reValidateMode: 'onBlur',
     defaultValues: {
+      logo: '',
       primaryColor: DEFAULT_PRIMARY,
       secondaryColor: DEFAULT_SECONDARY,
       borderRadius: 8,
@@ -140,6 +143,7 @@ export default function AdminSettingsPage() {
     },
   });
 
+  const logo = useWatch({ control, name: 'logo', defaultValue: '' });
   const primaryColor = useWatch({ control, name: 'primaryColor', defaultValue: DEFAULT_PRIMARY });
   const secondaryColor = useWatch({ control, name: 'secondaryColor', defaultValue: DEFAULT_SECONDARY });
   const borderRadius = useWatch({ control, name: 'borderRadius', defaultValue: 8 });
@@ -147,13 +151,18 @@ export default function AdminSettingsPage() {
   const fontPair = useWatch({ control, name: 'fontPair', defaultValue: 'brand' });
   const selectedFonts = fontPairs.find((pair) => pair.value === fontPair) || fontPairs[0];
 
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [currentCompany, setCurrentCompany] = useState<SiteSettings['company'] | null>(null);
+
   useEffect(() => {
     let active = true;
     const load = async () => {
       try {
         const settings = await SanpackRepository.getSettings();
         if (!active) return;
+        setCurrentCompany(settings.company || null);
         reset({
+          logo: settings.company?.logo || '',
           primaryColor: settings.design?.primaryColor || DEFAULT_PRIMARY,
           secondaryColor: settings.design?.designVersion === 2
             ? settings.design.secondaryColor || DEFAULT_SECONDARY
@@ -172,18 +181,53 @@ export default function AdminSettingsPage() {
     return () => { active = false; };
   }, [reset]);
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    setPageError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'uploads');
+      const res = await fetch('/api/admin/media', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || 'Не удалось загрузить логотип');
+      }
+      const data = await res.json();
+      if (data.file?.url) {
+        setValue('logo', data.file.url, { shouldDirty: true });
+        setNotice('Логотип загружен. Нажмите «Сохранить настройки» для применения на сайте.');
+      }
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : 'Ошибка при загрузке логотипа');
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   const save = handleSubmit(async (values) => {
     setPageError('');
     setNotice('');
     const design: SiteSettings['design'] = {
-      ...values,
-      designVersion: 2,
       primaryColor: normalizeHex(values.primaryColor),
       secondaryColor: normalizeHex(values.secondaryColor, DEFAULT_SECONDARY),
+      borderRadius: values.borderRadius,
+      themeMode: values.themeMode,
+      fontPair: values.fontPair,
+      designVersion: 2,
+    };
+    const company = {
+      ...(currentCompany || {}),
+      logo: values.logo?.trim() || '',
     };
     try {
-      await SanpackRepository.saveSettings({ design } as Partial<SiteSettings>);
-      setNotice('Настройки сохранены. Цвета, тема, шрифты и геометрия применены ко всему интерфейсу.');
+      await SanpackRepository.saveSettings({ design, company } as Partial<SiteSettings>);
+      setNotice('Настройки сохранены. Логотип, цвета, тема, шрифты и геометрия успешно обновлены.');
       router.refresh();
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Настройки не сохранены.');
@@ -205,9 +249,9 @@ export default function AdminSettingsPage() {
   return (
     <div className="admin-page mx-auto max-w-6xl space-y-6">
       <header className="border-b border-[var(--sp-line)] pb-5">
-        <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)]">Внешний вид</h1>
+        <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)]">Внешний вид и брендинг</h1>
         <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">
-          Настройте визуальную систему магазина: два акцентных цвета, нейтральную тему, шрифтовую пару и геометрию компонентов.
+          Настройте логотип магазина, два акцентных цвета, тему оформления, шрифтовую пару и геометрию интерфейса.
         </p>
       </header>
 
@@ -222,6 +266,69 @@ export default function AdminSettingsPage() {
       ) : (
         <form onSubmit={save} className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-5">
+            {/* Logo Settings Section */}
+            <section className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <ImageIcon className="mt-0.5 size-5 text-[var(--sp-brand)]" aria-hidden="true" />
+                  <div>
+                    <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">Логотип сайта</h2>
+                    <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">
+                      Загрузите SVG или PNG файл логотипа. Логотип сохраняет свои оригинальные цвета и не перекрашивается при смене темы сайта.
+                    </p>
+                  </div>
+                </div>
+
+                {logo && (
+                  <button
+                    type="button"
+                    onClick={() => setValue('logo', '', { shouldDirty: true })}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-ink-secondary)] hover:text-red-600 transition-colors shrink-0"
+                    title="Сбросить к стандартному векторному логотипу"
+                  >
+                    <RotateCcw className="size-3" />
+                    <span>Сбросить</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Logo Preview Boxes (Light & Dark) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="rounded-xl border border-[var(--sp-line)] bg-white p-4 flex flex-col items-center justify-center gap-2 min-h-[90px]">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">На светлом фоне</span>
+                  <SanpackLogo src={logo || undefined} variant="green" className="h-7" />
+                </div>
+                <div className="rounded-xl border border-zinc-800 bg-[#0F172A] p-4 flex flex-col items-center justify-center gap-2 min-h-[90px]">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">На тёмном фоне / в футере</span>
+                  <SanpackLogo src={logo || undefined} variant="white" className="h-7" />
+                </div>
+              </div>
+
+              {/* Upload & Path inputs */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--sp-brand)] px-4 text-xs font-bold text-[var(--sp-on-brand)] hover:brightness-105 shadow-sm transition-all shrink-0">
+                  {uploadingLogo ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                  <span>{uploadingLogo ? 'Загрузка...' : 'Загрузить SVG / PNG'}</span>
+                  <input
+                    type="file"
+                    accept=".svg,.png,.webp,.jpg,.jpeg"
+                    onChange={handleLogoUpload}
+                    disabled={uploadingLogo}
+                    className="sr-only"
+                  />
+                </label>
+
+                <div className="min-w-0 flex-1">
+                  <input
+                    type="text"
+                    {...register('logo')}
+                    placeholder="Или укажите прямую ссылку / путь к логотипу..."
+                    className="admin-control text-xs w-full"
+                  />
+                </div>
+              </div>
+            </section>
+
             <section className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6">
               <div className="flex items-start gap-3">
                 <Palette className="mt-0.5 size-5 text-[var(--sp-brand)]" aria-hidden="true" />

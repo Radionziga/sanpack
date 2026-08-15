@@ -17,10 +17,13 @@ import {
   X,
 } from 'lucide-react';
 import type { MediaFolderKey, MediaItem, MediaLibraryResponse } from '@/lib/media/types';
+import type { BatchDeleteResult } from '@/lib/media/storageService';
+import { MediaBatchDeleteModal } from '@/components/admin/media/MediaBatchDeleteModal';
 import { MediaCard } from '@/components/admin/media/MediaCard';
 import { MediaDeleteConfirmModal } from '@/components/admin/media/MediaDeleteConfirmModal';
 import { MediaDetailModal } from '@/components/admin/media/MediaDetailModal';
 import { MediaUploadModal } from '@/components/admin/media/MediaUploadModal';
+import { CheckSquare, Square, Trash2 } from 'lucide-react';
 
 type SortOption = 'date_desc' | 'date_asc' | 'size_desc' | 'size_asc' | 'name_asc';
 type UsageFilter = 'all' | 'used' | 'unused';
@@ -29,6 +32,10 @@ export default function MediaLibraryPage() {
   const [data, setData] = useState<MediaLibraryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Selection State
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
 
   // Filters & State
   const [search, setSearch] = useState('');
@@ -130,7 +137,91 @@ export default function MediaLibraryPage() {
       setDetailFile(null);
     }
 
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      next.delete(file.path);
+      return next;
+    });
+
     showNotification(`Файл «${file.name}» успешно удалён.`);
+  }
+
+  // Handle Batch Deletion
+  async function handleConfirmBatchDelete(paths: string[], force: boolean): Promise<BatchDeleteResult> {
+    const response = await fetch('/api/admin/media', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths, force }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => null);
+      throw new Error(errData?.error || 'Не удалось выполнить массовое удаление.');
+    }
+
+    const result: BatchDeleteResult = await response.json();
+    return result;
+  }
+
+  function handleBatchSuccess(deletedPaths: string[]) {
+    const deletedSet = new Set(deletedPaths);
+
+    setData((prev) => {
+      if (!prev) return null;
+      const updatedFiles = prev.files.filter((f) => !deletedSet.has(f.path));
+      const deletedFiles = prev.files.filter((f) => deletedSet.has(f.path));
+      const deletedSize = deletedFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+      const deletedUsed = deletedFiles.filter((f) => f.usage.isUsed).length;
+      const deletedUnused = deletedFiles.length - deletedUsed;
+
+      const folderCounts = { ...prev.stats.folderCounts };
+      deletedFiles.forEach((f) => {
+        if (folderCounts[f.folder]) {
+          folderCounts[f.folder] = Math.max(0, folderCounts[f.folder] - 1);
+        }
+      });
+      folderCounts.all = Math.max(0, (folderCounts.all || 0) - deletedFiles.length);
+
+      return {
+        files: updatedFiles,
+        stats: {
+          ...prev.stats,
+          totalCount: updatedFiles.length,
+          totalSizeBytes: Math.max(0, prev.stats.totalSizeBytes - deletedSize),
+          usedCount: Math.max(0, prev.stats.usedCount - deletedUsed),
+          unusedCount: Math.max(0, prev.stats.unusedCount - deletedUnused),
+          folderCounts,
+        },
+      };
+    });
+
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      deletedPaths.forEach((p) => next.delete(p));
+      return next;
+    });
+
+    showNotification(`Удалено файлов: ${deletedPaths.length}`);
+  }
+
+  function toggleSelect(path: string) {
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  }
+
+  function selectAllVisible(files: MediaItem[]) {
+    setSelectedPaths(new Set(files.map((f) => f.path)));
+  }
+
+  function clearSelection() {
+    setSelectedPaths(new Set());
   }
 
   // Handle Upload Success
@@ -446,6 +537,55 @@ export default function MediaLibraryPage() {
           </div>
         </div>
 
+        {/* Selection quick actions bar if items are available */}
+        {filteredFiles.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--sp-line)]/50 text-xs">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const allVisibleSelected = filteredFiles.every((f) => selectedPaths.has(f.path));
+                  if (allVisibleSelected) {
+                    clearSelection();
+                  } else {
+                    selectAllVisible(filteredFiles);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2.5 py-1 font-semibold text-[var(--sp-ink)] hover:bg-[var(--sp-line)]/50 transition-colors"
+              >
+                {filteredFiles.every((f) => selectedPaths.has(f.path)) ? (
+                  <>
+                    <CheckSquare className="size-3.5 text-[var(--sp-brand)]" />
+                    <span>Снять выделение ({selectedPaths.size})</span>
+                  </>
+                ) : (
+                  <>
+                    <Square className="size-3.5 text-[var(--sp-ink-tertiary)]" />
+                    <span>Выбрать все показанные ({filteredFiles.length})</span>
+                  </>
+                )}
+              </button>
+
+              {selectedPaths.size > 0 && (
+                <span className="text-[11px] font-bold text-[var(--sp-brand)]">
+                  Выбрано: {selectedPaths.size}
+                </span>
+              )}
+            </div>
+
+            {selectedPaths.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1 font-bold text-white hover:bg-red-700 transition-colors shadow-2xs"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Удалить выбранные ({selectedPaths.size})</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Folder Pills Bar */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 scrollbar-none border-t border-[var(--sp-line)]/60">
           {folderTabs.map((tab) => {
@@ -542,6 +682,21 @@ export default function MediaLibraryPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--sp-line)] bg-[var(--sp-surface-inset)] text-[10px] font-bold uppercase tracking-wider text-[var(--sp-ink-muted)]">
+                      <th className="p-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={filteredFiles.length > 0 && filteredFiles.every((f) => selectedPaths.has(f.path))}
+                          onChange={() => {
+                            if (filteredFiles.every((f) => selectedPaths.has(f.path))) {
+                              clearSelection();
+                            } else {
+                              selectAllVisible(filteredFiles);
+                            }
+                          }}
+                          aria-label="Выбрать все"
+                          className="size-4 rounded accent-[var(--sp-brand)] cursor-pointer"
+                        />
+                      </th>
                       <th className="p-3 w-12">Превью</th>
                       <th className="p-3">Файл / Путь</th>
                       <th className="p-3">Папка</th>
@@ -556,6 +711,8 @@ export default function MediaLibraryPage() {
                         key={file.id}
                         file={file}
                         viewMode="table"
+                        isSelected={selectedPaths.has(file.path)}
+                        onToggleSelect={() => toggleSelect(file.path)}
                         onClick={() => setDetailFile(file)}
                         onDelete={() => setDeleteTarget(file)}
                       />
@@ -574,6 +731,8 @@ export default function MediaLibraryPage() {
                   key={file.id}
                   file={file}
                   viewMode="compact"
+                  isSelected={selectedPaths.has(file.path)}
+                  onToggleSelect={() => toggleSelect(file.path)}
                   onClick={() => setDetailFile(file)}
                   onDelete={() => setDeleteTarget(file)}
                 />
@@ -589,6 +748,8 @@ export default function MediaLibraryPage() {
                   key={file.id}
                   file={file}
                   viewMode="grid"
+                  isSelected={selectedPaths.has(file.path)}
+                  onToggleSelect={() => toggleSelect(file.path)}
                   onClick={() => setDetailFile(file)}
                   onDelete={() => setDeleteTarget(file)}
                 />
@@ -597,6 +758,49 @@ export default function MediaLibraryPage() {
           )}
         </>
       )}
+
+      {/* Floating Action Bar when items are selected */}
+      {selectedPaths.size > 0 && (
+        <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center px-4 animate-in slide-in-from-bottom-5 duration-200 pointer-events-none">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--sp-line)] bg-[var(--sp-surface)]/95 backdrop-blur-xl px-5 py-3 shadow-2xl pointer-events-auto max-w-lg w-full">
+            <div className="flex items-center gap-2">
+              <span className="flex size-6 items-center justify-center rounded-full bg-[var(--sp-brand)] text-[11px] font-bold text-[var(--sp-on-brand)]">
+                {selectedPaths.size}
+              </span>
+              <span className="text-xs font-bold text-[var(--sp-ink)]">
+                {selectedPaths.size === 1 ? 'Выбран 1 файл' : `Выбрано файлов: ${selectedPaths.size}`}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-1.5 text-xs font-semibold text-[var(--sp-ink-secondary)] hover:text-[var(--sp-ink)] hover:bg-[var(--sp-line)]/50 transition-colors"
+              >
+                Снять выбор
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-red-700 transition-colors shadow-md"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Удалить ({selectedPaths.size})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Delete Confirmation Modal */}
+      <MediaBatchDeleteModal
+        isOpen={isBatchDeleteOpen}
+        files={data?.files.filter((f) => selectedPaths.has(f.path)) || []}
+        onClose={() => setIsBatchDeleteOpen(false)}
+        onConfirmBatch={handleConfirmBatchDelete}
+        onSuccess={handleBatchSuccess}
+      />
 
       {/* Detail Inspection Modal */}
       <MediaDetailModal

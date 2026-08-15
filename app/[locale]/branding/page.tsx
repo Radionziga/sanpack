@@ -13,22 +13,22 @@ export default function BrandingPage() {
   const copy = pageCopy[language].branding;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F7F6]">
+    <div className="min-h-screen flex flex-col bg-[var(--sp-surface-inset)]">
       <Header />
 
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-4 space-y-12">
           {/* Hero */}
-          <div className="bg-gradient-to-r from-[#004F2B] to-[#006F3C] text-white rounded-3xl p-8 md:p-12 shadow-xl">
+          <div className="bg-gradient-to-r from-[var(--sp-brand-deep)] to-[var(--sp-brand)] text-white rounded-[var(--sp-radius)] p-8 md:p-12 shadow-xl">
             <div className="max-w-2xl space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-xs font-bold">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--sp-radius-control)] bg-white/10 text-[var(--sp-accent)] text-xs font-bold">
                 <Printer className="w-4 h-4" />
                 <span>{copy.eyebrow}</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold">
+              <h1 className="font-extended text-3xl sm:text-4xl font-bold">
                 {t('branding')} SANPACK
               </h1>
-              <p className="text-sm text-slate-200 leading-relaxed">
+              <p className="text-sm text-white/85 leading-relaxed">
                 {copy.intro}
               </p>
             </div>
@@ -37,25 +37,25 @@ export default function BrandingPage() {
           {/* Services list */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {copy.services.map(([title, description], index) => (
-              <div key={title} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-[#EAF5EF] text-[#006F3C] font-bold flex items-center justify-center">
+              <div key={title} className="bg-[var(--sp-surface)] rounded-[var(--sp-radius)] p-6 border border-[var(--sp-line)] shadow-xs space-y-3">
+                <div className="w-10 h-10 rounded-[var(--sp-radius-control)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] text-[var(--sp-brand)] font-bold flex items-center justify-center">
                   {String(index + 1).padStart(2, '0')}
                 </div>
-                <h3 className="text-base font-bold text-[#18231E]">{title}</h3>
-                <p className="text-xs text-[#68736D]">{description}</p>
+                <h3 className="font-extended text-base font-bold text-[var(--sp-ink)]">{title}</h3>
+                <p className="text-xs text-[var(--sp-ink-secondary)]">{description}</p>
               </div>
             ))}
           </div>
 
           {/* CTA Box */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-4">
-            <h2 className="text-xl font-bold text-[#18231E]">{copy.ctaTitle}</h2>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
+          <div className="bg-[var(--sp-surface)] rounded-[var(--sp-radius)] p-8 border border-[var(--sp-line)] text-center space-y-4">
+            <h2 className="font-extended text-xl font-bold text-[var(--sp-ink)]">{copy.ctaTitle}</h2>
+            <p className="text-xs text-[var(--sp-ink-secondary)] max-w-md mx-auto">
               {copy.ctaText}
             </p>
             <Link
               href="/request"
-              className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#008348] text-white font-bold rounded-xl text-xs shadow-md"
+              className="inline-flex items-center gap-2 px-6 py-3.5 bg-[var(--sp-brand)] hover:bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand)] font-bold rounded-[var(--sp-radius-control)] text-xs shadow-md transition-all active:scale-95"
             >
               <span>{copy.ctaButton}</span>
               <ArrowRight className="w-4 h-4" />
