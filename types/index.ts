@@ -330,6 +330,7 @@ export interface SiteSettings {
   company: {
     name: string;
     logo: string;
+    logoDark?: string;
     favicon: string;
     descriptionRu: string;
     descriptionUz: string;

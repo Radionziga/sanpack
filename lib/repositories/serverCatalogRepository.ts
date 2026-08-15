@@ -51,7 +51,7 @@ export const getPublicProducts = unstable_cache(
 
 export const getPublicCategories = unstable_cache(
   () => readCollection<Category>('categories', initialCategories),
-  ['public-categories-v2-price-list-2026-08'],
+  ['public-categories-v3-clean-images-2026-08'],
   { revalidate: 1800, tags: ['categories'] }
 );
 
@@ -69,7 +69,7 @@ export const getPublicClients = unstable_cache(
 
 export const getPublicBanners = unstable_cache(
   () => readCollection<Banner>('banners', initialBanners),
-  ['public-banners-cta-v2'],
+  ['public-banners-v3-three-banners-2026-08'],
   { revalidate: 900, tags: ['banners'] }
 );
 

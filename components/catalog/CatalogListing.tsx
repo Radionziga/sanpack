@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import {
+  ChevronLeft,
   ChevronRight,
   Filter,
   Grid2X2,
@@ -36,6 +37,7 @@ const copyByLanguage = {
   ru: {
     catalog: 'Каталог',
     all: 'Все товары',
+    back: 'Назад',
     filters: 'Фильтры',
     closeFilters: 'Закрыть фильтры',
     active: 'Выбрано',
@@ -52,6 +54,7 @@ const copyByLanguage = {
   uz: {
     catalog: 'Katalog',
     all: 'Barcha mahsulotlar',
+    back: 'Orqaga',
     filters: 'Filtrlar',
     closeFilters: 'Filtrlarni yopish',
     active: 'Tanlangan',
@@ -68,6 +71,7 @@ const copyByLanguage = {
   en: {
     catalog: 'Catalog',
     all: 'All products',
+    back: 'Back',
     filters: 'Filters',
     closeFilters: 'Close filters',
     active: 'Selected',
@@ -248,6 +252,15 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
     [activeCategorySlug, categories],
   );
 
+  const parentCategory = useMemo(
+    () => (currentCategory?.parentId ? categories.find((c) => c.id === currentCategory.parentId) ?? null : null),
+    [categories, currentCategory],
+  );
+
+  const parentTitle = parentCategory
+    ? getLocalizedText(parentCategory.titleRu, parentCategory.titleUz, parentCategory.titleEn)
+    : copy.catalog;
+
   const scopedProducts = useMemo(() => {
     if (!currentCategory) return products;
     const childIds = categories
@@ -324,20 +337,67 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
   return (
     <main className="flex-1 pb-8 pt-4 md:py-8">
       <div className="mx-auto w-full max-w-7xl px-4">
+        {/* Desktop Breadcrumb */}
         <nav className="mb-6 hidden items-center gap-2 text-xs font-medium text-[var(--sp-ink-tertiary)] md:flex" aria-label="Breadcrumb">
           <Link href="/" className="transition-colors hover:text-[var(--sp-brand)]">{t('home')}</Link>
           <ChevronRight className="size-3.5" aria-hidden="true" />
-          {currentCategory ? (
+          <Link href="/catalog" className="transition-colors hover:text-[var(--sp-brand)]">{t('catalog')}</Link>
+          {parentCategory ? (
             <>
-              <Link href="/catalog" className="transition-colors hover:text-[var(--sp-brand)]">{t('catalog')}</Link>
               <ChevronRight className="size-3.5" aria-hidden="true" />
+              <Link href={`/catalog/${parentCategory.slug}`} className="transition-colors hover:text-[var(--sp-brand)]">
+                {parentTitle}
+              </Link>
             </>
           ) : null}
-          <span className="font-semibold text-[var(--sp-ink)]">{categoryTitle}</span>
+          {currentCategory ? (
+            <>
+              <ChevronRight className="size-3.5" aria-hidden="true" />
+              <span className="font-semibold text-[var(--sp-ink)]">{categoryTitle}</span>
+            </>
+          ) : null}
         </nav>
 
+        {/* Mobile Navigation Pill (Quick back button) */}
+        {currentCategory ? (
+          <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
+            <Link
+              href={parentCategory ? `/catalog/${parentCategory.slug}` : '/catalog'}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-xs font-semibold text-[var(--sp-ink)] shadow-2xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95"
+            >
+              <ChevronLeft className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
+              <span className="truncate max-w-[200px]">
+                {parentCategory ? parentTitle : copy.all}
+              </span>
+            </Link>
+
+            <Link
+              href="/catalog"
+              className="text-xs font-medium text-[var(--sp-ink-secondary)] transition-colors hover:text-[var(--sp-brand)]"
+            >
+              {copy.all}
+            </Link>
+          </div>
+        ) : null}
+
         <div className="mb-4 md:mb-8">
-          <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl">{categoryTitle}</h1>
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {currentCategory ? (
+              <Link
+                href={parentCategory ? `/catalog/${parentCategory.slug}` : '/catalog'}
+                className="flex size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] shadow-xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95 md:hidden"
+                aria-label={copy.back}
+                title={copy.back}
+              >
+                <ChevronLeft className="size-5 text-[var(--sp-brand)]" aria-hidden="true" />
+              </Link>
+            ) : null}
+            <div className="min-w-0 flex-1">
+              <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl truncate">
+                {categoryTitle}
+              </h1>
+            </div>
+          </div>
           {categoryDescription ? <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--sp-ink-secondary)]">{categoryDescription}</p> : null}
           <p className="mt-1.5 text-xs font-medium text-[var(--sp-ink-secondary)]">
             {t('foundItems')} <span className="font-semibold tabular-nums text-[var(--sp-brand)]">{filteredProducts.length}</span>

@@ -42,15 +42,7 @@ export default async function HomePage({
   const activeCategories = categories
     .filter((category) => category.status === 'active')
     .sort((a, b) => a.sortOrder - b.sortOrder);
-  const publicBanners = (banners.length > 0 ? banners : initialBanners).map((banner) =>
-    banner.imageDesktop === '/catalog/page_1.png'
-      ? {
-          ...banner,
-          imageDesktop: '/promo/sanpack-supply-desktop.webp',
-          imageMobile: '/promo/sanpack-supply-mobile.webp',
-        }
-      : banner
-  );
+  const publicBanners = banners.length > 0 ? banners : initialBanners;
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">

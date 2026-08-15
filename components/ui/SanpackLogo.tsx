@@ -4,6 +4,7 @@ import React from 'react';
 
 interface SanpackLogoProps {
   src?: string;
+  srcDark?: string;
   variant?: 'green' | 'white' | 'accent' | 'currentColor' | 'dark';
   className?: string;
   showSubtitle?: boolean;
@@ -11,17 +12,28 @@ interface SanpackLogoProps {
 
 export function SanpackLogo({
   src,
+  srcDark,
   variant = 'green',
   className = 'h-7',
 }: SanpackLogoProps) {
-  // If a custom logo file URL is provided (e.g. uploaded SVG or PNG in settings),
-  // render it directly without any CSS color tinting or filtering
-  if (src) {
+  // Determine appropriate image source based on variant / background:
+  // - In white/dark backgrounds (footer, dark preview), use srcDark if supplied,
+  //   or src if srcDark was not passed as a separate prop.
+  // - In light backgrounds (header, invoice, light preview), use src.
+  let activeSrc: string | undefined;
+  if (variant === 'white' || variant === 'dark') {
+    activeSrc = srcDark || (srcDark === undefined ? src : undefined);
+  } else {
+    activeSrc = src || srcDark;
+  }
+
+  // If a custom logo file URL is resolved, render it directly without CSS color filters
+  if (activeSrc) {
     return (
       <div className="inline-flex items-center select-none shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={src}
+          src={activeSrc}
           alt="SANPACK Distribution"
           className={`${className} w-auto max-w-full object-contain`}
         />

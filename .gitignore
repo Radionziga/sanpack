@@ -17,6 +17,8 @@ agent/
 artifacts/
 tmp/
 outputs/
+scratch/
+public/promo/raw/
 .codex-logs/
 .codex-runtime/
 

@@ -17,6 +17,7 @@ const DEFAULT_SECONDARY = '#DCE9AF';
 
 const settingsFormSchema = z.object({
   logo: z.string().optional(),
+  logoDark: z.string().optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
   borderRadius: z.number().int().min(0).max(32),
@@ -135,6 +136,7 @@ export default function AdminSettingsPage() {
     reValidateMode: 'onBlur',
     defaultValues: {
       logo: '',
+      logoDark: '',
       primaryColor: DEFAULT_PRIMARY,
       secondaryColor: DEFAULT_SECONDARY,
       borderRadius: 8,
@@ -144,6 +146,7 @@ export default function AdminSettingsPage() {
   });
 
   const logo = useWatch({ control, name: 'logo', defaultValue: '' });
+  const logoDark = useWatch({ control, name: 'logoDark', defaultValue: '' });
   const primaryColor = useWatch({ control, name: 'primaryColor', defaultValue: DEFAULT_PRIMARY });
   const secondaryColor = useWatch({ control, name: 'secondaryColor', defaultValue: DEFAULT_SECONDARY });
   const borderRadius = useWatch({ control, name: 'borderRadius', defaultValue: 8 });
@@ -152,6 +155,7 @@ export default function AdminSettingsPage() {
   const selectedFonts = fontPairs.find((pair) => pair.value === fontPair) || fontPairs[0];
 
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingLogoDark, setUploadingLogoDark] = useState(false);
   const [currentCompany, setCurrentCompany] = useState<SiteSettings['company'] | null>(null);
 
   useEffect(() => {
@@ -163,6 +167,7 @@ export default function AdminSettingsPage() {
         setCurrentCompany(settings.company || null);
         reset({
           logo: settings.company?.logo || '',
+          logoDark: settings.company?.logoDark || '',
           primaryColor: settings.design?.primaryColor || DEFAULT_PRIMARY,
           secondaryColor: settings.design?.designVersion === 2
             ? settings.design.secondaryColor || DEFAULT_SECONDARY
@@ -181,10 +186,14 @@ export default function AdminSettingsPage() {
     return () => { active = false; };
   }, [reset]);
 
-  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>, targetField: 'logo' | 'logoDark' = 'logo') {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingLogo(true);
+    if (targetField === 'logoDark') {
+      setUploadingLogoDark(true);
+    } else {
+      setUploadingLogo(true);
+    }
     setPageError('');
     try {
       const formData = new FormData();
@@ -200,13 +209,17 @@ export default function AdminSettingsPage() {
       }
       const data = await res.json();
       if (data.file?.url) {
-        setValue('logo', data.file.url, { shouldDirty: true });
-        setNotice('Логотип загружен. Нажмите «Сохранить настройки» для применения на сайте.');
+        setValue(targetField, data.file.url, { shouldDirty: true });
+        setNotice(`Логотип (${targetField === 'logoDark' ? 'для тёмного фона' : 'основной'}) загружен. Нажмите «Сохранить настройки» для применения.`);
       }
     } catch (err) {
       setPageError(err instanceof Error ? err.message : 'Ошибка при загрузке логотипа');
     } finally {
-      setUploadingLogo(false);
+      if (targetField === 'logoDark') {
+        setUploadingLogoDark(false);
+      } else {
+        setUploadingLogo(false);
+      }
     }
   }
 
@@ -224,10 +237,11 @@ export default function AdminSettingsPage() {
     const company = {
       ...(currentCompany || {}),
       logo: values.logo?.trim() || '',
+      logoDark: values.logoDark?.trim() || '',
     };
     try {
       await SanpackRepository.saveSettings({ design, company } as Partial<SiteSettings>);
-      setNotice('Настройки сохранены. Логотип, цвета, тема, шрифты и геометрия успешно обновлены.');
+      setNotice('Настройки сохранены. Логотипы (для светлого и тёмного фона), цвета, тема, шрифты и геометрия успешно обновлены.');
       router.refresh();
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Настройки не сохранены.');
@@ -251,7 +265,7 @@ export default function AdminSettingsPage() {
       <header className="border-b border-[var(--sp-line)] pb-5">
         <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)]">Внешний вид и брендинг</h1>
         <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">
-          Настройте логотип магазина, два акцентных цвета, тему оформления, шрифтовую пару и геометрию интерфейса.
+          Настройте логотипы магазина, два акцентных цвета, тему оформления, шрифтовую пару и геометрию интерфейса.
         </p>
       </header>
 
@@ -266,65 +280,117 @@ export default function AdminSettingsPage() {
       ) : (
         <form onSubmit={save} className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-5">
-            {/* Logo Settings Section */}
-            <section className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <ImageIcon className="mt-0.5 size-5 text-[var(--sp-brand)]" aria-hidden="true" />
-                  <div>
-                    <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">Логотип сайта</h2>
-                    <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">
-                      Загрузите SVG или PNG файл логотипа. Логотип сохраняет свои оригинальные цвета и не перекрашивается при смене темы сайта.
-                    </p>
-                  </div>
+            {/* Section: Logos (Light & Dark) */}
+            <section className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6 space-y-6">
+              <div className="flex items-start gap-3">
+                <ImageIcon className="mt-0.5 size-5 text-[var(--sp-brand)]" aria-hidden="true" />
+                <div>
+                  <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">Логотипы компании</h2>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">
+                    Настройте два варианта логотипа: для светлого фона (шапка сайта, документы) и для тёмного фона (футер, тёмные промо-блоки). Логотипы сохраняют оригинальные цвета.
+                  </p>
                 </div>
-
-                {logo && (
-                  <button
-                    type="button"
-                    onClick={() => setValue('logo', '', { shouldDirty: true })}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-ink-secondary)] hover:text-red-600 transition-colors shrink-0"
-                    title="Сбросить к стандартному векторному логотипу"
-                  >
-                    <RotateCcw className="size-3" />
-                    <span>Сбросить</span>
-                  </button>
-                )}
               </div>
 
-              {/* Logo Preview Boxes (Light & Dark) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="rounded-xl border border-[var(--sp-line)] bg-white p-4 flex flex-col items-center justify-center gap-2 min-h-[90px]">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">На светлом фоне</span>
+              {/* Logo Slot 1: Light background */}
+              <div className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--sp-ink)]">Основной логотип (для светлого фона)</h3>
+                    <p className="text-xs text-[var(--sp-ink-tertiary)]">Отображается в светлой шапке сайта и в счетах/накладных.</p>
+                  </div>
+                  {logo && (
+                    <button
+                      type="button"
+                      onClick={() => setValue('logo', '', { shouldDirty: true })}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-ink-secondary)] hover:text-red-600 transition-colors shrink-0"
+                      title="Сбросить к стандартному фирменному векторному логотипу"
+                    >
+                      <RotateCcw className="size-3" />
+                      <span>Сбросить</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Preview Box */}
+                <div className="rounded-lg border border-gray-200 bg-white p-4 flex flex-col items-center justify-center gap-1.5 min-h-[85px] shadow-sm">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Предпросмотр на белом фоне (шапка)</span>
                   <SanpackLogo src={logo || undefined} variant="green" className="h-7" />
                 </div>
-                <div className="rounded-xl border border-zinc-800 bg-[#0F172A] p-4 flex flex-col items-center justify-center gap-2 min-h-[90px]">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">На тёмном фоне / в футере</span>
-                  <SanpackLogo src={logo || undefined} variant="white" className="h-7" />
+
+                {/* Controls */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+                  <label className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-3.5 text-xs font-bold text-[var(--sp-on-brand)] hover:brightness-105 shadow-sm transition-all shrink-0">
+                    {uploadingLogo ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                    <span>{uploadingLogo ? 'Загрузка...' : 'Загрузить SVG / PNG'}</span>
+                    <input
+                      type="file"
+                      accept=".svg,.png,.webp,.jpg,.jpeg"
+                      onChange={(e) => void handleLogoUpload(e, 'logo')}
+                      disabled={uploadingLogo}
+                      className="sr-only"
+                    />
+                  </label>
+
+                  <div className="min-w-0 flex-1">
+                    <input
+                      type="text"
+                      {...register('logo')}
+                      placeholder="URL или путь к логотипу (напр. /logo.svg)..."
+                      className="admin-control text-xs w-full"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Upload & Path inputs */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-                <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--sp-brand)] px-4 text-xs font-bold text-[var(--sp-on-brand)] hover:brightness-105 shadow-sm transition-all shrink-0">
-                  {uploadingLogo ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-                  <span>{uploadingLogo ? 'Загрузка...' : 'Загрузить SVG / PNG'}</span>
-                  <input
-                    type="file"
-                    accept=".svg,.png,.webp,.jpg,.jpeg"
-                    onChange={handleLogoUpload}
-                    disabled={uploadingLogo}
-                    className="sr-only"
-                  />
-                </label>
+              {/* Logo Slot 2: Dark background */}
+              <div className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--sp-ink)]">Логотип для тёмного фона (футер, тёмная тема)</h3>
+                    <p className="text-xs text-[var(--sp-ink-tertiary)]">Отображается в тёмно-зелёном футере и на тёмных баннерах. Рекомендуется белый или светлый логотип.</p>
+                  </div>
+                  {logoDark && (
+                    <button
+                      type="button"
+                      onClick={() => setValue('logoDark', '', { shouldDirty: true })}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-ink-secondary)] hover:text-red-600 transition-colors shrink-0"
+                      title="Сбросить к стандартному белому векторному логотипу"
+                    >
+                      <RotateCcw className="size-3" />
+                      <span>Сбросить</span>
+                    </button>
+                  )}
+                </div>
 
-                <div className="min-w-0 flex-1">
-                  <input
-                    type="text"
-                    {...register('logo')}
-                    placeholder="Или укажите прямую ссылку / путь к логотипу..."
-                    className="admin-control text-xs w-full"
-                  />
+                {/* Preview Box */}
+                <div className="rounded-lg border border-[#022B1D] bg-[#03432D] p-4 flex flex-col items-center justify-center gap-1.5 min-h-[85px] shadow-sm">
+                  <span className="text-[10px] font-bold text-emerald-300/80 uppercase tracking-wider">Предпросмотр на тёмном фоне (футер)</span>
+                  <SanpackLogo src={logoDark || undefined} variant="white" className="h-7" />
+                </div>
+
+                {/* Controls */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+                  <label className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[var(--sp-brand)] px-3.5 text-xs font-bold text-[var(--sp-on-brand)] hover:brightness-105 shadow-sm transition-all shrink-0">
+                    {uploadingLogoDark ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                    <span>{uploadingLogoDark ? 'Загрузка...' : 'Загрузить светлый SVG / PNG'}</span>
+                    <input
+                      type="file"
+                      accept=".svg,.png,.webp,.jpg,.jpeg"
+                      onChange={(e) => void handleLogoUpload(e, 'logoDark')}
+                      disabled={uploadingLogoDark}
+                      className="sr-only"
+                    />
+                  </label>
+
+                  <div className="min-w-0 flex-1">
+                    <input
+                      type="text"
+                      {...register('logoDark')}
+                      placeholder="URL или путь к светлому логотипу (напр. /logo-white.svg)..."
+                      className="admin-control text-xs w-full"
+                    />
+                  </div>
                 </div>
               </div>
             </section>

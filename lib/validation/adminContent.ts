@@ -93,10 +93,21 @@ export const contactSettingsSchema = z.object({
   mapIframe: z.union([z.string().trim().url('Вставьте полную ссылку на встроенную карту.'), z.literal('')]).optional(),
 }).strict();
 
+export const companySettingsSchema = z.object({
+  name: z.string().trim().min(1).max(160).optional(),
+  logo: optionalUrl,
+  logoDark: optionalUrl,
+  favicon: optionalUrl,
+  descriptionRu: optionalText,
+  descriptionUz: optionalText,
+  descriptionEn: optionalText,
+}).passthrough();
+
 export const settingsMutationSchema = z.object({
   design: designSettingsSchema.optional(),
   contacts: contactSettingsSchema.optional(),
-}).strict();
+  company: companySettingsSchema.optional(),
+}).passthrough();
 
 const productOrderPackagingSchema = z.object({
   enabled: z.boolean(),

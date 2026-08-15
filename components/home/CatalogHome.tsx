@@ -91,17 +91,24 @@ export function CatalogHome({
 
   const categoryCards = categories
     .map((category) => {
+      const subcategories = categories.filter((c) => c.parentId === category.id);
+      const childCategoryIds = new Set([category.id, ...subcategories.map((c) => c.id)]);
       const categoryProducts = products.filter(
-        (product) => product.categoryId === category.id
+        (product) =>
+          childCategoryIds.has(product.categoryId) ||
+          childCategoryIds.has(product.categorySlug) ||
+          product.categoryId === category.id ||
+          product.categorySlug === category.slug
       );
+
       return {
         category,
         count: categoryProducts.length,
         image: category.image || categoryProducts[0]?.mainImage,
       };
     })
-    .filter((item) => item.count > 0)
-    .slice(0, 10);
+    .filter((item) => item.count > 0 || !item.category.parentId)
+    .sort((a, b) => (a.category.sortOrder ?? 99) - (b.category.sortOrder ?? 99));
 
   const popularProducts = products.filter((product) => product.featured).slice(0, 8);
   const ownProductionProducts = products
@@ -113,7 +120,7 @@ export function CatalogHome({
 
   return (
     <div className="bg-[var(--sp-canvas)]">
-      <section className="mx-auto max-w-7xl px-4 pb-7 pt-5 md:pb-9 md:pt-7">
+      <section className="mx-auto max-w-7xl px-4 md:px-10 lg:px-12 pb-7 pt-5 md:pb-9 md:pt-7">
         <PromoCarousel banners={banners} locale={locale} />
       </section>
 
@@ -142,29 +149,32 @@ export function CatalogHome({
                   <Link
                     key={category.id}
                     href={`/catalog/${category.slug}`}
-                    className="group relative min-h-[176px] min-w-[184px] max-w-[184px] snap-start overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[var(--sp-brand)] hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0 md:min-h-[196px] md:min-w-[212px] md:max-w-[212px]"
+                    className="group relative aspect-[4/3] min-w-[220px] max-w-[220px] snap-start overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[var(--sp-brand)] hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0 sm:min-w-[240px] sm:max-w-[240px] md:min-w-[260px] md:max-w-[260px]"
                   >
-                    <div className="relative z-10 max-w-[85%]">
-                      <h3 className="line-clamp-2 font-compact text-sm font-semibold leading-snug text-[var(--sp-ink)]">
+                    {/* Full Card Image */}
+                    {image ? (
+                      <Image
+                        src={image}
+                        alt={getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
+                        fill
+                        sizes="(max-width: 768px) 240px, 260px"
+                        className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-[var(--sp-surface-inset)]">
+                        <PackageSearch className="h-16 w-16 text-[var(--sp-ink-muted)]" aria-hidden="true" />
+                      </div>
+                    )}
+
+                    {/* Clean Top-Left Text */}
+                    <div className="relative z-10 p-3.5 sm:p-4 max-w-[90%]">
+                      <h3 className="line-clamp-2 font-compact text-xs sm:text-sm font-bold leading-snug text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]">
                         {getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
                       </h3>
-                      <p className="mt-1 text-[11px] text-[var(--sp-ink-tertiary)]">
+                      <p className="mt-0.5 text-[10px] sm:text-[11px] font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]">
                         {t('itemsCount', { count })}
                       </p>
                     </div>
-                    {image ? (
-                      <div className="absolute bottom-[-5%] right-[-4%] h-[69%] w-[75%]">
-                        <Image
-                          src={image}
-                          alt=""
-                          fill
-                          sizes="212px"
-                          className="object-contain object-right-bottom"
-                        />
-                      </div>
-                    ) : (
-                      <PackageSearch className="absolute bottom-5 right-5 h-16 w-16 text-[var(--sp-ink-muted)]" aria-hidden="true" />
-                    )}
                   </Link>
                 ))}
               </div>

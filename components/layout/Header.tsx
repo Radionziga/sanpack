@@ -244,11 +244,16 @@ export function Header({
         </div>
 
         {/* Level 2: Main Header */}
-        <div className="border-b border-[var(--sp-line)] py-2 md:py-3">
+        <div className="border-b border-[var(--sp-line)] py-2.5 md:py-3">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 md:gap-4">
             {/* Logo */}
-            <Link href="/" className="shrink-0 flex items-center" aria-label="SANPACK — на главную">
-              <SanpackLogo src={siteSettings.company?.logo} variant="green" className="h-5 sm:h-6 md:h-7 lg:h-8" />
+            <Link href="/" className="shrink-0 flex items-center py-0.5" aria-label="SANPACK — на главную">
+              <SanpackLogo
+                src={siteSettings.company?.logo}
+                srcDark={siteSettings.company?.logoDark}
+                variant="green"
+                className="h-8 sm:h-8.5 md:h-8.5 lg:h-9"
+              />
             </Link>
 
             {/* Catalog Button & Global Search Bar */}

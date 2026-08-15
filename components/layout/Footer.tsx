@@ -40,7 +40,12 @@ export function Footer() {
           {/* Col 1: SANPACK Info */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="inline-block max-w-full" aria-label="SANPACK — на главную">
-              <SanpackLogo src={company?.logo} variant="white" className="h-6 sm:h-8" />
+              <SanpackLogo
+                src={company?.logo}
+                srcDark={company?.logoDark}
+                variant="white"
+                className="h-6 sm:h-8"
+              />
             </Link>
             <p className="max-w-sm text-xs leading-relaxed text-[color-mix(in_srgb,var(--sp-on-brand)_78%,transparent)]">
               {t('footerDesc')}

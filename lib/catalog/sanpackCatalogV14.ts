@@ -164,64 +164,98 @@ const catalogItems: CatalogItem[] = [
   ...greens,
 ];
 
-export const catalogV14Products: Product[] = catalogItems.map((entry, index) => ({
-  id: entry.id,
-  slug: entry.slug,
-  sku: entry.sku,
-  status: 'published',
-  brandName: entry.brandName,
-  categoryId: entry.categoryId,
-  categorySlug: entry.categorySlug,
-  titleRu: entry.titleRu,
-  titleUz: entry.titleUz,
-  titleEn: entry.titleEn,
-  shortDescriptionRu: `${entry.titleRu}. Позиция из каталога SANPACK v1.4.`,
-  shortDescriptionUz: `${entry.titleUz}. SANPACK v1.4 katalogidagi mahsulot.`,
-  shortDescriptionEn: `${entry.titleEn}. Product from the SANPACK v1.4 catalogue.`,
-  descriptionRu: `Оптовая поставка от SANPACK. Характеристики и доступность уточняйте у менеджера.`,
-  descriptionUz: `SANPACK ulgurji yetkazib berishi. Xususiyatlar va mavjudlikni menejerdan aniqlashtiring.`,
-  descriptionEn: `Wholesale supply by SANPACK. Confirm specifications and availability with a manager.`,
-  images: [PLACEHOLDER_IMAGE],
-  mainImage: PLACEHOLDER_IMAGE,
-  attributes: {
-    ...entry.attributes,
-    ...(entry.brandName ? { brand: entry.brandName } : {}),
-  },
-  variants: [],
-  currency: 'UZS',
-  showPrice: false,
-  stockStatus: 'on_order',
-  minimumOrder: entry.minimumOrder ?? 1,
-  salesUnit: entry.salesUnit,
-  unitCode: entry.unitCode,
-  quantityStep: 1,
-  priceMode: 'request',
-  availability: 'on_order',
-  featured: false,
-  newProduct: false,
-  ownProduction: entry.ownProduction ?? false,
-  sortOrder: index + 1,
-  seo: {
-    titleRu: `${entry.titleRu} — SANPACK`,
-    titleUz: `${entry.titleUz} — SANPACK`,
-    titleEn: `${entry.titleEn} — SANPACK`,
-  },
-  createdAt: IMPORTED_AT,
-  updatedAt: IMPORTED_AT,
-}));
+function getProductImage(entry: CatalogItem): string {
+  if (entry.categoryId === 'cat-trash-bags') {
+    return '/catalog/sanpack_trash_bag_roll_10.png';
+  }
+  if (entry.categoryId === 'cat-tshirt-bags') {
+    return '/catalog/commercial_packaging_2.png';
+  }
+  if (entry.categoryId === 'cat-film-foil') {
+    return '/catalog/commercial_packaging_5.webp';
+  }
+  if (entry.categoryId === 'cat-gloves') {
+    return '/catalog/commercial_packaging_8.webp';
+  }
+  if (entry.categoryId === 'cat-consumables') {
+    return '/catalog/commercial_packaging_3.webp';
+  }
+  if (entry.categoryId === 'cat-groceries') {
+    return '/catalog/extracted_p11_img3.jpeg';
+  }
+  if (entry.categoryId === 'cat-cheeses') {
+    return '/catalog/extracted_p12_img2.jpeg';
+  }
+  if (entry.categoryId === 'cat-greens') {
+    return '/catalog/extracted_p13_img1.jpeg';
+  }
+  if (entry.categoryId === 'cat-food') {
+    return '/catalog/extracted_p14_img1.jpeg';
+  }
+  return PLACEHOLDER_IMAGE;
+}
+
+export const catalogV14Products: Product[] = catalogItems.map((entry, index) => {
+  const img = getProductImage(entry);
+  return {
+    id: entry.id,
+    slug: entry.slug,
+    sku: entry.sku,
+    status: 'published',
+    brandName: entry.brandName,
+    categoryId: entry.categoryId,
+    categorySlug: entry.categorySlug,
+    titleRu: entry.titleRu,
+    titleUz: entry.titleUz,
+    titleEn: entry.titleEn,
+    shortDescriptionRu: `${entry.titleRu}. Позиция из каталога SANPACK v1.4.`,
+    shortDescriptionUz: `${entry.titleUz}. SANPACK v1.4 katalogidagi mahsulot.`,
+    shortDescriptionEn: `${entry.titleEn}. Product from the SANPACK v1.4 catalogue.`,
+    descriptionRu: `Оптовая поставка от SANPACK. Характеристики и доступность уточняйте у менеджера.`,
+    descriptionUz: `SANPACK ulgurji yetkazib berishi. Xususiyatlar va mavjudlikni menejerdan aniqlashtiring.`,
+    descriptionEn: `Wholesale supply by SANPACK. Confirm specifications and availability with a manager.`,
+    images: [img],
+    mainImage: img,
+    attributes: {
+      ...entry.attributes,
+      ...(entry.brandName ? { brand: entry.brandName } : {}),
+    },
+    variants: [],
+    currency: 'UZS',
+    showPrice: false,
+    stockStatus: 'on_order',
+    minimumOrder: entry.minimumOrder ?? 1,
+    salesUnit: entry.salesUnit,
+    unitCode: entry.unitCode,
+    quantityStep: 1,
+    priceMode: 'request',
+    availability: 'on_order',
+    featured: index < 8,
+    newProduct: index >= 8 && index < 14,
+    ownProduction: entry.ownProduction ?? false,
+    sortOrder: index + 1,
+    seo: {
+      titleRu: `${entry.titleRu} — SANPACK`,
+      titleUz: `${entry.titleUz} — SANPACK`,
+      titleEn: `${entry.titleEn} — SANPACK`,
+    },
+    createdAt: IMPORTED_AT,
+    updatedAt: IMPORTED_AT,
+  };
+});
 
 export const catalogV14Categories: Category[] = [
-  { id: 'cat-packaging', slug: 'packaging', titleRu: 'Упаковка и пакеты', titleUz: 'Qadoqlash va paketlar', titleEn: 'Packaging and bags', descriptionRu: 'Пакеты, мусорные мешки и упаковочные решения.', descriptionUz: 'Paketlar, chiqindi qoplari va qadoqlash yechimlari.', descriptionEn: 'Bags, refuse sacks and packaging solutions.', image: PLACEHOLDER_IMAGE, icon: 'Package', status: 'active', sortOrder: 1 },
-  { id: 'cat-trash-bags', parentId: 'cat-packaging', slug: 'meshki-dlya-musora', titleRu: 'Мешки для мусора', titleUz: 'Chiqindi qoplari', titleEn: 'Refuse bags', image: PLACEHOLDER_IMAGE, icon: 'Trash2', status: 'active', sortOrder: 10 },
-  { id: 'cat-tshirt-bags', parentId: 'cat-packaging', slug: 'pakety-mayka', titleRu: 'Пакеты «Майка» и рулонные', titleUz: '«Mayka» va rulonli paketlar', titleEn: 'Carrier and roll bags', image: PLACEHOLDER_IMAGE, icon: 'ShoppingBag', status: 'active', sortOrder: 11 },
-  { id: 'cat-consumables', slug: 'consumables', titleRu: 'Расходные материалы и гигиена', titleUz: 'Sarf materiallari va gigiyena', titleEn: 'Consumables and hygiene', image: PLACEHOLDER_IMAGE, icon: 'Shield', status: 'active', sortOrder: 2 },
-  { id: 'cat-gloves', parentId: 'cat-consumables', slug: 'perchatki', titleRu: 'Перчатки', titleUz: 'Qo‘lqoplar', titleEn: 'Gloves', image: PLACEHOLDER_IMAGE, icon: 'Hand', status: 'active', sortOrder: 20 },
-  { id: 'cat-film-foil', parentId: 'cat-consumables', slug: 'folga-i-plenka', titleRu: 'Фольга, плёнка и пергамент', titleUz: 'Folga, plyonka va pergament', titleEn: 'Foil, film and parchment', image: PLACEHOLDER_IMAGE, icon: 'Film', status: 'active', sortOrder: 21 },
-  { id: 'cat-food', slug: 'food-horeca', titleRu: 'Продукты питания', titleUz: 'Oziq-ovqat mahsulotlari', titleEn: 'Food products', image: PLACEHOLDER_IMAGE, icon: 'Utensils', status: 'active', sortOrder: 3 },
-  { id: 'cat-groceries', parentId: 'cat-food', slug: 'bakaleya', titleRu: 'Бакалея, рис и мука', titleUz: 'Baqolchilik, guruch va un', titleEn: 'Groceries, rice and flour', image: PLACEHOLDER_IMAGE, icon: 'Wheat', status: 'active', sortOrder: 30 },
-  { id: 'cat-cheeses', parentId: 'cat-food', slug: 'syry-i-maslo', titleRu: 'Сыры и сливочное масло', titleUz: 'Pishloqlar va sariyog‘', titleEn: 'Cheese and butter', image: PLACEHOLDER_IMAGE, icon: 'PieChart', status: 'active', sortOrder: 31 },
-  { id: 'cat-greens', parentId: 'cat-food', slug: 'svezhaya-zelen', titleRu: 'Свежая зелень Novagreen', titleUz: 'Yangi ko‘katlar Novagreen', titleEn: 'Fresh Novagreen produce', image: PLACEHOLDER_IMAGE, icon: 'Leaf', status: 'active', sortOrder: 32 },
-  { id: 'cat-branding', slug: 'branding-polygraphy', titleRu: 'Полиграфия и брендирование', titleUz: 'Poligrafiya va brendlash', titleEn: 'Printing and branding', image: PLACEHOLDER_IMAGE, icon: 'Printer', status: 'active', sortOrder: 4 },
+  { id: 'cat-packaging', slug: 'packaging', titleRu: 'Упаковка и пакеты', titleUz: 'Qadoqlash va paketlar', titleEn: 'Packaging and bags', descriptionRu: 'Пакеты, мусорные мешки и упаковочные решения.', descriptionUz: 'Paketlar, chiqindi qoplari va qadoqlash yechimlari.', descriptionEn: 'Bags, refuse sacks and packaging solutions.', image: '/catalog/categories/packaging_hero.png', icon: 'Package', status: 'active', sortOrder: 1 },
+  { id: 'cat-trash-bags', parentId: 'cat-packaging', slug: 'meshki-dlya-musora', titleRu: 'Мешки для мусора', titleUz: 'Chiqindi qoplari', titleEn: 'Refuse bags', image: '/catalog/categories/trash_bags.png', icon: 'Trash2', status: 'active', sortOrder: 10 },
+  { id: 'cat-tshirt-bags', parentId: 'cat-packaging', slug: 'pakety-mayka', titleRu: 'Пакеты «Майка» и рулонные', titleUz: '«Mayka» va rulonli paketlar', titleEn: 'Carrier and roll bags', image: '/catalog/categories/carrier_bags.png', icon: 'ShoppingBag', status: 'active', sortOrder: 11 },
+  { id: 'cat-consumables', slug: 'consumables', titleRu: 'Расходные материалы и гигиена', titleUz: 'Sarf materiallari va gigiyena', titleEn: 'Consumables and hygiene', image: '/catalog/categories/cleaning.png', icon: 'Shield', status: 'active', sortOrder: 2 },
+  { id: 'cat-gloves', parentId: 'cat-consumables', slug: 'perchatki', titleRu: 'Перчатки', titleUz: 'Qo‘lqoplar', titleEn: 'Gloves', image: '/catalog/categories/gloves.png', icon: 'Hand', status: 'active', sortOrder: 20 },
+  { id: 'cat-film-foil', parentId: 'cat-consumables', slug: 'folga-i-plenka', titleRu: 'Фольга, плёнка и пергамент', titleUz: 'Folga, plyonka va pergament', titleEn: 'Foil, film and parchment', image: '/catalog/categories/food_packaging.png', icon: 'Film', status: 'active', sortOrder: 21 },
+  { id: 'cat-food', slug: 'food-horeca', titleRu: 'Продукты питания', titleUz: 'Oziq-ovqat mahsulotlari', titleEn: 'Food products', image: '/catalog/categories/food_hero.png', icon: 'Utensils', status: 'active', sortOrder: 3 },
+  { id: 'cat-groceries', parentId: 'cat-food', slug: 'bakaleya', titleRu: 'Бакалея, рис и мука', titleUz: 'Baqolchilik, guruch va un', titleEn: 'Groceries, rice and flour', image: '/catalog/categories/flour.png', icon: 'Wheat', status: 'active', sortOrder: 30 },
+  { id: 'cat-cheeses', parentId: 'cat-food', slug: 'syry-i-maslo', titleRu: 'Сыры и сливочное масло', titleUz: 'Pishloqlar va sariyog‘', titleEn: 'Cheese and butter', image: '/catalog/categories/dairy.png', icon: 'PieChart', status: 'active', sortOrder: 31 },
+  { id: 'cat-greens', parentId: 'cat-food', slug: 'svezhaya-zelen', titleRu: 'Свежая зелень Novagreen', titleUz: 'Yangi ko‘katlar Novagreen', titleEn: 'Fresh Novagreen produce', image: '/catalog/categories/fresh_greens.png', icon: 'Leaf', status: 'active', sortOrder: 32 },
+  { id: 'cat-branding', slug: 'branding-polygraphy', titleRu: 'Полиграфия и брендирование', titleUz: 'Poligrafiya va brendlash', titleEn: 'Printing and branding', image: '/catalog/commercial_packaging_10.webp', icon: 'Printer', status: 'active', sortOrder: 4 },
 ];
 
 export const catalogV14Attributes: Attribute[] = [
