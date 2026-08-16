@@ -130,7 +130,6 @@ export default function PdfCatalogAdminPage() {
             initialOptions={{
               withPrices: true,
               language: 'ru',
-              density: 6,
             }}
             embeddedInAdmin={true}
           />

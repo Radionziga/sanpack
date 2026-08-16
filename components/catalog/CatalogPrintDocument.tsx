@@ -3,13 +3,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Printer,
-  Globe,
-  DollarSign,
   Share2,
   Check,
   ZoomIn,
   ZoomOut,
-  Layers,
   ArrowLeft,
   Package,
   Phone,
@@ -19,8 +16,6 @@ import {
   Truck,
   Building2,
   Sparkles,
-  Grid2X2,
-  LayoutGrid,
 } from 'lucide-react';
 import Link from 'next/link';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
@@ -36,9 +31,16 @@ interface CatalogPrintDocumentProps {
     withPrices?: boolean;
     language?: Language;
     categoryId?: string;
-    density?: 4 | 6 | 8;
   };
   embeddedInAdmin?: boolean;
+}
+
+interface CategoryPageChunk {
+  category: Category;
+  products: Product[];
+  pageIndex: number;
+  totalCategoryPages: number;
+  layoutCols: 2 | 3 | 4;
 }
 
 export function CatalogPrintDocument({
@@ -53,7 +55,6 @@ export function CatalogPrintDocument({
   const [withPrices, setWithPrices] = useState<boolean>(initialOptions.withPrices !== false);
   const [language, setLanguage] = useState<Language>(initialOptions.language || 'ru');
   const [selectedCategory, setSelectedCategory] = useState<string>(initialOptions.categoryId || '');
-  const [density, setDensity] = useState<4 | 6 | 8>(initialOptions.density || 6);
   const [scale, setScale] = useState<number>(embeddedInAdmin ? 0.75 : 0.85);
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -79,10 +80,14 @@ export function CatalogPrintDocument({
     });
   }, [initialProducts, selectedCategory]);
 
-  // Group products by category and chunk into pages according to selected density
+  // Intelligent category page solver:
+  // - If category has <= 6 items -> 1 page of 6 (3 cols x 2 rows)
+  // - If category has 7..8 items -> 1 page of 8 (4 cols x 2 rows)
+  // - If category has 9..12 items -> 2 pages of 6 (3 cols x 2 rows)
+  // - If category has 13..16 items -> 2 pages of 8 (4 cols x 2 rows)
+  // - If more -> chunk into batches of 6 or 8 so no page has fewer than 3 items!
   const categoryPages = useMemo(() => {
-    const itemsPerPage = density;
-    const pages: { category: Category; products: Product[]; pageIndex: number; totalCategoryPages: number }[] = [];
+    const pages: CategoryPageChunk[] = [];
 
     const activeCategories = selectedCategory
       ? sortedCategories.filter((c) => c.id === selectedCategory || c.slug === selectedCategory)
@@ -94,19 +99,45 @@ export function CatalogPrintDocument({
       );
       if (catProds.length === 0) continue;
 
-      const totalPages = Math.ceil(catProds.length / itemsPerPage);
-      for (let i = 0; i < totalPages; i++) {
+      const totalCount = catProds.length;
+
+      // Determine optimal chunking
+      if (totalCount <= 6) {
         pages.push({
           category: cat,
-          products: catProds.slice(i * itemsPerPage, (i + 1) * itemsPerPage),
-          pageIndex: i + 1,
-          totalCategoryPages: totalPages,
+          products: catProds,
+          pageIndex: 1,
+          totalCategoryPages: 1,
+          layoutCols: totalCount <= 4 ? 2 : 3,
         });
+      } else if (totalCount <= 8) {
+        pages.push({
+          category: cat,
+          products: catProds,
+          pageIndex: 1,
+          totalCategoryPages: 1,
+          layoutCols: 4,
+        });
+      } else {
+        // More than 8 items: chunk into balanced pages of 6 or 8
+        const itemsPerPage = totalCount <= 12 ? 6 : 8;
+        const totalPages = Math.ceil(totalCount / itemsPerPage);
+        const cols: 3 | 4 = itemsPerPage === 6 ? 3 : 4;
+
+        for (let i = 0; i < totalPages; i++) {
+          pages.push({
+            category: cat,
+            products: catProds.slice(i * itemsPerPage, (i + 1) * itemsPerPage),
+            pageIndex: i + 1,
+            totalCategoryPages: totalPages,
+            layoutCols: cols,
+          });
+        }
       }
     }
 
     return pages;
-  }, [filteredProducts, sortedCategories, selectedCategory, density]);
+  }, [filteredProducts, sortedCategories, selectedCategory]);
 
   // Total pages including cover
   const totalDocumentPages = categoryPages.length + 1;
@@ -126,7 +157,6 @@ export function CatalogPrintDocument({
       const url = new URL(window.location.href);
       url.searchParams.set('prices', withPrices ? '1' : '0');
       url.searchParams.set('lang', language);
-      url.searchParams.set('density', String(density));
       if (selectedCategory) url.searchParams.set('category', selectedCategory);
       navigator.clipboard.writeText(url.toString());
       setCopied(true);
@@ -139,7 +169,7 @@ export function CatalogPrintDocument({
       {/* =========================================================================
           FLOATING ACTION BAR (SCREEN ONLY - HIDDEN ON PRINT)
           ========================================================================= */}
-      <aside aria-label="Панель печати каталога" className="no-print sticky top-4 z-50 w-full max-w-6xl px-4 pointer-events-none mb-4">
+      <aside aria-label="Панель печати каталога" className="no-print sticky top-4 z-50 w-full max-w-5xl px-4 pointer-events-none mb-4">
         <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/70 flex flex-wrap items-center justify-between gap-3">
           {/* Back link & Title */}
           <div className="flex items-center gap-3">
@@ -200,26 +230,11 @@ export function CatalogPrintDocument({
               ))}
             </div>
 
-            {/* Density Selector (4, 6, 8) */}
-            <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700" title="Количество товаров на страницу">
-              {([4, 6, 8] as const).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDensity(d)}
-                  className={`px-2 py-1 rounded-md font-bold text-[11px] transition ${
-                    density === d ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {d === 4 ? '4 (Крупно)' : d === 6 ? '6 (Оптимально)' : '8 (Компактно)'}
-                </button>
-              ))}
-            </div>
-
             {/* Category selector */}
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-emerald-500 outline-none max-w-[180px] truncate"
+              className="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-emerald-500 outline-none max-w-[200px] truncate"
             >
               <option value="">Все категории ({initialProducts.length})</option>
               {sortedCategories.map((c) => (
@@ -280,8 +295,8 @@ export function CatalogPrintDocument({
         :root {
           --a4-width: 210mm;
           --a4-height: 297mm;
-          --page-padding-x: 13mm;
-          --page-padding-y: 13mm;
+          --page-padding-x: 14mm;
+          --page-padding-y: 14mm;
         }
 
         .a4-container {
@@ -345,7 +360,7 @@ export function CatalogPrintDocument({
             break-after: page !important;
             break-inside: avoid !important;
             margin: 0 !important;
-            padding: 13mm 13mm !important;
+            padding: 14mm 14mm !important;
             box-sizing: border-box !important;
             overflow: hidden !important;
           }
@@ -362,10 +377,10 @@ export function CatalogPrintDocument({
         {/* =======================================================================
             PAGE 1: COVER PAGE (ТИТУЛЬНЫЙ ЛИСТ)
             ======================================================================= */}
-        <div className="a4-page justify-between border-t-8 border-[#0F6E43]">
+        <div className="a4-page justify-between border-t-8 border-[#03432D]">
           {/* Cover Header Bar */}
           <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#0F6E43]">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#03432D]">
               SANPACK Distribution LLC
             </span>
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">
@@ -381,7 +396,7 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Sub-badge */}
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#0F6E43] text-xs font-bold uppercase tracking-widest mb-4">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#03432D] text-xs font-bold uppercase tracking-widest mb-4">
               <Sparkles className="size-3.5" />
               <span>
                 {language === 'uz'
@@ -409,21 +424,21 @@ export function CatalogPrintDocument({
             {/* Highlighted Metrics / Features */}
             <div className="grid grid-cols-3 gap-4 w-full max-w-lg mb-8 text-left">
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-                <Building2 className="size-6 text-[#0F6E43] mb-2" />
+                <Building2 className="size-6 text-[#03432D] mb-2" />
                 <div className="text-xs font-black text-slate-900 uppercase">160+ позиций</div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
                   Сертифицированная продукция
                 </div>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-                <ShieldCheck className="size-6 text-[#0F6E43] mb-2" />
+                <ShieldCheck className="size-6 text-[#03432D] mb-2" />
                 <div className="text-xs font-black text-slate-900 uppercase">Собственное пр-во</div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
                   Гарантия качества и стандартов
                 </div>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-                <Truck className="size-6 text-[#0F6E43] mb-2" />
+                <Truck className="size-6 text-[#03432D] mb-2" />
                 <div className="text-xs font-black text-slate-900 uppercase">Быстрая доставка</div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
                   По Ташкенту и всему Узбекистану
@@ -443,7 +458,7 @@ export function CatalogPrintDocument({
           {/* Cover Footer (Contacts) */}
           <div className="pt-4 border-t border-slate-200 grid grid-cols-3 gap-2 text-xs text-slate-600">
             <div className="flex items-center gap-2">
-              <Phone className="size-4 text-[#0F6E43] shrink-0" />
+              <Phone className="size-4 text-[#03432D] shrink-0" />
               <div className="font-mono text-[11px] font-bold">
                 <div>{phone1}</div>
                 <div>{phone2}</div>
@@ -451,15 +466,15 @@ export function CatalogPrintDocument({
             </div>
 
             <div className="flex items-center gap-2 justify-center">
-              <Mail className="size-4 text-[#0F6E43] shrink-0" />
+              <Mail className="size-4 text-[#03432D] shrink-0" />
               <div className="text-[11px]">
-                <div className="font-bold text-[#0F6E43]">{website}</div>
+                <div className="font-bold text-[#03432D]">{website}</div>
                 <div className="text-slate-500">{email}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-2 justify-end text-right">
-              <MapPin className="size-4 text-[#0F6E43] shrink-0" />
+              <MapPin className="size-4 text-[#03432D] shrink-0" />
               <div className="text-[11px] text-slate-600 leading-tight">
                 <div className="font-bold">{address}</div>
                 <div className="text-slate-400">Пн-Сб 9:00 - 18:00</div>
@@ -469,67 +484,57 @@ export function CatalogPrintDocument({
         </div>
 
         {/* =======================================================================
-            PAGES 2+: CATEGORY PRODUCT GRIDS (4, 6, OR 8 PRODUCTS PER A4 PAGE)
+            PAGES 2+: EDITORIAL BROCHURE STYLE (MATCHING CDR PDF LAYOUT)
             ======================================================================= */}
         {categoryPages.map((pageData, pageIdx) => {
-          const { category, products: pageProds, pageIndex, totalCategoryPages } = pageData;
+          const { category, products: pageProds, pageIndex, totalCategoryPages, layoutCols } = pageData;
           const currentDocPageNumber = pageIdx + 2;
 
-          // Card layout sizing classes based on density
-          const gridColsClass = density === 4 ? 'grid-cols-2 gap-4' : density === 6 ? 'grid-cols-2 gap-3.5' : 'grid-cols-2 gap-2.5';
-          const imageSizeClass = density === 4 ? 'w-32 h-32' : density === 6 ? 'w-28 h-28' : 'w-24 h-24';
+          // Grid class based on solved layout
+          const gridColsClass =
+            layoutCols === 2
+              ? 'grid-cols-2 gap-8'
+              : layoutCols === 3
+                ? 'grid-cols-3 gap-6'
+                : 'grid-cols-4 gap-4';
+
+          const imageAreaHeight =
+            layoutCols === 2 ? 'h-48' : layoutCols === 3 ? 'h-40' : 'h-32';
 
           return (
             <div key={`${category.id}-${pageIndex}`} className="a4-page justify-between">
-              {/* PAGE HEADER (КОЛОНТИТУЛ) */}
-              <header className="flex justify-between items-end border-b-2 border-[#0F6E43] pb-2 mb-3 shrink-0">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest leading-none">
-                    SANPACK • {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
-                  </h3>
-                  <p className="text-[10px] text-slate-500 font-medium mt-1 uppercase tracking-wide">
-                    {withPrices
-                      ? language === 'uz'
-                        ? 'Ulgurji narxlar'
-                        : 'Оптовый прайс-лист'
-                      : language === 'uz'
-                        ? 'Taqdimot'
-                        : 'Презентация'}
-                  </p>
+              {/* TOP SOLID GREEN HEADER BANNER (LIKE USER'S PDF CATALOG) */}
+              <header className="bg-[#03432D] text-white px-4 py-2.5 rounded-lg flex justify-between items-center shrink-0 mb-4">
+                <div className="flex items-center gap-3">
+                  <SanpackLogo variant="white" className="h-5" />
+                  <div className="h-4 w-px bg-emerald-500/50" />
+                  <div className="text-[11px] font-bold text-emerald-100 uppercase tracking-widest leading-none">
+                    {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-slate-900 font-mono tracking-tight">
-                    {phone1} <span className="text-slate-300 mx-1">|</span> {phone2}
-                  </p>
-                  <p className="text-[10px] text-[#0F6E43] font-black uppercase tracking-widest mt-0.5">
-                    {website}
-                  </p>
+                <div className="text-right flex items-center gap-3 text-[10px] text-emerald-200 font-medium">
+                  <span className="font-mono font-bold text-white">{phone1}</span>
+                  <span className="opacity-40">|</span>
+                  <span className="font-mono font-bold text-white">{website}</span>
                 </div>
               </header>
 
-              {/* SECTION HEADER (ЗАГОЛОВОК РАЗДЕЛА) */}
-              <section className="mb-3 shrink-0 flex justify-between items-center">
-                <div className="border-l-4 border-[#0F6E43] pl-3 py-0.5">
-                  <h1 className="text-xl font-black text-slate-900 uppercase leading-none tracking-tight">
-                    {language === 'uz' ? category.titleUz || category.titleRu : category.titleRu}
-                  </h1>
-                  {category.titleUz && language !== 'uz' && (
-                    <h2 className="text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wide">
-                      {category.titleUz}
-                    </h2>
-                  )}
-                </div>
-                <div className="bg-slate-100 px-2.5 py-1 rounded-md text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-                  {totalCategoryPages > 1
-                    ? `Часть ${pageIndex} из ${totalCategoryPages}`
-                    : `Раздел`}
-                </div>
+              {/* CATEGORY TITLE & SUBTITLE */}
+              <section className="mb-4 shrink-0">
+                <h1 className="text-2xl font-black text-slate-900 uppercase leading-none tracking-tight">
+                  {language === 'uz' ? category.titleUz || category.titleRu : category.titleRu}
+                </h1>
+                {category.titleUz && language !== 'uz' && (
+                  <h2 className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wide">
+                    {category.titleUz}
+                  </h2>
+                )}
               </section>
 
-              {/* MAIN PRODUCTS GRID */}
-              <main className={`flex-1 grid ${gridColsClass} content-start`}>
+              {/* PRODUCTS GRID (EDITORIAL FLOATING STYLE - NO HEAVY CARD BOXES) */}
+              <main className={`flex-1 grid ${gridColsClass} content-start py-2`}>
                 {pageProds.map((product) => {
-                  // Title
+                  // Full Title (no premature ellipsis)
                   const title =
                     language === 'uz'
                       ? product.titleUz || product.titleRu
@@ -537,17 +542,17 @@ export function CatalogPrintDocument({
                         ? product.titleEn || product.titleRu
                         : product.titleRu;
 
-                  // Attributes & specs formatting
+                  // Specs list
                   const specs: string[] = [];
                   if (product.attributes?.size) specs.push(String(product.attributes.size));
                   if (product.attributes?.volume) specs.push(String(product.attributes.volume));
                   if (product.attributes?.weight) specs.push(String(product.attributes.weight));
                   if (product.attributes?.package_quantity) {
-                    specs.push(`${product.attributes.package_quantity} шт/уп`);
+                    specs.push(`${product.attributes.package_quantity} шт в упаковке`);
+                  } else if (product.salesUnit && product.salesUnit !== 'шт') {
+                    specs.push(`Единица: ${product.salesUnit}`);
                   }
                   if (product.attributes?.material) specs.push(String(product.attributes.material));
-
-                  const specString = specs.slice(0, 3).join(' | ');
 
                   // Pricing
                   let displayPrice = '';
@@ -559,76 +564,59 @@ export function CatalogPrintDocument({
                     }
                   }
 
-                  const salesUnitText = product.salesUnit || 'шт';
-
                   return (
-                    <article
+                    <div
                       key={product.id}
-                      className="bg-white border border-slate-200/90 rounded-2xl p-2.5 flex flex-col justify-between relative overflow-hidden shadow-sm"
+                      className="flex flex-col justify-between items-start h-full group"
                     >
-                      <div className="flex items-center gap-3 h-full">
-                        {/* Image (Left) - Substantially Larger with clean backdrop */}
-                        <div className={`${imageSizeClass} shrink-0 bg-white rounded-xl p-1.5 border border-slate-100 flex items-center justify-center overflow-hidden shadow-inner`}>
-                          {product.mainImage || product.images?.[0] ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={product.mainImage || product.images?.[0]}
-                              alt={title}
-                              className="w-full h-full object-contain"
-                              loading="eager"
-                            />
-                          ) : (
-                            <Package className="size-10 text-slate-300" />
-                          )}
-                        </div>
+                      {/* Product Text Top */}
+                      <div className="w-full">
+                        {/* Title in Brand Green */}
+                        <h3 className="text-xs sm:text-sm font-black text-[#03432D] uppercase tracking-tight leading-snug">
+                          {title}
+                        </h3>
 
-                        {/* Details (Right) */}
-                        <div className="flex-1 min-w-0 flex flex-col justify-between h-full py-0.5">
-                          <div>
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block truncate mb-0.5">
-                              {category.titleRu}
+                        {/* Specs */}
+                        {specs.length > 0 && (
+                          <div className="text-[11px] text-slate-600 font-medium leading-tight mt-1 space-y-0.5">
+                            {specs.slice(0, 3).map((s, idx) => (
+                              <div key={idx}>{s}</div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Clean Price Line (No neon pills) */}
+                        {withPrices && displayPrice && (
+                          <div className="mt-1.5 text-xs font-black text-slate-900 flex items-baseline gap-1">
+                            <span>{displayPrice}</span>
+                            <span className="text-[10px] font-normal text-slate-500">
+                              / {product.salesUnit || 'уп'}
                             </span>
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-tight leading-snug line-clamp-2 mb-1">
-                              {title}
-                            </h3>
-
-                            {specString && (
-                              <p className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-tight">
-                                {specString}
-                              </p>
-                            )}
                           </div>
-
-                          {/* Price / Packaging Badge */}
-                          <div className="mt-2 flex items-center justify-between gap-1">
-                            {withPrices && displayPrice ? (
-                              <span className="bg-emerald-600 text-white text-[11px] font-black px-2.5 py-1 rounded-lg leading-none shadow-sm flex items-center gap-1">
-                                <span>{displayPrice}</span>
-                                <span className="text-[9px] font-normal opacity-90">
-                                  / {salesUnitText}
-                                </span>
-                              </span>
-                            ) : (
-                              <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-lg leading-none">
-                                {salesUnitText.toUpperCase()}
-                              </span>
-                            )}
-
-                            {product.sku && (
-                              <span className="text-[9px] font-mono text-slate-400">
-                                {product.sku}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        )}
                       </div>
-                    </article>
+
+                      {/* Product Image Bottom (Floating on pure white paper) */}
+                      <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-3 relative`}>
+                        {product.mainImage || product.images?.[0] ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={product.mainImage || product.images?.[0]}
+                            alt={title}
+                            className="max-w-full max-h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.06)]"
+                            loading="eager"
+                          />
+                        ) : (
+                          <Package className="size-12 text-slate-300" />
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
               </main>
 
               {/* PAGE FOOTER (НИЖНИЙ КОЛОНТИТУЛ) */}
-              <footer className="mt-auto pt-2.5 border-t border-slate-200 flex justify-between items-center shrink-0">
+              <footer className="mt-auto pt-3 border-t border-slate-200 flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     Sanpack Distribution • Комплексное снабжение HoReCa

@@ -25,9 +25,6 @@ export default async function CatalogPrintPage({ params, searchParams }: PagePro
       : locale
   ) as Language;
 
-  const densityParam = Number(resolvedSearchParams.density);
-  const density = (densityParam === 4 || densityParam === 8 ? densityParam : 6) as 4 | 6 | 8;
-
   const [products, categories, settings, clients] = await Promise.all([
     getPublicProducts(),
     getPublicCategories(),
@@ -45,7 +42,6 @@ export default async function CatalogPrintPage({ params, searchParams }: PagePro
         withPrices,
         language: langParam,
         categoryId: selectedCategory,
-        density,
       }}
     />
   );
