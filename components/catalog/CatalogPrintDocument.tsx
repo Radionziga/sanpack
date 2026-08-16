@@ -821,8 +821,8 @@ export function CatalogPrintDocument({
 
           return (
             <div key={`${category.id}-${pageIndex}`} className="a4-page justify-between">
-              {/* TOP SOLID GREEN HEADER BANNER (NO CYAN/TURQUOISE, LARGER LOGO, NON-WRAPPING PHONE NUMBERS) */}
-              <header className="bg-[#03432D] text-white px-5 py-3.5 rounded-none flex justify-between items-center shrink-0 mb-4">
+              {/* TOP SOLID GREEN HEADER BANNER (SPACIOUS, NO OVERFLOW) */}
+              <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-4">
                 <div className="flex items-center gap-3.5 shrink-0">
                   <SanpackLogo variant="white" className="h-7 sm:h-8" />
                   <div className="h-5 w-px bg-white/30" />
@@ -830,12 +830,8 @@ export function CatalogPrintDocument({
                     {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
                   </div>
                 </div>
-                <div className="text-right flex items-center gap-3 text-[11px] text-white font-medium font-mono whitespace-nowrap shrink-0">
-                  <span className="font-semibold text-white whitespace-nowrap">{phone1}</span>
-                  <span className="text-white/35">|</span>
-                  <span className="font-semibold text-white whitespace-nowrap">{phone2}</span>
-                  <span className="text-white/35">|</span>
-                  <span className="font-semibold text-[#DCE9AF] whitespace-nowrap">{website}</span>
+                <div className="text-right flex items-center gap-2 text-[11px] text-white font-mono whitespace-nowrap shrink-0">
+                  <span className="font-semibold text-[#DCE9AF] uppercase tracking-wider">{website}</span>
                 </div>
               </header>
 
@@ -955,15 +951,24 @@ export function CatalogPrintDocument({
                 ))}
               </main>
 
-              {/* PAGE FOOTER (НИЖНИЙ КОЛОНТИТУЛ) */}
+              {/* PAGE FOOTER (НИЖНИЙ КОЛОНТИТУЛ С НОМЕРАМИ ТЕЛЕФОНОВ) */}
               <footer className="mt-auto pt-3 border-t border-[#DCE2DE] flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold text-[#929C96] uppercase tracking-widest">
+                  <span className="text-[10px] font-semibold text-[#929C96] uppercase tracking-wider">
                     {language === 'uz'
-                      ? 'Sanpack Distribution • HoReCa uchun kompleks ta’minot'
-                      : 'Sanpack Distribution • Комплексное снабжение HoReCa'}
+                      ? 'Sanpack Distribution • HoReCa ta’minoti'
+                      : 'Sanpack Distribution • Поставки HoReCa'}
                   </span>
                 </div>
+
+                {/* Center Phone Numbers */}
+                <div className="flex items-center gap-2 font-mono text-[11px] text-[#151B18] font-medium whitespace-nowrap">
+                  <Phone className="size-3.5 text-[#03432D] shrink-0" />
+                  <span className="font-semibold">{phone1}</span>
+                  <span className="text-[#AEB9B2]">|</span>
+                  <span className="font-semibold">{phone2}</span>
+                </div>
+
                 <div className="text-xs font-bold text-[#929C96] font-mono">
                   {String(currentDocPageNumber).padStart(2, '0')} / {String(totalDocumentPages).padStart(2, '0')}
                 </div>
