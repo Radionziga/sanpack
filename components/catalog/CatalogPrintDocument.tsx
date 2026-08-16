@@ -43,6 +43,164 @@ interface CategoryPageChunk {
   layoutCols: 2 | 3 | 4;
 }
 
+// Comprehensive dictionary for translating product titles and terms into Uzbek
+function translateTitleToUzbek(titleRu: string): string {
+  if (!titleRu) return '';
+  let str = titleRu;
+
+  const dictionary: [RegExp, string][] = [
+    // Phrases & Multi-word categories
+    [/Мусорные пакеты/gi, 'Chiqindi paketlari'],
+    [/Мусорные мешки/gi, 'Chiqindi qoplari'],
+    [/Пакеты «Майка»/gi, '«Mayka» paketlar'],
+    [/Пакеты майка/gi, '«Mayka» paketlar'],
+    [/Пакеты для пиццы/gi, 'Pitsa paketlari'],
+    [/Отрывные пакеты/gi, 'Yirtma paketlar'],
+    [/Вакуумные пакеты/gi, 'Vakuumli paketlar'],
+    [/Крафт-пакеты/gi, 'Kraft paketlar'],
+    [/Крафт пакеты/gi, 'Kraft paketlar'],
+    [/Пищевая стрейч-плёнка/gi, 'Oziq-ovqat streych plyonkasi'],
+    [/Пищевая стрейч-пленка/gi, 'Oziq-ovqat streych plyonkasi'],
+    [/Стрейч-плёнка/gi, 'Streych plyonka'],
+    [/Стрейч-пленка/gi, 'Streych plyonka'],
+    [/Стрейч плёнка/gi, 'Streych plyonka'],
+    [/Стрейч пленка/gi, 'Streych plyonka'],
+    [/Алюминиевая фольга/gi, 'Alyuminiy folga'],
+    [/Фольга/gi, 'Folga'],
+    [/Бумага для выпечки/gi, 'Pishiriq qog‘ozi'],
+    [/Пергаментная бумага/gi, 'Pergament qog‘ozi'],
+    [/Пергамент/gi, 'Pergament'],
+    [/Рулонные салфетки/gi, 'Rulonli salfetkalar'],
+    [/Квадратные салфетки/gi, 'Kvadrat salfetkalar'],
+    [/Влажные салфетки/gi, 'Nam salfetkalar'],
+    [/Салфетки для диспенсера/gi, 'Dispenser salfetkalari'],
+    [/Салфетки/gi, 'Salfetkalar'],
+    [/Туалетная бумага/gi, 'Hojatxona qog‘ozi'],
+    [/Бумажные полотенца/gi, 'Qog‘oz sochiqlar'],
+    [/Перчатки универсальные/gi, 'Universal qo‘lqoplar'],
+    [/Резиновые перчатки/gi, 'Rezina qo‘lqoplar'],
+    [/Нитриловые перчатки/gi, 'Nitril qo‘lqoplar'],
+    [/Виниловые перчатки/gi, 'Vinil qo‘lqoplar'],
+    [/Латексные перчатки/gi, 'Lateks qo‘lqoplar'],
+    [/Хозяйственные перчатки/gi, 'Xo‘jalik qo‘lqoplari'],
+    [/Одноразовые перчатки/gi, 'Bir martalik qo‘lqoplar'],
+    [/Перчатки/gi, 'Qo‘lqoplar'],
+    [/Губки для посуды/gi, 'Idish yuvish gubkalari'],
+    [/Губки/gi, 'Gubkalar'],
+    [/Тряпки для уборки/gi, 'Tozalash lattalari'],
+    [/Тряпки/gi, 'Lattalar'],
+    [/Зубочистки/gi, 'Tish tozalagichlar'],
+    [/Шпажки/gi, 'Sixlar'],
+    [/Одноразовые стаканы/gi, 'Bir martalik stakanlar'],
+    [/Одноразовые стаканчики/gi, 'Bir martalik stakanlar'],
+    [/Стаканы/gi, 'Stakanlar'],
+    [/Стаканчики/gi, 'Stakanlar'],
+    [/Контейнеры для еды/gi, 'Ovqat konteynerlari'],
+    [/Контейнеры/gi, 'Konteynerlar'],
+    [/Ланч-боксы/gi, 'Lanch-bokslar'],
+    [/Ланч боксы/gi, 'Lanch-bokslar'],
+    [/Коробки для пиццы/gi, 'Pitsa qutilari'],
+    [/Коробки/gi, 'Qutilar'],
+    [/Фольгированные формы/gi, 'Folga qoliplar'],
+    [/Трубочки/gi, 'Trubochkalar'],
+
+    // Modifiers & Adjectives
+    [/ультрапрочные/gi, 'o‘ta mustahkam'],
+    [/ультрапрочный/gi, 'o‘ta mustahkam'],
+    [/прочные/gi, 'mustahkam'],
+    [/прочный/gi, 'mustahkam'],
+    [/утолщённые/gi, 'qalinlashtirilgan'],
+    [/утолщенные/gi, 'qalinlashtirilgan'],
+    [/утолщённая/gi, 'qalinlashtirilgan'],
+    [/утолщенная/gi, 'qalinlashtirilgan'],
+    [/большая/gi, 'katta'],
+    [/большой/gi, 'katta'],
+    [/маленькая/gi, 'kichik'],
+    [/маленький/gi, 'kichik'],
+    [/двухслойная/gi, '2 qatlamli'],
+    [/двухслойные/gi, '2 qatlamli'],
+    [/трехслойная/gi, '3 qatlamli'],
+    [/трехслойные/gi, '3 qatlamli'],
+    [/2 слоя/gi, '2 qatlam'],
+    [/2 слоев/gi, '2 qatlam'],
+    [/2 рулона/gi, '2 rulon'],
+    [/4 рулона/gi, '4 rulon'],
+    [/6 рулонов/gi, '6 rulon'],
+    [/рулонов/gi, 'rulon'],
+    [/рулона/gi, 'rulon'],
+    [/рулон/gi, 'rulon'],
+    [/рулоне/gi, 'rulonda'],
+    [/упаковке/gi, 'qadoqda'],
+    [/упаковка/gi, 'qadoq'],
+    [/блоке/gi, 'blokda'],
+    [/блок/gi, 'blok'],
+    [/коробке/gi, 'qutida'],
+    [/коробка/gi, 'quti'],
+    [/штук/gi, 'dona'],
+    [/шт\./gi, 'dona'],
+    [/шт\b/gi, 'dona'],
+    [/см/gi, 'sm'],
+    [/л\b/gi, 'l'],
+    [/кг/gi, 'kg'],
+    [/мкм/gi, 'mkm'],
+    [/м\b/gi, 'm'],
+    [/уп\./gi, 'qadoq'],
+    [/уп\b/gi, 'qadoq'],
+    [/чёрные/gi, 'qora'],
+    [/черные/gi, 'qora'],
+    [/жёлтые/gi, 'sariq'],
+    [/желтые/gi, 'sariq'],
+    [/белые/gi, 'oq'],
+    [/синие/gi, 'ko‘k'],
+    [/прозрачные/gi, 'shaffof'],
+  ];
+
+  for (const [regex, replacement] of dictionary) {
+    str = str.replace(regex, replacement);
+  }
+
+  return str;
+}
+
+function getLocalizedProductTitle(product: Product, language: Language): string {
+  if (language === 'uz') {
+    // If product has a genuine Uzbek title with Latin characters
+    if (product.titleUz && product.titleUz !== product.titleRu && !/[а-яё]/i.test(product.titleUz)) {
+      return product.titleUz;
+    }
+    return translateTitleToUzbek(product.titleRu || product.titleUz || '');
+  }
+  if (language === 'en') {
+    if (product.titleEn && product.titleEn !== product.titleRu) {
+      return product.titleEn;
+    }
+    return product.titleRu;
+  }
+  return product.titleRu;
+}
+
+function getLocalizedSalesUnitLabel(unit: string | undefined, language: Language): string {
+  const clean = (unit || 'шт').toLowerCase().trim();
+  if (language === 'uz') {
+    if (clean.includes('рулон') || clean === 'рул' || clean === 'rulon') return 'rulon';
+    if (clean.includes('упаковк') || clean === 'уп' || clean === 'qadoq') return 'qadoq';
+    if (clean.includes('блок') || clean === 'blok') return 'blok';
+    if (clean.includes('коробк') || clean === 'кор' || clean === 'quti') return 'quti';
+    if (clean.includes('мешок') || clean === 'qop') return 'qop';
+    if (clean.includes('кг') || clean === 'kg') return 'kg';
+    return 'dona';
+  }
+  if (language === 'en') {
+    if (clean.includes('рулон') || clean === 'rulon') return 'roll';
+    if (clean.includes('упаковк') || clean === 'qadoq') return 'pack';
+    if (clean.includes('блок')) return 'block';
+    if (clean.includes('коробк') || clean === 'quti') return 'box';
+    if (clean.includes('кг')) return 'kg';
+    return 'pcs';
+  }
+  return clean;
+}
+
 export function CatalogPrintDocument({
   initialProducts = [],
   initialCategories = [],
@@ -80,12 +238,11 @@ export function CatalogPrintDocument({
     });
   }, [initialProducts, selectedCategory]);
 
-  // Intelligent category page solver:
-  // - If category has <= 6 items -> 1 page of 6 (3 cols x 2 rows)
-  // - If category has 7..8 items -> 1 page of 8 (4 cols x 2 rows)
-  // - If category has 9..12 items -> 2 pages of 6 (3 cols x 2 rows)
-  // - If category has 13..16 items -> 2 pages of 8 (4 cols x 2 rows)
-  // - If more -> chunk into batches of 6 or 8 so no page has fewer than 3 items!
+  // Dynamic category page solver:
+  // - <= 6 items -> 1 page (3 cols x 2 rows or 2 cols x 2 rows)
+  // - 7..8 items -> 1 page (4 cols x 2 rows)
+  // - 9..12 items -> 2 pages of 6 (3 cols x 2 rows)
+  // - 13..16 items -> 2 pages of 8 (4 cols x 2 rows)
   const categoryPages = useMemo(() => {
     const pages: CategoryPageChunk[] = [];
 
@@ -101,7 +258,6 @@ export function CatalogPrintDocument({
 
       const totalCount = catProds.length;
 
-      // Determine optimal chunking
       if (totalCount <= 6) {
         pages.push({
           category: cat,
@@ -119,7 +275,6 @@ export function CatalogPrintDocument({
           layoutCols: 4,
         });
       } else {
-        // More than 8 items: chunk into balanced pages of 6 or 8
         const itemsPerPage = totalCount <= 12 ? 6 : 8;
         const totalPages = Math.ceil(totalCount / itemsPerPage);
         const cols: 3 | 4 = itemsPerPage === 6 ? 3 : 4;
@@ -239,7 +394,7 @@ export function CatalogPrintDocument({
               <option value="">Все категории ({initialProducts.length})</option>
               {sortedCategories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.titleRu}
+                  {language === 'uz' ? c.titleUz || c.titleRu : c.titleRu}
                 </option>
               ))}
             </select>
@@ -380,10 +535,10 @@ export function CatalogPrintDocument({
         <div className="a4-page justify-between border-t-8 border-[#03432D]">
           {/* Cover Header Bar */}
           <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#03432D]">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#03432D]">
               SANPACK Distribution LLC
             </span>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider font-mono">
               sanpack.uz
             </span>
           </div>
@@ -396,7 +551,7 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Sub-badge */}
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#03432D] text-xs font-bold uppercase tracking-widest mb-4">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#03432D] text-xs font-semibold uppercase tracking-widest mb-4">
               <Sparkles className="size-3.5" />
               <span>
                 {language === 'uz'
@@ -406,12 +561,12 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Main Title */}
-            <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tight leading-none mb-3">
+            <h1 className="text-4xl font-extrabold text-slate-900 uppercase tracking-tight leading-none mb-3">
               {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
             </h1>
 
             {/* Subtitle / Mode */}
-            <h2 className="text-base font-bold text-slate-600 uppercase tracking-wider mb-8">
+            <h2 className="text-base font-semibold text-slate-600 uppercase tracking-wider mb-8">
               {withPrices
                 ? language === 'uz'
                   ? 'Ulgurji narxlar ro‘yxati (Prays-list)'
@@ -423,31 +578,37 @@ export function CatalogPrintDocument({
 
             {/* Highlighted Metrics / Features */}
             <div className="grid grid-cols-3 gap-4 w-full max-w-lg mb-8 text-left">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <Building2 className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-black text-slate-900 uppercase">160+ позиций</div>
+                <div className="text-xs font-bold text-slate-900 uppercase">
+                  {language === 'uz' ? '160+ pozitsiya' : '160+ позиций'}
+                </div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
-                  Сертифицированная продукция
+                  {language === 'uz' ? 'Sertifikatlangan mahsulot' : 'Сертифицированная продукция'}
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <ShieldCheck className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-black text-slate-900 uppercase">Собственное пр-во</div>
+                <div className="text-xs font-bold text-slate-900 uppercase">
+                  {language === 'uz' ? 'O‘z ishlab chiqarishimiz' : 'Собственное пр-во'}
+                </div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
-                  Гарантия качества и стандартов
+                  {language === 'uz' ? 'Sifat va standartlar kafolati' : 'Гарантия качества и стандартов'}
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <Truck className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-black text-slate-900 uppercase">Быстрая доставка</div>
+                <div className="text-xs font-bold text-slate-900 uppercase">
+                  {language === 'uz' ? 'Tezkor yetkazib berish' : 'Быстрая доставка'}
+                </div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
-                  По Ташкенту и всему Узбекистану
+                  {language === 'uz' ? 'Toshkent va butun O‘zbekiston' : 'По Ташкенту и всему Узбекистану'}
                 </div>
               </div>
             </div>
 
             {/* Generation Date */}
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
               {new Intl.DateTimeFormat(language === 'uz' ? 'uz-UZ' : 'ru-RU', {
                 month: 'long',
                 year: 'numeric',
@@ -459,7 +620,7 @@ export function CatalogPrintDocument({
           <div className="pt-4 border-t border-slate-200 grid grid-cols-3 gap-2 text-xs text-slate-600">
             <div className="flex items-center gap-2">
               <Phone className="size-4 text-[#03432D] shrink-0" />
-              <div className="font-mono text-[11px] font-bold">
+              <div className="font-mono text-[11px] font-semibold">
                 <div>{phone1}</div>
                 <div>{phone2}</div>
               </div>
@@ -468,7 +629,7 @@ export function CatalogPrintDocument({
             <div className="flex items-center gap-2 justify-center">
               <Mail className="size-4 text-[#03432D] shrink-0" />
               <div className="text-[11px]">
-                <div className="font-bold text-[#03432D]">{website}</div>
+                <div className="font-semibold text-[#03432D]">{website}</div>
                 <div className="text-slate-500">{email}</div>
               </div>
             </div>
@@ -476,15 +637,17 @@ export function CatalogPrintDocument({
             <div className="flex items-center gap-2 justify-end text-right">
               <MapPin className="size-4 text-[#03432D] shrink-0" />
               <div className="text-[11px] text-slate-600 leading-tight">
-                <div className="font-bold">{address}</div>
-                <div className="text-slate-400">Пн-Сб 9:00 - 18:00</div>
+                <div className="font-semibold">{address}</div>
+                <div className="text-slate-400">
+                  {language === 'uz' ? 'Dush-Shan 9:00 - 18:00' : 'Пн-Сб 9:00 - 18:00'}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* =======================================================================
-            PAGES 2+: EDITORIAL BROCHURE STYLE (MATCHING CDR PDF LAYOUT)
+            PAGES 2+: EDITORIAL BROCHURE STYLE (SHARP CORNERS, MORE BREATHING ROOM, NO SHADOWS)
             ======================================================================= */}
         {categoryPages.map((pageData, pageIdx) => {
           const { category, products: pageProds, pageIndex, totalCategoryPages, layoutCols } = pageData;
@@ -493,66 +656,91 @@ export function CatalogPrintDocument({
           // Grid class based on solved layout
           const gridColsClass =
             layoutCols === 2
-              ? 'grid-cols-2 gap-8'
+              ? 'grid-cols-2 gap-x-8 gap-y-10'
               : layoutCols === 3
-                ? 'grid-cols-3 gap-6'
-                : 'grid-cols-4 gap-4';
+                ? 'grid-cols-3 gap-x-6 gap-y-8'
+                : 'grid-cols-4 gap-x-4 gap-y-7';
 
           const imageAreaHeight =
             layoutCols === 2 ? 'h-48' : layoutCols === 3 ? 'h-40' : 'h-32';
 
+          const categoryTitle =
+            language === 'uz'
+              ? category.titleUz || translateTitleToUzbek(category.titleRu)
+              : category.titleRu;
+
+          const categorySubtitle =
+            language === 'uz'
+              ? category.titleRu
+              : category.titleUz;
+
           return (
             <div key={`${category.id}-${pageIndex}`} className="a4-page justify-between">
-              {/* TOP SOLID GREEN HEADER BANNER (LIKE USER'S PDF CATALOG) */}
-              <header className="bg-[#03432D] text-white px-4 py-2.5 rounded-lg flex justify-between items-center shrink-0 mb-4">
+              {/* TOP SOLID GREEN HEADER BANNER (CRISP 90-DEGREE EDGES, NO ROUNDED CORNERS) */}
+              <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-6">
                 <div className="flex items-center gap-3">
                   <SanpackLogo variant="white" className="h-5" />
                   <div className="h-4 w-px bg-emerald-500/50" />
-                  <div className="text-[11px] font-bold text-emerald-100 uppercase tracking-widest leading-none">
+                  <div className="text-[11px] font-semibold text-emerald-100 uppercase tracking-widest leading-none">
                     {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
                   </div>
                 </div>
                 <div className="text-right flex items-center gap-3 text-[10px] text-emerald-200 font-medium">
-                  <span className="font-mono font-bold text-white">{phone1}</span>
+                  <span className="font-mono font-semibold text-white">{phone1}</span>
                   <span className="opacity-40">|</span>
-                  <span className="font-mono font-bold text-white">{website}</span>
+                  <span className="font-mono font-semibold text-white">{website}</span>
                 </div>
               </header>
 
-              {/* CATEGORY TITLE & SUBTITLE */}
-              <section className="mb-4 shrink-0">
-                <h1 className="text-2xl font-black text-slate-900 uppercase leading-none tracking-tight">
-                  {language === 'uz' ? category.titleUz || category.titleRu : category.titleRu}
+              {/* CATEGORY TITLE & SUBTITLE WITH GENEROUS AIR */}
+              <section className="mb-6 shrink-0">
+                <h1 className="text-2xl font-extrabold text-slate-900 uppercase leading-none tracking-tight">
+                  {categoryTitle}
                 </h1>
-                {category.titleUz && language !== 'uz' && (
-                  <h2 className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wide">
-                    {category.titleUz}
+                {categorySubtitle && (
+                  <h2 className="text-xs text-slate-500 font-medium mt-1 uppercase tracking-wide">
+                    {categorySubtitle}
                   </h2>
                 )}
               </section>
 
-              {/* PRODUCTS GRID (EDITORIAL FLOATING STYLE - NO HEAVY CARD BOXES) */}
-              <main className={`flex-1 grid ${gridColsClass} content-start py-2`}>
+              {/* PRODUCTS GRID (EDITORIAL AIR, CLEAN BLENDING IMAGES - ZERO DROP SHADOW) */}
+              <main className={`flex-1 grid ${gridColsClass} content-start py-1`}>
                 {pageProds.map((product) => {
-                  // Full Title (no premature ellipsis)
-                  const title =
-                    language === 'uz'
-                      ? product.titleUz || product.titleRu
-                      : language === 'en'
-                        ? product.titleEn || product.titleRu
-                        : product.titleRu;
+                  // Full localized title
+                  const title = getLocalizedProductTitle(product, language);
 
-                  // Specs list
+                  // Specs list with localized terms
                   const specs: string[] = [];
-                  if (product.attributes?.size) specs.push(String(product.attributes.size));
-                  if (product.attributes?.volume) specs.push(String(product.attributes.volume));
-                  if (product.attributes?.weight) specs.push(String(product.attributes.weight));
-                  if (product.attributes?.package_quantity) {
-                    specs.push(`${product.attributes.package_quantity} шт в упаковке`);
-                  } else if (product.salesUnit && product.salesUnit !== 'шт') {
-                    specs.push(`Единица: ${product.salesUnit}`);
+                  if (product.attributes?.size) {
+                    const sizeVal = String(product.attributes.size).replace(/см/gi, 'sm');
+                    specs.push(sizeVal);
                   }
-                  if (product.attributes?.material) specs.push(String(product.attributes.material));
+                  if (product.attributes?.volume) {
+                    const volVal = String(product.attributes.volume).replace(/л\b/gi, 'l');
+                    specs.push(volVal);
+                  }
+                  if (product.attributes?.weight) {
+                    const weightVal = String(product.attributes.weight).replace(/кг/gi, 'kg');
+                    specs.push(weightVal);
+                  }
+                  if (product.attributes?.package_quantity) {
+                    specs.push(
+                      language === 'uz'
+                        ? `${product.attributes.package_quantity} dona qadoqda`
+                        : `${product.attributes.package_quantity} шт в упаковке`
+                    );
+                  } else if (product.salesUnit && product.salesUnit !== 'шт') {
+                    const unitLabel = getLocalizedSalesUnitLabel(product.salesUnit, language);
+                    specs.push(
+                      language === 'uz'
+                        ? `Birlik: ${unitLabel}`
+                        : `Единица: ${product.salesUnit}`
+                    );
+                  }
+                  if (product.attributes?.material) {
+                    specs.push(String(product.attributes.material));
+                  }
 
                   // Pricing
                   let displayPrice = '';
@@ -564,21 +752,23 @@ export function CatalogPrintDocument({
                     }
                   }
 
+                  const salesUnitLabel = getLocalizedSalesUnitLabel(product.salesUnit, language);
+
                   return (
                     <div
                       key={product.id}
-                      className="flex flex-col justify-between items-start h-full group"
+                      className="flex flex-col justify-between items-start h-full"
                     >
-                      {/* Product Text Top */}
+                      {/* Product Text Top (Clean, Readable, Non-heavy Font) */}
                       <div className="w-full">
                         {/* Title in Brand Green */}
-                        <h3 className="text-xs sm:text-sm font-black text-[#03432D] uppercase tracking-tight leading-snug">
+                        <h3 className="text-xs sm:text-[13px] font-bold text-[#03432D] uppercase tracking-normal leading-snug">
                           {title}
                         </h3>
 
                         {/* Specs */}
                         {specs.length > 0 && (
-                          <div className="text-[11px] text-slate-600 font-medium leading-tight mt-1 space-y-0.5">
+                          <div className="text-[11px] text-slate-600 font-normal leading-tight mt-1 space-y-0.5">
                             {specs.slice(0, 3).map((s, idx) => (
                               <div key={idx}>{s}</div>
                             ))}
@@ -587,27 +777,27 @@ export function CatalogPrintDocument({
 
                         {/* Clean Price Line (No neon pills) */}
                         {withPrices && displayPrice && (
-                          <div className="mt-1.5 text-xs font-black text-slate-900 flex items-baseline gap-1">
+                          <div className="mt-1.5 text-xs font-bold text-slate-900 flex items-baseline gap-1">
                             <span>{displayPrice}</span>
                             <span className="text-[10px] font-normal text-slate-500">
-                              / {product.salesUnit || 'уп'}
+                              / {salesUnitLabel}
                             </span>
                           </div>
                         )}
                       </div>
 
-                      {/* Product Image Bottom (Floating on pure white paper) */}
-                      <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-3 relative`}>
+                      {/* Product Image Bottom (100% flat seamless blend with paper - NO DROP SHADOW) */}
+                      <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-3 bg-transparent`}>
                         {product.mainImage || product.images?.[0] ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={product.mainImage || product.images?.[0]}
                             alt={title}
-                            className="max-w-full max-h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.06)]"
+                            className="max-w-full max-h-full object-contain"
                             loading="eager"
                           />
                         ) : (
-                          <Package className="size-12 text-slate-300" />
+                          <Package className="size-10 text-slate-300" />
                         )}
                       </div>
                     </div>
@@ -618,11 +808,13 @@ export function CatalogPrintDocument({
               {/* PAGE FOOTER (НИЖНИЙ КОЛОНТИТУЛ) */}
               <footer className="mt-auto pt-3 border-t border-slate-200 flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Sanpack Distribution • Комплексное снабжение HoReCa
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                    {language === 'uz'
+                      ? 'Sanpack Distribution • HoReCa uchun kompleks ta’minot'
+                      : 'Sanpack Distribution • Комплексное снабжение HoReCa'}
                   </span>
                 </div>
-                <div className="text-xs font-black text-slate-400 font-mono">
+                <div className="text-xs font-bold text-slate-400 font-mono">
                   {String(currentDocPageNumber).padStart(2, '0')} / {String(totalDocumentPages).padStart(2, '0')}
                 </div>
               </footer>
