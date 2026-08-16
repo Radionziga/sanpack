@@ -13,10 +13,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  ShieldCheck,
-  Truck,
-  Building2,
-  Sparkles,
   FileText,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -361,7 +357,6 @@ export function CatalogPrintDocument({
           rowsCount: 2,
         });
       } else if (totalCount === 9) {
-        // Fits all 9 items (e.g. Курица) on 1 single page in a clean 3x3 matrix!
         pages.push({
           category: cat,
           products: catProds,
@@ -371,7 +366,6 @@ export function CatalogPrintDocument({
           rowsCount: 3,
         });
       } else if (totalCount <= 12) {
-        // Fits up to 12 items on 1 single page in a 4x3 matrix!
         pages.push({
           category: cat,
           products: catProds,
@@ -381,7 +375,6 @@ export function CatalogPrintDocument({
           rowsCount: 3,
         });
       } else {
-        // More than 12 items: calculate optimal batch size (e.g. 9 or 12 items per page)
         const itemsPerPage = totalCount <= 18 ? 9 : 12;
         const totalPages = Math.ceil(totalCount / itemsPerPage);
         const cols: 3 | 4 = itemsPerPage === 9 ? 3 : 4;
@@ -413,8 +406,8 @@ export function CatalogPrintDocument({
   const website = 'sanpack.uz';
   const address =
     language === 'uz'
-      ? settings?.contacts?.addressUz || 'Toshkent sh., O‘zbekiston'
-      : settings?.contacts?.addressRu || 'г. Ташкент, Узбекистан';
+      ? settings?.contacts?.addressUz || 'Toshkent sh., Sergeli tumani, Yangi Sergeli ko‘ch., 14A'
+      : settings?.contacts?.addressRu || 'г. Ташкент, Сергелийский р-н, ул. Янги Сергели, 14А';
 
   const handleCopyLink = () => {
     if (typeof window !== 'undefined' && navigator.clipboard) {
@@ -631,6 +624,11 @@ export function CatalogPrintDocument({
           margin-bottom: 24px;
         }
 
+        .a4-page-cover {
+          background-color: #03432D !important;
+          color: #ffffff !important;
+        }
+
         @media screen and (max-width: 230mm) {
           .a4-container {
             transform: none !important;
@@ -677,6 +675,12 @@ export function CatalogPrintDocument({
             box-sizing: border-box !important;
             overflow: hidden !important;
           }
+          .a4-page-cover {
+            background-color: #03432D !important;
+            color: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
 
@@ -688,43 +692,40 @@ export function CatalogPrintDocument({
         style={{ transform: `scale(${scale})` }}
       >
         {/* =======================================================================
-            PAGE 1: COVER PAGE (ТИТУЛЬНЫЙ ЛИСТ)
+            PAGE 1: COVER PAGE (ЭЛЕГАНТНЫЙ ИЗУМРУДНЫЙ ТИТУЛЬНЫЙ ЛИСТ)
             ======================================================================= */}
-        <div className="a4-page justify-between border-t-8 border-[#03432D]">
+        <div className="a4-page a4-page-cover justify-between">
           {/* Cover Header Bar */}
-          <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#03432D]">
-              SANPACK Distribution LLC
+          <div className="flex justify-between items-center border-b border-emerald-800/80 pb-3.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-200">
+              SANPACK DISTRIBUTION LLC
             </span>
-            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider font-mono">
+            <span className="text-[11px] font-semibold text-emerald-200 uppercase tracking-wider font-mono">
               sanpack.uz
             </span>
           </div>
 
           {/* Center Main Cover Content */}
-          <div className="my-auto text-center flex flex-col items-center py-6">
+          <div className="my-auto text-center flex flex-col items-center py-8">
             {/* Logo */}
-            <div className="mb-8">
-              <SanpackLogo variant="green" className="h-16" />
+            <div className="mb-10">
+              <SanpackLogo variant="white" className="h-20 sm:h-24" />
             </div>
 
-            {/* Sub-badge */}
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#03432D] text-xs font-semibold uppercase tracking-widest mb-4">
-              <Sparkles className="size-3.5" />
-              <span>
-                {language === 'uz'
-                  ? 'HoReCa va biznes uchun kompleks ta’minot'
-                  : 'Комплексные поставки для HoReCa и бизнеса'}
-              </span>
+            {/* Subtitle Company Tagline */}
+            <div className="text-sm font-medium text-emerald-200 uppercase tracking-wider mb-6">
+              {language === 'uz'
+                ? 'HoReCa va biznes uchun kompleks ta’minot'
+                : 'Комплексные поставки для HoReCa и бизнеса'}
             </div>
 
             {/* Main Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold text-[#03432D] uppercase tracking-tight leading-none mb-3">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white uppercase tracking-normal leading-tight mb-3">
               {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
             </h1>
 
             {/* Subtitle / Mode */}
-            <h2 className="text-sm sm:text-base font-semibold text-slate-600 uppercase tracking-wider mb-8">
+            <h2 className="text-lg sm:text-xl font-medium text-emerald-100 uppercase tracking-wide mb-10">
               {withPrices
                 ? language === 'uz'
                   ? 'Ulgurji narxlar ro‘yxati (Prays-list)'
@@ -734,39 +735,8 @@ export function CatalogPrintDocument({
                   : 'Презентационный каталог'}
             </h2>
 
-            {/* Highlighted Metrics / Features */}
-            <div className="grid grid-cols-3 gap-4 w-full max-w-lg mb-8 text-left">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <Building2 className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-bold text-slate-800 uppercase">
-                  {language === 'uz' ? '160+ pozitsiya' : '160+ позиций'}
-                </div>
-                <div className="text-[10px] text-slate-500 leading-tight mt-1">
-                  {language === 'uz' ? 'Sertifikatlangan mahsulot' : 'Сертифицированная продукция'}
-                </div>
-              </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <ShieldCheck className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-bold text-slate-800 uppercase">
-                  {language === 'uz' ? 'O‘z ishlab chiqarishimiz' : 'Собственное пр-во'}
-                </div>
-                <div className="text-[10px] text-slate-500 leading-tight mt-1">
-                  {language === 'uz' ? 'Sifat va standartlar kafolati' : 'Гарантия качества и стандартов'}
-                </div>
-              </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <Truck className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-bold text-slate-800 uppercase">
-                  {language === 'uz' ? 'Tezkor yetkazib berish' : 'Быстрая доставка'}
-                </div>
-                <div className="text-[10px] text-slate-500 leading-tight mt-1">
-                  {language === 'uz' ? 'Toshkent va butun O‘zbekiston' : 'По Ташкенту и всему Узбекистану'}
-                </div>
-              </div>
-            </div>
-
-            {/* Generation Date */}
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+            {/* Clean Date / Year */}
+            <div className="text-xs font-semibold text-emerald-300 uppercase tracking-widest">
               {new Intl.DateTimeFormat(language === 'uz' ? 'uz-UZ' : 'ru-RU', {
                 month: 'long',
                 year: 'numeric',
@@ -774,30 +744,33 @@ export function CatalogPrintDocument({
             </div>
           </div>
 
-          {/* Cover Footer (Contacts) */}
-          <div className="pt-4 border-t border-slate-200 grid grid-cols-3 gap-2 text-xs text-slate-600">
-            <div className="flex items-center gap-2">
-              <Phone className="size-4 text-[#03432D] shrink-0" />
-              <div className="font-mono text-[11px] font-semibold">
+          {/* Cover Footer (Clean White / Emerald Contacts) */}
+          <div className="pt-5 border-t border-emerald-800/80 grid grid-cols-3 gap-4 text-xs text-emerald-100">
+            {/* Phones */}
+            <div className="flex items-start gap-2.5">
+              <Phone className="size-4 text-emerald-300 shrink-0 mt-0.5" />
+              <div className="font-mono text-[11px] font-semibold leading-relaxed">
                 <div>{phone1}</div>
                 <div>{phone2}</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 justify-center">
-              <Mail className="size-4 text-[#03432D] shrink-0" />
-              <div className="text-[11px]">
-                <div className="font-semibold text-[#03432D]">{website}</div>
-                <div className="text-slate-500">{email}</div>
+            {/* Site & Email */}
+            <div className="flex items-start gap-2.5 justify-center">
+              <Mail className="size-4 text-emerald-300 shrink-0 mt-0.5" />
+              <div className="text-[11px] leading-relaxed">
+                <div className="font-semibold text-white font-mono">{website}</div>
+                <div className="text-emerald-200">{email}</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 justify-end text-right">
-              <MapPin className="size-4 text-[#03432D] shrink-0" />
-              <div className="text-[11px] text-slate-600 leading-tight">
-                <div className="font-semibold">{address}</div>
-                <div className="text-slate-400">
-                  {language === 'uz' ? 'Dush-Shan 9:00 - 18:00' : 'Пн-Сб 9:00 - 18:00'}
+            {/* Address */}
+            <div className="flex items-start gap-2.5 justify-end text-right">
+              <MapPin className="size-4 text-emerald-300 shrink-0 mt-0.5" />
+              <div className="text-[11px] leading-snug">
+                <div className="font-semibold text-white">{address}</div>
+                <div className="text-emerald-300 mt-0.5">
+                  {language === 'uz' ? 'Dush–Shan 9:00–18:00' : 'Пн–Сб 9:00–18:00'}
                 </div>
               </div>
             </div>
@@ -848,19 +821,21 @@ export function CatalogPrintDocument({
 
           return (
             <div key={`${category.id}-${pageIndex}`} className="a4-page justify-between">
-              {/* TOP SOLID GREEN HEADER BANNER (CRISP 90-DEGREE EDGES, NO ROUNDED CORNERS) */}
-              <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-4">
-                <div className="flex items-center gap-3">
-                  <SanpackLogo variant="white" className="h-5" />
-                  <div className="h-4 w-px bg-emerald-500/50" />
-                  <div className="text-[11px] font-semibold text-emerald-100 uppercase tracking-widest leading-none">
+              {/* TOP SOLID GREEN HEADER BANNER (TALLER, LARGER LOGO, BOTH PHONE NUMBERS) */}
+              <header className="bg-[#03432D] text-white px-5 py-3.5 rounded-none flex justify-between items-center shrink-0 mb-4">
+                <div className="flex items-center gap-3.5">
+                  <SanpackLogo variant="white" className="h-7 sm:h-8" />
+                  <div className="h-5 w-px bg-emerald-500/40" />
+                  <div className="text-[11px] font-semibold text-emerald-100 uppercase tracking-wider leading-none">
                     {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
                   </div>
                 </div>
-                <div className="text-right flex items-center gap-3 text-[10px] text-emerald-200 font-medium">
-                  <span className="font-mono font-semibold text-white">{phone1}</span>
+                <div className="text-right flex items-center gap-2.5 text-[10.5px] text-emerald-100 font-medium font-mono">
+                  <span className="font-semibold text-white">{phone1}</span>
                   <span className="opacity-40">|</span>
-                  <span className="font-mono font-semibold text-white">{website}</span>
+                  <span className="font-semibold text-white">{phone2}</span>
+                  <span className="opacity-40">|</span>
+                  <span className="font-semibold text-emerald-300">{website}</span>
                 </div>
               </header>
 
@@ -884,7 +859,7 @@ export function CatalogPrintDocument({
                   // Full localized title
                   const title = getLocalizedProductTitle(product, language);
 
-                  // Specs list with localized terms
+                  // Specs list with localized terms (clean physical specs only, no redundant sales unit)
                   const specs: string[] = [];
                   if (product.attributes?.size) {
                     const sizeVal = String(product.attributes.size).replace(/см/gi, 'sm');
@@ -903,13 +878,6 @@ export function CatalogPrintDocument({
                       language === 'uz'
                         ? `${product.attributes.package_quantity} dona qadoqda`
                         : `${product.attributes.package_quantity} шт в упаковке`
-                    );
-                  } else if (product.salesUnit && product.salesUnit !== 'шт') {
-                    const unitLabel = getLocalizedSalesUnitLabel(product.salesUnit, language);
-                    specs.push(
-                      language === 'uz'
-                        ? `Birlik: ${unitLabel}`
-                        : `Единица: ${product.salesUnit}`
                     );
                   }
                   if (product.attributes?.material) {
@@ -940,7 +908,7 @@ export function CatalogPrintDocument({
                           {title}
                         </h3>
 
-                        {/* Specs */}
+                        {/* Specs (No redundant "Единица: кг") */}
                         {specs.length > 0 && (
                           <div className="text-[10px] text-slate-500 font-normal leading-tight mt-0.5 space-y-0.5">
                             {specs.slice(0, 3).map((s, idx) => (
