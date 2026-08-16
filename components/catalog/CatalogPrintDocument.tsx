@@ -792,18 +792,16 @@ export function CatalogPrintDocument({
                 ? 'grid-cols-3'
                 : 'grid-cols-4';
 
-          // Adaptive image container height: Noticeably larger images for all layouts!
+          // Adaptive image container height: Large images flush with cell borders
           const isThreeRows = rowsCount >= 3 || pageProds.length > 8;
           const imageAreaHeight =
             layoutCols === 2
-              ? 'h-52 sm:h-60'
+              ? 'h-56 sm:h-64'
               : layoutCols === 3 && !isThreeRows
-                ? 'h-44 sm:h-52'
+                ? 'h-48 sm:h-56'
                 : isThreeRows
-                  ? 'h-32 sm:h-36'
-                  : 'h-36 sm:h-40';
-
-          const cellPadding = isThreeRows ? 'p-2.5 sm:p-3' : 'p-3.5 sm:p-4';
+                  ? 'h-36 sm:h-40'
+                  : 'h-40 sm:h-44';
 
           const categoryTitle =
             language === 'uz'
@@ -894,10 +892,10 @@ export function CatalogPrintDocument({
                     return (
                       <div
                         key={product.id}
-                        className={`border-r border-b border-[#DCE2DE] ${cellPadding} flex flex-col justify-between items-start h-full bg-white`}
+                        className="border-r border-b border-[#DCE2DE] flex flex-col justify-between items-start h-full bg-white overflow-hidden"
                       >
-                        {/* Product Text Top (Clean, Readable, Brand Green) */}
-                        <div className="w-full">
+                        {/* Product Text Top (Clean, Readable, Brand Green with dedicated padding) */}
+                        <div className="w-full px-3 pt-2.5 pb-1">
                           {/* Title in Brand Green */}
                           <h3 className="text-[11.5px] sm:text-xs font-bold text-[#03432D] uppercase tracking-normal leading-snug">
                             {title}
@@ -923,14 +921,14 @@ export function CatalogPrintDocument({
                           )}
                         </div>
 
-                        {/* Product Image Bottom (Enlarged, high-clarity image with zero shadow) */}
-                        <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-2.5 bg-transparent`}>
+                        {/* Product Image Bottom (Flush against left, right, and bottom borders with no gap) */}
+                        <div className={`w-full ${imageAreaHeight} flex items-center justify-center bg-transparent mt-auto`}>
                           {product.mainImage || product.images?.[0] ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={product.mainImage || product.images?.[0]}
                               alt={title}
-                              className="w-full h-full object-contain p-1"
+                              className="w-full h-full object-contain"
                               loading="eager"
                             />
                           ) : (
@@ -945,7 +943,7 @@ export function CatalogPrintDocument({
                   {Array.from({ length: emptySlotsCount }).map((_, idx) => (
                     <div
                       key={`empty-${idx}`}
-                      className={`border-r border-b border-[#DCE2DE] ${cellPadding} bg-white`}
+                      className="border-r border-b border-[#DCE2DE] bg-white"
                     />
                   ))}
                 </div>
