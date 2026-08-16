@@ -848,107 +848,107 @@ export function CatalogPrintDocument({
               </section>
 
               {/* PRODUCTS GRID MATRIX WITH DELICATE THIN GREY DIVIDERS */}
-              <main
-                className={`flex-1 grid ${gridColsClass} content-start border-t border-l border-[#DCE2DE]`}
-              >
-                {pageProds.map((product) => {
-                  // Full localized title
-                  const title = getLocalizedProductTitle(product, language);
+              <main className="flex-1 flex flex-col justify-start">
+                <div className={`grid ${gridColsClass} content-start border-t border-l border-[#DCE2DE]`}>
+                  {pageProds.map((product) => {
+                    // Full localized title
+                    const title = getLocalizedProductTitle(product, language);
 
-                  // Specs list with localized terms (clean physical specs only, no redundant sales unit)
-                  const specs: string[] = [];
-                  if (product.attributes?.size) {
-                    const sizeVal = String(product.attributes.size).replace(/см/gi, 'sm');
-                    specs.push(sizeVal);
-                  }
-                  if (product.attributes?.volume) {
-                    const volVal = String(product.attributes.volume).replace(/л\b/gi, 'l');
-                    specs.push(volVal);
-                  }
-                  if (product.attributes?.weight) {
-                    const weightVal = String(product.attributes.weight).replace(/кг/gi, 'kg');
-                    specs.push(weightVal);
-                  }
-                  if (product.attributes?.package_quantity) {
-                    specs.push(
-                      language === 'uz'
-                        ? `${product.attributes.package_quantity} dona qadoqda`
-                        : `${product.attributes.package_quantity} шт в упаковке`
-                    );
-                  }
-                  if (product.attributes?.material) {
-                    specs.push(String(product.attributes.material));
-                  }
-
-                  // Pricing
-                  let displayPrice = '';
-                  if (withPrices) {
-                    if (product.variants && product.variants.length > 0 && product.variants[0].price) {
-                      displayPrice = formatMoney(product.variants[0].price, language, product.currency || 'UZS');
-                    } else if (product.price) {
-                      displayPrice = formatMoney(product.price, language, product.currency || 'UZS');
+                    // Specs list with localized terms (clean physical specs only, no redundant sales unit)
+                    const specs: string[] = [];
+                    if (product.attributes?.size) {
+                      const sizeVal = String(product.attributes.size).replace(/см/gi, 'sm');
+                      specs.push(sizeVal);
                     }
-                  }
+                    if (product.attributes?.volume) {
+                      const volVal = String(product.attributes.volume).replace(/л\b/gi, 'l');
+                      specs.push(volVal);
+                    }
+                    if (product.attributes?.weight) {
+                      const weightVal = String(product.attributes.weight).replace(/кг/gi, 'kg');
+                      specs.push(weightVal);
+                    }
+                    if (product.attributes?.package_quantity) {
+                      specs.push(
+                        language === 'uz'
+                          ? `${product.attributes.package_quantity} dona qadoqda`
+                          : `${product.attributes.package_quantity} шт в упаковке`
+                      );
+                    }
+                    if (product.attributes?.material) {
+                      specs.push(String(product.attributes.material));
+                    }
 
-                  const salesUnitLabel = getLocalizedSalesUnitLabel(product.salesUnit, language);
+                    // Pricing
+                    let displayPrice = '';
+                    if (withPrices) {
+                      if (product.variants && product.variants.length > 0 && product.variants[0].price) {
+                        displayPrice = formatMoney(product.variants[0].price, language, product.currency || 'UZS');
+                      } else if (product.price) {
+                        displayPrice = formatMoney(product.price, language, product.currency || 'UZS');
+                      }
+                    }
 
-                  return (
+                    const salesUnitLabel = getLocalizedSalesUnitLabel(product.salesUnit, language);
+
+                    return (
+                      <div
+                        key={product.id}
+                        className={`border-r border-b border-[#DCE2DE] ${cellPadding} flex flex-col justify-between items-start h-full bg-white`}
+                      >
+                        {/* Product Text Top (Clean, Readable, Brand Green) */}
+                        <div className="w-full">
+                          {/* Title in Brand Green */}
+                          <h3 className="text-[11.5px] sm:text-xs font-bold text-[#03432D] uppercase tracking-normal leading-snug">
+                            {title}
+                          </h3>
+
+                          {/* Specs (No redundant "Единица: кг") */}
+                          {specs.length > 0 && (
+                            <div className="text-[10px] text-[#64748B] font-normal leading-tight mt-0.5 space-y-0.5">
+                              {specs.slice(0, 3).map((s, idx) => (
+                                <div key={idx}>{s}</div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Clean Price Line */}
+                          {withPrices && displayPrice && (
+                            <div className="mt-1 text-xs font-bold text-[#151B18] flex items-baseline gap-1">
+                              <span>{displayPrice}</span>
+                              <span className="text-[10px] font-normal text-[#64748B]">
+                                / {salesUnitLabel}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Product Image Bottom (Enlarged, high-clarity image with zero shadow) */}
+                        <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-2.5 bg-transparent`}>
+                          {product.mainImage || product.images?.[0] ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={product.mainImage || product.images?.[0]}
+                              alt={title}
+                              className="w-full h-full object-contain p-1"
+                              loading="eager"
+                            />
+                          ) : (
+                            <Package className="size-10 text-[#AEB9B2]" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Empty cells to complete the rectangular matrix lines */}
+                  {Array.from({ length: emptySlotsCount }).map((_, idx) => (
                     <div
-                      key={product.id}
-                      className={`border-r border-b border-[#DCE2DE] ${cellPadding} flex flex-col justify-between items-start h-full bg-white`}
-                    >
-                      {/* Product Text Top (Clean, Readable, Brand Green) */}
-                      <div className="w-full">
-                        {/* Title in Brand Green */}
-                        <h3 className="text-[11.5px] sm:text-xs font-bold text-[#03432D] uppercase tracking-normal leading-snug">
-                          {title}
-                        </h3>
-
-                        {/* Specs (No redundant "Единица: кг") */}
-                        {specs.length > 0 && (
-                          <div className="text-[10px] text-[#64748B] font-normal leading-tight mt-0.5 space-y-0.5">
-                            {specs.slice(0, 3).map((s, idx) => (
-                              <div key={idx}>{s}</div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Clean Price Line */}
-                        {withPrices && displayPrice && (
-                          <div className="mt-1 text-xs font-bold text-[#151B18] flex items-baseline gap-1">
-                            <span>{displayPrice}</span>
-                            <span className="text-[10px] font-normal text-[#64748B]">
-                              / {salesUnitLabel}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Product Image Bottom (Enlarged, high-clarity image with zero shadow) */}
-                      <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-2.5 bg-transparent`}>
-                        {product.mainImage || product.images?.[0] ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={product.mainImage || product.images?.[0]}
-                            alt={title}
-                            className="w-full h-full object-contain p-1"
-                            loading="eager"
-                          />
-                        ) : (
-                          <Package className="size-10 text-[#AEB9B2]" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Empty cells to complete the rectangular matrix lines */}
-                {Array.from({ length: emptySlotsCount }).map((_, idx) => (
-                  <div
-                    key={`empty-${idx}`}
-                    className={`border-r border-b border-[#DCE2DE] ${cellPadding} bg-white`}
-                  />
-                ))}
+                      key={`empty-${idx}`}
+                      className={`border-r border-b border-[#DCE2DE] ${cellPadding} bg-white`}
+                    />
+                  ))}
+                </div>
               </main>
 
               {/* PAGE FOOTER (НИЖНИЙ КОЛОНТИТУЛ С НОМЕРАМИ ТЕЛЕФОНОВ) */}
