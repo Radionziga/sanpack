@@ -692,15 +692,15 @@ export function CatalogPrintDocument({
         style={{ transform: `scale(${scale})` }}
       >
         {/* =======================================================================
-            PAGE 1: COVER PAGE (ЭЛЕГАНТНЫЙ ИЗУМРУДНЫЙ ТИТУЛЬНЫЙ ЛИСТ)
+            PAGE 1: COVER PAGE (ИЗУМРУДНЫЙ ТИТУЛЬНЫЙ ЛИСТ В ФИРМЕННЫХ ЦВЕТАХ)
             ======================================================================= */}
         <div className="a4-page a4-page-cover justify-between">
           {/* Cover Header Bar */}
-          <div className="flex justify-between items-center border-b border-emerald-800/80 pb-3.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-200">
+          <div className="flex justify-between items-center border-b border-white/20 pb-3.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
               SANPACK DISTRIBUTION LLC
             </span>
-            <span className="text-[11px] font-semibold text-emerald-200 uppercase tracking-wider font-mono">
+            <span className="text-[11px] font-semibold text-white uppercase tracking-wider font-mono">
               sanpack.uz
             </span>
           </div>
@@ -713,7 +713,7 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Subtitle Company Tagline */}
-            <div className="text-sm font-medium text-emerald-200 uppercase tracking-wider mb-6">
+            <div className="text-sm font-medium text-white/85 uppercase tracking-wider mb-6">
               {language === 'uz'
                 ? 'HoReCa va biznes uchun kompleks ta’minot'
                 : 'Комплексные поставки для HoReCa и бизнеса'}
@@ -725,7 +725,7 @@ export function CatalogPrintDocument({
             </h1>
 
             {/* Subtitle / Mode */}
-            <h2 className="text-lg sm:text-xl font-medium text-emerald-100 uppercase tracking-wide mb-10">
+            <h2 className="text-lg sm:text-xl font-medium text-white/90 uppercase tracking-wide mb-10">
               {withPrices
                 ? language === 'uz'
                   ? 'Ulgurji narxlar ro‘yxati (Prays-list)'
@@ -736,7 +736,7 @@ export function CatalogPrintDocument({
             </h2>
 
             {/* Clean Date / Year */}
-            <div className="text-xs font-semibold text-emerald-300 uppercase tracking-widest">
+            <div className="text-xs font-semibold text-white/70 uppercase tracking-widest">
               {new Intl.DateTimeFormat(language === 'uz' ? 'uz-UZ' : 'ru-RU', {
                 month: 'long',
                 year: 'numeric',
@@ -744,32 +744,32 @@ export function CatalogPrintDocument({
             </div>
           </div>
 
-          {/* Cover Footer (Clean White / Emerald Contacts) */}
-          <div className="pt-5 border-t border-emerald-800/80 grid grid-cols-3 gap-4 text-xs text-emerald-100">
+          {/* Cover Footer (Clean White / Brand Lime Contacts) */}
+          <div className="pt-5 border-t border-white/20 grid grid-cols-3 gap-4 text-xs text-white">
             {/* Phones */}
             <div className="flex items-start gap-2.5">
-              <Phone className="size-4 text-emerald-300 shrink-0 mt-0.5" />
-              <div className="font-mono text-[11px] font-semibold leading-relaxed">
-                <div>{phone1}</div>
-                <div>{phone2}</div>
+              <Phone className="size-4 text-[#79B245] shrink-0 mt-0.5" />
+              <div className="font-mono text-[11px] font-semibold leading-relaxed whitespace-nowrap">
+                <div className="whitespace-nowrap">{phone1}</div>
+                <div className="whitespace-nowrap">{phone2}</div>
               </div>
             </div>
 
             {/* Site & Email */}
             <div className="flex items-start gap-2.5 justify-center">
-              <Mail className="size-4 text-emerald-300 shrink-0 mt-0.5" />
+              <Mail className="size-4 text-[#79B245] shrink-0 mt-0.5" />
               <div className="text-[11px] leading-relaxed">
                 <div className="font-semibold text-white font-mono">{website}</div>
-                <div className="text-emerald-200">{email}</div>
+                <div className="text-white/80">{email}</div>
               </div>
             </div>
 
             {/* Address */}
             <div className="flex items-start gap-2.5 justify-end text-right">
-              <MapPin className="size-4 text-emerald-300 shrink-0 mt-0.5" />
+              <MapPin className="size-4 text-[#79B245] shrink-0 mt-0.5" />
               <div className="text-[11px] leading-snug">
                 <div className="font-semibold text-white">{address}</div>
-                <div className="text-emerald-300 mt-0.5">
+                <div className="text-white/70 mt-0.5">
                   {language === 'uz' ? 'Dush–Shan 9:00–18:00' : 'Пн–Сб 9:00–18:00'}
                 </div>
               </div>
@@ -792,18 +792,18 @@ export function CatalogPrintDocument({
                 ? 'grid-cols-3'
                 : 'grid-cols-4';
 
-          // Adaptive image and padding sizing based on number of rows (e.g. 3 rows for 9 or 12 items)
+          // Adaptive image container height: Noticeably larger images for all layouts!
           const isThreeRows = rowsCount >= 3 || pageProds.length > 8;
           const imageAreaHeight =
-            isThreeRows
-              ? 'h-24 sm:h-28'
-              : layoutCols === 2
-                ? 'h-40 sm:h-44'
-                : layoutCols === 3
+            layoutCols === 2
+              ? 'h-52 sm:h-60'
+              : layoutCols === 3 && !isThreeRows
+                ? 'h-44 sm:h-52'
+                : isThreeRows
                   ? 'h-32 sm:h-36'
-                  : 'h-28 sm:h-30';
+                  : 'h-36 sm:h-40';
 
-          const cellPadding = isThreeRows ? 'p-2.5 sm:p-3' : 'p-3 sm:p-3.5';
+          const cellPadding = isThreeRows ? 'p-2.5 sm:p-3' : 'p-3.5 sm:p-4';
 
           const categoryTitle =
             language === 'uz'
@@ -821,21 +821,21 @@ export function CatalogPrintDocument({
 
           return (
             <div key={`${category.id}-${pageIndex}`} className="a4-page justify-between">
-              {/* TOP SOLID GREEN HEADER BANNER (TALLER, LARGER LOGO, BOTH PHONE NUMBERS) */}
+              {/* TOP SOLID GREEN HEADER BANNER (NO CYAN/TURQUOISE, LARGER LOGO, NON-WRAPPING PHONE NUMBERS) */}
               <header className="bg-[#03432D] text-white px-5 py-3.5 rounded-none flex justify-between items-center shrink-0 mb-4">
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 shrink-0">
                   <SanpackLogo variant="white" className="h-7 sm:h-8" />
-                  <div className="h-5 w-px bg-emerald-500/40" />
-                  <div className="text-[11px] font-semibold text-emerald-100 uppercase tracking-wider leading-none">
+                  <div className="h-5 w-px bg-white/30" />
+                  <div className="text-[11px] font-semibold text-white/90 uppercase tracking-wider leading-none">
                     {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
                   </div>
                 </div>
-                <div className="text-right flex items-center gap-2.5 text-[10.5px] text-emerald-100 font-medium font-mono">
-                  <span className="font-semibold text-white">{phone1}</span>
-                  <span className="opacity-40">|</span>
-                  <span className="font-semibold text-white">{phone2}</span>
-                  <span className="opacity-40">|</span>
-                  <span className="font-semibold text-emerald-300">{website}</span>
+                <div className="text-right flex items-center gap-3 text-[11px] text-white font-medium font-mono whitespace-nowrap shrink-0">
+                  <span className="font-semibold text-white whitespace-nowrap">{phone1}</span>
+                  <span className="text-white/35">|</span>
+                  <span className="font-semibold text-white whitespace-nowrap">{phone2}</span>
+                  <span className="text-white/35">|</span>
+                  <span className="font-semibold text-[#DCE9AF] whitespace-nowrap">{website}</span>
                 </div>
               </header>
 
@@ -928,18 +928,18 @@ export function CatalogPrintDocument({
                         )}
                       </div>
 
-                      {/* Product Image Bottom (Clean flat image with zero shadow) */}
-                      <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-2 bg-transparent`}>
+                      {/* Product Image Bottom (Enlarged, high-clarity image with zero shadow) */}
+                      <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-2.5 bg-transparent`}>
                         {product.mainImage || product.images?.[0] ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={product.mainImage || product.images?.[0]}
                             alt={title}
-                            className="max-w-full max-h-full object-contain"
+                            className="w-full h-full object-contain p-1"
                             loading="eager"
                           />
                         ) : (
-                          <Package className="size-8 text-slate-300" />
+                          <Package className="size-10 text-slate-300" />
                         )}
                       </div>
                     </div>
