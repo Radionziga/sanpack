@@ -1,18 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  Printer,
-  ExternalLink,
-  Share2,
-  Check,
-  RefreshCw,
-  Sparkles,
-  Loader2,
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { CatalogPrintDocument } from '@/components/catalog/CatalogPrintDocument';
-import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
+import type { Category, ClientPartner, Product, SiteSettings } from '@/types';
 
 export default function PdfCatalogAdminPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -20,7 +12,6 @@ export default function PdfCatalogAdminPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [clients, setClients] = useState<ClientPartner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -58,61 +49,11 @@ export default function PdfCatalogAdminPage() {
     loadData();
   }, []);
 
-  const handleCopyLink = () => {
-    if (navigator.clipboard) {
-      const url = `${window.location.origin}/ru/catalog/print?prices=1`;
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }
-  };
-
   return (
     <div className="admin-page mx-auto max-w-7xl space-y-4">
       <AdminPageHeader
         title="PDF-каталог и прайс-листы (A4)"
         description="Интерактивная студия формирования каталога формата А4 с крупными фото, живыми оптовыми ценами и сохранением в PDF."
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleCopyLink}
-              className="admin-button-secondary text-xs sm:text-sm flex items-center gap-1.5"
-              title="Скопировать прямую ссылку на каталог для клиентов"
-            >
-              {copied ? (
-                <>
-                  <Check className="size-4 text-[var(--sp-success)]" />
-                  <span>Ссылка скопирована!</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="size-4" />
-                  <span>Копировать ссылку</span>
-                </>
-              )}
-            </button>
-
-            <a
-              href="/ru/catalog/print?prices=1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="admin-button-secondary text-xs sm:text-sm flex items-center gap-1.5"
-              title="Открыть каталог на весь экран"
-            >
-              <ExternalLink className="size-4" />
-              <span>На весь экран</span>
-            </a>
-
-            <button
-              onClick={() => window.print()}
-              className="admin-button-primary text-xs sm:text-sm flex items-center gap-2"
-              title="Распечатать или сохранить в PDF"
-            >
-              <Printer className="size-4" />
-              <span>Печать / Сохранить в PDF</span>
-            </button>
-          </div>
-        }
       />
 
       {loading ? (

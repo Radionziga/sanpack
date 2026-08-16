@@ -8,6 +8,7 @@ import {
   ZoomIn,
   ZoomOut,
   ArrowLeft,
+  ExternalLink,
   Package,
   Phone,
   Mail,
@@ -16,6 +17,8 @@ import {
   Truck,
   Building2,
   Sparkles,
+  Layers,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
@@ -85,10 +88,18 @@ function translateTitleToUzbek(titleRu: string): string {
     [/Хозяйственные перчатки/gi, 'Xo‘jalik qo‘lqoplari'],
     [/Одноразовые перчатки/gi, 'Bir martalik qo‘lqoplar'],
     [/Перчатки/gi, 'Qo‘lqoplar'],
+    [/Губки для мытья посуды/gi, 'Idish yuvish gubkalari'],
     [/Губки для посуды/gi, 'Idish yuvish gubkalari'],
+    [/Корейская губка/gi, 'Koreys gubkasi'],
     [/Губки/gi, 'Gubkalar'],
+    [/Губка/gi, 'Gubka'],
+    [/Цветные тряпки для столов/gi, 'Stol uchun rangli lattalar'],
+    [/Половая тряпка из микрофибры/gi, 'Mikrofibradan pol lattasi'],
+    [/Половая тряпка/gi, 'Pol lattasi'],
+    [/Тряпка «Дельфин»/gi, '«Delfin» lattasi'],
     [/Тряпки для уборки/gi, 'Tozalash lattalari'],
     [/Тряпки/gi, 'Lattalar'],
+    [/Тряпка/gi, 'Latta'],
     [/Зубочистки/gi, 'Tish tozalagichlar'],
     [/Шпажки/gi, 'Sixlar'],
     [/Одноразовые стаканы/gi, 'Bir martalik stakanlar'],
@@ -103,6 +114,24 @@ function translateTitleToUzbek(titleRu: string): string {
     [/Коробки/gi, 'Qutilar'],
     [/Фольгированные формы/gi, 'Folga qoliplar'],
     [/Трубочки/gi, 'Trubochkalar'],
+    [/Продукты питания/gi, 'Oziq-ovqat mahsulotlari'],
+    [/Упаковка и расходные материалы/gi, 'Qadoqlash va sarf materiallari'],
+    [/Упаковка для пищевых продуктов/gi, 'Oziq-ovqat qadoqlari'],
+    [/Бумажная продукция/gi, 'Qog‘oz mahsulotlari'],
+    [/Хозяйственные товары/gi, 'Xo‘jalik mollari'],
+    [/Говядина/gi, 'Mol go‘shti'],
+    [/Курица/gi, 'Tovuq go‘shti'],
+    [/Молочная продукция/gi, 'Sut mahsulotlari'],
+    [/Куриные яйца/gi, 'Tovuq tuxumlari'],
+    [/Мука/gi, 'Un mahsulotlari'],
+    [/Фрукты/gi, 'Mevalar'],
+    [/Свежая зелень Novagreen/gi, 'Novagreen yangi ko‘katlari'],
+    [/Крупы и бобовые/gi, 'Yormalar va dukkaklilar'],
+    [/Микрозелень/gi, 'Mikroko‘katlar'],
+    [/Растительные и фритюрные масла/gi, 'O‘simlik va fritur moylari'],
+    [/Сахар/gi, 'Shakar'],
+    [/Овощи/gi, 'Sabzavotlar'],
+    [/Ягоды/gi, 'Mevalar va rezavorlar'],
 
     // Modifiers & Adjectives
     [/ультрапрочные/gi, 'o‘ta mustahkam'],
@@ -164,7 +193,6 @@ function translateTitleToUzbek(titleRu: string): string {
 
 function getLocalizedProductTitle(product: Product, language: Language): string {
   if (language === 'uz') {
-    // If product has a genuine Uzbek title with Latin characters
     if (product.titleUz && product.titleUz !== product.titleRu && !/[а-яё]/i.test(product.titleUz)) {
       return product.titleUz;
     }
@@ -213,7 +241,7 @@ export function CatalogPrintDocument({
   const [withPrices, setWithPrices] = useState<boolean>(initialOptions.withPrices !== false);
   const [language, setLanguage] = useState<Language>(initialOptions.language || 'ru');
   const [selectedCategory, setSelectedCategory] = useState<string>(initialOptions.categoryId || '');
-  const [scale, setScale] = useState<number>(embeddedInAdmin ? 0.75 : 0.85);
+  const [scale, setScale] = useState<number>(embeddedInAdmin ? 0.78 : 0.85);
   const [copied, setCopied] = useState<boolean>(false);
 
   // Set page title for nice PDF export filename
@@ -227,32 +255,69 @@ export function CatalogPrintDocument({
     return [...initialCategories].sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
   }, [initialCategories]);
 
-  // Filter products by selected category (if any) and published status
+  // Separate parent categories (parentId is empty/undefined) and child categories
+  const parentCategories = useMemo(() => {
+    return sortedCategories.filter((c) => !c.parentId);
+  }, [sortedCategories]);
+
+  // Find all category IDs for the currently selected category (including child categories)
+  const matchingCategoryIds = useMemo(() => {
+    if (!selectedCategory) return null; // All categories
+
+    const targetCat = sortedCategories.find(
+      (c) => c.id === selectedCategory || c.slug === selectedCategory
+    );
+    if (!targetCat) return new Set([selectedCategory]);
+
+    const ids = new Set<string>();
+    ids.add(targetCat.id);
+    if (targetCat.slug) ids.add(targetCat.slug);
+
+    // Recursively add children
+    const addDescendants = (parentId: string) => {
+      for (const c of sortedCategories) {
+        if (c.parentId === parentId) {
+          ids.add(c.id);
+          if (c.slug) ids.add(c.slug);
+          addDescendants(c.id);
+        }
+      }
+    };
+    addDescendants(targetCat.id);
+
+    return ids;
+  }, [selectedCategory, sortedCategories]);
+
+  // Filter products by selected category hierarchy and published status
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((p) => {
       if (p.status && p.status !== 'published') return false;
-      if (selectedCategory && p.categoryId !== selectedCategory && p.categorySlug !== selectedCategory) {
-        return false;
+      if (matchingCategoryIds) {
+        const match =
+          (p.categoryId && matchingCategoryIds.has(p.categoryId)) ||
+          (p.categorySlug && matchingCategoryIds.has(p.categorySlug));
+        if (!match) return false;
       }
       return true;
     });
-  }, [initialProducts, selectedCategory]);
+  }, [initialProducts, matchingCategoryIds]);
 
   // Dynamic category page solver:
-  // - <= 6 items -> 1 page (3 cols x 2 rows or 2 cols x 2 rows)
-  // - 7..8 items -> 1 page (4 cols x 2 rows)
-  // - 9..12 items -> 2 pages of 6 (3 cols x 2 rows)
-  // - 13..16 items -> 2 pages of 8 (4 cols x 2 rows)
+  // - Categories with items are paginated
+  // - <= 6 items -> 1 page (3 cols or 2 cols)
+  // - 7..8 items -> 1 page (4 cols)
+  // - 9..12 items -> 2 pages of 6
+  // - 13..16 items -> 2 pages of 8
   const categoryPages = useMemo(() => {
     const pages: CategoryPageChunk[] = [];
 
-    const activeCategories = selectedCategory
-      ? sortedCategories.filter((c) => c.id === selectedCategory || c.slug === selectedCategory)
+    const activeCategories = matchingCategoryIds
+      ? sortedCategories.filter((c) => matchingCategoryIds.has(c.id) || (c.slug && matchingCategoryIds.has(c.slug)))
       : sortedCategories;
 
     for (const cat of activeCategories) {
       const catProds = filteredProducts.filter(
-        (p) => p.categoryId === cat.id || p.categorySlug === cat.slug
+        (p) => p.categoryId === cat.id || p.categorySlug === cat.slug || p.categoryId === cat.slug
       );
       if (catProds.length === 0) continue;
 
@@ -292,7 +357,7 @@ export function CatalogPrintDocument({
     }
 
     return pages;
-  }, [filteredProducts, sortedCategories, selectedCategory]);
+  }, [filteredProducts, sortedCategories, matchingCategoryIds]);
 
   // Total pages including cover
   const totalDocumentPages = categoryPages.length + 1;
@@ -309,7 +374,8 @@ export function CatalogPrintDocument({
 
   const handleCopyLink = () => {
     if (typeof window !== 'undefined' && navigator.clipboard) {
-      const url = new URL(window.location.href);
+      const origin = window.location.origin;
+      const url = new URL(`${origin}/ru/catalog/print`);
       url.searchParams.set('prices', withPrices ? '1' : '0');
       url.searchParams.set('lang', language);
       if (selectedCategory) url.searchParams.set('category', selectedCategory);
@@ -322,62 +388,71 @@ export function CatalogPrintDocument({
   return (
     <div className={`min-h-screen text-slate-900 font-sans antialiased flex flex-col items-center ${embeddedInAdmin ? 'bg-transparent' : 'bg-slate-200'}`}>
       {/* =========================================================================
-          FLOATING ACTION BAR (SCREEN ONLY - HIDDEN ON PRINT)
+          INTEGRATED NATIVE CONTROL TOOLBAR (ADMIN PANEL STYLE)
           ========================================================================= */}
-      <aside aria-label="Панель печати каталога" className="no-print sticky top-4 z-50 w-full max-w-5xl px-4 pointer-events-none mb-4">
-        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/70 flex flex-wrap items-center justify-between gap-3">
-          {/* Back link & Title */}
+      <aside aria-label="Панель управления каталогом" className="no-print sticky top-2 z-40 w-full max-w-6xl px-2 sm:px-4 mb-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+          {/* Left Group: Status / Filter info */}
           <div className="flex items-center gap-3">
             {!embeddedInAdmin && (
               <Link
                 href="/catalog"
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 transition"
                 title="Вернуться на сайт"
               >
                 <ArrowLeft className="size-4" />
               </Link>
             )}
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                <Sparkles className="size-3.5" />
-                <span>SANPACK Каталог продукции (A4)</span>
+              <div className="text-xs font-bold text-[#03432D] dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <FileText className="size-4 text-[#03432D]" />
+                <span>SANPACK Каталог А4</span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-500 font-medium">
                 {totalDocumentPages} стр. • {filteredProducts.length} позиций
               </div>
             </div>
           </div>
 
-          {/* Quick Filters */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* Price Toggle */}
-            <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+          {/* Center Controls: Prices, Language, Category */}
+          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+            {/* Price Segmented Toggle */}
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
               <button
+                type="button"
                 onClick={() => setWithPrices(true)}
-                className={`px-2.5 py-1 rounded-md font-semibold transition ${
-                  withPrices ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+                  withPrices
+                    ? 'bg-[#03432D] text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                 }`}
               >
                 С ценами
               </button>
               <button
+                type="button"
                 onClick={() => setWithPrices(false)}
-                className={`px-2.5 py-1 rounded-md font-semibold transition ${
-                  !withPrices ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+                  !withPrices
+                    ? 'bg-[#03432D] text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                 }`}
               >
                 Без цен
               </button>
             </div>
 
-            {/* Language Switcher */}
-            <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+            {/* Language Segmented Toggle */}
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
               {(['ru', 'uz', 'en'] as const).map((l) => (
                 <button
+                  type="button"
                   key={l}
                   onClick={() => setLanguage(l)}
-                  className={`px-2 py-1 rounded-md font-bold uppercase transition ${
-                    language === l ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                  className={`px-2.5 py-1.5 rounded-lg font-bold uppercase transition ${
+                    language === l
+                      ? 'bg-[#03432D] text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   {l}
@@ -385,37 +460,62 @@ export function CatalogPrintDocument({
               ))}
             </div>
 
-            {/* Category selector */}
+            {/* Category Hierarchical Selector */}
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-emerald-500 outline-none max-w-[200px] truncate"
+              className="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-emerald-500 outline-none max-w-[260px] truncate shadow-sm cursor-pointer"
             >
-              <option value="">Все категории ({initialProducts.length})</option>
-              {sortedCategories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {language === 'uz' ? c.titleUz || c.titleRu : c.titleRu}
-                </option>
-              ))}
+              <option value="">Все разделы ({initialProducts.length} тов.)</option>
+              {parentCategories.map((parent) => {
+                const children = sortedCategories.filter((c) => c.parentId === parent.id);
+                const parentChildIds = new Set([parent.id, ...children.map((ch) => ch.id)]);
+                const parentTotalProds = initialProducts.filter(
+                  (p) => p.categoryId && parentChildIds.has(p.categoryId)
+                ).length;
+
+                return (
+                  <optgroup
+                    key={parent.id}
+                    label={`${language === 'uz' ? parent.titleUz || parent.titleRu : parent.titleRu} (${parentTotalProds})`}
+                  >
+                    <option value={parent.id} className="font-bold">
+                      📁 Все: {language === 'uz' ? parent.titleUz || parent.titleRu : parent.titleRu} ({parentTotalProds})
+                    </option>
+                    {children.map((child) => {
+                      const childProds = initialProducts.filter(
+                        (p) => p.categoryId === child.id || p.categorySlug === child.slug
+                      ).length;
+                      return (
+                        <option key={child.id} value={child.id}>
+                          &nbsp;&nbsp;↳ {language === 'uz' ? child.titleUz || child.titleRu : child.titleRu} ({childProds})
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                );
+              })}
             </select>
           </div>
 
-          {/* Actions: Zoom, Copy Link, Print */}
+          {/* Right Actions: Zoom, Copy Link, Fullscreen, Print */}
           <div className="flex items-center gap-2">
             {/* Zoom Controls */}
-            <div className="hidden sm:flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-lg border border-slate-700 text-slate-300 text-xs">
+            <div className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs">
               <button
+                type="button"
                 onClick={() => setScale((s) => Math.max(0.4, s - 0.1))}
-                className="hover:text-white p-0.5"
-                title="Уменьшить"
+                className="hover:text-black dark:hover:text-white p-1"
+                title="Уменьшить масштаб"
               >
                 <ZoomOut className="size-3.5" />
               </button>
-              <span className="font-mono text-[10px] w-8 text-center">{Math.round(scale * 100)}%</span>
+              <span className="font-mono text-[11px] w-9 text-center font-semibold">{Math.round(scale * 100)}%</span>
               <button
+                type="button"
                 onClick={() => setScale((s) => Math.min(1.2, s + 0.1))}
-                className="hover:text-white p-0.5"
-                title="Увеличить"
+                className="hover:text-black dark:hover:text-white p-1"
+                title="Увеличить масштаб"
               >
                 <ZoomIn className="size-3.5" />
               </button>
@@ -423,21 +523,35 @@ export function CatalogPrintDocument({
 
             {/* Copy Link */}
             <button
+              type="button"
               onClick={handleCopyLink}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition active:scale-95"
-              title="Скопировать ссылку на каталог"
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              title="Скопировать прямую ссылку на каталог"
             >
-              {copied ? <Check className="size-3.5 text-emerald-400" /> : <Share2 className="size-3.5" />}
+              {copied ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5" />}
               <span className="hidden sm:inline">{copied ? 'Скопировано' : 'Ссылка'}</span>
             </button>
 
+            {/* Open Fullscreen link */}
+            <a
+              href={`/ru/catalog/print?prices=${withPrices ? '1' : '0'}&lang=${language}${selectedCategory ? `&category=${selectedCategory}` : ''}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              title="Открыть каталог в новой вкладке"
+            >
+              <ExternalLink className="size-3.5" />
+              <span className="hidden md:inline">На весь экран</span>
+            </a>
+
             {/* PRINT / SAVE PDF BUTTON */}
             <button
+              type="button"
               onClick={() => window.print()}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded-lg shadow-lg flex items-center gap-2 text-xs transition active:scale-95"
+              className="bg-[#03432D] hover:bg-[#023322] text-white font-bold px-4 py-2 rounded-xl shadow-md flex items-center gap-2 text-xs transition active:scale-95"
             >
               <Printer className="size-4" />
-              <span>Печать / Экспорт в PDF</span>
+              <span>Печать / Сохранить в PDF</span>
             </button>
           </div>
         </div>
@@ -647,7 +761,7 @@ export function CatalogPrintDocument({
         </div>
 
         {/* =======================================================================
-            PAGES 2+: EDITORIAL BROCHURE STYLE (SHARP CORNERS, MORE BREATHING ROOM, NO SHADOWS)
+            PAGES 2+: EDITORIAL BROCHURE STYLE WITH DELICATE THIN GREY DIVIDER GRID
             ======================================================================= */}
         {categoryPages.map((pageData, pageIdx) => {
           const { category, products: pageProds, pageIndex, totalCategoryPages, layoutCols } = pageData;
@@ -656,13 +770,13 @@ export function CatalogPrintDocument({
           // Grid class based on solved layout
           const gridColsClass =
             layoutCols === 2
-              ? 'grid-cols-2 gap-x-8 gap-y-10'
+              ? 'grid-cols-2'
               : layoutCols === 3
-                ? 'grid-cols-3 gap-x-6 gap-y-8'
-                : 'grid-cols-4 gap-x-4 gap-y-7';
+                ? 'grid-cols-3'
+                : 'grid-cols-4';
 
           const imageAreaHeight =
-            layoutCols === 2 ? 'h-48' : layoutCols === 3 ? 'h-40' : 'h-32';
+            layoutCols === 2 ? 'h-44' : layoutCols === 3 ? 'h-36' : 'h-28';
 
           const categoryTitle =
             language === 'uz'
@@ -674,10 +788,14 @@ export function CatalogPrintDocument({
               ? category.titleRu
               : category.titleUz;
 
+          // Calculate total slots for an even, balanced grid matrix
+          const totalSlots = Math.ceil(pageProds.length / layoutCols) * layoutCols;
+          const emptySlotsCount = totalSlots - pageProds.length;
+
           return (
             <div key={`${category.id}-${pageIndex}`} className="a4-page justify-between">
               {/* TOP SOLID GREEN HEADER BANNER (CRISP 90-DEGREE EDGES, NO ROUNDED CORNERS) */}
-              <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-6">
+              <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-5">
                 <div className="flex items-center gap-3">
                   <SanpackLogo variant="white" className="h-5" />
                   <div className="h-4 w-px bg-emerald-500/50" />
@@ -693,7 +811,7 @@ export function CatalogPrintDocument({
               </header>
 
               {/* CATEGORY TITLE & SUBTITLE WITH GENEROUS AIR */}
-              <section className="mb-6 shrink-0">
+              <section className="mb-4 shrink-0">
                 <h1 className="text-2xl font-extrabold text-slate-900 uppercase leading-none tracking-tight">
                   {categoryTitle}
                 </h1>
@@ -704,8 +822,10 @@ export function CatalogPrintDocument({
                 )}
               </section>
 
-              {/* PRODUCTS GRID (EDITORIAL AIR, CLEAN BLENDING IMAGES - ZERO DROP SHADOW) */}
-              <main className={`flex-1 grid ${gridColsClass} content-start py-1`}>
+              {/* PRODUCTS GRID MATRIX WITH DELICATE THIN GREY DIVIDERS */}
+              <main
+                className={`flex-1 grid ${gridColsClass} content-start border-t border-l border-slate-200/80`}
+              >
                 {pageProds.map((product) => {
                   // Full localized title
                   const title = getLocalizedProductTitle(product, language);
@@ -757,9 +877,9 @@ export function CatalogPrintDocument({
                   return (
                     <div
                       key={product.id}
-                      className="flex flex-col justify-between items-start h-full"
+                      className="border-r border-b border-slate-200/80 p-3.5 flex flex-col justify-between items-start h-full bg-white transition-colors"
                     >
-                      {/* Product Text Top (Clean, Readable, Non-heavy Font) */}
+                      {/* Product Text Top */}
                       <div className="w-full">
                         {/* Title in Brand Green */}
                         <h3 className="text-xs sm:text-[13px] font-bold text-[#03432D] uppercase tracking-normal leading-snug">
@@ -768,14 +888,14 @@ export function CatalogPrintDocument({
 
                         {/* Specs */}
                         {specs.length > 0 && (
-                          <div className="text-[11px] text-slate-600 font-normal leading-tight mt-1 space-y-0.5">
+                          <div className="text-[10px] sm:text-[11px] text-slate-500 font-normal leading-tight mt-1 space-y-0.5">
                             {specs.slice(0, 3).map((s, idx) => (
                               <div key={idx}>{s}</div>
                             ))}
                           </div>
                         )}
 
-                        {/* Clean Price Line (No neon pills) */}
+                        {/* Clean Price Line */}
                         {withPrices && displayPrice && (
                           <div className="mt-1.5 text-xs font-bold text-slate-900 flex items-baseline gap-1">
                             <span>{displayPrice}</span>
@@ -786,7 +906,7 @@ export function CatalogPrintDocument({
                         )}
                       </div>
 
-                      {/* Product Image Bottom (100% flat seamless blend with paper - NO DROP SHADOW) */}
+                      {/* Product Image Bottom (Clean flat image with zero shadow) */}
                       <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-3 bg-transparent`}>
                         {product.mainImage || product.images?.[0] ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
@@ -803,6 +923,14 @@ export function CatalogPrintDocument({
                     </div>
                   );
                 })}
+
+                {/* Empty cells to complete the rectangular matrix lines */}
+                {Array.from({ length: emptySlotsCount }).map((_, idx) => (
+                  <div
+                    key={`empty-${idx}`}
+                    className="border-r border-b border-slate-200/80 p-3.5 bg-white"
+                  />
+                ))}
               </main>
 
               {/* PAGE FOOTER (НИЖНИЙ КОЛОНТИТУЛ) */}
