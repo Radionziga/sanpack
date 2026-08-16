@@ -17,7 +17,6 @@ import {
   Truck,
   Building2,
   Sparkles,
-  Layers,
   FileText,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -44,6 +43,7 @@ interface CategoryPageChunk {
   pageIndex: number;
   totalCategoryPages: number;
   layoutCols: 2 | 3 | 4;
+  rowsCount: number;
 }
 
 // Comprehensive dictionary for translating product titles and terms into Uzbek
@@ -121,6 +121,15 @@ function translateTitleToUzbek(titleRu: string): string {
     [/Хозяйственные товары/gi, 'Xo‘jalik mollari'],
     [/Говядина/gi, 'Mol go‘shti'],
     [/Курица/gi, 'Tovuq go‘shti'],
+    [/Куриный окорочок/gi, 'Tovuq soni'],
+    [/Куриные крылышки/gi, 'Tovuq qanotchalari'],
+    [/Целая курица/gi, 'Butun tovuq'],
+    [/Куриная грудка очищенная/gi, 'Tozalangan tovuq filesi'],
+    [/Куриная грудка/gi, 'Tovuq filesi'],
+    [/Куриное бедро без костей и кожи/gi, 'Suyaksiz va terisiz tovuq soni'],
+    [/Куриное бедро без костей/gi, 'Suyaksiz tovuq soni'],
+    [/Куриное бедро/gi, 'Tovuq soni'],
+    [/Куриная голень/gi, 'Tovuq boldiri'],
     [/Молочная продукция/gi, 'Sut mahsulotlari'],
     [/Куриные яйца/gi, 'Tovuq tuxumlari'],
     [/Мука/gi, 'Un mahsulotlari'],
@@ -303,11 +312,12 @@ export function CatalogPrintDocument({
   }, [initialProducts, matchingCategoryIds]);
 
   // Dynamic category page solver:
-  // - Categories with items are paginated
-  // - <= 6 items -> 1 page (3 cols or 2 cols)
-  // - 7..8 items -> 1 page (4 cols)
-  // - 9..12 items -> 2 pages of 6
-  // - 13..16 items -> 2 pages of 8
+  // - 1..4 items -> 1 page (2 cols x 2 rows)
+  // - 5..6 items -> 1 page (3 cols x 2 rows)
+  // - 7..8 items -> 1 page (4 cols x 2 rows)
+  // - 9 items -> 1 page (3 cols x 3 rows = 9 items) - Perfect for Chicken/Курица!
+  // - 10..12 items -> 1 page (4 cols x 3 rows = 12 items)
+  // - > 12 items -> Split evenly into balanced multi-page batches of up to 9 or 12 items
   const categoryPages = useMemo(() => {
     const pages: CategoryPageChunk[] = [];
 
@@ -323,13 +333,23 @@ export function CatalogPrintDocument({
 
       const totalCount = catProds.length;
 
-      if (totalCount <= 6) {
+      if (totalCount <= 4) {
         pages.push({
           category: cat,
           products: catProds,
           pageIndex: 1,
           totalCategoryPages: 1,
-          layoutCols: totalCount <= 4 ? 2 : 3,
+          layoutCols: 2,
+          rowsCount: Math.ceil(totalCount / 2),
+        });
+      } else if (totalCount <= 6) {
+        pages.push({
+          category: cat,
+          products: catProds,
+          pageIndex: 1,
+          totalCategoryPages: 1,
+          layoutCols: 3,
+          rowsCount: 2,
         });
       } else if (totalCount <= 8) {
         pages.push({
@@ -338,19 +358,43 @@ export function CatalogPrintDocument({
           pageIndex: 1,
           totalCategoryPages: 1,
           layoutCols: 4,
+          rowsCount: 2,
+        });
+      } else if (totalCount === 9) {
+        // Fits all 9 items (e.g. Курица) on 1 single page in a clean 3x3 matrix!
+        pages.push({
+          category: cat,
+          products: catProds,
+          pageIndex: 1,
+          totalCategoryPages: 1,
+          layoutCols: 3,
+          rowsCount: 3,
+        });
+      } else if (totalCount <= 12) {
+        // Fits up to 12 items on 1 single page in a 4x3 matrix!
+        pages.push({
+          category: cat,
+          products: catProds,
+          pageIndex: 1,
+          totalCategoryPages: 1,
+          layoutCols: 4,
+          rowsCount: 3,
         });
       } else {
-        const itemsPerPage = totalCount <= 12 ? 6 : 8;
+        // More than 12 items: calculate optimal batch size (e.g. 9 or 12 items per page)
+        const itemsPerPage = totalCount <= 18 ? 9 : 12;
         const totalPages = Math.ceil(totalCount / itemsPerPage);
-        const cols: 3 | 4 = itemsPerPage === 6 ? 3 : 4;
+        const cols: 3 | 4 = itemsPerPage === 9 ? 3 : 4;
 
         for (let i = 0; i < totalPages; i++) {
+          const slice = catProds.slice(i * itemsPerPage, (i + 1) * itemsPerPage);
           pages.push({
             category: cat,
-            products: catProds.slice(i * itemsPerPage, (i + 1) * itemsPerPage),
+            products: slice,
             pageIndex: i + 1,
             totalCategoryPages: totalPages,
             layoutCols: cols,
+            rowsCount: Math.ceil(slice.length / cols),
           });
         }
       }
@@ -386,7 +430,7 @@ export function CatalogPrintDocument({
   };
 
   return (
-    <div className={`min-h-screen text-slate-900 font-sans antialiased flex flex-col items-center ${embeddedInAdmin ? 'bg-transparent' : 'bg-slate-200'}`}>
+    <div className={`min-h-screen text-slate-800 font-sans antialiased flex flex-col items-center ${embeddedInAdmin ? 'bg-transparent' : 'bg-slate-200'}`}>
       {/* =========================================================================
           INTEGRATED NATIVE CONTROL TOOLBAR (ADMIN PANEL STYLE)
           ========================================================================= */}
@@ -675,12 +719,12 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Main Title */}
-            <h1 className="text-4xl font-extrabold text-slate-900 uppercase tracking-tight leading-none mb-3">
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#03432D] uppercase tracking-tight leading-none mb-3">
               {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
             </h1>
 
             {/* Subtitle / Mode */}
-            <h2 className="text-base font-semibold text-slate-600 uppercase tracking-wider mb-8">
+            <h2 className="text-sm sm:text-base font-semibold text-slate-600 uppercase tracking-wider mb-8">
               {withPrices
                 ? language === 'uz'
                   ? 'Ulgurji narxlar ro‘yxati (Prays-list)'
@@ -694,7 +738,7 @@ export function CatalogPrintDocument({
             <div className="grid grid-cols-3 gap-4 w-full max-w-lg mb-8 text-left">
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <Building2 className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-bold text-slate-900 uppercase">
+                <div className="text-xs font-bold text-slate-800 uppercase">
                   {language === 'uz' ? '160+ pozitsiya' : '160+ позиций'}
                 </div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
@@ -703,7 +747,7 @@ export function CatalogPrintDocument({
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <ShieldCheck className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-bold text-slate-900 uppercase">
+                <div className="text-xs font-bold text-slate-800 uppercase">
                   {language === 'uz' ? 'O‘z ishlab chiqarishimiz' : 'Собственное пр-во'}
                 </div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
@@ -712,7 +756,7 @@ export function CatalogPrintDocument({
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <Truck className="size-6 text-[#03432D] mb-2" />
-                <div className="text-xs font-bold text-slate-900 uppercase">
+                <div className="text-xs font-bold text-slate-800 uppercase">
                   {language === 'uz' ? 'Tezkor yetkazib berish' : 'Быстрая доставка'}
                 </div>
                 <div className="text-[10px] text-slate-500 leading-tight mt-1">
@@ -764,7 +808,7 @@ export function CatalogPrintDocument({
             PAGES 2+: EDITORIAL BROCHURE STYLE WITH DELICATE THIN GREY DIVIDER GRID
             ======================================================================= */}
         {categoryPages.map((pageData, pageIdx) => {
-          const { category, products: pageProds, pageIndex, totalCategoryPages, layoutCols } = pageData;
+          const { category, products: pageProds, pageIndex, totalCategoryPages, layoutCols, rowsCount } = pageData;
           const currentDocPageNumber = pageIdx + 2;
 
           // Grid class based on solved layout
@@ -775,8 +819,18 @@ export function CatalogPrintDocument({
                 ? 'grid-cols-3'
                 : 'grid-cols-4';
 
+          // Adaptive image and padding sizing based on number of rows (e.g. 3 rows for 9 or 12 items)
+          const isThreeRows = rowsCount >= 3 || pageProds.length > 8;
           const imageAreaHeight =
-            layoutCols === 2 ? 'h-44' : layoutCols === 3 ? 'h-36' : 'h-28';
+            isThreeRows
+              ? 'h-24 sm:h-28'
+              : layoutCols === 2
+                ? 'h-40 sm:h-44'
+                : layoutCols === 3
+                  ? 'h-32 sm:h-36'
+                  : 'h-28 sm:h-30';
+
+          const cellPadding = isThreeRows ? 'p-2.5 sm:p-3' : 'p-3 sm:p-3.5';
 
           const categoryTitle =
             language === 'uz'
@@ -795,7 +849,7 @@ export function CatalogPrintDocument({
           return (
             <div key={`${category.id}-${pageIndex}`} className="a4-page justify-between">
               {/* TOP SOLID GREEN HEADER BANNER (CRISP 90-DEGREE EDGES, NO ROUNDED CORNERS) */}
-              <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-5">
+              <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-4">
                 <div className="flex items-center gap-3">
                   <SanpackLogo variant="white" className="h-5" />
                   <div className="h-4 w-px bg-emerald-500/50" />
@@ -810,13 +864,13 @@ export function CatalogPrintDocument({
                 </div>
               </header>
 
-              {/* CATEGORY TITLE & SUBTITLE WITH GENEROUS AIR */}
-              <section className="mb-4 shrink-0">
-                <h1 className="text-2xl font-extrabold text-slate-900 uppercase leading-none tracking-tight">
+              {/* CATEGORY TITLE & SUBTITLE (SOFT ELEGANT BRAND GREEN / SLATE, NO HARSH PITCH BLACK) */}
+              <section className="mb-3.5 shrink-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#03432D] uppercase leading-none tracking-normal">
                   {categoryTitle}
                 </h1>
                 {categorySubtitle && (
-                  <h2 className="text-xs text-slate-500 font-medium mt-1 uppercase tracking-wide">
+                  <h2 className="text-[11px] text-slate-500 font-medium mt-1 uppercase tracking-wide">
                     {categorySubtitle}
                   </h2>
                 )}
@@ -877,18 +931,18 @@ export function CatalogPrintDocument({
                   return (
                     <div
                       key={product.id}
-                      className="border-r border-b border-slate-200/80 p-3.5 flex flex-col justify-between items-start h-full bg-white transition-colors"
+                      className={`border-r border-b border-slate-200/80 ${cellPadding} flex flex-col justify-between items-start h-full bg-white`}
                     >
-                      {/* Product Text Top */}
+                      {/* Product Text Top (Clean, Readable, Brand Green) */}
                       <div className="w-full">
                         {/* Title in Brand Green */}
-                        <h3 className="text-xs sm:text-[13px] font-bold text-[#03432D] uppercase tracking-normal leading-snug">
+                        <h3 className="text-[11.5px] sm:text-xs font-bold text-[#03432D] uppercase tracking-normal leading-snug">
                           {title}
                         </h3>
 
                         {/* Specs */}
                         {specs.length > 0 && (
-                          <div className="text-[10px] sm:text-[11px] text-slate-500 font-normal leading-tight mt-1 space-y-0.5">
+                          <div className="text-[10px] text-slate-500 font-normal leading-tight mt-0.5 space-y-0.5">
                             {specs.slice(0, 3).map((s, idx) => (
                               <div key={idx}>{s}</div>
                             ))}
@@ -897,7 +951,7 @@ export function CatalogPrintDocument({
 
                         {/* Clean Price Line */}
                         {withPrices && displayPrice && (
-                          <div className="mt-1.5 text-xs font-bold text-slate-900 flex items-baseline gap-1">
+                          <div className="mt-1 text-xs font-bold text-slate-800 flex items-baseline gap-1">
                             <span>{displayPrice}</span>
                             <span className="text-[10px] font-normal text-slate-500">
                               / {salesUnitLabel}
@@ -907,7 +961,7 @@ export function CatalogPrintDocument({
                       </div>
 
                       {/* Product Image Bottom (Clean flat image with zero shadow) */}
-                      <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-3 bg-transparent`}>
+                      <div className={`w-full ${imageAreaHeight} flex items-center justify-center mt-2 bg-transparent`}>
                         {product.mainImage || product.images?.[0] ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
@@ -917,7 +971,7 @@ export function CatalogPrintDocument({
                             loading="eager"
                           />
                         ) : (
-                          <Package className="size-10 text-slate-300" />
+                          <Package className="size-8 text-slate-300" />
                         )}
                       </div>
                     </div>
@@ -928,7 +982,7 @@ export function CatalogPrintDocument({
                 {Array.from({ length: emptySlotsCount }).map((_, idx) => (
                   <div
                     key={`empty-${idx}`}
-                    className="border-r border-b border-slate-200/80 p-3.5 bg-white"
+                    className={`border-r border-b border-slate-200/80 ${cellPadding} bg-white`}
                   />
                 ))}
               </main>
