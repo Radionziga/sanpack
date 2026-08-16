@@ -9,7 +9,7 @@ import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { ProductVariantsEditor } from '@/components/admin/ProductVariantsEditor';
 import { deleteUploadedMedia, MediaUploadField } from '@/components/admin/MediaUploadField';
-import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star, FileText, Download } from 'lucide-react';
 import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 
 const attributeLabels: Record<string, string> = {
@@ -309,9 +309,31 @@ export default function AdminProductsPage() {
         title="Товары"
         description="Управляйте ассортиментом, ценами, упаковкой и характеристиками. Редактор открывается как отдельное рабочее пространство."
         action={(
-          <button type="button" onClick={handleOpenCreate} className="admin-button-primary">
-            <Plus className="size-4" aria-hidden="true" /> Добавить товар
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/api/catalog/pdf?prices=1"
+              target="_blank"
+              rel="noreferrer"
+              className="admin-button-secondary inline-flex items-center gap-1.5 text-xs font-semibold"
+              title="Сгенерировать и открыть PDF-прайс с актуальными ценами"
+            >
+              <FileText className="size-3.5 text-[var(--sp-brand)]" aria-hidden="true" />
+              PDF с ценами
+            </a>
+            <a
+              href="/api/catalog/pdf?prices=0"
+              target="_blank"
+              rel="noreferrer"
+              className="admin-button-secondary inline-flex items-center gap-1.5 text-xs font-semibold"
+              title="Сгенерировать и открыть PDF-каталог без цен (для презентаций)"
+            >
+              <FileText className="size-3.5 text-[var(--sp-ink-secondary)]" aria-hidden="true" />
+              PDF без цен
+            </a>
+            <button type="button" onClick={handleOpenCreate} className="admin-button-primary">
+              <Plus className="size-4" aria-hidden="true" /> Добавить товар
+            </button>
+          </div>
         )}
       />
 

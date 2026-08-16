@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   FileSpreadsheet,
+  FileText,
   FolderTree,
   Globe,
   ImageIcon,
@@ -36,6 +37,7 @@ const navigation = [
       { label: 'Товары', href: '/admin/products', icon: Package },
       { label: 'Категории', href: '/admin/categories', icon: FolderTree },
       { label: 'Атрибуты и фильтры', href: '/admin/attributes', icon: SlidersHorizontal },
+      { label: 'PDF-каталог', href: '/admin/pdf-catalog', icon: FileText },
     ],
   },
   {

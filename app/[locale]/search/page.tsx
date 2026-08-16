@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/catalog/ProductCard';
@@ -9,10 +10,11 @@ import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories
 import { Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { pageCopy } from '@/lib/i18n/pageCopy';
-import { RefreshCw, Search } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Search } from 'lucide-react';
 
 function SearchResultsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get('q') || '';
   const { t, language } = useLanguage();
   const copy = pageCopy[language].search;
@@ -22,9 +24,9 @@ function SearchResultsContent() {
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const stateCopy = {
-    ru: { error: 'Не удалось выполнить поиск', errorText: 'Проверьте соединение и попробуйте ещё раз.', retry: 'Попробовать снова' },
-    uz: { error: 'Qidiruvni bajarib bo‘lmadi', errorText: 'Internet aloqasini tekshirib, qayta urinib ko‘ring.', retry: 'Qayta urinish' },
-    en: { error: 'Search is unavailable', errorText: 'Check your connection and try again.', retry: 'Try again' },
+    ru: { back: 'Назад', error: 'Не удалось выполнить поиск', errorText: 'Проверьте соединение и попробуйте ещё раз.', retry: 'Попробовать снова' },
+    uz: { back: 'Orqaga', error: 'Qidiruvni bajarib bo‘lmadi', errorText: 'Internet aloqasini tekshirib, qayta urinib ko‘ring.', retry: 'Qayta urinish' },
+    en: { back: 'Back', error: 'Search is unavailable', errorText: 'Check your connection and try again.', retry: 'Try again' },
   }[language];
 
   useEffect(() => {
@@ -60,9 +62,28 @@ function SearchResultsContent() {
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-8 pt-5 md:py-10">
       <div className="mb-5 md:mb-8">
-        <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl">
-          {copy.title}: &ldquo;{query}&rdquo;
-        </h1>
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push('/catalog');
+              }
+            }}
+            className="flex size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] shadow-xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95"
+            aria-label={stateCopy.back}
+            title={stateCopy.back}
+          >
+            <ChevronLeft className="size-5 text-[var(--sp-brand)]" aria-hidden="true" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl truncate">
+              {copy.title}: &ldquo;{query}&rdquo;
+            </h1>
+          </div>
+        </div>
         <p className="mt-1.5 text-xs text-[var(--sp-ink-secondary)]">
           {t('foundItems')} <span className="font-semibold tabular-nums text-[var(--sp-brand)]">{products.length}</span>
         </p>

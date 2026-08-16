@@ -17,6 +17,7 @@ import {
   ChevronDownIcon,
   PaperAirplaneIcon,
   DocumentTextIcon,
+  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
@@ -30,6 +31,7 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { useMobileStorefrontChrome } from '@/components/layout/MobileStorefrontChrome';
+import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 
 export function Header({
   initialCategories = [],
@@ -116,7 +118,8 @@ export function Header({
 
   useEffect(() => {
     let active = true;
-    if (searchQuery.trim().length >= 2) {
+    const q = searchQuery.trim().toLowerCase();
+    if (q.length >= 1) {
       const loadProducts = catalogProducts.length > 0
         ? Promise.resolve(catalogProducts)
         : SanpackRepository.getProducts().then((products) => {
@@ -125,15 +128,26 @@ export function Header({
           });
       loadProducts.then((products) => {
         if (!active) return;
-        const q = searchQuery.toLowerCase();
-        const filtered = products.filter(
-          (p) =>
-            p.titleRu.toLowerCase().includes(q) ||
-            p.titleUz.toLowerCase().includes(q) ||
-            p.sku.toLowerCase().includes(q) ||
-            p.shortDescriptionRu.toLowerCase().includes(q)
-        );
-        setSearchResults(filtered.slice(0, 6));
+        const filtered = products
+          .filter(
+            (p) =>
+              (p.titleRu || '').toLowerCase().includes(q) ||
+              (p.titleUz || '').toLowerCase().includes(q) ||
+              (p.titleEn || '').toLowerCase().includes(q) ||
+              (p.sku || '').toLowerCase().includes(q) ||
+              (p.shortDescriptionRu || '').toLowerCase().includes(q) ||
+              (p.categorySlug || '').toLowerCase().includes(q)
+          )
+          .sort((a, b) => {
+            const aTitle = ((language === 'uz' ? a.titleUz : language === 'en' ? a.titleEn : a.titleRu) || a.titleRu || '').toLowerCase();
+            const bTitle = ((language === 'uz' ? b.titleUz : language === 'en' ? b.titleEn : b.titleRu) || b.titleRu || '').toLowerCase();
+            const aStarts = aTitle.startsWith(q) || aTitle.split(' ').some((w) => w.startsWith(q));
+            const bStarts = bTitle.startsWith(q) || bTitle.split(' ').some((w) => w.startsWith(q));
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            return aTitle.localeCompare(bTitle);
+          });
+        setSearchResults(filtered.slice(0, 8));
         setIsSearchOpen(true);
       }).catch(() => {
         if (active) setSearchResults([]);
@@ -150,7 +164,7 @@ export function Header({
     return () => {
       active = false;
     };
-  }, [catalogProducts, searchQuery]);
+  }, [catalogProducts, searchQuery, language]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -282,6 +296,7 @@ export function Header({
                     ref={inputRef}
                     type="text"
                     value={searchQuery}
+                    onFocus={() => setIsSearchOpen(true)}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('searchPlaceholder')}
                     className="h-10 w-full rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)] pl-3.5 pr-11 text-xs font-medium text-[var(--sp-ink)] outline-none transition-colors placeholder:text-[var(--sp-ink-tertiary)] focus:border-[var(--sp-brand)] focus-visible:!outline-none"
@@ -293,6 +308,7 @@ export function Header({
                         onClick={() => {
                           setSearchQuery('');
                           setIsSearchOpen(false);
+                          inputRef.current?.focus();
                         }}
                         className="rounded-[var(--sp-radius-control-inner)] p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
                         aria-label="Очистить поиск"
@@ -312,48 +328,106 @@ export function Header({
 
                 {/* Instant Search Popup */}
                 <AnimatePresence>
-                  {isSearchOpen && searchResults.length > 0 && (
+                  {isSearchOpen && (
                     <motion.div
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 6 }}
-                      className="absolute left-0 top-full z-50 mt-1.5 w-full overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-raised)]"
+                      className="absolute left-0 top-full z-50 mt-1.5 w-full min-w-[320px] max-w-lg overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-2xl"
                     >
-                      <div className="border-b border-[var(--sp-line-soft)] px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--sp-ink-tertiary)]">
-                        {fixText(`${copy.found} (${searchResults.length})`)}
-                      </div>
-                      <ul className="divide-y divide-[var(--sp-line-soft)]">
-                        {searchResults.map((product) => (
-                          <li key={product.id}>
-                            <Link
-                              href={`/product/${product.slug}`}
-                              onClick={() => setIsSearchOpen(false)}
-                              className="group flex items-center gap-3 p-2.5 transition-colors hover:bg-[var(--sp-surface-inset)]"
-                            >
-                              <Image
-                                src={product.mainImage || '/catalog/product-placeholder.svg'}
-                                alt={product.titleRu}
-                                width={36}
-                                height={36}
-                                className="size-9 rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] object-cover"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="truncate text-xs font-semibold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)]">
-                                  {getLocalizedText(product.titleRu, product.titleUz, product.titleEn)}
-                                </p>
-                                <p className="text-[10px] text-[var(--sp-ink-tertiary)]">
-                                  {copy.sku}: {product.sku}
-                                </p>
-                              </div>
-                              <span className="whitespace-nowrap text-xs font-semibold text-[var(--sp-brand)]">
-                                {product.showPrice && product.price
-                                  ? `${product.price.toLocaleString()} ${copy.currency}`
-                                  : t('priceOnRequest')}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+                      {searchQuery.trim().length > 0 ? (
+                        searchResults.length > 0 ? (
+                          <div>
+                            <div className="flex items-center justify-between border-b border-[var(--sp-line-soft)] px-3.5 py-2 text-[11px] font-semibold text-[var(--sp-ink-secondary)]">
+                              <span>{fixText(`${copy.found} (${searchResults.length})`)}</span>
+                            </div>
+                            <ul className="max-h-[380px] divide-y divide-[var(--sp-line-soft)] overflow-y-auto">
+                              {searchResults.map((product) => {
+                                const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
+                                const priceText = getProductCatalogPriceText(product, language);
+                                return (
+                                  <li key={product.id}>
+                                    <Link
+                                      href={`/product/${product.slug}`}
+                                      onClick={() => setIsSearchOpen(false)}
+                                      className="group flex items-center gap-3 p-2.5 transition-colors hover:bg-[var(--sp-surface-inset)]"
+                                    >
+                                      <div className="relative size-10 shrink-0 overflow-hidden rounded-lg border border-[var(--sp-line)] bg-white">
+                                        <Image
+                                          src={product.mainImage || '/catalog/product-placeholder.svg'}
+                                          alt={title}
+                                          fill
+                                          sizes="40px"
+                                          className="object-contain"
+                                        />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="truncate text-xs font-semibold text-[var(--sp-ink)] group-hover:text-[var(--sp-brand)]">
+                                          {title}
+                                        </p>
+                                        <div className="flex items-center gap-2 text-[10px] text-[var(--sp-ink-tertiary)]">
+                                          <span className="font-mono">{copy.sku}: {product.sku}</span>
+                                          {product.salesUnit ? <span>· {product.salesUnit}</span> : null}
+                                        </div>
+                                      </div>
+                                      <span className="whitespace-nowrap text-xs font-bold text-[var(--sp-brand)]">
+                                        {priceText}
+                                      </span>
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                            <div className="border-t border-[var(--sp-line-soft)] bg-[var(--sp-surface)] p-2">
+                              <Link
+                                href={{ pathname: '/search', query: { q: searchQuery.trim() } }}
+                                onClick={() => setIsSearchOpen(false)}
+                                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--sp-brand)] py-2 text-xs font-semibold text-[var(--sp-on-brand)] transition-colors hover:bg-[var(--sp-brand-deep)]"
+                              >
+                                <span>Смотреть все результаты в каталоге</span>
+                                <ArrowRightIcon className="size-3.5" />
+                              </Link>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center">
+                            <p className="text-xs font-medium text-[var(--sp-ink-secondary)]">
+                              По запросу «{searchQuery}» товары не найдены
+                            </p>
+                            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                              {['Мешки для мусора', 'Салфетки', 'Контейнеры', 'Перчатки', 'Пакеты'].map((term) => (
+                                <button
+                                  key={term}
+                                  type="button"
+                                  onClick={() => setSearchQuery(term)}
+                                  className="rounded-md border border-[var(--sp-line)] bg-[var(--sp-surface)] px-2 py-1 text-[11px] font-medium text-[var(--sp-ink)] hover:border-[var(--sp-brand)]"
+                                >
+                                  {term}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <div className="p-3.5">
+                          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--sp-ink-muted)]">
+                            Часто ищут
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Мешки для мусора', 'Салфетки', 'Контейнеры', 'Перчатки', 'Зелень', 'Пакеты', 'Стаканы', 'Фольга'].map((term) => (
+                              <button
+                                key={term}
+                                type="button"
+                                onClick={() => setSearchQuery(term)}
+                                className="flex items-center gap-1 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2.5 py-1 text-xs font-medium text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)]"
+                              >
+                                <MagnifyingGlassIcon className="size-3 text-[var(--sp-ink-muted)]" />
+                                <span>{term}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

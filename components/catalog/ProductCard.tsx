@@ -94,6 +94,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
               fill
               sizes="(max-width: 767px) 100vw, 168px"
               loading={eagerImage ? 'eager' : 'lazy'}
+              priority={eagerImage}
               className="object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             />
           </Link>
@@ -168,6 +169,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
             fill
             sizes="(max-width: 767px) calc(50vw - 24px), (max-width: 1024px) 33vw, 280px"
             loading={eagerImage ? 'eager' : 'lazy'}
+            priority={eagerImage}
             className="object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
           />
         </Link>

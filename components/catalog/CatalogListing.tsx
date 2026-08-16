@@ -358,28 +358,6 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
           ) : null}
         </nav>
 
-        {/* Mobile Navigation Pill (Quick back button) */}
-        {currentCategory ? (
-          <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
-            <Link
-              href={parentCategory ? `/catalog/${parentCategory.slug}` : '/catalog'}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-xs font-semibold text-[var(--sp-ink)] shadow-2xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95"
-            >
-              <ChevronLeft className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
-              <span className="truncate max-w-[200px]">
-                {parentCategory ? parentTitle : copy.all}
-              </span>
-            </Link>
-
-            <Link
-              href="/catalog"
-              className="text-xs font-medium text-[var(--sp-ink-secondary)] transition-colors hover:text-[var(--sp-brand)]"
-            >
-              {copy.all}
-            </Link>
-          </div>
-        ) : null}
-
         <div className="mb-4 md:mb-8">
           <div className="flex items-center gap-2.5 sm:gap-3">
             {currentCategory ? (
@@ -406,7 +384,7 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
 
         <MobileCategoryRail categories={categories} activeCategory={currentCategory} />
 
-        <div className="sticky top-[57px] z-20 -mx-4 mt-3 border-y border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-canvas)_96%,transparent)] px-4 py-2 backdrop-blur-xl md:static md:mx-0 md:mt-6 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
+        <div className="sticky top-[56px] z-20 -mx-4 mt-3 border-y border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-canvas)_96%,transparent)] px-4 py-2.5 backdrop-blur-xl md:static md:mx-0 md:mt-6 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
           <div className="flex items-center gap-2 md:justify-end">
             <button
               ref={filterTriggerRef}

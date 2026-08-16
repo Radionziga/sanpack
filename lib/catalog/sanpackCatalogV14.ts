@@ -164,21 +164,129 @@ const catalogItems: CatalogItem[] = [
   ...greens,
 ];
 
+const skuImageMap: Record<string, string> = {
+  // Мешки для мусора SANPACK
+  'SP-M-4550-20': '/catalog/sanpack_trash_bag_roll_6_nobg.png',
+  'SP-M-4560-22': '/catalog/sanpack_trash_bag_roll_3_nobg.png',
+  'SP-M-5070-41': '/catalog/sanpack_trash_bag_roll_4_nobg.png',
+  'SP-M-6090-85': '/catalog/sanpack_trash_bag_roll_1_nobg.png',
+  'SP-M-80110-160': '/catalog/sanpack_trash_bag_roll_1_nobg.png',
+  'SP-M-90110-220': '/catalog/commercial_packaging_3.webp',
+  'SP-M-90120-240-6': '/catalog/sanpack_trash_bag_roll_2_nobg.png',
+  'SP-M-90120-240-11': '/catalog/sanpack_trash_bag_roll_5_nobg.png',
+
+  // Фольга и пленка
+  'SP-FOIL': '/catalog/commercial_packaging_1.png',
+  'SP-STRETCH': '/catalog/commercial_packaging_2.png',
+  'SP-PARCHMENT': '/catalog/commercial_packaging_5.webp',
+  'SP-VACUUM-FILM': '/catalog/commercial_packaging_4.webp',
+
+  // Перчатки
+  'SP-GLOVE-PE': '/catalog/commercial_packaging_11_nobg.png',
+  'SP-GLOVE-NITRILE': '/catalog/commercial_packaging_12_nobg.png',
+  'SP-GLOVE-RUBBER': '/catalog/commercial_packaging_8.webp',
+
+  // Пакеты Майка и фасовка
+  'SP-BAG-3KG': '/catalog/commercial_packaging_9.webp',
+  'SP-BAG-5KG': '/catalog/commercial_packaging_10.webp',
+  'SP-BAG-10KG': '/catalog/commercial_packaging_8.webp',
+  'SP-BAG-25KG': '/catalog/commercial_packaging_6.webp',
+  'SP-BAG-50KG': '/catalog/commercial_packaging_7.webp',
+  'SP-BAG-LOGO': '/catalog/commercial_packaging_10.webp',
+  'SP-ROLL-1927': '/catalog/commercial_packaging_4.webp',
+  'SP-ROLL-2838': '/catalog/commercial_packaging_5.webp',
+  'SP-PIZZA-BAG': '/catalog/categories/vacuum_pizza_bags.png',
+
+  // Гигиена и хозтовары
+  'SP-HYG-001': '/catalog/extracted_p7_img1.jpeg',
+  'SP-HYG-002': '/catalog/extracted_p7_img2.jpeg',
+  'SP-HYG-003': '/catalog/extracted_p7_img3.jpeg',
+  'SP-HYG-004': '/catalog/extracted_p7_img5.jpeg',
+  'SP-HYG-005': '/catalog/extracted_p7_img6.jpeg',
+  'SP-HYG-006': '/catalog/extracted_p7_img7.jpeg',
+  'SP-HYG-007': '/catalog/extracted_p7_img8.jpeg',
+  'SP-HYG-008': '/catalog/extracted_p7_img9.jpeg',
+  'SP-HYG-009': '/catalog/extracted_p7_img10.jpeg',
+  'SP-HYG-010': '/catalog/extracted_p7_img12.jpeg',
+
+  // Бакалея и крупы
+  'SP-GRC-001': '/catalog/extracted_p11_img1.jpeg',
+  'SP-GRC-002': '/catalog/extracted_p11_img2.jpeg',
+  'SP-GRC-003': '/catalog/extracted_p11_img3.jpeg',
+  'SP-GRC-004': '/catalog/extracted_p11_img4.jpeg',
+  'SP-GRC-005': '/catalog/extracted_p11_img5.jpeg',
+  'SP-GRC-006': '/catalog/extracted_p11_img6.jpeg',
+  'SP-GRC-007': '/catalog/extracted_p11_img7.jpeg',
+  'SP-GRC-008': '/catalog/extracted_p11_img8.jpeg',
+  'SP-GRC-009': '/catalog/extracted_p11_img7.jpeg',
+  'SP-GRC-010': '/catalog/extracted_p10_img8.jpeg',
+  'SP-GRC-011': '/catalog/extracted_p10_img1.jpeg',
+  'SP-GRC-012': '/catalog/extracted_p10_img4.jpeg',
+
+  // Мясо
+  'SP-FOOD-001': '/catalog/extracted_p14_img1.jpeg',
+  'SP-FOOD-002': '/catalog/extracted_p14_img1.jpeg',
+  'SP-FOOD-003': '/catalog/extracted_p10_img7.png',
+
+  // Сыры и масло
+  'SP-DAIRY-001': '/catalog/extracted_p12_img1.jpeg',
+  'SP-DAIRY-002': '/catalog/extracted_p12_img2.jpeg',
+  'SP-DAIRY-003': '/catalog/extracted_p12_img3.jpeg',
+  'SP-DAIRY-004': '/catalog/extracted_p12_img4.jpeg',
+  'SP-DAIRY-005': '/catalog/extracted_p12_img5.jpeg',
+  'SP-DAIRY-006': '/catalog/extracted_p12_img6.jpeg',
+  'SP-DAIRY-007': '/catalog/extracted_p12_img7.jpeg',
+  'SP-DAIRY-008': '/catalog/extracted_p12_img8.jpeg',
+  'SP-DAIRY-009': '/catalog/extracted_p12_img9.jpeg',
+  'SP-DAIRY-010': '/catalog/extracted_p12_img3.jpeg',
+  'SP-DAIRY-011': '/catalog/extracted_p12_img4.jpeg',
+  'SP-DAIRY-012': '/catalog/extracted_p12_img1.jpeg',
+  'SP-DAIRY-013': '/catalog/extracted_p12_img2.jpeg',
+  'SP-DAIRY-014': '/catalog/extracted_p12_img2.jpeg',
+  'SP-DAIRY-015': '/catalog/extracted_p12_img1.jpeg',
+
+  // Зелень и микрозелень
+  'SP-GREEN-001': '/catalog/extracted_p13_img1.jpeg',
+  'SP-GREEN-002': '/catalog/extracted_p13_img2.jpeg',
+  'SP-GREEN-003': '/catalog/extracted_p13_img3.jpeg',
+  'SP-GREEN-004': '/catalog/extracted_p13_img4.jpeg',
+  'SP-GREEN-005': '/catalog/extracted_p13_img5.jpeg',
+  'SP-GREEN-006': '/catalog/extracted_p13_img1.jpeg',
+  'SP-GREEN-007': '/catalog/extracted_p13_img2.jpeg',
+  'SP-GREEN-008': '/catalog/extracted_p13_img3.jpeg',
+  'SP-GREEN-009': '/catalog/extracted_p13_img4.jpeg',
+  'SP-GREEN-010': '/catalog/extracted_p13_img5.jpeg',
+  'SP-GREEN-011': '/catalog/extracted_p13_img1.jpeg',
+  'SP-GREEN-012': '/catalog/extracted_p13_img2.jpeg',
+  'SP-GREEN-013': '/catalog/extracted_p13_img3.jpeg',
+  'SP-GREEN-014': '/catalog/extracted_p13_img4.jpeg',
+  'SP-MICRO-001': '/catalog/extracted_p13_img1.jpeg',
+  'SP-MICRO-002': '/catalog/extracted_p13_img2.jpeg',
+  'SP-MICRO-003': '/catalog/extracted_p13_img3.jpeg',
+  'SP-MICRO-004': '/catalog/extracted_p13_img4.jpeg',
+  'SP-MICRO-005': '/catalog/extracted_p13_img5.jpeg',
+  'SP-MICRO-006': '/catalog/extracted_p13_img1.jpeg',
+  'SP-MICRO-007': '/catalog/extracted_p13_img2.jpeg',
+};
+
 function getProductImage(entry: CatalogItem): string {
+  if (skuImageMap[entry.sku]) {
+    return skuImageMap[entry.sku];
+  }
   if (entry.categoryId === 'cat-trash-bags') {
-    return '/catalog/sanpack_trash_bag_roll_10.png';
+    return '/catalog/sanpack_trash_bag_roll_1_nobg.png';
   }
   if (entry.categoryId === 'cat-tshirt-bags') {
-    return '/catalog/commercial_packaging_2.png';
+    return '/catalog/commercial_packaging_10.webp';
   }
   if (entry.categoryId === 'cat-film-foil') {
-    return '/catalog/commercial_packaging_5.webp';
+    return '/catalog/commercial_packaging_2.png';
   }
   if (entry.categoryId === 'cat-gloves') {
-    return '/catalog/commercial_packaging_8.webp';
+    return '/catalog/commercial_packaging_11_nobg.png';
   }
   if (entry.categoryId === 'cat-consumables') {
-    return '/catalog/commercial_packaging_3.webp';
+    return '/catalog/extracted_p7_img2.jpeg';
   }
   if (entry.categoryId === 'cat-groceries') {
     return '/catalog/extracted_p11_img3.jpeg';

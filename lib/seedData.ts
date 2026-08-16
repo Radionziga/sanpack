@@ -1,5 +1,5 @@
 import { ClientPartner, Banner, SiteSettings } from '@/types';
-import { catalogV14Attributes, catalogV14Categories, catalogV14Products } from '@/lib/catalog/sanpackCatalogV14';
+import { priceList2026Attributes, priceList2026Categories, priceList2026Products } from '@/lib/catalog/sanpackPriceLists2026';
 
 export const initialSiteSettings: SiteSettings = {
   company: {
@@ -55,9 +55,9 @@ export const initialSiteSettings: SiteSettings = {
   },
 };
 
-export const initialCategories = catalogV14Categories;
+export const initialCategories = priceList2026Categories;
 
-export const initialAttributes = catalogV14Attributes;
+export const initialAttributes = priceList2026Attributes;
 
 export const initialClients: ClientPartner[] = [
   { id: 'cl-1', name: 'BON! Cafe Français', logo: '/catalog/extracted_p2_img1.jpeg', category: 'cafe', sortOrder: 1 },
@@ -136,4 +136,4 @@ export const initialBanners: Banner[] = [
   },
 ];
 
-export const initialProducts = catalogV14Products;
+export const initialProducts = priceList2026Products;

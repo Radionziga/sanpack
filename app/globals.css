@@ -104,6 +104,19 @@
   p {
     text-wrap: pretty;
   }
+
+  /* Global input resets to eliminate default browser square focus outlines */
+  input, select, textarea {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+  }
 }
 
 @media (max-width: 767px) {
@@ -427,15 +440,29 @@
   outline-offset: 2px;
 }
 
-/* Composite fields draw one focus indicator on their rounded shell. */
-.sp-field-input,
-.sp-field-input:focus,
-.sp-field-input:focus-visible {
+[data-sanpack-theme] input:focus-visible,
+[data-sanpack-theme] textarea:focus-visible,
+[data-sanpack-theme] select:focus-visible,
+[data-sanpack-theme] input:focus,
+[data-sanpack-theme] textarea:focus,
+[data-sanpack-theme] select:focus,
+[data-sanpack-theme] .sp-field-input,
+[data-sanpack-theme] .sp-field-input:focus,
+[data-sanpack-theme] .sp-field-input:focus-visible {
   appearance: none;
+  -webkit-appearance: none;
   border: 0;
   outline: none !important;
+  outline-offset: 0 !important;
   box-shadow: none !important;
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
 }
 
 /* Compatibility bridge while legacy catalog surfaces move to semantic tokens. */

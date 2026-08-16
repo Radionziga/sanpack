@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { getImageProps } from 'next/image';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Banner, Language } from '@/types';
@@ -45,14 +45,14 @@ function localizedButtonText(banner: Banner, locale: Language) {
   return banner.buttonTextRu || '';
 }
 
-function BannerImage({ banner, alt, priority }: { banner: Banner; alt: string; priority: boolean }) {
+function BannerImage({ banner, alt }: { banner: Banner; alt: string }) {
   const desktop = getImageProps({
     src: banner.imageDesktop,
     alt,
     width: 2400,
     height: 700,
     sizes: '(max-width: 767px) 100vw, min(1400px, 100vw)',
-    priority,
+    priority: true, // Preload all carousel banners for seamless swipe
     quality: 90,
   });
   const mobile = getImageProps({
@@ -61,7 +61,7 @@ function BannerImage({ banner, alt, priority }: { banner: Banner; alt: string; p
     width: 1600,
     height: 900,
     sizes: '100vw',
-    priority,
+    priority: true, // Preload mobile resolution too
     quality: 90,
   });
   const { srcSet: mobileSrcSet } = mobile.props;
@@ -72,6 +72,8 @@ function BannerImage({ banner, alt, priority }: { banner: Banner; alt: string; p
       <img
         {...desktop.props}
         alt={alt}
+        loading="eager"
+        decoding="async"
         className="h-full w-full object-cover"
       />
     </picture>
@@ -86,8 +88,21 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHoverPaused, setIsHoverPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
   const regionRef = useRef<HTMLElement>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const touchStartTime = useRef<number>(0);
   const copy = labels[locale];
+
+  const move = useCallback(
+    (direction: -1 | 1) => {
+      setActiveIndex((current) => (current + direction + slides.length) % slides.length);
+    },
+    [slides.length]
+  );
 
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -98,17 +113,56 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
   }, []);
 
   useEffect(() => {
-    if (slides.length < 2 || isHoverPaused || reduceMotion) return;
+    if (slides.length < 2 || isHoverPaused || isDragging || reduceMotion) return;
     const timer = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
     }, 6500);
     return () => window.clearInterval(timer);
-  }, [isHoverPaused, reduceMotion, slides.length]);
+  }, [isHoverPaused, isDragging, reduceMotion, slides.length]);
 
   if (slides.length === 0) return null;
 
-  const move = (direction: -1 | 1) => {
-    setActiveIndex((current) => (current + direction + slides.length) % slides.length);
+  // Touch swipe handling
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (slides.length < 2) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    touchStartTime.current = Date.now();
+    setIsDragging(true);
+    setDragOffset(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const diffX = currentX - touchStartX.current;
+    const diffY = currentY - touchStartY.current;
+
+    // Check if horizontal intent is dominant
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      setDragOffset(diffX);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null) return;
+    const diffX = dragOffset;
+    const elapsedTime = Date.now() - touchStartTime.current;
+    const threshold = 40; // Minimum px to trigger slide
+
+    // Quick swipe or distance threshold
+    const isQuickSwipe = elapsedTime < 350 && Math.abs(diffX) > 20;
+    if (diffX < -threshold || (isQuickSwipe && diffX < -15)) {
+      move(1); // Swipe left -> next
+    } else if (diffX > threshold || (isQuickSwipe && diffX > 15)) {
+      move(-1); // Swipe right -> prev
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+    setDragOffset(0);
+    setIsDragging(false);
   };
 
   return (
@@ -119,11 +173,25 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
         aria-roledescription={slides.length > 1 ? 'carousel' : undefined}
         onMouseEnter={() => setIsHoverPaused(true)}
         onMouseLeave={() => setIsHoverPaused(false)}
-        className="relative overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] shadow-sm"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => {
+          touchStartX.current = null;
+          setDragOffset(0);
+          setIsDragging(false);
+        }}
+        className="relative overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] shadow-sm select-none touch-pan-y"
       >
         <div
-          className="flex transition-transform duration-500 ease-out motion-reduce:transition-none"
-          style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+          className={`flex ${
+            isDragging ? 'transition-none' : 'transition-transform duration-500 ease-out motion-reduce:transition-none'
+          }`}
+          style={{
+            transform: isDragging
+              ? `calc(-${activeIndex * 100}% + ${dragOffset}px)`
+              : `translateX(-${activeIndex * 100}%)`,
+          }}
         >
           {slides.map((banner, index) => {
             const title = localizedTitle(banner, locale);
@@ -134,8 +202,8 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
 
             const content = (
               <div className="relative h-full w-full">
-                <BannerImage banner={banner} alt={title || 'SANPACK Promo'} priority={index === 0} />
-                
+                <BannerImage banner={banner} alt={title || 'SANPACK Promo'} />
+
                 {(hasText || hasButton) && (
                   <div className="absolute inset-0 z-10 flex flex-col justify-center px-5 sm:px-8 md:px-12 lg:px-16 py-4 sm:py-6 md:py-8 pointer-events-none">
                     <div className="max-w-[62%] sm:max-w-[55%] md:max-w-[50%] lg:max-w-[46%] space-y-1.5 sm:space-y-2 md:space-y-3">
@@ -179,7 +247,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
                     <Link
                       href={banner.link}
                       tabIndex={index === activeIndex ? 0 : -1}
-                      aria-label={buttonText ? `${buttonText}: ${title || 'SANPACK'}` : (title || 'SANPACK')}
+                      aria-label={buttonText ? `${buttonText}: ${title || 'SANPACK'}` : title || 'SANPACK'}
                       className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
                     >
                       {content}
@@ -188,23 +256,21 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
                     <a
                       href={banner.link}
                       tabIndex={index === activeIndex ? 0 : -1}
-                      aria-label={buttonText ? `${buttonText}: ${title || 'SANPACK'}` : (title || 'SANPACK')}
+                      aria-label={buttonText ? `${buttonText}: ${title || 'SANPACK'}` : title || 'SANPACK'}
                       className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
                     >
                       {content}
                     </a>
                   )
                 ) : (
-                  <div className="relative h-full w-full">
-                    {content}
-                  </div>
+                  <div className="relative h-full w-full">{content}</div>
                 )}
               </div>
             );
           })}
         </div>
 
-        {/* Minimalist Floating Dots - Clean dots without wrapper/borders */}
+        {/* Minimalist Floating Dots */}
         {slides.length > 1 && (
           <div className="absolute bottom-2.5 sm:bottom-3.5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 sm:gap-1.5">
             {slides.map((banner, index) => (
@@ -229,7 +295,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
         )}
       </section>
 
-      {/* Outside Clean Arrows - Positioned outside slider without circles */}
+      {/* Outside Clean Arrows */}
       {slides.length > 1 && (
         <>
           <button
