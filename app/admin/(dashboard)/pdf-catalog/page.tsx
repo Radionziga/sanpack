@@ -62,7 +62,7 @@ export default function PdfCatalogAdminPage() {
           <span className="text-sm font-semibold">Загрузка каталога и базы товаров...</span>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--sp-line)] bg-slate-100/90 p-2 sm:p-4 shadow-inner overflow-hidden">
+        <div className="rounded-2xl border border-[var(--sp-line)] bg-[#F4F7F5] p-2 sm:p-4 shadow-sm overflow-hidden">
           <CatalogPrintDocument
             initialProducts={products}
             initialCategories={categories}

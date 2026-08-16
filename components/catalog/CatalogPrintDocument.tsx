@@ -423,45 +423,45 @@ export function CatalogPrintDocument({
   };
 
   return (
-    <div className={`min-h-screen text-slate-800 font-sans antialiased flex flex-col items-center ${embeddedInAdmin ? 'bg-transparent' : 'bg-slate-200'}`}>
+    <div className={`min-h-screen text-[#151B18] font-sans antialiased flex flex-col items-center ${embeddedInAdmin ? 'bg-transparent' : 'bg-[#EFF2F0]'}`}>
       {/* =========================================================================
-          INTEGRATED NATIVE CONTROL TOOLBAR (ADMIN PANEL STYLE)
+          INTEGRATED CONTROL TOOLBAR IN SANPACK BRAND STYLE (NO BLUE/DARK TINTS)
           ========================================================================= */}
       <aside aria-label="Панель управления каталогом" className="no-print sticky top-2 z-40 w-full max-w-6xl px-2 sm:px-4 mb-4">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white border border-[#DCE2DE] rounded-2xl shadow-sm p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
           {/* Left Group: Status / Filter info */}
           <div className="flex items-center gap-3">
             {!embeddedInAdmin && (
               <Link
                 href="/catalog"
-                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 transition"
+                className="p-2 rounded-xl bg-[#F4F7F5] border border-[#DCE2DE] hover:bg-[#E8ECE9] text-[#151B18] transition"
                 title="Вернуться на сайт"
               >
                 <ArrowLeft className="size-4" />
               </Link>
             )}
             <div>
-              <div className="text-xs font-bold text-[#03432D] dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="text-xs font-bold text-[#03432D] uppercase tracking-wider flex items-center gap-1.5">
                 <FileText className="size-4 text-[#03432D]" />
                 <span>SANPACK Каталог А4</span>
               </div>
-              <div className="text-[11px] text-slate-500 font-medium">
+              <div className="text-[11px] text-[#4C5751] font-medium">
                 {totalDocumentPages} стр. • {filteredProducts.length} позиций
               </div>
             </div>
           </div>
 
-          {/* Center Controls: Prices, Language, Category */}
+          {/* Center Controls: Prices, Language, Category in Brand Theme */}
           <div className="flex flex-wrap items-center gap-2.5 text-xs">
             {/* Price Segmented Toggle */}
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex bg-[#F4F7F5] p-1 rounded-xl border border-[#DCE2DE]">
               <button
                 type="button"
                 onClick={() => setWithPrices(true)}
                 className={`px-3 py-1.5 rounded-lg font-semibold transition ${
                   withPrices
                     ? 'bg-[#03432D] text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    : 'text-[#4C5751] hover:text-[#151B18]'
                 }`}
               >
                 С ценами
@@ -472,7 +472,7 @@ export function CatalogPrintDocument({
                 className={`px-3 py-1.5 rounded-lg font-semibold transition ${
                   !withPrices
                     ? 'bg-[#03432D] text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    : 'text-[#4C5751] hover:text-[#151B18]'
                 }`}
               >
                 Без цен
@@ -480,7 +480,7 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Language Segmented Toggle */}
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex bg-[#F4F7F5] p-1 rounded-xl border border-[#DCE2DE]">
               {(['ru', 'uz', 'en'] as const).map((l) => (
                 <button
                   type="button"
@@ -489,7 +489,7 @@ export function CatalogPrintDocument({
                   className={`px-2.5 py-1.5 rounded-lg font-bold uppercase transition ${
                     language === l
                       ? 'bg-[#03432D] text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      : 'text-[#4C5751] hover:text-[#151B18]'
                   }`}
                 >
                   {l}
@@ -501,7 +501,7 @@ export function CatalogPrintDocument({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-emerald-500 outline-none max-w-[260px] truncate shadow-sm cursor-pointer"
+              className="bg-[#F4F7F5] text-[#151B18] border border-[#DCE2DE] rounded-xl px-3 py-1.5 text-xs font-medium focus:border-[#03432D] outline-none max-w-[260px] truncate shadow-sm cursor-pointer"
             >
               <option value="">Все разделы ({initialProducts.length} тов.)</option>
               {parentCategories.map((parent) => {
@@ -538,20 +538,20 @@ export function CatalogPrintDocument({
           {/* Right Actions: Zoom, Copy Link, Fullscreen, Print */}
           <div className="flex items-center gap-2">
             {/* Zoom Controls */}
-            <div className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs">
+            <div className="hidden sm:flex items-center gap-1 bg-[#F4F7F5] px-2 py-1 rounded-xl border border-[#DCE2DE] text-[#4C5751] text-xs">
               <button
                 type="button"
                 onClick={() => setScale((s) => Math.max(0.4, s - 0.1))}
-                className="hover:text-black dark:hover:text-white p-1"
+                className="hover:text-[#151B18] p-1"
                 title="Уменьшить масштаб"
               >
                 <ZoomOut className="size-3.5" />
               </button>
-              <span className="font-mono text-[11px] w-9 text-center font-semibold">{Math.round(scale * 100)}%</span>
+              <span className="font-mono text-[11px] w-9 text-center font-semibold text-[#151B18]">{Math.round(scale * 100)}%</span>
               <button
                 type="button"
                 onClick={() => setScale((s) => Math.min(1.2, s + 0.1))}
-                className="hover:text-black dark:hover:text-white p-1"
+                className="hover:text-[#151B18] p-1"
                 title="Увеличить масштаб"
               >
                 <ZoomIn className="size-3.5" />
@@ -562,10 +562,10 @@ export function CatalogPrintDocument({
             <button
               type="button"
               onClick={handleCopyLink}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              className="bg-[#F4F7F5] hover:bg-[#E8ECE9] text-[#151B18] px-3 py-2 rounded-xl border border-[#DCE2DE] font-semibold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
               title="Скопировать прямую ссылку на каталог"
             >
-              {copied ? <Check className="size-3.5 text-emerald-600" /> : <Share2 className="size-3.5" />}
+              {copied ? <Check className="size-3.5 text-[#03432D]" /> : <Share2 className="size-3.5" />}
               <span className="hidden sm:inline">{copied ? 'Скопировано' : 'Ссылка'}</span>
             </button>
 
@@ -574,7 +574,7 @@ export function CatalogPrintDocument({
               href={`/ru/catalog/print?prices=${withPrices ? '1' : '0'}&lang=${language}${selectedCategory ? `&category=${selectedCategory}` : ''}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              className="bg-[#F4F7F5] hover:bg-[#E8ECE9] text-[#151B18] px-3 py-2 rounded-xl border border-[#DCE2DE] font-semibold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
               title="Открыть каталог в новой вкладке"
             >
               <ExternalLink className="size-3.5" />
@@ -585,7 +585,7 @@ export function CatalogPrintDocument({
             <button
               type="button"
               onClick={() => window.print()}
-              className="bg-[#03432D] hover:bg-[#023322] text-white font-bold px-4 py-2 rounded-xl shadow-md flex items-center gap-2 text-xs transition active:scale-95"
+              className="bg-[#03432D] hover:bg-[#023322] text-white font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 text-xs transition active:scale-95"
             >
               <Printer className="size-4" />
               <span>Печать / Сохранить в PDF</span>
@@ -695,10 +695,10 @@ export function CatalogPrintDocument({
             PAGE 1: COVER PAGE (ИЗУМРУДНЫЙ ТИТУЛЬНЫЙ ЛИСТ В ФИРМЕННЫХ ЦВЕТАХ)
             ======================================================================= */}
         <div className="a4-page a4-page-cover justify-between">
-          {/* Cover Header Bar */}
+          {/* Cover Header Bar (Clean SANPACK DISTRIBUTION without LLC) */}
           <div className="flex justify-between items-center border-b border-white/20 pb-3.5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
-              SANPACK DISTRIBUTION LLC
+              SANPACK DISTRIBUTION
             </span>
             <span className="text-[11px] font-semibold text-white uppercase tracking-wider font-mono">
               sanpack.uz
@@ -845,7 +845,7 @@ export function CatalogPrintDocument({
                   {categoryTitle}
                 </h1>
                 {categorySubtitle && (
-                  <h2 className="text-[11px] text-slate-500 font-medium mt-1 uppercase tracking-wide">
+                  <h2 className="text-[11px] text-[#64748B] font-medium mt-1 uppercase tracking-wide">
                     {categorySubtitle}
                   </h2>
                 )}
@@ -853,7 +853,7 @@ export function CatalogPrintDocument({
 
               {/* PRODUCTS GRID MATRIX WITH DELICATE THIN GREY DIVIDERS */}
               <main
-                className={`flex-1 grid ${gridColsClass} content-start border-t border-l border-slate-200/80`}
+                className={`flex-1 grid ${gridColsClass} content-start border-t border-l border-[#DCE2DE]`}
               >
                 {pageProds.map((product) => {
                   // Full localized title
@@ -899,7 +899,7 @@ export function CatalogPrintDocument({
                   return (
                     <div
                       key={product.id}
-                      className={`border-r border-b border-slate-200/80 ${cellPadding} flex flex-col justify-between items-start h-full bg-white`}
+                      className={`border-r border-b border-[#DCE2DE] ${cellPadding} flex flex-col justify-between items-start h-full bg-white`}
                     >
                       {/* Product Text Top (Clean, Readable, Brand Green) */}
                       <div className="w-full">
@@ -910,7 +910,7 @@ export function CatalogPrintDocument({
 
                         {/* Specs (No redundant "Единица: кг") */}
                         {specs.length > 0 && (
-                          <div className="text-[10px] text-slate-500 font-normal leading-tight mt-0.5 space-y-0.5">
+                          <div className="text-[10px] text-[#64748B] font-normal leading-tight mt-0.5 space-y-0.5">
                             {specs.slice(0, 3).map((s, idx) => (
                               <div key={idx}>{s}</div>
                             ))}
@@ -919,9 +919,9 @@ export function CatalogPrintDocument({
 
                         {/* Clean Price Line */}
                         {withPrices && displayPrice && (
-                          <div className="mt-1 text-xs font-bold text-slate-800 flex items-baseline gap-1">
+                          <div className="mt-1 text-xs font-bold text-[#151B18] flex items-baseline gap-1">
                             <span>{displayPrice}</span>
-                            <span className="text-[10px] font-normal text-slate-500">
+                            <span className="text-[10px] font-normal text-[#64748B]">
                               / {salesUnitLabel}
                             </span>
                           </div>
@@ -939,7 +939,7 @@ export function CatalogPrintDocument({
                             loading="eager"
                           />
                         ) : (
-                          <Package className="size-10 text-slate-300" />
+                          <Package className="size-10 text-[#AEB9B2]" />
                         )}
                       </div>
                     </div>
@@ -950,21 +950,21 @@ export function CatalogPrintDocument({
                 {Array.from({ length: emptySlotsCount }).map((_, idx) => (
                   <div
                     key={`empty-${idx}`}
-                    className={`border-r border-b border-slate-200/80 ${cellPadding} bg-white`}
+                    className={`border-r border-b border-[#DCE2DE] ${cellPadding} bg-white`}
                   />
                 ))}
               </main>
 
               {/* PAGE FOOTER (НИЖНИЙ КОЛОНТИТУЛ) */}
-              <footer className="mt-auto pt-3 border-t border-slate-200 flex justify-between items-center shrink-0">
+              <footer className="mt-auto pt-3 border-t border-[#DCE2DE] flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                  <span className="text-[10px] font-semibold text-[#929C96] uppercase tracking-widest">
                     {language === 'uz'
                       ? 'Sanpack Distribution • HoReCa uchun kompleks ta’minot'
                       : 'Sanpack Distribution • Комплексное снабжение HoReCa'}
                   </span>
                 </div>
-                <div className="text-xs font-bold text-slate-400 font-mono">
+                <div className="text-xs font-bold text-[#929C96] font-mono">
                   {String(currentDocPageNumber).padStart(2, '0')} / {String(totalDocumentPages).padStart(2, '0')}
                 </div>
               </footer>
