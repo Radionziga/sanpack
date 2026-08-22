@@ -18,6 +18,7 @@ import {
   initialSiteSettings,
 } from '@/lib/seedData';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { filterPublicProducts } from '@/lib/catalog/publicProducts';
 import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
 
 function isSeedFallbackEnabled() {
@@ -82,8 +83,10 @@ async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
 }
 
 export const getPublicProducts = unstable_cache(
-  () => readCollection<Product>('products', initialProducts),
-  ['public-products-v6-serialized-2026-08-16'],
+  async () => filterPublicProducts(
+    await readCollection<Product>('products', initialProducts)
+  ),
+  ['public-products-v7-published-only-2026-08-22'],
   { revalidate: 300, tags: ['products'] }
 );
 

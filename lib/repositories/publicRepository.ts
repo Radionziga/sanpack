@@ -7,6 +7,10 @@ import type {
   RequestOrder,
   SiteSettings,
 } from '@/types';
+import {
+  findPublicProductById,
+  findPublicProductBySlug,
+} from '@/lib/catalog/publicProducts';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
 async function read<T>(resource: string): Promise<T> {
@@ -22,12 +26,10 @@ export const PublicSanpackRepository = {
   getBanners: () => read<Banner[]>('banners'),
   getSettings: () => read<SiteSettings>('settings'),
   async getProductBySlug(slug: string) {
-    const products = await this.getProducts();
-    return products.find((product) => product.slug === slug) || null;
+    return findPublicProductBySlug(await this.getProducts(), slug);
   },
   async getProductById(id: string) {
-    const products = await this.getProducts();
-    return products.find((product) => product.id === id) || null;
+    return findPublicProductById(await this.getProducts(), id);
   },
   async createRequest(data: {
     contactName: string;
