@@ -193,9 +193,14 @@ export default function AdminAttributesPage() {
 
   const handleDeleteAttribute = async (id: string, title: string) => {
     if (confirm(`Вы уверены, что хотите удалить характеристику "${title}"?`)) {
-      await AdminRepository.deleteAttribute(id);
-      await loadData();
-      showToast('Характеристика удалена');
+      setLoadError('');
+      try {
+        await AdminRepository.deleteAttribute(id);
+        await loadData();
+        showToast('Характеристика удалена');
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : 'Характеристика не удалена.');
+      }
     }
   };
 

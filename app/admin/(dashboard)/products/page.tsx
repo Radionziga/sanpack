@@ -231,14 +231,19 @@ export default function AdminProductsPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Вы действительно хотите удалить этот товар из каталога?')) {
-      const product = products.find((item) => item.id === id);
-      await AdminRepository.deleteProduct(id);
-      for (const path of getManagedMediaPaths(product)) {
-        await deleteUploadedMedia(path).catch((error) => {
-          console.warn('Could not remove product image.', error);
-        });
+      setLoadError('');
+      try {
+        const product = products.find((item) => item.id === id);
+        await AdminRepository.deleteProduct(id);
+        for (const path of getManagedMediaPaths(product)) {
+          await deleteUploadedMedia(path).catch((error) => {
+            console.warn('Could not remove product image.', error);
+          });
+        }
+        await loadData();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : 'Товар не удалён. Попробуйте ещё раз.');
       }
-      loadData();
     }
   };
 
