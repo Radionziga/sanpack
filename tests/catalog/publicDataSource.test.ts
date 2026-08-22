@@ -1,10 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  assertPublicDataReadAllowed,
   loadPublicData,
   PublicDataUnavailableError,
 } from '@/lib/catalog/publicDataSource';
 
 describe('public data source policy', () => {
+  it('fails before cached reads during credentialless production builds', () => {
+    expect(() => assertPublicDataReadAllowed({
+      resource: 'settings',
+      seedEnabled: false,
+      phase: 'phase-production-build',
+    })).toThrow(PublicDataUnavailableError);
+
+    expect(() => assertPublicDataReadAllowed({
+      resource: 'settings',
+      seedEnabled: true,
+      phase: 'phase-production-build',
+    })).not.toThrow();
+
+    expect(() => assertPublicDataReadAllowed({
+      resource: 'settings',
+      seedEnabled: false,
+      phase: 'phase-production-build',
+      serviceAccountJson: '{}',
+    })).not.toThrow();
+  });
+
   it('uses seed data only when demo mode is explicitly enabled', async () => {
     const load = vi.fn(async () => ['stored']);
 

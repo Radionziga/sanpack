@@ -19,7 +19,10 @@ import {
 } from '@/lib/seedData';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { filterPublicProducts } from '@/lib/catalog/publicProducts';
-import { loadPublicData } from '@/lib/catalog/publicDataSource';
+import {
+  assertPublicDataReadAllowed,
+  loadPublicData,
+} from '@/lib/catalog/publicDataSource';
 import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
 
 function isSeedFallbackEnabled() {
@@ -27,12 +30,16 @@ function isSeedFallbackEnabled() {
 }
 
 function getPublicAdminDb() {
-  const isCredentiallessBuild = process.env.NEXT_PHASE === 'phase-production-build'
-    && !process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (isCredentiallessBuild) {
-    throw new Error('Remote public data reads are disabled for a credentialless production build.');
-  }
   return getAdminDb();
+}
+
+function assertPublicReadAllowed(resource: string) {
+  assertPublicDataReadAllowed({
+    resource,
+    seedEnabled: isSeedFallbackEnabled(),
+    phase: process.env.NEXT_PHASE,
+    serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
+  });
 }
 
 function serializeFirestoreData<T>(value: unknown): T {
@@ -89,7 +96,7 @@ async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
   });
 }
 
-export const getPublicProducts = unstable_cache(
+const getCachedPublicProducts = unstable_cache(
   async () => filterPublicProducts(
     await readCollection<Product>('products', initialProducts)
   ),
@@ -97,31 +104,56 @@ export const getPublicProducts = unstable_cache(
   { revalidate: 300, tags: ['products'] }
 );
 
-export const getPublicCategories = unstable_cache(
+export async function getPublicProducts() {
+  assertPublicReadAllowed('products');
+  return getCachedPublicProducts();
+}
+
+const getCachedPublicCategories = unstable_cache(
   () => readCollection<Category>('categories', initialCategories),
   ['public-categories-v6-fail-honest-2026-08-22'],
   { revalidate: 1800, tags: ['categories'] }
 );
 
-export const getPublicAttributes = unstable_cache(
+export async function getPublicCategories() {
+  assertPublicReadAllowed('categories');
+  return getCachedPublicCategories();
+}
+
+const getCachedPublicAttributes = unstable_cache(
   () => readCollection<Attribute>('attributes', initialAttributes),
   ['public-attributes-v5-fail-honest-2026-08-22'],
   { revalidate: 1800, tags: ['attributes'] }
 );
 
-export const getPublicClients = unstable_cache(
+export async function getPublicAttributes() {
+  assertPublicReadAllowed('attributes');
+  return getCachedPublicAttributes();
+}
+
+const getCachedPublicClients = unstable_cache(
   () => readCollection<ClientPartner>('clients', initialClients),
   ['public-clients-v4-fail-honest-2026-08-22'],
   { revalidate: 3600, tags: ['clients'] }
 );
 
-export const getPublicBanners = unstable_cache(
+export async function getPublicClients() {
+  assertPublicReadAllowed('clients');
+  return getCachedPublicClients();
+}
+
+const getCachedPublicBanners = unstable_cache(
   () => readCollection<Banner>('banners', initialBanners),
   ['public-banners-v6-fail-honest-2026-08-22'],
   { revalidate: 900, tags: ['banners'] }
 );
 
-export const getPublicSettings = unstable_cache(
+export async function getPublicBanners() {
+  assertPublicReadAllowed('banners');
+  return getCachedPublicBanners();
+}
+
+const getCachedPublicSettings = unstable_cache(
   () => loadPublicData({
     resource: 'settings',
     seedEnabled: isSeedFallbackEnabled(),
@@ -140,3 +172,8 @@ export const getPublicSettings = unstable_cache(
   ['public-settings-v4-fail-honest-2026-08-22'],
   { revalidate: 1800, tags: ['settings'] }
 );
+
+export async function getPublicSettings() {
+  assertPublicReadAllowed('settings');
+  return getCachedPublicSettings();
+}

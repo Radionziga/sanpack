@@ -5,6 +5,24 @@ export class PublicDataUnavailableError extends Error {
   }
 }
 
+export function assertPublicDataReadAllowed({
+  resource,
+  seedEnabled,
+  phase,
+  serviceAccountJson,
+}: {
+  resource: string;
+  seedEnabled: boolean;
+  phase?: string;
+  serviceAccountJson?: string;
+}) {
+  if (seedEnabled || phase !== 'phase-production-build' || serviceAccountJson) return;
+
+  throw new PublicDataUnavailableError(resource, {
+    cause: new Error('Remote public data reads are disabled for a credentialless production build.'),
+  });
+}
+
 export async function loadPublicData<T>({
   resource,
   seedEnabled,
