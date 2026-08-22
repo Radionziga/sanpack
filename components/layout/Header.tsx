@@ -261,7 +261,7 @@ export function Header({
         <div className="border-b border-[var(--sp-line)] py-2.5 md:py-3">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 md:gap-4">
             {/* Logo */}
-            <Link href="/" className="shrink-0 flex items-center py-0.5" aria-label="SANPACK — на главную">
+            <Link href="/" className="shrink-0 flex items-center py-0.5" aria-label={`${siteSettings.company.name} — на главную`}>
               <SanpackLogo
                 src={siteSettings.company?.logo}
                 srcDark={siteSettings.company?.logoDark}

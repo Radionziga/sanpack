@@ -20,7 +20,7 @@ function getCredential() {
 }
 
 function getAdminApp() {
-  const adminAppName = 'sanpack-admin';
+  const adminAppName = 'commerce-platform-admin';
   return (
     getApps().find((app) => app.name === adminAppName) ??
     initializeApp({

@@ -20,7 +20,7 @@ export function CategorySidebar({ categories, activeSlug }: CategorySidebarProps
     <div className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 shadow-[var(--sp-shadow-soft)]">
       <div className="mb-3 flex items-center gap-2 border-b border-[var(--sp-line-soft)] pb-3 text-base font-semibold text-[var(--sp-ink)]">
         <Folder className="size-5 text-[var(--sp-brand)]" />
-        <span>{t('adminCategories')} SANPACK</span>
+        <span>{t('adminCategories')}</span>
       </div>
 
       <ul className="space-y-2">

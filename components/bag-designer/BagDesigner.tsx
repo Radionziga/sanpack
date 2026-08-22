@@ -409,7 +409,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
         </div>
       </div>
 
-      <p className="mx-auto mt-4 max-w-3xl text-center text-xs leading-5 text-[var(--sp-ink-muted)]">Эскиз и визуализация показывают идею. Перед производством технолог SANPACK проверит размеры, материал и зону нанесения.</p>
+      <p className="mx-auto mt-4 max-w-3xl text-center text-xs leading-5 text-[var(--sp-ink-muted)]">Эскиз и визуализация показывают идею. Перед производством наш технолог проверит размеры, материал и зону нанесения.</p>
     </section>
   );
 }

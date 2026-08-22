@@ -42,7 +42,7 @@ export async function createInternalDocument(
       title: `${settings.documentTitle} ${order.requestNumber}`,
       author: settings.companyName,
       subject: 'Внутренний документ по заказу',
-      creator: 'SANPACK Commerce Platform',
+      creator: 'Commerce Platform',
     },
     defaultStyle: { font: 'Roboto', fontSize: 9, color: '#17201C', lineHeight: 1.25 },
     footer: (currentPage, pageCount) => ({

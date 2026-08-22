@@ -16,7 +16,7 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId
   );
 }
 
-const CLIENT_APP_NAME = 'storefront-client';
+const CLIENT_APP_NAME = 'commerce-storefront-client';
 const app = getApps().find((candidate) => candidate.name === CLIENT_APP_NAME)
   ?? initializeApp(firebaseConfig, CLIENT_APP_NAME);
 

@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       await sendTelegramMessage(
         decryptSecret(current.notifications.tokenEncrypted),
         current.notifications.chatId,
-        'SANPACK: тестовое уведомление доставлено. Интеграция работает.'
+        'Тестовое уведомление доставлено. Интеграция работает.'
       );
       return NextResponse.json({ success: true, message: 'Тестовое сообщение доставлено. Уведомления о новых заказах готовы.' });
     }

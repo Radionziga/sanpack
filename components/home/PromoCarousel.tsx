@@ -9,19 +9,19 @@ import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 
 const labels = {
   ru: {
-    region: 'Промо-предложения SANPACK',
+    region: 'Промо-предложения',
     previous: 'Предыдущий баннер',
     next: 'Следующий баннер',
     slide: 'Показать баннер',
   },
   uz: {
-    region: 'SANPACK promo takliflari',
+    region: 'Promo takliflar',
     previous: 'Oldingi banner',
     next: 'Keyingi banner',
     slide: 'Bannerni ko‘rsatish',
   },
   en: {
-    region: 'SANPACK promotions',
+    region: 'Promotions',
     previous: 'Previous banner',
     next: 'Next banner',
     slide: 'Show banner',
@@ -209,7 +209,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
 
             const content = (
               <div className="relative h-full w-full">
-                <BannerImage banner={banner} alt={title || 'SANPACK Promo'} />
+                <BannerImage banner={banner} alt={title || labels[locale].region} />
 
                 {(hasText || hasButton) && (
                   <div className="absolute inset-0 z-10 flex flex-col justify-center px-5 sm:px-8 md:px-12 lg:px-16 py-4 sm:py-6 md:py-8 pointer-events-none">
@@ -254,7 +254,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
                     <Link
                       href={banner.link}
                       tabIndex={index === activeIndex ? 0 : -1}
-                      aria-label={buttonText ? `${buttonText}: ${title || 'SANPACK'}` : title || 'SANPACK'}
+                      aria-label={buttonText ? `${buttonText}: ${title || labels[locale].region}` : title || labels[locale].region}
                       className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
                     >
                       {content}
@@ -263,7 +263,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
                     <a
                       href={banner.link}
                       tabIndex={index === activeIndex ? 0 : -1}
-                      aria-label={buttonText ? `${buttonText}: ${title || 'SANPACK'}` : title || 'SANPACK'}
+                      aria-label={buttonText ? `${buttonText}: ${title || labels[locale].region}` : title || labels[locale].region}
                       className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
                     >
                       {content}

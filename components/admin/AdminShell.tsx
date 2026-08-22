@@ -80,7 +80,7 @@ export default function AdminShell({ children, adminEmail }: { children: ReactNo
       <aside className="border-b border-[var(--sp-line)] bg-[var(--sp-canvas)] md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r">
         <div className="flex h-full flex-col">
           <div className="flex min-h-16 items-center justify-between gap-4 px-4 md:min-h-20 md:px-6">
-            <Link href="/admin" aria-label="SANPACK — главная админ-панели" className="min-w-0 flex-1 text-[var(--sp-brand)]">
+            <Link href="/admin" aria-label="Главная админ-панели" className="min-w-0 flex-1 text-[var(--sp-brand)]">
               <SanpackLogo variant="currentColor" className="h-auto w-full max-w-[196px]" />
             </Link>
             <details className="group relative md:hidden">

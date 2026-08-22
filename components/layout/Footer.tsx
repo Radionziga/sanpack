@@ -39,7 +39,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Col 1: SANPACK Info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block max-w-full" aria-label="SANPACK — на главную">
+            <Link href="/" className="inline-block max-w-full" aria-label={`${company.name} — на главную`}>
               <SanpackLogo
                 src={company?.logo}
                 srcDark={company?.logoDark}
