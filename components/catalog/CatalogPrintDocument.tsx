@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, type CSSProperties } from 'react';
 import {
   Printer,
   Share2,
@@ -22,6 +22,7 @@ import { formatMoney } from '@/lib/catalog/productPresentation';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 import {
   getCatalogCompanyName,
+  getCatalogDocumentTheme,
   getCatalogSiteLabel,
 } from '@/lib/documents/catalogIdentity';
 
@@ -102,6 +103,14 @@ export function CatalogPrintDocument({
   const [copied, setCopied] = useState<boolean>(false);
   const companyName = settings ? getCatalogCompanyName(settings) : 'Storefront';
   const website = getCatalogSiteLabel(process.env.NEXT_PUBLIC_SITE_URL);
+  const documentTheme = getCatalogDocumentTheme(settings?.design);
+  const catalogTheme = {
+    '--catalog-brand': documentTheme.brand,
+    '--catalog-brand-deep': documentTheme.brandDeep,
+    '--catalog-accent': documentTheme.accent,
+    '--catalog-on-brand': documentTheme.onBrand,
+    '--catalog-on-brand-deep': documentTheme.onBrandDeep,
+  } as CSSProperties;
 
   // Set page title for nice PDF export filename
   useEffect(() => {
@@ -286,29 +295,29 @@ export function CatalogPrintDocument({
   };
 
   return (
-    <div className={`min-h-screen text-[#151B18] font-sans antialiased flex flex-col items-center ${embeddedInAdmin ? 'bg-transparent' : 'bg-[#EFF2F0]'}`}>
+    <div style={catalogTheme} className={`min-h-screen font-sans antialiased flex flex-col items-center text-[var(--sp-ink)] ${embeddedInAdmin ? 'bg-transparent' : 'bg-[var(--sp-canvas)]'}`}>
       {/* =========================================================================
           INTEGRATED CONTROL TOOLBAR
           ========================================================================= */}
       <aside aria-label="Панель управления каталогом" className="no-print sticky top-2 z-40 w-full max-w-6xl px-2 sm:px-4 mb-4">
-        <div className="bg-white border border-[#DCE2DE] rounded-2xl shadow-sm p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sp-radius)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 shadow-sm sm:p-4">
           {/* Left Group: Status / Filter info */}
           <div className="flex items-center gap-3">
             {!embeddedInAdmin && (
               <Link
                 href="/catalog"
-                className="p-2 rounded-xl bg-[#F4F7F5] border border-[#DCE2DE] hover:bg-[#E8ECE9] text-[#151B18] transition"
+                className="rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-2 text-[var(--sp-ink)] transition hover:bg-[var(--sp-surface-hover)]"
                 title="Вернуться на сайт"
               >
                 <ArrowLeft className="size-4" />
               </Link>
             )}
             <div>
-              <div className="text-xs font-bold text-[#03432D] uppercase tracking-wider flex items-center gap-1.5">
-                <FileText className="size-4 text-[#03432D]" />
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--sp-brand)]">
+                <FileText className="size-4 text-[var(--sp-brand)]" />
                 <span>{companyName} — Каталог А4</span>
               </div>
-              <div className="text-[11px] text-[#4C5751] font-medium">
+              <div className="text-[11px] font-medium text-[var(--sp-ink-secondary)]">
                 {totalDocumentPages} стр. • {filteredProducts.length} позиций
               </div>
             </div>
@@ -317,14 +326,14 @@ export function CatalogPrintDocument({
           {/* Center Controls: Prices, Language, Category in Brand Theme */}
           <div className="flex flex-wrap items-center gap-2.5 text-xs">
             {/* Price Segmented Toggle */}
-            <div className="flex bg-[#F4F7F5] p-1 rounded-xl border border-[#DCE2DE]">
+            <div className="flex rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-1">
               <button
                 type="button"
                 onClick={() => setWithPrices(true)}
                 className={`px-3 py-1.5 rounded-lg font-semibold transition ${
                   withPrices
-                    ? 'bg-[#03432D] text-white shadow-sm'
-                    : 'text-[#4C5751] hover:text-[#151B18]'
+                    ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-sm'
+                    : 'text-[var(--sp-ink-secondary)] hover:text-[var(--sp-ink)]'
                 }`}
               >
                 С ценами
@@ -334,8 +343,8 @@ export function CatalogPrintDocument({
                 onClick={() => setWithPrices(false)}
                 className={`px-3 py-1.5 rounded-lg font-semibold transition ${
                   !withPrices
-                    ? 'bg-[#03432D] text-white shadow-sm'
-                    : 'text-[#4C5751] hover:text-[#151B18]'
+                    ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-sm'
+                    : 'text-[var(--sp-ink-secondary)] hover:text-[var(--sp-ink)]'
                 }`}
               >
                 Без цен
@@ -343,7 +352,7 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Language Segmented Toggle */}
-            <div className="flex bg-[#F4F7F5] p-1 rounded-xl border border-[#DCE2DE]">
+            <div className="flex rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-1">
               {(['ru', 'uz', 'en'] as const).map((l) => (
                 <button
                   type="button"
@@ -351,8 +360,8 @@ export function CatalogPrintDocument({
                   onClick={() => setLanguage(l)}
                   className={`px-2.5 py-1.5 rounded-lg font-bold uppercase transition ${
                     language === l
-                      ? 'bg-[#03432D] text-white shadow-sm'
-                      : 'text-[#4C5751] hover:text-[#151B18]'
+                      ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-sm'
+                      : 'text-[var(--sp-ink-secondary)] hover:text-[var(--sp-ink)]'
                   }`}
                 >
                   {l}
@@ -364,7 +373,7 @@ export function CatalogPrintDocument({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-[#F4F7F5] text-[#151B18] border border-[#DCE2DE] rounded-xl px-3 py-1.5 text-xs font-medium focus:border-[#03432D] outline-none max-w-[260px] truncate shadow-sm cursor-pointer"
+              className="max-w-[260px] cursor-pointer truncate rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-1.5 text-xs font-medium text-[var(--sp-ink)] shadow-sm outline-none focus:border-[var(--sp-brand)]"
             >
               <option value="">Все разделы ({initialProducts.length} тов.)</option>
               {parentCategories.map((parent) => {
@@ -401,20 +410,20 @@ export function CatalogPrintDocument({
           {/* Right Actions: Zoom, Copy Link, Fullscreen, Print */}
           <div className="flex items-center gap-2">
             {/* Zoom Controls */}
-            <div className="hidden sm:flex items-center gap-1 bg-[#F4F7F5] px-2 py-1 rounded-xl border border-[#DCE2DE] text-[#4C5751] text-xs">
+            <div className="hidden items-center gap-1 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2 py-1 text-xs text-[var(--sp-ink-secondary)] sm:flex">
               <button
                 type="button"
                 onClick={() => setScale((s) => Math.max(0.4, s - 0.1))}
-                className="hover:text-[#151B18] p-1"
+                className="p-1 hover:text-[var(--sp-ink)]"
                 title="Уменьшить масштаб"
               >
                 <ZoomOut className="size-3.5" />
               </button>
-              <span className="font-mono text-[11px] w-9 text-center font-semibold text-[#151B18]">{Math.round(scale * 100)}%</span>
+              <span className="w-9 text-center font-mono text-[11px] font-semibold text-[var(--sp-ink)]">{Math.round(scale * 100)}%</span>
               <button
                 type="button"
                 onClick={() => setScale((s) => Math.min(1.2, s + 0.1))}
-                className="hover:text-[#151B18] p-1"
+                className="p-1 hover:text-[var(--sp-ink)]"
                 title="Увеличить масштаб"
               >
                 <ZoomIn className="size-3.5" />
@@ -425,10 +434,10 @@ export function CatalogPrintDocument({
             <button
               type="button"
               onClick={handleCopyLink}
-              className="bg-[#F4F7F5] hover:bg-[#E8ECE9] text-[#151B18] px-3 py-2 rounded-xl border border-[#DCE2DE] font-semibold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-2 text-xs font-semibold text-[var(--sp-ink)] shadow-sm transition hover:bg-[var(--sp-surface-hover)] active:scale-95"
               title="Скопировать прямую ссылку на каталог"
             >
-              {copied ? <Check className="size-3.5 text-[#03432D]" /> : <Share2 className="size-3.5" />}
+              {copied ? <Check className="size-3.5 text-[var(--sp-brand)]" /> : <Share2 className="size-3.5" />}
               <span className="hidden sm:inline">{copied ? 'Скопировано' : 'Ссылка'}</span>
             </button>
 
@@ -437,7 +446,7 @@ export function CatalogPrintDocument({
               href={`/ru/catalog/print?prices=${withPrices ? '1' : '0'}&lang=${language}${selectedCategory ? `&category=${selectedCategory}` : ''}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-[#F4F7F5] hover:bg-[#E8ECE9] text-[#151B18] px-3 py-2 rounded-xl border border-[#DCE2DE] font-semibold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-2 text-xs font-semibold text-[var(--sp-ink)] shadow-sm transition hover:bg-[var(--sp-surface-hover)] active:scale-95"
               title="Открыть каталог в новой вкладке"
             >
               <ExternalLink className="size-3.5" />
@@ -448,7 +457,7 @@ export function CatalogPrintDocument({
             <button
               type="button"
               onClick={() => window.print()}
-              className="bg-[#03432D] hover:bg-[#023322] text-white font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 text-xs transition active:scale-95"
+              className="flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 py-2 text-xs font-bold text-[var(--sp-on-brand)] shadow-sm transition hover:opacity-90 active:scale-95"
             >
               <Printer className="size-4" />
               <span>Печать / Сохранить в PDF</span>
@@ -488,8 +497,8 @@ export function CatalogPrintDocument({
         }
 
         .a4-page-cover {
-          background-color: #03432D !important;
-          color: #ffffff !important;
+          background-color: var(--catalog-brand-deep) !important;
+          color: var(--catalog-on-brand-deep) !important;
         }
 
         @media screen and (max-width: 230mm) {
@@ -539,8 +548,8 @@ export function CatalogPrintDocument({
             overflow: hidden !important;
           }
           .a4-page-cover {
-            background-color: #03432D !important;
-            color: #ffffff !important;
+            background-color: var(--catalog-brand-deep) !important;
+            color: var(--catalog-on-brand-deep) !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -559,11 +568,11 @@ export function CatalogPrintDocument({
             ======================================================================= */}
         <div className="a4-page a4-page-cover justify-between">
           {/* Cover Header Bar */}
-          <div className="flex justify-between items-center border-b border-white/20 pb-3.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
+          <div className="flex items-center justify-between border-b border-[color-mix(in_srgb,var(--catalog-on-brand-deep)_20%,transparent)] pb-3.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--catalog-on-brand-deep)] opacity-80">
               {companyName}
             </span>
-            <span className="text-[11px] font-semibold text-white uppercase tracking-wider font-mono">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--catalog-on-brand-deep)]">
               {website}
             </span>
           </div>
@@ -582,19 +591,19 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Subtitle Company Tagline */}
-            <div className="text-sm font-medium text-white/85 uppercase tracking-wider mb-6">
+            <div className="mb-6 text-sm font-medium uppercase tracking-wider text-[var(--catalog-on-brand-deep)] opacity-85">
               {language === 'uz'
                 ? 'HoReCa va biznes uchun kompleks ta’minot'
                 : 'Комплексные поставки для HoReCa и бизнеса'}
             </div>
 
             {/* Main Title */}
-            <h1 className="text-4xl sm:text-5xl font-bold text-white uppercase tracking-normal leading-tight mb-3">
+            <h1 className="mb-3 text-4xl font-bold uppercase leading-tight tracking-normal text-[var(--catalog-on-brand-deep)] sm:text-5xl">
               {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
             </h1>
 
             {/* Subtitle / Mode */}
-            <h2 className="text-lg sm:text-xl font-medium text-white/90 uppercase tracking-wide mb-10">
+            <h2 className="mb-10 text-lg font-medium uppercase tracking-wide text-[var(--catalog-on-brand-deep)] opacity-90 sm:text-xl">
               {withPrices
                 ? language === 'uz'
                   ? 'Ulgurji narxlar ro‘yxati (Prays-list)'
@@ -605,7 +614,7 @@ export function CatalogPrintDocument({
             </h2>
 
             {/* Clean Date / Year */}
-            <div className="text-xs font-semibold text-white/70 uppercase tracking-widest">
+            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--catalog-on-brand-deep)] opacity-70">
               {new Intl.DateTimeFormat(language === 'uz' ? 'uz-UZ' : 'ru-RU', {
                 month: 'long',
                 year: 'numeric',
@@ -614,10 +623,10 @@ export function CatalogPrintDocument({
           </div>
 
           {/* Cover Footer (Clean White / Brand Lime Contacts) */}
-          <div className="pt-5 border-t border-white/20 grid grid-cols-3 gap-4 text-xs text-white">
+          <div className="grid grid-cols-3 gap-4 border-t border-[color-mix(in_srgb,var(--catalog-on-brand-deep)_20%,transparent)] pt-5 text-xs text-[var(--catalog-on-brand-deep)]">
             {/* Phones */}
             <div className="flex items-start gap-2.5">
-              <Phone className="size-4 text-[#79B245] shrink-0 mt-0.5" />
+              <Phone className="mt-0.5 size-4 shrink-0 text-[var(--catalog-accent)]" />
               <div className="font-mono text-[11px] font-semibold leading-relaxed whitespace-nowrap">
                 <div className="whitespace-nowrap">{phone1}</div>
                 <div className="whitespace-nowrap">{phone2}</div>
@@ -626,19 +635,19 @@ export function CatalogPrintDocument({
 
             {/* Site & Email */}
             <div className="flex items-start gap-2.5 justify-center">
-              <Mail className="size-4 text-[#79B245] shrink-0 mt-0.5" />
+              <Mail className="mt-0.5 size-4 shrink-0 text-[var(--catalog-accent)]" />
               <div className="text-[11px] leading-relaxed">
-                <div className="font-semibold text-white font-mono">{website}</div>
-                <div className="text-white/80">{email}</div>
+                <div className="font-mono font-semibold text-[var(--catalog-on-brand-deep)]">{website}</div>
+                <div className="text-[var(--catalog-on-brand-deep)] opacity-80">{email}</div>
               </div>
             </div>
 
             {/* Address */}
             <div className="flex items-start gap-2.5 justify-end text-right">
-              <MapPin className="size-4 text-[#79B245] shrink-0 mt-0.5" />
+              <MapPin className="mt-0.5 size-4 shrink-0 text-[var(--catalog-accent)]" />
               <div className="text-[11px] leading-snug">
-                <div className="font-semibold text-white">{address}</div>
-                <div className="text-white/70 mt-0.5">{workingHours}</div>
+                <div className="font-semibold text-[var(--catalog-on-brand-deep)]">{address}</div>
+                <div className="mt-0.5 text-[var(--catalog-on-brand-deep)] opacity-70">{workingHours}</div>
               </div>
             </div>
           </div>
@@ -684,7 +693,7 @@ export function CatalogPrintDocument({
           return (
             <div key={`${category.id}-${pageIndex}`} className="a4-page justify-between">
               {/* TOP SOLID GREEN HEADER BANNER (SPACIOUS, NO OVERFLOW) */}
-              <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-4">
+              <header className="mb-4 flex shrink-0 items-center justify-between rounded-none bg-[var(--catalog-brand)] px-5 py-3 text-[var(--catalog-on-brand)]">
                 <div className="flex items-center gap-3.5 shrink-0">
                   <BrandLogo
                     src={settings?.company.logo}
@@ -693,19 +702,19 @@ export function CatalogPrintDocument({
                     variant="white"
                     className="h-7 sm:h-8"
                   />
-                  <div className="h-5 w-px bg-white/30" />
-                  <div className="text-[11px] font-semibold text-white/90 uppercase tracking-wider leading-none">
+                  <div className="h-5 w-px bg-[var(--catalog-on-brand)] opacity-30" />
+                  <div className="text-[11px] font-semibold uppercase leading-none tracking-wider text-[var(--catalog-on-brand)] opacity-90">
                     {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
                   </div>
                 </div>
-                <div className="text-right flex items-center gap-2 text-[11px] text-white font-mono whitespace-nowrap shrink-0">
-                  <span className="font-semibold text-[#DCE9AF] uppercase tracking-wider">{website}</span>
+                <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-right font-mono text-[11px] text-[var(--catalog-on-brand)]">
+                  <span className="font-semibold uppercase tracking-wider text-[var(--catalog-accent)]">{website}</span>
                 </div>
               </header>
 
               {/* CATEGORY TITLE & SUBTITLE (SOFT ELEGANT BRAND GREEN / SLATE, NO HARSH PITCH BLACK) */}
               <section className="mb-3.5 shrink-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-[#03432D] uppercase leading-none tracking-normal">
+                <h1 className="text-xl font-bold uppercase leading-none tracking-normal text-[var(--catalog-brand)] sm:text-2xl">
                   {categoryTitle}
                 </h1>
                 {categorySubtitle && (
@@ -767,7 +776,7 @@ export function CatalogPrintDocument({
                         {/* Product Text Top (Clean, Readable, Brand Green with dedicated padding) */}
                         <div className="w-full px-3 pt-2.5 pb-1">
                           {/* Title in Brand Green */}
-                          <h3 className="text-[11.5px] sm:text-xs font-bold text-[#03432D] uppercase tracking-normal leading-snug">
+                          <h3 className="text-[11.5px] font-bold uppercase leading-snug tracking-normal text-[var(--catalog-brand)] sm:text-xs">
                             {title}
                           </h3>
 
@@ -831,7 +840,7 @@ export function CatalogPrintDocument({
 
                 {/* Center Phone Numbers */}
                 <div className="flex items-center gap-2 font-mono text-[11px] text-[#151B18] font-medium whitespace-nowrap">
-                  <Phone className="size-3.5 text-[#03432D] shrink-0" />
+                  <Phone className="size-3.5 shrink-0 text-[var(--catalog-brand)]" />
                   <span className="font-semibold">{phone1}</span>
                   <span className="text-[#AEB9B2]">|</span>
                   <span className="font-semibold">{phone2}</span>

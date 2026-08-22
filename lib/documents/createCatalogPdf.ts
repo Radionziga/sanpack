@@ -8,6 +8,7 @@ import type { Content, Margins, TableCell, TDocumentDefinitions } from 'pdfmake/
 import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
 import {
   getCatalogCompanyName,
+  getCatalogDocumentTheme,
   getCatalogSiteLabel,
 } from '@/lib/documents/catalogIdentity';
 
@@ -133,8 +134,11 @@ export async function createCatalogPdf(
   const phone2 = settings.contacts.phone2.trim();
   const email = settings.contacts.email.trim();
 
-  const brandGreen = '#0F6E43';
-  const darkGreen = '#0B5332';
+  const catalogTheme = getCatalogDocumentTheme(settings.design);
+  const brandGreen = catalogTheme.brand;
+  const darkGreen = catalogTheme.brandDeep;
+  const onBrand = catalogTheme.onBrand;
+  const onDarkBrand = catalogTheme.onBrandDeep;
   const lightBg = '#F3F4F6';
   const darkInk = '#111827';
   const secondaryInk = '#4B5563';
@@ -196,13 +200,13 @@ export async function createCatalogPdf(
                 text: companyName,
                 fontSize: 15,
                 bold: true,
-                color: '#FFFFFF',
+                color: onBrand,
                 characterSpacing: 1.5,
               },
               {
                 text: '|   Каталог продукции  /  Mahsulotlar katalogi' + (withPrices ? ' (Прайс-лист)' : ''),
                 fontSize: 9,
-                color: '#FFFFFF',
+                color: onBrand,
                 alignment: 'right',
                 margin: [0, 4, 0, 0] as Margins,
               },
@@ -246,7 +250,7 @@ export async function createCatalogPdf(
       text: companyName,
       fontSize: 38,
       bold: true,
-      color: '#FFFFFF',
+      color: onDarkBrand,
       alignment: 'center',
       characterSpacing: 4,
       margin: [0, 0, 0, 8] as Margins,
@@ -254,7 +258,7 @@ export async function createCatalogPdf(
     {
       text: 'Комплексные поставки для HoReCa\nHoReCa uchun kompleks ta’minot',
       fontSize: 12,
-      color: '#FFFFFF',
+      color: onDarkBrand,
       alignment: 'center',
       lineHeight: 1.3,
       margin: [0, 0, 0, 16] as Margins,
@@ -263,7 +267,7 @@ export async function createCatalogPdf(
       text: 'КАТАЛОГ ПРОДУКЦИИ\nMAHSULOTLAR KATALOGI',
       fontSize: 17,
       bold: true,
-      color: '#FFFFFF',
+      color: onDarkBrand,
       alignment: 'center',
       characterSpacing: 1.5,
       lineHeight: 1.25,
