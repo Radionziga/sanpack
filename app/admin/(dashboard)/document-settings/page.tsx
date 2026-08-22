@@ -6,7 +6,7 @@ import type { InternalDocumentSettings } from '@/types';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
 const empty: InternalDocumentSettings = {
-  documentTitle: 'Внутренняя накладная', companyName: 'SANPACK', legalName: '', taxId: '', address: '', phone: '', email: '', bankDetails: '', logoUrl: '', footerText: 'Внутренний документ. Не является счётом-фактурой или фискальным документом.', numberPrefix: 'НК', showSignatureFields: true, showStampPlaceholder: true,
+  documentTitle: 'Внутренняя накладная', companyName: '', legalName: '', taxId: '', address: '', phone: '', email: '', bankDetails: '', logoUrl: '', footerText: 'Внутренний документ. Не является счётом-фактурой или фискальным документом.', numberPrefix: 'НК', showSignatureFields: true, showStampPlaceholder: true,
 };
 
 export default function DocumentSettingsPage() {

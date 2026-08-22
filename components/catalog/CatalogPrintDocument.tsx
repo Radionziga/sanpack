@@ -812,8 +812,8 @@ export function CatalogPrintDocument({
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-semibold text-[#929C96] uppercase tracking-wider">
                     {language === 'uz'
-                      ? 'Sanpack Distribution • HoReCa ta’minoti'
-                      : 'Sanpack Distribution • Поставки HoReCa'}
+                      ? `${companyName} • HoReCa ta’minoti`
+                      : `${companyName} • Поставки HoReCa`}
                   </span>
                 </div>
 
