@@ -65,7 +65,7 @@ export function FastCategories({ categories }: FastCategoriesProps) {
                 className="bg-[var(--sp-surface)] rounded-2xl border border-[var(--sp-line)] p-5 hover:shadow-md hover:border-[var(--sp-brand)] transition-all group flex flex-col justify-between aspect-[4/3]"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-[var(--sp-surface-inset)] text-[var(--sp-brand)] flex items-center justify-center group-hover:bg-[var(--sp-brand)] group-hover:text-white transition-colors shadow-xs">
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-[var(--sp-surface-inset)] text-[var(--sp-brand)] shadow-xs transition-colors group-hover:bg-[var(--sp-brand)] group-hover:text-[var(--sp-on-brand)]">
                     <Icon className="w-6 h-6" />
                   </div>
                   <ArrowRight className="w-4 h-4 text-[var(--sp-ink-muted)] group-hover:text-[var(--sp-brand)] group-hover:translate-x-1 transition-all" />

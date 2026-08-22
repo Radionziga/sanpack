@@ -21,14 +21,14 @@ export default function AboutPage() {
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-4 space-y-12">
           {/* Hero Header */}
-          <div className="bg-[var(--sp-brand-deep)] text-white rounded-[var(--sp-radius)] p-8 md:p-12 shadow-lg relative overflow-hidden">
+          <div className="relative overflow-hidden rounded-[var(--sp-radius)] bg-[var(--sp-brand-deep)] p-8 text-[var(--sp-on-brand-deep)] shadow-lg md:p-12">
             <div className="relative z-10 max-w-2xl space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--sp-radius-control)] bg-white/10 text-[var(--sp-accent)] text-xs font-semibold">
+              <div className="inline-flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] px-3 py-1 text-xs font-semibold text-[var(--sp-accent)]">
                 <Factory className="w-4 h-4" />
                 <span>{copy.eyebrow}</span>
               </div>
               <h1 className="font-extended text-3xl sm:text-4xl font-bold">{t('about')} {company.name}</h1>
-              <p className="text-sm text-white/85 leading-relaxed">
+              <p className="text-sm leading-relaxed text-[var(--sp-on-brand-deep)] opacity-85">
                 {copy.intro}
               </p>
             </div>

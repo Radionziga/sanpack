@@ -579,7 +579,7 @@ export default function AdminProductsPage() {
                       <div className="relative aspect-square overflow-hidden rounded-[var(--sp-radius-control)] bg-white">
                         <Image src={asset.url} alt={`Изображение товара ${index + 1}`} fill sizes="260px" className="object-contain" />
                         {index === 0 ? (
-                          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+                          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-2 py-1 text-[10px] font-bold text-[var(--sp-on-brand)] shadow-sm">
                             <Star className="size-3" aria-hidden="true" /> Главное
                           </span>
                         ) : null}

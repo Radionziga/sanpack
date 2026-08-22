@@ -16,20 +16,20 @@ export function CtaBanner() {
   }[language];
 
   return (
-    <section className="py-16 bg-[var(--sp-brand-deep)] text-white">
+    <section className="bg-[var(--sp-brand-deep)] py-16 text-[var(--sp-on-brand-deep)]">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="bg-gradient-to-r from-[var(--sp-brand-deep)] to-[var(--sp-brand)] rounded-[var(--sp-radius)] p-8 md:p-10 shadow-xl flex flex-col lg:flex-row items-center justify-between gap-8 border border-white/10">
+        <div className="flex flex-col items-center justify-between gap-8 rounded-[var(--sp-radius)] border border-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] bg-gradient-to-r from-[var(--sp-brand-deep)] to-[var(--sp-brand)] p-8 shadow-xl md:p-10 lg:flex-row">
           <div className="space-y-3 max-w-2xl text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--sp-radius-control)] bg-white/10 text-[var(--sp-accent)] text-xs font-semibold">
+            <div className="inline-flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] px-3 py-1 text-xs font-semibold text-[var(--sp-accent)]">
               <ChatBubbleLeftEllipsisIcon className="w-4 h-4 text-[var(--sp-accent)]" />
               <span>{copy[0]}</span>
             </div>
 
-            <h2 className="font-extended text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            <h2 className="font-extended text-2xl font-bold tracking-tight text-[var(--sp-on-brand-deep)] sm:text-3xl">
               {t('ctaTitle')}
             </h2>
 
-            <p className="text-xs sm:text-sm text-white/85 leading-relaxed font-normal">
+            <p className="text-xs font-normal leading-relaxed text-[var(--sp-on-brand-deep)] opacity-85 sm:text-sm">
               {t('ctaDesc')}
             </p>
           </div>
@@ -37,7 +37,7 @@ export function CtaBanner() {
           <div className="shrink-0 flex flex-col sm:flex-row items-center gap-3">
             <Link
               href="/request"
-              className="px-6 py-3.5 bg-[var(--sp-accent)] text-[var(--sp-brand-deep)] hover:bg-white font-bold text-xs rounded-[var(--sp-radius-control)] shadow-md transition-all flex items-center gap-2 active:scale-95"
+              className="flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-accent)] px-6 py-3.5 text-xs font-bold text-[var(--sp-on-accent)] shadow-md transition-all hover:opacity-90 active:scale-95"
             >
               <span>{t('ctaBtn')}</span>
               <ArrowRightIcon className="w-4 h-4" />
@@ -47,7 +47,7 @@ export function CtaBanner() {
               href={contacts.telegram}
               target="_blank"
               rel="noreferrer"
-              className="px-5 py-3.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-[var(--sp-radius-control)] border border-white/20 transition-all backdrop-blur-sm"
+              className="rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-brand-deep)_20%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] px-5 py-3.5 text-xs font-semibold text-[var(--sp-on-brand-deep)] backdrop-blur-sm transition-all hover:bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_18%,transparent)]"
             >
               {copy[1]}
             </a> : null}

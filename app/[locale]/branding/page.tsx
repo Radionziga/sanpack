@@ -21,16 +21,16 @@ export default function BrandingPage() {
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-4 space-y-12">
           {/* Hero */}
-          <div className="bg-gradient-to-r from-[var(--sp-brand-deep)] to-[var(--sp-brand)] text-white rounded-[var(--sp-radius)] p-8 md:p-12 shadow-xl">
+          <div className="rounded-[var(--sp-radius)] bg-gradient-to-r from-[var(--sp-brand-deep)] to-[var(--sp-brand)] p-8 text-[var(--sp-on-brand-deep)] shadow-xl md:p-12">
             <div className="max-w-2xl space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--sp-radius-control)] bg-white/10 text-[var(--sp-accent)] text-xs font-bold">
+              <div className="inline-flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] px-3 py-1 text-xs font-bold text-[var(--sp-accent)]">
                 <Printer className="w-4 h-4" />
                 <span>{copy.eyebrow}</span>
               </div>
               <h1 className="font-extended text-3xl sm:text-4xl font-bold">
                 {t('branding')} {company.name}
               </h1>
-              <p className="text-sm text-white/85 leading-relaxed">
+              <p className="text-sm leading-relaxed text-[var(--sp-on-brand-deep)] opacity-85">
                 {copy.intro}
               </p>
             </div>

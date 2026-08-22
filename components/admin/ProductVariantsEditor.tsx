@@ -209,7 +209,7 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
             quantityStep: 1,
             attributes: [{ key: '', value: '' }],
           })}
-          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--sp-brand-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sp-brand)] focus-visible:ring-offset-2"
+          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 py-2.5 text-xs font-semibold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sp-brand)] focus-visible:ring-offset-2"
         >
           <Plus className="size-4" aria-hidden="true" />
           Добавить вариант

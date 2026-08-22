@@ -355,7 +355,7 @@ export default function AdminPromotionsPage() {
                     ) : null}
                     {buttonTextRu && link ? (
                       <div className="pt-1">
-                        <span className="inline-flex items-center gap-1 rounded bg-[var(--sp-brand)] px-2.5 py-1 text-[10px] sm:text-xs font-semibold text-white shadow">
+                        <span className="inline-flex items-center gap-1 rounded bg-[var(--sp-brand)] px-2.5 py-1 text-[10px] font-semibold text-[var(--sp-on-brand)] shadow sm:text-xs">
                           {buttonTextRu} <ArrowRight className="size-3" />
                         </span>
                       </div>

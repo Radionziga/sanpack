@@ -346,7 +346,7 @@ export function CatalogHome({
                 className="group flex items-center justify-between rounded-xl border border-[var(--sp-brand-border)] bg-[var(--sp-brand-subtle)] p-4 transition-all hover:border-[var(--sp-brand)] hover:shadow-sm active:scale-[0.98]"
               >
                 <div className="pr-3">
-                  <span className="inline-block rounded bg-[var(--sp-brand)] px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                  <span className="inline-block rounded bg-[var(--sp-brand)] px-2 py-0.5 text-[10px] font-bold uppercase text-[var(--sp-on-brand)]">
                     Прайс-лист
                   </span>
                   <p className="mt-1 font-semibold text-sm text-[var(--sp-ink)]">
