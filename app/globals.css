@@ -14,21 +14,6 @@
     --sp-font-heading: 'MTS Wide', var(--font-manrope), sans-serif;
     --sp-font-body: 'MTS Text', var(--font-inter), sans-serif;
     --sp-font-ui: 'MTS Compact', var(--font-inter), sans-serif;
-    --sanpack-green: #0F6E43;
-    --sanpack-dark: #095030;
-    --sanpack-lime: #DCE9AF;
-    --sanpack-button: #0F6E43;
-    --sanpack-light-bg: #F4F7F5;
-    --sanpack-white: #FFFFFF;
-    --sanpack-surface: #F8FAFC;
-    --sanpack-border: #E2E8F0;
-    --sanpack-text: #1E293B;
-    --sanpack-muted: #64748B;
-    --sanpack-warning: #D97706;
-    --sanpack-error: #DC2626;
-    --sanpack-success: #0F6E43;
-    --sanpack-kraft: #D8C7A3;
-    --sanpack-kraft-light: #F1EBDD;
     --sp-primary: #0F6E43;
     --sp-primary-strong: #0A4B2E;
     --sp-secondary: #DCE9AF;
@@ -547,11 +532,4 @@ input[type="search"]::-webkit-search-results-decoration {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-/* Smooth transition for hover effects */
-.transition-sanpack {
-  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
-  transition-duration: 0.2s;
-  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
