@@ -31,6 +31,17 @@ describe('commerce admin validation', () => {
       },
     }).success).toBe(true);
   });
+
+  it.each([
+    'in_stock',
+    'on_order',
+    'temporarily_unavailable',
+    'discontinued',
+    'unavailable',
+    'informational',
+  ] as const)('accepts the shared variant availability %s', (availability) => {
+    expect(productVariantSchema.safeParse(createVariant({ availability })).success).toBe(true);
+  });
 });
 
 describe('client admin validation', () => {

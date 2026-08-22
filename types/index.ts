@@ -12,7 +12,9 @@ export type ProductAvailability =
   | 'in_stock'
   | 'on_order'
   | 'temporarily_unavailable'
-  | 'discontinued';
+  | 'discontinued'
+  | 'unavailable'
+  | 'informational';
 
 export type QuantityUnit =
   | 'piece'
