@@ -6,6 +6,7 @@ import { Language } from '@/types';
 import { translations, TranslationKeys } from '@/lib/i18n/translations';
 import { fixPrepositions } from '@/lib/utils/formatText';
 import { getPathLanguage } from '@/lib/i18n/pathLocale';
+import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 
 interface LanguageContextType {
   language: Language;
@@ -43,10 +44,7 @@ export function LanguageProvider({
   };
 
   const getLocalizedText = (ru?: string, uz?: string, en?: string): string => {
-    if (language === 'uz' && uz) return fixPrepositions(uz);
-    if (language === 'en' && en) return fixPrepositions(en);
-    if (ru) return fixPrepositions(ru);
-    return fixPrepositions(uz || '');
+    return fixPrepositions(resolveLocalizedText(language, { ru, uz, en }).text);
   };
 
   const fixText = (text: string): string => {

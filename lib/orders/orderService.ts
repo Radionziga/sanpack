@@ -76,7 +76,7 @@ export async function createOrderSnapshots(lines: CheckoutLineInput[]) {
       lineId: crypto.randomUUID(),
       productId: product.id,
       productTitleRu: product.titleRu,
-      productTitleUz: product.titleUz || product.titleRu,
+      productTitleUz: product.titleUz,
       productTitleEn: product.titleEn,
       productSlug: product.slug,
       variantId: variant?.id,

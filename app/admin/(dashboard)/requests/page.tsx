@@ -79,7 +79,7 @@ export default function AdminRequestsPage() {
     const item: RequestItem = {
       productId: product.id,
       productTitleRu: product.titleRu,
-      productTitleUz: product.titleUz || product.titleRu,
+      productTitleUz: product.titleUz,
       productSlug: product.slug,
       variantId: variant?.id,
       variantTitleRu: variant?.titleRu,

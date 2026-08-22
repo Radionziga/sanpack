@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getPublicProducts } from '@/lib/repositories/serverCatalogRepository';
 import { routing } from '@/i18n/routing';
 import type { Language } from '@/types';
+import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 
 function localized(
   locale: Language,
@@ -10,9 +11,7 @@ function localized(
   uz: string,
   en?: string
 ) {
-  if (locale === 'uz') return uz || ru;
-  if (locale === 'en') return en || ru;
-  return ru;
+  return resolveLocalizedText(locale, { ru, uz, en }).text;
 }
 
 export async function generateMetadata({

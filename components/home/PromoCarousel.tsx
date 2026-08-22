@@ -5,6 +5,7 @@ import { getImageProps } from 'next/image';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Banner, Language } from '@/types';
 import { Link } from '@/i18n/navigation';
+import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 
 const labels = {
   ru: {
@@ -28,21 +29,27 @@ const labels = {
 } satisfies Record<Language, Record<string, string>>;
 
 function localizedTitle(banner: Banner, locale: Language) {
-  if (locale === 'uz') return banner.titleUz || banner.titleRu || '';
-  if (locale === 'en') return banner.titleEn || banner.titleRu || '';
-  return banner.titleRu || '';
+  return resolveLocalizedText(locale, {
+    ru: banner.titleRu,
+    uz: banner.titleUz,
+    en: banner.titleEn,
+  }).text;
 }
 
 function localizedSubtitle(banner: Banner, locale: Language) {
-  if (locale === 'uz') return banner.subtitleUz || banner.subtitleRu || '';
-  if (locale === 'en') return banner.subtitleEn || banner.subtitleRu || '';
-  return banner.subtitleRu || '';
+  return resolveLocalizedText(locale, {
+    ru: banner.subtitleRu,
+    uz: banner.subtitleUz,
+    en: banner.subtitleEn,
+  }).text;
 }
 
 function localizedButtonText(banner: Banner, locale: Language) {
-  if (locale === 'uz') return banner.buttonTextUz || banner.buttonTextRu || '';
-  if (locale === 'en') return banner.buttonTextEn || banner.buttonTextRu || '';
-  return banner.buttonTextRu || '';
+  return resolveLocalizedText(locale, {
+    ru: banner.buttonTextRu,
+    uz: banner.buttonTextUz,
+    en: banner.buttonTextEn,
+  }).text;
 }
 
 function BannerImage({ banner, alt }: { banner: Banner; alt: string }) {

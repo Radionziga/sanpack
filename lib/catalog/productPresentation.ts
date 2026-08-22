@@ -1,5 +1,6 @@
 import type { Attribute, Language, Product, QuantityUnit } from '@/types';
 import { fixPrepositions } from '@/lib/utils/formatText';
+import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 
 const localeByLanguage: Record<Language, string> = {
   ru: 'ru-RU',
@@ -269,9 +270,7 @@ function getLocalizedValue(
   uz?: string,
   en?: string,
 ) {
-  if (language === 'uz') return uz || ru;
-  if (language === 'en') return en || ru;
-  return ru;
+  return resolveLocalizedText(language, { ru, uz, en }).text;
 }
 
 function normalizeKey(key: string) {

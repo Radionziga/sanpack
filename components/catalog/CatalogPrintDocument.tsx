@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
 import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
 import { formatMoney } from '@/lib/catalog/productPresentation';
+import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 
 interface CatalogPrintDocumentProps {
   initialProducts: Product[];
@@ -42,174 +43,21 @@ interface CategoryPageChunk {
   rowsCount: number;
 }
 
-// Comprehensive dictionary for translating product titles and terms into Uzbek
-function translateTitleToUzbek(titleRu: string): string {
-  if (!titleRu) return '';
-  let str = titleRu;
-
-  const dictionary: [RegExp, string][] = [
-    // Phrases & Multi-word categories
-    [/Мусорные пакеты/gi, 'Chiqindi paketlari'],
-    [/Мусорные мешки/gi, 'Chiqindi qoplari'],
-    [/Пакеты «Майка»/gi, '«Mayka» paketlar'],
-    [/Пакеты майка/gi, '«Mayka» paketlar'],
-    [/Пакеты для пиццы/gi, 'Pitsa paketlari'],
-    [/Отрывные пакеты/gi, 'Yirtma paketlar'],
-    [/Вакуумные пакеты/gi, 'Vakuumli paketlar'],
-    [/Крафт-пакеты/gi, 'Kraft paketlar'],
-    [/Крафт пакеты/gi, 'Kraft paketlar'],
-    [/Пищевая стрейч-плёнка/gi, 'Oziq-ovqat streych plyonkasi'],
-    [/Пищевая стрейч-пленка/gi, 'Oziq-ovqat streych plyonkasi'],
-    [/Стрейч-плёнка/gi, 'Streych plyonka'],
-    [/Стрейч-пленка/gi, 'Streych plyonka'],
-    [/Стрейч плёнка/gi, 'Streych plyonka'],
-    [/Стрейч пленка/gi, 'Streych plyonka'],
-    [/Алюминиевая фольга/gi, 'Alyuminiy folga'],
-    [/Фольга/gi, 'Folga'],
-    [/Бумага для выпечки/gi, 'Pishiriq qog‘ozi'],
-    [/Пергаментная бумага/gi, 'Pergament qog‘ozi'],
-    [/Пергамент/gi, 'Pergament'],
-    [/Рулонные салфетки/gi, 'Rulonli salfetkalar'],
-    [/Квадратные салфетки/gi, 'Kvadrat salfetkalar'],
-    [/Влажные салфетки/gi, 'Nam salfetkalar'],
-    [/Салфетки для диспенсера/gi, 'Dispenser salfetkalari'],
-    [/Салфетки/gi, 'Salfetkalar'],
-    [/Туалетная бумага/gi, 'Hojatxona qog‘ozi'],
-    [/Бумажные полотенца/gi, 'Qog‘oz sochiqlar'],
-    [/Перчатки универсальные/gi, 'Universal qo‘lqoplar'],
-    [/Резиновые перчатки/gi, 'Rezina qo‘lqoplar'],
-    [/Нитриловые перчатки/gi, 'Nitril qo‘lqoplar'],
-    [/Виниловые перчатки/gi, 'Vinil qo‘lqoplar'],
-    [/Латексные перчатки/gi, 'Lateks qo‘lqoplar'],
-    [/Хозяйственные перчатки/gi, 'Xo‘jalik qo‘lqoplari'],
-    [/Одноразовые перчатки/gi, 'Bir martalik qo‘lqoplar'],
-    [/Перчатки/gi, 'Qo‘lqoplar'],
-    [/Губки для мытья посуды/gi, 'Idish yuvish gubkalari'],
-    [/Губки для посуды/gi, 'Idish yuvish gubkalari'],
-    [/Корейская губка/gi, 'Koreys gubkasi'],
-    [/Губки/gi, 'Gubkalar'],
-    [/Губка/gi, 'Gubka'],
-    [/Цветные тряпки для столов/gi, 'Stol uchun rangli lattalar'],
-    [/Половая тряпка из микрофибры/gi, 'Mikrofibradan pol lattasi'],
-    [/Половая тряпка/gi, 'Pol lattasi'],
-    [/Тряпка «Дельфин»/gi, '«Delfin» lattasi'],
-    [/Тряпки для уборки/gi, 'Tozalash lattalari'],
-    [/Тряпки/gi, 'Lattalar'],
-    [/Тряпка/gi, 'Latta'],
-    [/Зубочистки/gi, 'Tish tozalagichlar'],
-    [/Шпажки/gi, 'Sixlar'],
-    [/Одноразовые стаканы/gi, 'Bir martalik stakanlar'],
-    [/Одноразовые стаканчики/gi, 'Bir martalik stakanlar'],
-    [/Стаканы/gi, 'Stakanlar'],
-    [/Стаканчики/gi, 'Stakanlar'],
-    [/Контейнеры для еды/gi, 'Ovqat konteynerlari'],
-    [/Контейнеры/gi, 'Konteynerlar'],
-    [/Ланч-боксы/gi, 'Lanch-bokslar'],
-    [/Ланч боксы/gi, 'Lanch-bokslar'],
-    [/Коробки для пиццы/gi, 'Pitsa qutilari'],
-    [/Коробки/gi, 'Qutilar'],
-    [/Фольгированные формы/gi, 'Folga qoliplar'],
-    [/Трубочки/gi, 'Trubochkalar'],
-    [/Продукты питания/gi, 'Oziq-ovqat mahsulotlari'],
-    [/Упаковка и расходные материалы/gi, 'Qadoqlash va sarf materiallari'],
-    [/Упаковка для пищевых продуктов/gi, 'Oziq-ovqat qadoqlari'],
-    [/Бумажная продукция/gi, 'Qog‘oz mahsulotlari'],
-    [/Хозяйственные товары/gi, 'Xo‘jalik mollari'],
-    [/Говядина/gi, 'Mol go‘shti'],
-    [/Курица/gi, 'Tovuq go‘shti'],
-    [/Куриный окорочок/gi, 'Tovuq soni'],
-    [/Куриные крылышки/gi, 'Tovuq qanotchalari'],
-    [/Целая курица/gi, 'Butun tovuq'],
-    [/Куриная грудка очищенная/gi, 'Tozalangan tovuq filesi'],
-    [/Куриная грудка/gi, 'Tovuq filesi'],
-    [/Куриное бедро без костей и кожи/gi, 'Suyaksiz va terisiz tovuq soni'],
-    [/Куриное бедро без костей/gi, 'Suyaksiz tovuq soni'],
-    [/Куриное бедро/gi, 'Tovuq soni'],
-    [/Куриная голень/gi, 'Tovuq boldiri'],
-    [/Молочная продукция/gi, 'Sut mahsulotlari'],
-    [/Куриные яйца/gi, 'Tovuq tuxumlari'],
-    [/Мука/gi, 'Un mahsulotlari'],
-    [/Фрукты/gi, 'Mevalar'],
-    [/Свежая зелень Novagreen/gi, 'Novagreen yangi ko‘katlari'],
-    [/Крупы и бобовые/gi, 'Yormalar va dukkaklilar'],
-    [/Микрозелень/gi, 'Mikroko‘katlar'],
-    [/Растительные и фритюрные масла/gi, 'O‘simlik va fritur moylari'],
-    [/Сахар/gi, 'Shakar'],
-    [/Овощи/gi, 'Sabzavotlar'],
-    [/Ягоды/gi, 'Mevalar va rezavorlar'],
-
-    // Modifiers & Adjectives
-    [/ультрапрочные/gi, 'o‘ta mustahkam'],
-    [/ультрапрочный/gi, 'o‘ta mustahkam'],
-    [/прочные/gi, 'mustahkam'],
-    [/прочный/gi, 'mustahkam'],
-    [/утолщённые/gi, 'qalinlashtirilgan'],
-    [/утолщенные/gi, 'qalinlashtirilgan'],
-    [/утолщённая/gi, 'qalinlashtirilgan'],
-    [/утолщенная/gi, 'qalinlashtirilgan'],
-    [/большая/gi, 'katta'],
-    [/большой/gi, 'katta'],
-    [/маленькая/gi, 'kichik'],
-    [/маленький/gi, 'kichik'],
-    [/двухслойная/gi, '2 qatlamli'],
-    [/двухслойные/gi, '2 qatlamli'],
-    [/трехслойная/gi, '3 qatlamli'],
-    [/трехслойные/gi, '3 qatlamli'],
-    [/2 слоя/gi, '2 qatlam'],
-    [/2 слоев/gi, '2 qatlam'],
-    [/2 рулона/gi, '2 rulon'],
-    [/4 рулона/gi, '4 rulon'],
-    [/6 рулонов/gi, '6 rulon'],
-    [/рулонов/gi, 'rulon'],
-    [/рулона/gi, 'rulon'],
-    [/рулон/gi, 'rulon'],
-    [/рулоне/gi, 'rulonda'],
-    [/упаковке/gi, 'qadoqda'],
-    [/упаковка/gi, 'qadoq'],
-    [/блоке/gi, 'blokda'],
-    [/блок/gi, 'blok'],
-    [/коробке/gi, 'qutida'],
-    [/коробка/gi, 'quti'],
-    [/штук/gi, 'dona'],
-    [/шт\./gi, 'dona'],
-    [/шт\b/gi, 'dona'],
-    [/см/gi, 'sm'],
-    [/л\b/gi, 'l'],
-    [/кг/gi, 'kg'],
-    [/мкм/gi, 'mkm'],
-    [/м\b/gi, 'm'],
-    [/уп\./gi, 'qadoq'],
-    [/уп\b/gi, 'qadoq'],
-    [/чёрные/gi, 'qora'],
-    [/черные/gi, 'qora'],
-    [/жёлтые/gi, 'sariq'],
-    [/желтые/gi, 'sariq'],
-    [/белые/gi, 'oq'],
-    [/синие/gi, 'ko‘k'],
-    [/прозрачные/gi, 'shaffof'],
-  ];
-
-  for (const [regex, replacement] of dictionary) {
-    str = str.replace(regex, replacement);
-  }
-
-  return str;
-}
 
 function getLocalizedProductTitle(product: Product, language: Language): string {
-  if (language === 'uz') {
-    if (product.titleUz && product.titleUz !== product.titleRu && !/[а-яё]/i.test(product.titleUz)) {
-      return product.titleUz;
-    }
-    return translateTitleToUzbek(product.titleRu || product.titleUz || '');
-  }
-  if (language === 'en') {
-    if (product.titleEn && product.titleEn !== product.titleRu) {
-      return product.titleEn;
-    }
-    return product.titleRu;
-  }
-  return product.titleRu;
+  return resolveLocalizedText(language, {
+    ru: product.titleRu,
+    uz: product.titleUz,
+    en: product.titleEn,
+  }).text;
+}
+
+function getLocalizedCategoryTitle(category: Category, language: Language): string {
+  return resolveLocalizedText(language, {
+    ru: category.titleRu,
+    uz: category.titleUz,
+    en: category.titleEn,
+  }).text;
 }
 
 function getLocalizedSalesUnitLabel(unit: string | undefined, language: Language): string {
@@ -514,10 +362,10 @@ export function CatalogPrintDocument({
                 return (
                   <optgroup
                     key={parent.id}
-                    label={`${language === 'uz' ? parent.titleUz || parent.titleRu : parent.titleRu} (${parentTotalProds})`}
+                    label={`${getLocalizedCategoryTitle(parent, language)} (${parentTotalProds})`}
                   >
                     <option value={parent.id} className="font-bold">
-                      📁 Все: {language === 'uz' ? parent.titleUz || parent.titleRu : parent.titleRu} ({parentTotalProds})
+                      📁 Все: {getLocalizedCategoryTitle(parent, language)} ({parentTotalProds})
                     </option>
                     {children.map((child) => {
                       const childProds = initialProducts.filter(
@@ -525,7 +373,7 @@ export function CatalogPrintDocument({
                       ).length;
                       return (
                         <option key={child.id} value={child.id}>
-                          &nbsp;&nbsp;↳ {language === 'uz' ? child.titleUz || child.titleRu : child.titleRu} ({childProds})
+                          &nbsp;&nbsp;↳ {getLocalizedCategoryTitle(child, language)} ({childProds})
                         </option>
                       );
                     })}
@@ -803,10 +651,7 @@ export function CatalogPrintDocument({
                   ? 'h-36 sm:h-40'
                   : 'h-40 sm:h-44';
 
-          const categoryTitle =
-            language === 'uz'
-              ? category.titleUz || translateTitleToUzbek(category.titleRu)
-              : category.titleRu;
+          const categoryTitle = getLocalizedCategoryTitle(category, language);
 
           const categorySubtitle =
             language === 'uz'

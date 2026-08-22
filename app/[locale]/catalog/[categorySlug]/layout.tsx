@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getPublicCategories } from '@/lib/repositories/serverCatalogRepository';
 import type { Language } from '@/types';
 import { routing } from '@/i18n/routing';
+import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 
 export async function generateMetadata({
   params,
@@ -17,18 +18,16 @@ export async function generateMetadata({
   );
   if (!category) return {};
 
-  const title =
-    locale === 'uz'
-      ? category.seo?.titleUz || category.titleUz
-      : locale === 'en'
-        ? category.seo?.titleEn || category.titleEn || category.titleRu
-        : category.seo?.titleRu || category.titleRu;
-  const description =
-    locale === 'uz'
-      ? category.seo?.descriptionUz || category.descriptionUz
-      : locale === 'en'
-        ? category.seo?.descriptionEn || category.descriptionEn || category.descriptionRu
-        : category.seo?.descriptionRu || category.descriptionRu;
+  const title = resolveLocalizedText(locale, {
+    ru: category.seo?.titleRu || category.titleRu,
+    uz: category.seo?.titleUz || category.titleUz,
+    en: category.seo?.titleEn || category.titleEn,
+  }).text;
+  const description = resolveLocalizedText(locale, {
+    ru: category.seo?.descriptionRu || category.descriptionRu,
+    uz: category.seo?.descriptionUz || category.descriptionUz,
+    en: category.seo?.descriptionEn || category.descriptionEn,
+  }).text;
   const path = `/catalog/${category.slug}`;
 
   return {

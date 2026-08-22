@@ -208,7 +208,7 @@ export interface RequestItem {
   lineId?: string;
   productId: string;
   productTitleRu: string;
-  productTitleUz: string;
+  productTitleUz?: string;
   productTitleEn?: string;
   productSlug: string;
   variantId?: string;
