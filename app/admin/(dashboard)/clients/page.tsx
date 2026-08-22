@@ -16,6 +16,8 @@ export default function AdminClientsPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Partial<ClientPartner> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     loadClients();
@@ -41,6 +43,7 @@ export default function AdminClientsPage() {
   }
 
   const handleCreate = () => {
+    setSaveError('');
     setEditingClient({
       name: '',
       logo: '',
@@ -55,22 +58,34 @@ export default function AdminClientsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingClient) return;
+    setSaving(true);
+    setSaveError('');
 
-    if (editingClient.id) {
-      await AdminRepository.updateClient(editingClient.id, editingClient);
-    } else {
-      await AdminRepository.createClient(editingClient as Omit<ClientPartner, 'id' | 'createdAt'>);
+    try {
+      if (editingClient.id) {
+        await AdminRepository.updateClient(editingClient.id, editingClient);
+      } else {
+        await AdminRepository.createClient(editingClient as Omit<ClientPartner, 'id'>);
+      }
+
+      await loadClients();
+      setIsModalOpen(false);
+      setEditingClient(null);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Партнёр не сохранён.');
+    } finally {
+      setSaving(false);
     }
-
-    setIsModalOpen(false);
-    setEditingClient(null);
-    loadClients();
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Удалить партнёра?')) {
-      await AdminRepository.deleteClient(id);
-      loadClients();
+      try {
+        await AdminRepository.deleteClient(id);
+        await loadClients();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : 'Партнёр не удалён.');
+      }
     }
   };
 
@@ -121,6 +136,7 @@ export default function AdminClientsPage() {
             <div className="flex items-center justify-center gap-2 border-t border-[var(--sp-line)] pt-2">
               <button
                 onClick={() => {
+                  setSaveError('');
                   setEditingClient(client);
                   setIsModalOpen(true);
                 }}
@@ -137,6 +153,7 @@ export default function AdminClientsPage() {
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
+
           </div>
         ))}
       </div>
@@ -159,12 +176,16 @@ export default function AdminClientsPage() {
               </button>
             </div>
 
+            {saveError ? (
+              <p role="alert" className="sp-alert sp-alert-danger text-sm">{saveError}</p>
+            ) : null}
+
             <div>
               <label className="font-bold block mb-1">Название бренда *</label>
               <input
                 type="text"
                 required
-                value={editingClient.name || ''}
+                value={editingClient.name ?? ''}
                 onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
                 className="admin-control mt-1.5 text-sm font-normal"
               />
@@ -175,7 +196,7 @@ export default function AdminClientsPage() {
               <input
                 type="text"
                 required
-                value={editingClient.logo || ''}
+                value={editingClient.logo ?? ''}
                 onChange={(e) => setEditingClient({ ...editingClient, logo: e.target.value })}
                 className="admin-control mt-1.5 text-sm font-normal"
               />
@@ -220,9 +241,10 @@ export default function AdminClientsPage() {
               </button>
               <button
                 type="submit"
-                className="admin-button-primary"
+                disabled={saving}
+                className="admin-button-primary disabled:opacity-50"
               >
-                Сохранить
+                {saving ? 'Сохраняем…' : 'Сохранить'}
               </button>
             </div>
           </form>
