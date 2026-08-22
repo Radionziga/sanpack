@@ -35,6 +35,10 @@ instruction to delete operational data or run migration scripts.
   `admins/{uid}` document.
 - Legacy bag-designer drafts remain recognizable by the read-only cleanup
   inspection command.
+- Product `availability` retains both historical value sets for compatibility;
+  `stockStatus` remains the canonical storefront and admin inventory status.
+- The attribute `required` flag is preserved across admin edits, but product-save
+  enforcement remains disabled until existing production products are audited.
 
 ## Removed as proven dead
 
@@ -54,6 +58,8 @@ instruction to delete operational data or run migration scripts.
 - A distributed bag-designer rate limiter and a cleanup scheduler.
 - Mass translation of catalog content whose Uzbek or English text is still an
   explicit Russian fallback.
+- Enforcing required attributes after every existing product has been checked
+  for the fields that would become mandatory.
 
 No production data, backup, migration artifact or operational script was
 deleted during this cleanup.
