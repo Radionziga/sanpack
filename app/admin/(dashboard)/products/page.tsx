@@ -411,7 +411,7 @@ export default function AdminProductsPage() {
                       <td className="p-3.5">
                         {p.ownProduction ? (
                           <span className="flex w-fit items-center gap-1 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] px-2 py-0.5 text-[10px] font-bold text-[var(--sp-brand)]">
-                            <Factory className="w-3 h-3" /> SANPACK
+                            <Factory className="w-3 h-3" /> Собственное производство
                           </span>
                         ) : (
                           <span className="text-[10px] text-[var(--sp-ink-tertiary)]">Импорт</span>

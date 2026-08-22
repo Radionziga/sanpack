@@ -9,9 +9,11 @@ import { ClientPartner } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { pageCopy } from '@/lib/i18n/pageCopy';
 import { Star, Quote } from 'lucide-react';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export default function ClientsPage() {
   const { t, language } = useLanguage();
+  const { company } = useSiteSettings();
   const copy = pageCopy[language].clients;
   const [clients, setClients] = useState<ClientPartner[]>([]);
 
@@ -29,7 +31,7 @@ export default function ClientsPage() {
         <div className="max-w-7xl mx-auto px-4 space-y-12">
           <div>
             <h1 className="text-3xl font-bold text-[var(--sp-ink)]">
-              {t('clients')} SANPACK
+              {t('clients')} {company.name}
             </h1>
             <p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">
               {copy.intro}

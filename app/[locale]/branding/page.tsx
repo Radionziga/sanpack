@@ -7,9 +7,11 @@ import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { pageCopy } from '@/lib/i18n/pageCopy';
 import { Printer, ArrowRight } from 'lucide-react';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export default function BrandingPage() {
   const { t, language } = useLanguage();
+  const { company } = useSiteSettings();
   const copy = pageCopy[language].branding;
 
   return (
@@ -26,7 +28,7 @@ export default function BrandingPage() {
                 <span>{copy.eyebrow}</span>
               </div>
               <h1 className="font-extended text-3xl sm:text-4xl font-bold">
-                {t('branding')} SANPACK
+                {t('branding')} {company.name}
               </h1>
               <p className="text-sm text-white/85 leading-relaxed">
                 {copy.intro}

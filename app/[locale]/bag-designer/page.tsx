@@ -10,7 +10,7 @@ import type { Language } from '@/types';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Конструктор пакета с логотипом — SANPACK',
+  title: 'Конструктор пакета с логотипом',
   description: 'Соберите макет пакета, разместите логотип и получите визуализацию перед расчётом производства.',
 };
 

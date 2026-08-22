@@ -99,7 +99,7 @@ export default function AdminLoginPage() {
                 Email
                 <span className="relative mt-1.5 block">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--sp-ink-muted)]" aria-hidden="true" />
-                  <input type="email" required autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin@sanpack.uz" className="admin-control min-h-12 pl-10 pr-3 text-sm font-normal" />
+                  <input type="email" required autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="admin@example.com" className="admin-control min-h-12 pl-10 pr-3 text-sm font-normal" />
                 </span>
               </label>
 

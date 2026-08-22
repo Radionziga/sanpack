@@ -7,9 +7,11 @@ import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { pageCopy } from '@/lib/i18n/pageCopy';
 import { Factory, Check } from 'lucide-react';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export default function AboutPage() {
   const { t, language } = useLanguage();
+  const { company } = useSiteSettings();
   const copy = pageCopy[language].about;
 
   return (
@@ -25,7 +27,7 @@ export default function AboutPage() {
                 <Factory className="w-4 h-4" />
                 <span>{copy.eyebrow}</span>
               </div>
-              <h1 className="font-extended text-3xl sm:text-4xl font-bold">{t('about')} SANPACK</h1>
+              <h1 className="font-extended text-3xl sm:text-4xl font-bold">{t('about')} {company.name}</h1>
               <p className="text-sm text-white/85 leading-relaxed">
                 {copy.intro}
               </p>
