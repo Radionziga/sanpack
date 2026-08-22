@@ -1,5 +1,10 @@
 import type { Attribute, Category, Product, QuantityUnit } from '@/types';
 import { getSeedProductImage } from '@/lib/catalog/seedProductImages';
+import {
+  getLocalizedSalesUnitLabel,
+  getSeedProductTranslation,
+  localizeSeedVariantLabel,
+} from '@/lib/catalog/seedProductLocalization';
 
 const IMPORTED_AT = '2026-08-12T00:00:00.000Z';
 
@@ -352,6 +357,10 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
   if (!category) throw new Error(`Не найдена категория ${entry.categoryId} для ${entry.code}.`);
   const sku = `SP-${entry.code}`;
   const productImage = getSeedProductImage(sku);
+  const translation = getSeedProductTranslation(entry.code);
+  if (!translation) throw new Error(`Не найдены переводы для товара ${entry.code}.`);
+  const salesUnitUz = getLocalizedSalesUnitLabel(entry.unitCode, 'uz') || entry.salesUnit;
+  const salesUnitEn = getLocalizedSalesUnitLabel(entry.unitCode, 'en') || entry.salesUnit;
 
   return {
     id: `price-2026-${entry.code.toLowerCase()}`,
@@ -362,11 +371,11 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
     categoryId: entry.categoryId,
     categorySlug: category.slug,
     titleRu: entry.name,
-    titleUz: entry.name,
-    titleEn: entry.name,
+    titleUz: translation.uz,
+    titleEn: translation.en,
     shortDescriptionRu: `${entry.name}. Цена указана за ${entry.salesUnit}.`,
-    shortDescriptionUz: `${entry.name}. Narx ${entry.salesUnit} uchun ko‘rsatilgan.`,
-    shortDescriptionEn: `${entry.name}. Price is shown per ${entry.salesUnit}.`,
+    shortDescriptionUz: `${translation.uz}. Narx ${salesUnitUz} uchun ko‘rsatilgan.`,
+    shortDescriptionEn: `${translation.en}. Price is shown per ${salesUnitEn}.`,
     descriptionRu: 'Товар из актуального прайс-листа SANPACK. Доступность и условия поставки уточняйте у менеджера.',
     descriptionUz: 'SANPACK amaldagi narxlar ro‘yxatidagi mahsulot. Mavjudligi va yetkazib berish shartlarini menejerdan aniqlashtiring.',
     descriptionEn: 'Product from the current SANPACK price list. Confirm availability and delivery terms with a manager.',
@@ -380,8 +389,8 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
       id: `${entry.code.toLowerCase()}-${variant.id}`,
       sku: variant.sku || `SP-${entry.code}-${variant.id.toUpperCase()}`,
       titleRu: variant.label,
-      titleUz: variant.label,
-      titleEn: variant.label,
+      titleUz: localizeSeedVariantLabel(variant.label, 'uz'),
+      titleEn: localizeSeedVariantLabel(variant.label, 'en'),
       price: variant.price,
       stockStatus: 'on_order',
       attributes: variant.attributes,
@@ -407,7 +416,11 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
     sortOrder: index + 1,
     seo: {
       titleRu: `${entry.name} — купить в SANPACK`,
+      titleUz: `${translation.uz} — SANPACK’dan xarid qilish`,
+      titleEn: `${translation.en} — buy from SANPACK`,
       descriptionRu: `${entry.name} по цене ${entry.price.toLocaleString('ru-RU')} сум. Заказ и поставка от SANPACK.`,
+      descriptionUz: `${translation.uz}: narxi ${entry.price.toLocaleString('uz-UZ')} so‘m. SANPACK’dan buyurtma va yetkazib berish.`,
+      descriptionEn: `${translation.en}: ${entry.price.toLocaleString('en-US')} UZS. Order and delivery from SANPACK.`,
     },
     createdAt: IMPORTED_AT,
     updatedAt: IMPORTED_AT,

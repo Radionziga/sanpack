@@ -50,6 +50,7 @@ import {
   getPresentedProductAttributes,
   getProductDescriptionText,
   getProductPriceLabel,
+  getProductSalesUnitLabel,
 } from '@/lib/catalog/productPresentation';
 
 export default function ProductDetailPage({
@@ -283,6 +284,7 @@ export default function ProductDetailPage({
   );
   const keyAttributes = visibleAttributes.slice(0, 4);
   const priceLabel = getProductPriceLabel(product, language);
+  const salesUnitLabel = getProductSalesUnitLabel(product, language);
   const managerSku = selectedVariant?.sku || product.sku;
   const galleryImages = [selectedVariant?.image, ...(product.images || [])]
     .filter((image): image is string => Boolean(image))
@@ -402,7 +404,7 @@ export default function ProductDetailPage({
                 {/* Quantity Controls */}
                 <div className="space-y-2">
                   <label htmlFor="product-quantity" className="block text-xs font-semibold text-[var(--sp-ink)]">
-                    {quantityLabel} ({product.salesUnit})
+                    {quantityLabel} ({salesUnitLabel})
                   </label>
                   <div className="flex items-center overflow-hidden rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)]">
                     <button

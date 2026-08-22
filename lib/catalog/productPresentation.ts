@@ -1,6 +1,7 @@
 import type { Attribute, Language, Product, QuantityUnit } from '@/types';
 import { fixPrepositions } from '@/lib/utils/formatText';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
+import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
 
 const localeByLanguage: Record<Language, string> = {
   ru: 'ru-RU',
@@ -389,7 +390,7 @@ function formatAttributeValue(
       : formatNumber(rawValue, language);
   }
 
-  const value = localizedOption || rawValue.trim();
+  const value = localizedOption || localizeSeedAttributeValue(rawValue.trim(), language);
   if (!value) return '';
   if (isMoney) {
     const numberValue = parseNumericValue(value);
@@ -551,10 +552,14 @@ function getLocalizedSalesUnit(product: Product, language: Language, accusative 
   return accusative ? forms.ru.accusative : forms.ru.one;
 }
 
+export function getProductSalesUnitLabel(product: Product, language: Language) {
+  return getLocalizedSalesUnit(product, language) || product.salesUnit?.trim() || '';
+}
+
 export function getProductPriceLabel(product: Product, language: Language) {
   const unit = getLocalizedSalesUnit(product, language, language === 'ru');
   if (language === 'en') return unit ? `Price per ${unit}` : 'Price';
-  if (language === 'uz') return unit ? `${unit} uchun narx` : 'Narx';
+  if (language === 'uz') return unit ? capitalize(`${unit} uchun narx`, language) : 'Narx';
   return unit ? `Цена за ${unit}` : 'Цена';
 }
 

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Attribute, Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { Filter, RotateCcw, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
 
 interface FilterSidebarProps {
   attributes: Attribute[];
@@ -169,8 +170,8 @@ export function FilterSidebar({
               combinedOptions.push({
                 value: valStr,
                 labelRu: valStr,
-                labelUz: valStr,
-                labelEn: valStr,
+                labelUz: localizeSeedAttributeValue(valStr, 'uz'),
+                labelEn: localizeSeedAttributeValue(valStr, 'en'),
                 count: optionCounts[valStr],
               });
             }
@@ -203,7 +204,7 @@ export function FilterSidebar({
                   </span>
                   {attr.unit && (
                     <span className="text-[10px] font-normal lowercase text-[var(--sp-ink-muted)]">
-                      ({attr.unit})
+                      ({localizeSeedAttributeValue(attr.unit, language)})
                     </span>
                   )}
                   {currentVals.length > 0 && (
