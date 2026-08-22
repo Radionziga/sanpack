@@ -21,6 +21,7 @@ import {
   getProductCatalogPriceText,
   getProductSupportingText,
 } from '@/lib/catalog/productPresentation';
+import { isProductOrderable } from '@/lib/commerce/productOffer';
 
 interface ProductCardProps {
   product: Product;
@@ -58,6 +59,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
   const supportingText = getProductSupportingText(product, language);
   const favorited = isFavorite(product.id);
   const hasVariants = Boolean(product.variants?.length);
+  const orderable = isProductOrderable(product);
   const inCart = isInCart(product.id);
   const orderRule = getProductOrderRule(product, language);
   const minimumOrderLabel = getMinimumOrderLabel(product, language);
@@ -129,13 +131,13 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
             <span className="block text-base font-semibold tracking-tight text-[var(--sp-brand)]">{price}</span>
             <span className="mt-0.5 block text-xs text-[var(--sp-ink-muted)]">{minimumOrderLabel}</span>
           </div>
-          {hasVariants ? (
+          {hasVariants || !orderable ? (
             <Link
               href={`/product/${product.slug}`}
               className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100"
             >
               <AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />
-              <span>{chooseVariantCopy}</span>
+              <span>{hasVariants ? chooseVariantCopy : t('details')}</span>
             </Link>
           ) : (
             <button
@@ -205,14 +207,14 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
             <span className="mt-0.5 block text-[11px] leading-snug text-[var(--sp-ink-muted)] sm:text-xs">{minimumOrderLabel}</span>
           </div>
 
-          {hasVariants ? (
+          {hasVariants || !orderable ? (
             <Link
               href={`/product/${product.slug}`}
               className="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-2 text-xs font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm lg:w-auto"
             >
               <AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />
-              <span className="sm:hidden">{compactActionCopy.choose}</span>
-              <span className="hidden sm:inline">{chooseVariantCopy}</span>
+              <span className="sm:hidden">{hasVariants ? compactActionCopy.choose : t('details')}</span>
+              <span className="hidden sm:inline">{hasVariants ? chooseVariantCopy : t('details')}</span>
             </Link>
           ) : (
             <button

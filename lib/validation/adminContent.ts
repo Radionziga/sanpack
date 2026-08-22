@@ -149,7 +149,7 @@ export const productVariantSchema = z.object({
   attributes: z.record(z.string().trim().min(1).max(160), z.string().trim().max(500)),
   image: optionalUrl,
   minOrder: z.number().positive().max(1_000_000_000).optional(),
-  priceMode: z.enum(['fixed', 'from', 'request']).optional(),
+  priceMode: z.enum(['fixed', 'from', 'request', 'informational']).optional(),
   availability: z.enum(['in_stock', 'on_order', 'unavailable', 'informational']).optional(),
   quantityStep: z.number().positive().max(1_000_000_000).optional(),
   minQuantity: z.number().positive().max(1_000_000_000).optional(),
@@ -177,6 +177,7 @@ export const productMutationSchema = z.object({
   minimumOrder: z.number().positive().max(1_000_000_000).optional(),
   quantityStep: z.number().positive().max(1_000_000_000).optional(),
   maximumOrder: z.number().positive().max(1_000_000_000).optional(),
+  priceMode: z.enum(['fixed', 'from', 'request', 'informational']).optional(),
   orderPackaging: productOrderPackagingSchema.optional(),
   variants: z.array(productVariantSchema).max(100).optional(),
 }).passthrough().superRefine((values, context) => {

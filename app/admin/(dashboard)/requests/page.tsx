@@ -5,6 +5,8 @@ import { FileDown, History, PackagePlus, Pencil, Phone, Save, X } from 'lucide-r
 import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
 import type { Product, RequestItem, RequestOrder } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { getProductOrderRule } from '@/lib/commerce/orderQuantities';
+import { getProductPriceMode, getProductUnitPrice } from '@/lib/commerce/productOffer';
 
 const statuses: Array<{ value: RequestOrder['status']; label: string }> = [
   { value: 'new', label: 'Новый' },
@@ -73,6 +75,7 @@ export default function AdminRequestsPage() {
     const product = products.find((candidate) => candidate.id === productId);
     if (!product) return;
     const variant = product.variants?.[0];
+    const orderRule = getProductOrderRule(product, 'ru', variant);
     const item: RequestItem = {
       productId: product.id,
       productTitleRu: product.titleRu,
@@ -82,10 +85,10 @@ export default function AdminRequestsPage() {
       variantTitleRu: variant?.titleRu,
       variantTitleUz: variant?.titleUz,
       sku: variant?.sku || product.sku,
-      quantity: product.minimumOrder || 1,
+      quantity: orderRule.minimumQuantity,
       unit: product.salesUnit || 'шт',
-      price: variant?.price ?? product.price,
-      priceMode: product.showPrice ? 'fixed' : 'request',
+      price: getProductUnitPrice(product, variant),
+      priceMode: getProductPriceMode(product, variant),
       image: variant?.image || product.mainImage,
     };
     patchSelected({ items: [...selected.items, item] });

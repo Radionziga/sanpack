@@ -3,6 +3,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { RequestItem, Product, ProductVariant } from '@/types';
 import { normalizeOrderQuantity } from '@/lib/commerce/orderQuantities';
+import {
+  getProductPriceMode,
+  getProductUnitPrice,
+  isProductOrderable,
+} from '@/lib/commerce/productOffer';
 
 interface RequestCartContextType {
   items: RequestItem[];
@@ -56,6 +61,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
     comment?: string
   ) => {
     if (product.variants?.length && !variant) return;
+    if (!isProductOrderable(product, variant)) return;
     setItems((prev) => {
       const existingIdx = prev.findIndex(
         (i) => i.productId === product.id && i.variantId === (variant?.id || undefined)
@@ -86,7 +92,8 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         sku: variant?.sku || product.sku,
         quantity: normalizeOrderQuantity(product, quantity, variant),
         unit: product.salesUnit || 'шт',
-        price: variant?.price || product.price,
+        price: getProductUnitPrice(product, variant),
+        priceMode: getProductPriceMode(product, variant),
         comment,
         image: variant?.image || product.mainImage,
         product,

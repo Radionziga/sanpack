@@ -29,6 +29,7 @@ export interface ProductOrderRule {
   packageStep: number;
   minimumQuantity: number;
   quantityStep: number;
+  maximumQuantity?: number;
 }
 
 export function getProductOrderRule(
@@ -52,6 +53,19 @@ export function getProductOrderRule(
     ? positiveInteger(packaging?.packageStep, 1)
     : 1;
 
+  const minimumQuantity = packageEnabled
+    ? unitsPerPackage * minimumPackages
+    : positiveNumber(variant?.minQuantity ?? variant?.minOrder ?? product.minimumOrder, 1);
+  const quantityStep = packageEnabled
+    ? unitsPerPackage * packageStep
+    : positiveNumber(variant?.quantityStep ?? product.quantityStep, 1);
+  const configuredMaximum = variant?.maxQuantity ?? product.maximumOrder;
+  const maximumQuantity = typeof configuredMaximum === 'number'
+    && Number.isFinite(configuredMaximum)
+    && configuredMaximum >= minimumQuantity
+    ? configuredMaximum
+    : undefined;
+
   return {
     salesUnit: product.salesUnit?.trim() || 'шт.',
     packageEnabled,
@@ -59,12 +73,9 @@ export function getProductOrderRule(
     unitsPerPackage,
     minimumPackages,
     packageStep,
-    minimumQuantity: packageEnabled
-      ? unitsPerPackage * minimumPackages
-      : positiveNumber(variant?.minQuantity ?? variant?.minOrder ?? product.minimumOrder, 1),
-    quantityStep: packageEnabled
-      ? unitsPerPackage * packageStep
-      : positiveNumber(variant?.quantityStep ?? product.quantityStep, 1),
+    minimumQuantity,
+    quantityStep,
+    maximumQuantity,
   };
 }
 
@@ -80,7 +91,14 @@ export function normalizeOrderQuantity(
   const steps = Math.ceil(
     (requestedQuantity - rule.minimumQuantity - EPSILON) / rule.quantityStep
   );
-  return rule.minimumQuantity + Math.max(0, steps) * rule.quantityStep;
+  const normalized = rule.minimumQuantity + Math.max(0, steps) * rule.quantityStep;
+  if (rule.maximumQuantity === undefined || normalized <= rule.maximumQuantity) {
+    return normalized;
+  }
+  const maximumSteps = Math.floor(
+    (rule.maximumQuantity - rule.minimumQuantity + EPSILON) / rule.quantityStep
+  );
+  return rule.minimumQuantity + Math.max(0, maximumSteps) * rule.quantityStep;
 }
 
 export function isValidOrderQuantity(
@@ -90,6 +108,7 @@ export function isValidOrderQuantity(
 ) {
   const rule = getProductOrderRule(product, 'ru', variant);
   if (!Number.isFinite(quantity) || quantity < rule.minimumQuantity) return false;
+  if (rule.maximumQuantity !== undefined && quantity > rule.maximumQuantity) return false;
   const ratio = (quantity - rule.minimumQuantity) / rule.quantityStep;
   return Math.abs(ratio - Math.round(ratio)) <= EPSILON;
 }
@@ -102,11 +121,18 @@ export function getOrderRuleSummary(
   const rule = getProductOrderRule(product, language, variant);
   const minimumQuantity = formatProductQuantity(product, rule.minimumQuantity, language);
   const quantityStep = formatProductQuantity(product, rule.quantityStep, language);
+  const maximumSuffix = rule.maximumQuantity === undefined
+    ? ''
+    : {
+        ru: ` Максимум — ${formatProductQuantity(product, rule.maximumQuantity, language)}.`,
+        uz: ` Maksimum — ${formatProductQuantity(product, rule.maximumQuantity, language)}.`,
+        en: ` Maximum: ${formatProductQuantity(product, rule.maximumQuantity, language)}.`,
+      }[language];
   if (!rule.packageEnabled) {
     const copy = {
-      ru: `Минимум ${minimumQuantity}; шаг — ${quantityStep}.`,
-      uz: `Minimum ${minimumQuantity}; qadam — ${quantityStep}.`,
-      en: `Minimum ${minimumQuantity}; step — ${quantityStep}.`,
+      ru: `Минимум ${minimumQuantity}; шаг — ${quantityStep}.${maximumSuffix}`,
+      uz: `Minimum ${minimumQuantity}; qadam — ${quantityStep}.${maximumSuffix}`,
+      en: `Minimum ${minimumQuantity}; step: ${quantityStep}.${maximumSuffix}`,
     };
     return copy[language];
   }
@@ -115,9 +141,9 @@ export function getOrderRuleSummary(
   const minimumPackages = formatQuantity(rule.minimumPackages, rule.packageName, language);
   const unitsPerPackage = formatProductQuantity(product, rule.unitsPerPackage, language);
   const copy = {
-    ru: `Внешняя упаковка — ${onePackage}, в ней ${unitsPerPackage}. Минимум ${minimumPackages} (${minimumQuantity}).`,
-    uz: `Tashqi qadoq — ${onePackage}, unda ${unitsPerPackage}. Minimum ${minimumPackages} (${minimumQuantity}).`,
-    en: `Outer package: ${onePackage}, containing ${unitsPerPackage}. Minimum ${minimumPackages} (${minimumQuantity}).`,
+    ru: `Внешняя упаковка — ${onePackage}, в ней ${unitsPerPackage}. Минимум ${minimumPackages} (${minimumQuantity}).${maximumSuffix}`,
+    uz: `Tashqi qadoq — ${onePackage}, unda ${unitsPerPackage}. Minimum ${minimumPackages} (${minimumQuantity}).${maximumSuffix}`,
+    en: `Outer package: ${onePackage}, containing ${unitsPerPackage}. Minimum ${minimumPackages} (${minimumQuantity}).${maximumSuffix}`,
   };
   return copy[language];
 }

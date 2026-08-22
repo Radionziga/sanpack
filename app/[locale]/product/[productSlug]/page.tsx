@@ -41,6 +41,10 @@ import {
   normalizeOrderQuantity,
 } from '@/lib/commerce/orderQuantities';
 import {
+  getProductUnitPrice,
+  isProductOrderable,
+} from '@/lib/commerce/productOffer';
+import {
   formatMoney,
   formatProductQuantity,
   getPresentedProductAttributes,
@@ -83,6 +87,7 @@ export default function ProductDetailPage({
       decrease: 'Уменьшить количество',
       increase: 'Увеличить количество',
       selectVariant: 'Сначала выберите вариант',
+      informational: 'Только информация',
     },
     uz: {
       notFound: 'Mahsulot topilmadi',
@@ -110,6 +115,7 @@ export default function ProductDetailPage({
       decrease: 'Miqdorni kamaytirish',
       increase: 'Miqdorni oshirish',
       selectVariant: 'Avval variantni tanlang',
+      informational: 'Faqat ma’lumot uchun',
     },
     en: {
       notFound: 'Product not found',
@@ -137,6 +143,7 @@ export default function ProductDetailPage({
       decrease: 'Decrease quantity',
       increase: 'Increase quantity',
       selectVariant: 'Choose a variant first',
+      informational: 'Information only',
     },
   }[language];
   const { addItem, isInCart } = useRequestCart();
@@ -245,6 +252,7 @@ export default function ProductDetailPage({
   const inCart = isInCart(product.id, selectedVariant?.id);
   const orderRule = getProductOrderRule(product, language, selectedVariant || undefined);
   const orderSummary = getOrderRuleSummary(product, language, selectedVariant || undefined);
+  const orderable = isProductOrderable(product, selectedVariant || undefined);
 
   // Dynamic price computation considering wholesale tiers
   const activeTiers = selectedVariant?.wholesaleTiers || product.wholesaleTiers || [];
@@ -252,7 +260,9 @@ export default function ProductDetailPage({
     ?.map((variant) => variant.price)
     .filter((price): price is number => typeof price === 'number' && price > 0)
     .sort((left, right) => left - right)[0];
-  let unitPrice = selectedVariant?.price || variantStartingPrice || product.price || 0;
+  let unitPrice = selectedVariant
+    ? getProductUnitPrice(product, selectedVariant) ?? 0
+    : variantStartingPrice ?? getProductUnitPrice(product) ?? 0;
 
   if (activeTiers.length > 0) {
     // Find matching tier
@@ -280,7 +290,7 @@ export default function ProductDetailPage({
   const quantityLabel = t('quantity').replace(/:\s*$/, '');
 
   const handleAddToCart = () => {
-    if (variantRequired) return;
+    if (variantRequired || !orderable) return;
     addItem(product, selectedVariant || undefined, quantity);
   };
 
@@ -407,12 +417,13 @@ export default function ProductDetailPage({
                       id="product-quantity"
                       type="number"
                       min={orderRule.minimumQuantity}
+                      max={orderRule.maximumQuantity}
                       step={orderRule.quantityStep}
                       value={quantity}
                       onChange={(e) => setQuantity(Number(e.target.value) || orderRule.minimumQuantity)}
                       onFocus={() => setIsQuantityEditing(true)}
                       onBlur={() => {
-                        setQuantity((current) => normalizeOrderQuantity(product, current));
+                        setQuantity((current) => normalizeOrderQuantity(product, current, selectedVariant || undefined));
                         setIsQuantityEditing(false);
                       }}
                       aria-label={quantityLabel}
@@ -420,7 +431,11 @@ export default function ProductDetailPage({
                     />
                     <button
                       type="button"
-                      onClick={() => setQuantity((q) => q + orderRule.quantityStep)}
+                      onClick={() => setQuantity((q) => normalizeOrderQuantity(
+                        product,
+                        q + orderRule.quantityStep,
+                        selectedVariant || undefined,
+                      ))}
                       aria-label={copy.increase}
                       className="flex size-11 shrink-0 items-center justify-center text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
                     >
@@ -445,7 +460,7 @@ export default function ProductDetailPage({
                 <div className="space-y-2 pt-1">
                   <motion.button
                     type="button"
-                    disabled={variantRequired}
+                    disabled={variantRequired || !orderable}
                     aria-describedby={variantRequired ? 'variant-selection-hint' : undefined}
                     whileTap={{ scale: 0.97 }}
                     onClick={handleAddToCart}
@@ -459,6 +474,11 @@ export default function ProductDetailPage({
                       <>
                         <ShoppingCart className="w-4 h-4" aria-hidden="true" />
                         <span>{copy.selectVariant}</span>
+                      </>
+                    ) : !orderable ? (
+                      <>
+                        <AlertCircle className="w-4 h-4" aria-hidden="true" />
+                        <span>{copy.informational}</span>
                       </>
                     ) : inCart ? (
                       <>

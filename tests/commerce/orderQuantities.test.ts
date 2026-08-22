@@ -68,5 +68,23 @@ describe('product order quantities', () => {
     expect(isValidOrderQuantity(product, 0.35)).toBe(false);
   });
 
-  it.todo('rejects a quantity above maximumOrder in the shared quantity validator');
+  it.each([
+    { requested: 9, normalized: 9, valid: true },
+    { requested: 10, normalized: 9, valid: false },
+    { requested: 100, normalized: 9, valid: false },
+  ])('enforces an unaligned maximum: $requested', ({ requested, normalized, valid }) => {
+    const product = createProduct({ minimumOrder: 1, quantityStep: 4, maximumOrder: 10 });
+
+    expect(normalizeOrderQuantity(product, requested)).toBe(normalized);
+    expect(isValidOrderQuantity(product, requested)).toBe(valid);
+  });
+
+  it('lets a variant maximum override the product maximum', () => {
+    const product = createProduct({ minimumOrder: 1, maximumOrder: 100 });
+    const variant = createVariant({ minQuantity: 0.5, quantityStep: 0.25, maxQuantity: 1.25 });
+
+    expect(getProductOrderRule(product, 'ru', variant).maximumQuantity).toBe(1.25);
+    expect(normalizeOrderQuantity(product, 2, variant)).toBe(1.25);
+    expect(isValidOrderQuantity(product, 1.5, variant)).toBe(false);
+  });
 });

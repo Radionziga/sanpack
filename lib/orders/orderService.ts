@@ -5,12 +5,13 @@ import type { CheckoutLineInput } from '@/lib/validation/order';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
 import { getProductOrderRule, isValidOrderQuantity } from '@/lib/commerce/orderQuantities';
+import { getProductPriceMode, getProductUnitPrice } from '@/lib/commerce/productOffer';
 
 function resolvePriceMode(product: Product, variantId?: string): ProductPriceMode {
   const variant = variantId
     ? product.variants?.find((candidate) => candidate.id === variantId)
     : undefined;
-  return variant?.priceMode ?? product.priceMode ?? (product.showPrice ? 'fixed' : 'request');
+  return getProductPriceMode(product, variant);
 }
 
 function assertQuantity(product: Product, quantity: number, variant?: ProductVariant) {
@@ -68,7 +69,7 @@ export async function createOrderSnapshots(lines: CheckoutLineInput[]) {
     }
     assertQuantity(product, line.quantity, variant);
 
-    const price = variant?.price ?? product.price;
+    const price = getProductUnitPrice(product, variant);
     const lineTotal = price === undefined ? undefined : price * line.quantity;
 
     return omitUndefinedFields({
