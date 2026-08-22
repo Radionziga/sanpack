@@ -97,13 +97,14 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isTextEntryFocused, setIsTextEntryFocused] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelTriggerRef = useRef<HTMLElement | null>(null);
+  const catalogRequestRef = useRef<Promise<void> | null>(null);
+  const isMountedRef = useRef(false);
   const normalizedPathname = normalizePathname(pathname);
 
   const copy = {
@@ -175,27 +176,40 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     },
   }[language];
 
-  // Load catalog on demand when search is opened
   useEffect(() => {
-    if (activePanel === 'search' && products.length === 0 && !isLoadingCatalog) {
-      setIsLoadingCatalog(true);
-      Promise.all([
-        SanpackRepository.getProducts(),
-        SanpackRepository.getCategories(),
-      ])
-        .then(([p, c]) => {
-          setProducts(p);
-          setCategories(c);
-        })
-        .catch(() => {})
-        .finally(() => setIsLoadingCatalog(false));
-    }
-  }, [activePanel, products.length, isLoadingCatalog]);
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const loadCatalog = useCallback(() => {
+    if (products.length > 0 || catalogRequestRef.current) return;
+
+    const request = Promise.all([
+      SanpackRepository.getProducts(),
+      SanpackRepository.getCategories(),
+    ])
+      .then(([nextProducts, nextCategories]) => {
+        if (!isMountedRef.current) return;
+        setProducts(nextProducts);
+        setCategories(nextCategories);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (catalogRequestRef.current === request) {
+          catalogRequestRef.current = null;
+        }
+      });
+
+    catalogRequestRef.current = request;
+  }, [products.length]);
 
   const openPanel = useCallback((panel: Exclude<MobilePanel, null>) => {
     panelTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (panel === 'search') loadCatalog();
     setActivePanel(panel);
-  }, []);
+  }, [loadCatalog]);
 
   const closePanel = useCallback(() => {
     setActivePanel(null);
