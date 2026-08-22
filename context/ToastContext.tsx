@@ -41,7 +41,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
 
       {/* Floating Toast Notification Container: Top on mobile, Bottom-Right on desktop */}
-      <div className="fixed top-4 inset-x-0 mx-auto px-4 z-[80] flex flex-col items-center gap-2 max-w-sm w-full pointer-events-none sm:top-auto sm:inset-x-auto sm:bottom-6 sm:right-6 sm:px-0 sm:items-end">
+      <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-[80] mx-auto flex w-full max-w-sm flex-col items-center gap-2 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:inset-x-auto sm:bottom-6 sm:right-6 sm:top-auto sm:px-0 sm:items-end">
         <AnimatePresence>
           {toasts.map((toast) => (
             <motion.div
@@ -50,20 +50,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, y: -10 }}
               transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-              className="pointer-events-auto w-full bg-[#18231E]/95 backdrop-blur-xl text-white p-3.5 rounded-2xl shadow-2xl border border-white/15 flex items-start justify-between gap-3 font-sans"
+              className="pointer-events-auto flex w-full items-start justify-between gap-3 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface-raised)_95%,transparent)] p-3.5 font-sans text-[var(--sp-ink)] shadow-[var(--sp-shadow-raised)] backdrop-blur-xl"
             >
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-[#006F3C] text-white shrink-0 mt-0.5 shadow-xs">
+                <div className="mt-0.5 shrink-0 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] p-2 text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)]">
                   {toast.type === 'success' ? (
-                    <CheckCircle className="w-4 h-4 text-[#DCE9AF]" />
+                    <CheckCircle className="size-4 text-[var(--sp-accent)]" />
                   ) : (
-                    <Info className="w-4 h-4 text-emerald-200" />
+                    <Info className="size-4 text-[var(--sp-on-brand)]" />
                   )}
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white leading-tight">{toast.title}</h4>
+                  <h4 className="text-xs font-bold leading-tight text-[var(--sp-ink)]">{toast.title}</h4>
                   {toast.message && (
-                    <p className="text-[11px] text-slate-300 mt-0.5 leading-normal">
+                    <p className="mt-0.5 text-[11px] leading-normal text-[var(--sp-ink-secondary)]">
                       {toast.message}
                     </p>
                   )}
@@ -73,7 +73,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => removeToast(toast.id)}
                 aria-label="Закрыть уведомление"
-                className="text-slate-400 hover:text-white p-1 transition-colors rounded-lg"
+                className="sp-icon-button rounded-[var(--sp-radius-control-inner)] p-1"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

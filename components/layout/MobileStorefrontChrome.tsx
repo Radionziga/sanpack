@@ -379,7 +379,7 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
       <nav
         aria-label={copy.navigation}
         aria-hidden={isTextEntryFocused || activePanel !== null ? true : undefined}
-        className={`mobile-bottom-navigation fixed inset-x-0 bottom-0 z-40 border-t border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_96%,transparent)] px-[max(0.375rem,env(safe-area-inset-left))] pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_28px_rgb(21_27_24/8%)] backdrop-blur-xl transition-transform duration-200 md:hidden ${
+        className={`mobile-bottom-navigation fixed inset-x-0 bottom-0 z-40 border-t border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_96%,transparent)] pb-[env(safe-area-inset-bottom)] pl-[max(0.375rem,env(safe-area-inset-left))] pr-[max(0.375rem,env(safe-area-inset-right))] shadow-[0_-10px_28px_rgb(21_27_24/8%)] backdrop-blur-xl transition-transform duration-200 md:hidden ${
           isTextEntryFocused || activePanel !== null ? 'pointer-events-none translate-y-full' : 'translate-y-0'
         }`}
       >
@@ -446,7 +446,7 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="absolute inset-x-0 bottom-0 flex max-h-[92dvh] flex-col rounded-t-[24px] border-t border-[var(--sp-line)] bg-[var(--sp-surface)] pb-[env(safe-area-inset-bottom)] shadow-[0_-24px_70px_rgb(8_16_12/28%)]"
+              className="absolute inset-x-0 bottom-0 flex max-h-[92dvh] flex-col rounded-t-[var(--sp-radius-card)] border-t border-[var(--sp-line)] bg-[var(--sp-surface)] pb-[env(safe-area-inset-bottom)] shadow-[0_-24px_70px_rgb(8_16_12/28%)]"
             >
               {/* Drag Pill */}
               <div className="mx-auto mt-2.5 h-1.5 w-12 rounded-full bg-[var(--sp-line-strong)]" aria-hidden="true" />

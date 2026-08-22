@@ -100,12 +100,12 @@ export function CallbackModal({ isOpen, onClose }: CallbackModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-xs">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="callback-modal-title"
-        className="relative w-full max-w-md rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] p-6 shadow-[var(--sp-shadow-raised)] animate-in fade-in zoom-in-95 duration-200 md:p-8"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] p-6 shadow-[var(--sp-shadow-raised)] animate-in fade-in zoom-in-95 duration-200 md:p-8"
       >
         <button
           type="button"
@@ -170,7 +170,7 @@ export function CallbackModal({ isOpen, onClose }: CallbackModalProps) {
                 />
               </div>
 
-              {error && <p role="alert" className="rounded-[var(--sp-radius-control-inner)] bg-red-500/8 px-3 py-2 text-xs text-[var(--sp-danger)]">{error}</p>}
+              {error && <p role="alert" className="sp-alert sp-alert-danger text-xs">{error}</p>}
 
               <button
                 type="submit"
