@@ -10,6 +10,8 @@ import { getGeminiPrivateSettings } from '@/lib/gemini/settings';
 import { decryptSecret } from '@/lib/telegram/secrets';
 import { notifyAboutBagDesignRequest } from '@/lib/telegram/notifications';
 import type { BagDesignRequestRecord } from '@/lib/bag-designer/types';
+import { decideBagGeneration } from '@/lib/bag-designer/draftLifecycle';
+import { checkRateLimit } from '@/lib/security/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -43,6 +45,8 @@ const actionSchema = z.discriminatedUnion('action', [
     logoName: z.string().trim().min(1).max(180),
     logoDataUrl: imageSchema,
     technicalPreviewDataUrl: imageSchema,
+    generationKey: z.string().uuid(),
+    requestToken: z.string().trim().min(64).max(200),
   }).strict(),
   z.object({
     action: z.literal('submit'),
@@ -75,77 +79,197 @@ function tokenHash(value: string) {
   return createHash('sha256').update(value).digest('hex');
 }
 
+function generationPayloadHash({
+  contact,
+  spec,
+  logoName,
+  logo,
+  technical,
+}: {
+  contact: z.infer<typeof contactSchema>;
+  spec: z.infer<typeof specSchema>;
+  logoName: string;
+  logo: Buffer;
+  technical: Buffer;
+}) {
+  return tokenHash(JSON.stringify({
+    contact,
+    spec,
+    logoName,
+    logoHash: tokenHash(logo.toString('base64')),
+    technicalHash: tokenHash(technical.toString('base64')),
+  }));
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
     const parsed = actionSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: 'Проверьте заполненные данные.' }, { status: 400 });
 
-    if (parsed.data.action === 'submit') {
-      const reference = getAdminDb().collection('bagDesignRequests').doc(parsed.data.requestId);
-      const snapshot = await reference.get();
-      if (!snapshot.exists || snapshot.data()?.requestTokenHash !== tokenHash(parsed.data.requestToken)) {
-        return NextResponse.json({ error: 'Черновик заявки не найден. Создайте визуализацию ещё раз.' }, { status: 404 });
-      }
-      if (snapshot.data()?.status !== 'draft') {
-        return NextResponse.json({ error: 'Эта заявка уже отправлена.' }, { status: 409 });
-      }
-      await reference.update({ status: 'new', submittedAt: new Date().toISOString(), updatedAt: FieldValue.serverTimestamp() });
-      const submitted = { id: snapshot.id, ...snapshot.data(), status: 'new' } as unknown as BagDesignRequestRecord;
-      try { await notifyAboutBagDesignRequest(submitted); } catch (error) { console.error('Bag design notification failed.', error); }
-      return NextResponse.json({ message: 'Заявка отправлена. Менеджер свяжется с вами для расчёта.', number: snapshot.data()?.number });
+    // This is a best-effort, process-local cost safeguard. It is deliberately
+    // not presented as distributed protection across App Hosting instances.
+    const rateLimit = checkRateLimit(
+      request,
+      parsed.data.action === 'generate' ? 'bag-designer-generate' : 'bag-designer-submit',
+      parsed.data.action === 'generate' ? 3 : 20,
+      parsed.data.action === 'generate' ? 60 * 60 * 1000 : 10 * 60 * 1000
+    );
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Слишком много попыток. Попробуйте немного позже.' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
+      );
     }
 
+    if (parsed.data.action === 'submit') {
+      const reference = getAdminDb().collection('bagDesignRequests').doc(parsed.data.requestId);
+      const submittedAt = new Date().toISOString();
+      const result = await getAdminDb().runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(reference);
+        const data = snapshot.data();
+        if (!snapshot.exists || data?.requestTokenHash !== tokenHash(parsed.data.requestToken)) {
+          return { outcome: 'not-found' as const };
+        }
+        if (data.status !== 'draft') return { outcome: 'already-submitted' as const };
+        if (data.generationState !== 'ready' || !data.aiMockupUrl) {
+          return { outcome: 'not-ready' as const };
+        }
+        transaction.update(reference, {
+          status: 'new',
+          submittedAt,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        return {
+          outcome: 'submitted' as const,
+          record: { id: snapshot.id, ...data, status: 'new', submittedAt },
+        };
+      });
+      if (result.outcome === 'not-found') {
+        return NextResponse.json({ error: 'Черновик заявки не найден. Создайте визуализацию ещё раз.' }, { status: 404 });
+      }
+      if (result.outcome === 'already-submitted') {
+        return NextResponse.json({ error: 'Эта заявка уже отправлена.' }, { status: 409 });
+      }
+      if (result.outcome === 'not-ready') {
+        return NextResponse.json({ error: 'Визуализация ещё не готова.' }, { status: 409 });
+      }
+      const submitted = result.record as unknown as BagDesignRequestRecord;
+      try { await notifyAboutBagDesignRequest(submitted); } catch (error) { console.error('Bag design notification failed.', error); }
+      return NextResponse.json({ message: 'Заявка отправлена. Менеджер свяжется с вами для расчёта.', number: submitted.number });
+    }
+
+    const generation = parsed.data;
     const settings = await getBagDesignerSettings();
     if (!settings.enabled) return NextResponse.json({ error: 'Конструктор сейчас недоступен.' }, { status: 404 });
-    if (parsed.data.spec.quantity < settings.minimumQuantity) {
+    if (generation.spec.quantity < settings.minimumQuantity) {
       return NextResponse.json({ error: `Минимальный тираж — ${settings.minimumQuantity.toLocaleString('ru-RU')} шт.` }, { status: 400 });
     }
     const gemini = await getGeminiPrivateSettings();
     if (!gemini.enabled || !gemini.apiKeyEncrypted) {
       return NextResponse.json({ error: 'Визуализация временно недоступна. Свяжитесь с менеджером.' }, { status: 503 });
     }
-    const logo = parseDataUrl(parsed.data.logoDataUrl);
-    const technical = parseDataUrl(parsed.data.technicalPreviewDataUrl);
-    const spec = parsed.data.spec;
-    const mockup = await generateBagMockup({
-      apiKey: decryptSecret(gemini.apiKeyEncrypted),
-      model: gemini.imageModel || 'gemini-3.1-flash-image',
-      technicalPreview: { mimeType: technical.mimeType, data: technical.data },
-      prompt: [
-        'Create a photorealistic commercial product mockup based strictly on the attached technical layout.',
-        `Bag type: ${BAG_TYPE_LABELS[spec.bagType]}. Size: ${spec.width}×${spec.height} cm${spec.gusset ? `, gusset ${spec.gusset} cm` : ''}.`,
-        'The supplied technical layout is intentionally neutral gray and does not represent the production material color.',
-        `Render the finished bag in the exact selected production color: ${spec.colorLabel} (${spec.color}); finish: ${spec.finish}. Do not copy the gray fill from the technical layout.`,
-        'Preserve the uploaded logo exactly: do not rewrite, redraw, translate, or invent text. Keep its placement and proportions from the layout.',
-        'Show one clean bag in a premium neutral studio setting, realistic polyethylene material, soft shadow, no people, no extra branding, no watermark.',
-      ].join(' '),
-    });
-
-    const id = randomUUID();
-    const requestToken = randomUUID() + randomUUID();
-    const number = `PKG-${new Date().toISOString().slice(2, 10).replaceAll('-', '')}-${id.slice(0, 4).toUpperCase()}`;
-    const folder = `bag-design-requests/${id}`;
-    const [logoUrl, technicalPreviewUrl, aiMockupUrl] = await Promise.all([
-      saveAsset(`${folder}/logo.${logo.mimeType.split('/')[1]}`, logo.buffer, logo.mimeType),
-      saveAsset(`${folder}/technical-preview.png`, technical.buffer, technical.mimeType),
-      saveAsset(`${folder}/ai-mockup.${mockup.mimeType.split('/')[1] || 'png'}`, Buffer.from(mockup.data, 'base64'), mockup.mimeType),
-    ]);
-    const record = {
-      number,
-      status: 'draft',
-      contact: parsed.data.contact,
+    const logo = parseDataUrl(generation.logoDataUrl);
+    const technical = parseDataUrl(generation.technicalPreviewDataUrl);
+    const spec = generation.spec;
+    const id = tokenHash(generation.generationKey);
+    const requestTokenHash = tokenHash(generation.requestToken);
+    const payloadHash = generationPayloadHash({
+      contact: generation.contact,
       spec,
-      logoName: parsed.data.logoName,
-      logoUrl,
-      technicalPreviewUrl,
-      aiMockupUrl,
-      requestTokenHash: tokenHash(requestToken),
-      createdAt: new Date().toISOString(),
-      updatedAt: FieldValue.serverTimestamp(),
-    };
-    await getAdminDb().collection('bagDesignRequests').doc(id).set(record);
-    return NextResponse.json({ requestId: id, requestToken, number, aiMockupUrl });
+      logoName: generation.logoName,
+      logo: logo.buffer,
+      technical: technical.buffer,
+    });
+    const reference = getAdminDb().collection('bagDesignRequests').doc(id);
+    const generationStartedAt = new Date().toISOString();
+    const number = `PKG-${generationStartedAt.slice(2, 10).replaceAll('-', '')}-${id.slice(0, 4).toUpperCase()}`;
+    const decision = await getAdminDb().runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(reference);
+      const existing = snapshot.exists ? snapshot.data() || {} : null;
+      const next = decideBagGeneration({
+        existing,
+        requestTokenHash,
+        payloadHash,
+        now: Date.now(),
+      });
+      if (next === 'create') {
+        transaction.create(reference, {
+          number,
+          status: 'draft',
+          generationState: 'processing',
+          generationStartedAt,
+          requestTokenHash,
+          payloadHash,
+          contact: generation.contact,
+          spec,
+          logoName: generation.logoName,
+          createdAt: generationStartedAt,
+          updatedAt: generationStartedAt,
+        });
+      } else if (next === 'retry') {
+        transaction.update(reference, { generationState: 'processing', generationStartedAt, updatedAt: generationStartedAt });
+      }
+      return { next, existing };
+    });
+    if (decision.next === 'conflict') {
+      return NextResponse.json({ error: 'Ключ генерации уже использован для другого макета.' }, { status: 409 });
+    }
+    if (decision.next === 'busy') {
+      return NextResponse.json({ error: 'Эта визуализация уже создаётся.' }, { status: 409 });
+    }
+    if (decision.next === 'reuse') {
+      return NextResponse.json({
+        requestId: id,
+        requestToken: generation.requestToken,
+        number: decision.existing?.number,
+        aiMockupUrl: decision.existing?.aiMockupUrl,
+      });
+    }
+
+    try {
+      const mockup = await generateBagMockup({
+        apiKey: decryptSecret(gemini.apiKeyEncrypted),
+        model: gemini.imageModel || 'gemini-3.1-flash-image',
+        technicalPreview: { mimeType: technical.mimeType, data: technical.data },
+        prompt: [
+          'Create a photorealistic commercial product mockup based strictly on the attached technical layout.',
+          `Bag type: ${BAG_TYPE_LABELS[spec.bagType]}. Size: ${spec.width}×${spec.height} cm${spec.gusset ? `, gusset ${spec.gusset} cm` : ''}.`,
+          'The supplied technical layout is intentionally neutral gray and does not represent the production material color.',
+          `Render the finished bag in the exact selected production color: ${spec.colorLabel} (${spec.color}); finish: ${spec.finish}. Do not copy the gray fill from the technical layout.`,
+          'Preserve the uploaded logo exactly: do not rewrite, redraw, translate, or invent text. Keep its placement and proportions from the layout.',
+          'Show one clean bag in a premium neutral studio setting, realistic polyethylene material, soft shadow, no people, no extra branding, no watermark.',
+        ].join(' '),
+      });
+
+      const folder = `bag-design-requests/${id}`;
+      const assetPaths = {
+        logo: `${folder}/logo.${logo.mimeType.split('/')[1]}`,
+        technicalPreview: `${folder}/technical-preview.png`,
+        aiMockup: `${folder}/ai-mockup.${mockup.mimeType.split('/')[1] || 'png'}`,
+      };
+      const [logoUrl, technicalPreviewUrl, aiMockupUrl] = await Promise.all([
+        saveAsset(assetPaths.logo, logo.buffer, logo.mimeType),
+        saveAsset(assetPaths.technicalPreview, technical.buffer, technical.mimeType),
+        saveAsset(assetPaths.aiMockup, Buffer.from(mockup.data, 'base64'), mockup.mimeType),
+      ]);
+      await reference.update({
+        generationState: 'ready',
+        logoUrl,
+        technicalPreviewUrl,
+        aiMockupUrl,
+        assetPaths,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return NextResponse.json({ requestId: id, requestToken: generation.requestToken, number, aiMockupUrl });
+    } catch (error) {
+      await reference.update({
+        generationState: 'failed',
+        generationFailedAt: new Date().toISOString(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }).catch(() => undefined);
+      throw error;
+    }
   } catch (error) {
     console.error('Bag designer operation failed.', error);
     const message = error instanceof Error ? error.message : '';

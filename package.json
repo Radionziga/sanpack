@@ -10,6 +10,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "bag-designer:cleanup:dry-run": "node --env-file=.env.local scripts/inspect-stale-bag-designer-drafts.mjs",
     "clean": "next clean"
   },
   "dependencies": {

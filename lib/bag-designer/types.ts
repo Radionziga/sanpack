@@ -54,6 +54,13 @@ export interface BagDesignRequestRecord {
   logoUrl: string;
   technicalPreviewUrl: string;
   aiMockupUrl: string;
+  generationState?: 'processing' | 'ready' | 'failed';
+  generationStartedAt?: string;
+  assetPaths?: {
+    logo: string;
+    technicalPreview: string;
+    aiMockup: string;
+  };
   createdAt: string;
   submittedAt?: string;
 }

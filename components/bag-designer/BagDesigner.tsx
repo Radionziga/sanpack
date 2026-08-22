@@ -76,6 +76,11 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
   const [result, setResult] = useState<{ requestId: string; requestToken: string; number: string; aiMockupUrl: string } | null>(null);
   const [submitted, setSubmitted] = useState('');
   const svgRef = useRef<SVGSVGElement>(null);
+  const generationAttemptRef = useRef<{
+    signature: string;
+    generationKey: string;
+    requestToken: string;
+  } | null>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem('sanpack-bag-designer-contact');
@@ -179,10 +184,28 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
     try {
       window.localStorage.setItem('sanpack-bag-designer-contact', JSON.stringify(contact));
       const technicalPreviewDataUrl = await svgToPng(svgRef.current);
+      const signature = JSON.stringify({ contact, spec, logoName, logoDataUrl });
+      if (generationAttemptRef.current?.signature !== signature) {
+        generationAttemptRef.current = {
+          signature,
+          generationKey: crypto.randomUUID(),
+          requestToken: `${crypto.randomUUID()}${crypto.randomUUID()}`,
+        };
+      }
+      const attempt = generationAttemptRef.current;
       const response = await fetch('/api/bag-designer', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', contact, spec, logoName, logoDataUrl, technicalPreviewDataUrl }),
+        body: JSON.stringify({
+          action: 'generate',
+          contact,
+          spec,
+          logoName,
+          logoDataUrl,
+          technicalPreviewDataUrl,
+          generationKey: attempt.generationKey,
+          requestToken: attempt.requestToken,
+        }),
       });
       const data = await parseJsonResponse<typeof result>(response, 'Не удалось создать визуализацию.');
       if (!data) throw new Error('Сервер не вернул результат визуализации.');
