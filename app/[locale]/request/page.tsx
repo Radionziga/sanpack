@@ -375,7 +375,7 @@ export default function RequestPage() {
                   ) : null}
 
                   {loginError ? (
-                    <div className="mt-4 flex items-start gap-2 rounded-[var(--sp-radius-control-inner)] bg-[color-mix(in_srgb,var(--sp-danger)_8%,var(--sp-surface))] px-3 py-2.5 text-xs text-[var(--sp-danger)]" role="alert">
+                    <div className="sp-alert sp-alert-danger mt-4 flex items-start gap-2 text-xs" role="alert">
                       <span className="min-w-0 flex-1">{loginError}</span>
                       <button type="button" onClick={() => setLoginError(null)} aria-label={copy.cancel} className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control-inner)]">
                         <X className="size-4" aria-hidden="true" />
@@ -440,7 +440,7 @@ export default function RequestPage() {
                   </div>
 
                   {submitError ? (
-                    <p className="mt-4 rounded-[var(--sp-radius-control-inner)] bg-[color-mix(in_srgb,var(--sp-danger)_8%,var(--sp-surface))] px-3 py-2.5 text-xs leading-5 text-[var(--sp-danger)]" role="alert">{submitError}</p>
+                    <p className="sp-alert sp-alert-danger mt-4 text-xs leading-5" role="alert">{submitError}</p>
                   ) : null}
 
                   <div className="mt-5 bg-[var(--sp-surface-inset)] p-3 rounded-[var(--sp-radius-control-inner)]">

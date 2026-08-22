@@ -1065,7 +1065,7 @@ export default function AdminProductsPage() {
             </section>
 
             {saveError ? (
-              <div role="alert" className="flex items-start gap-2 rounded-[var(--sp-radius-sm)] border border-red-300/60 bg-red-50 p-3 text-xs text-red-800">
+              <div role="alert" className="sp-alert sp-alert-danger flex items-start gap-2 text-xs">
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <span>{saveError}</span>
               </div>

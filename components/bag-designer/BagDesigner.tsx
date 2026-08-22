@@ -401,7 +401,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
             ) : null}
           </div>
 
-          <div aria-live="polite">{error ? <p role="alert" className="mt-4 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-danger)_32%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-danger)_8%,var(--sp-surface))] p-3 text-sm text-[var(--sp-danger)]">{error}</p> : null}</div>
+          <div aria-live="polite">{error ? <p role="alert" className="sp-alert sp-alert-danger mt-4 text-sm">{error}</p> : null}</div>
           <div className="mt-6 flex gap-3 border-t border-[var(--sp-line)] pt-5">
             <button type="button" onClick={() => { setError(''); setStep((value) => Math.max(0, value - 1)); }} disabled={step === 0} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] text-xs font-bold disabled:opacity-35"><ChevronLeft className="size-4" aria-hidden="true" /> Назад</button>
             {step < 2 ? <button type="button" onClick={goForward} className="inline-flex min-h-11 flex-[1.5] items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-xs font-bold text-[var(--sp-on-brand)]">{step === 0 ? 'Перейти к логотипу' : 'Перейти к визуализации'} <ChevronRight className="size-4" aria-hidden="true" /></button> : null}

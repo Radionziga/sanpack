@@ -83,7 +83,7 @@ export default function AdminLoginPage() {
             <p className="mt-2 text-sm leading-6 text-[var(--sp-ink-secondary)]">Введите данные вашей учётной записи.</p>
 
             {visibleError && (
-              <div className="mt-5 flex items-start gap-2 rounded-lg border border-red-300/40 bg-red-500/8 px-3 py-3 text-xs leading-5 text-[var(--sp-danger)]" role="alert">
+              <div className="sp-alert sp-alert-danger mt-5 flex items-start gap-2 text-xs leading-5" role="alert">
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <span>{visibleError}</span>
               </div>

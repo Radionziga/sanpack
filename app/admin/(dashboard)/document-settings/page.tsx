@@ -6,8 +6,35 @@ import type { InternalDocumentSettings } from '@/types';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
 const empty: InternalDocumentSettings = {
-  documentTitle: 'Внутренняя накладная', companyName: '', legalName: '', taxId: '', address: '', phone: '', email: '', bankDetails: '', logoUrl: '', footerText: 'Внутренний документ. Не является счётом-фактурой или фискальным документом.', numberPrefix: 'НК', showSignatureFields: true, showStampPlaceholder: true,
+  documentTitle: 'Внутренняя накладная',
+  companyName: '',
+  legalName: '',
+  taxId: '',
+  address: '',
+  phone: '',
+  email: '',
+  bankDetails: '',
+  logoUrl: '',
+  footerText: 'Внутренний документ. Не является счётом-фактурой или фискальным документом.',
+  numberPrefix: 'НК',
+  showSignatureFields: true,
+  showStampPlaceholder: true,
 };
+
+const textFields: Array<{
+  key: keyof InternalDocumentSettings;
+  label: string;
+  wide?: boolean;
+}> = [
+  { key: 'documentTitle', label: 'Название документа' },
+  { key: 'numberPrefix', label: 'Префикс номера' },
+  { key: 'companyName', label: 'Название магазина' },
+  { key: 'legalName', label: 'Юридическое наименование' },
+  { key: 'taxId', label: 'ИНН / СТИР' },
+  { key: 'phone', label: 'Телефон' },
+  { key: 'email', label: 'Email' },
+  { key: 'address', label: 'Адрес', wide: true },
+];
 
 export default function DocumentSettingsPage() {
   const [settings, setSettings] = useState(empty);
@@ -17,23 +44,171 @@ export default function DocumentSettingsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/document-settings', { cache: 'no-store' }).then(async (response) => {
-      return parseJsonResponse<InternalDocumentSettings>(response, 'Не удалось загрузить реквизиты.');
-    }).then(setSettings).catch((reason) => setError(reason.message)).finally(() => setLoading(false));
+    fetch('/api/admin/document-settings', { cache: 'no-store' })
+      .then((response) => parseJsonResponse<InternalDocumentSettings>(
+        response,
+        'Не удалось загрузить реквизиты.',
+      ))
+      .then(setSettings)
+      .catch((reason: unknown) => {
+        setError(reason instanceof Error ? reason.message : 'Не удалось загрузить реквизиты.');
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  function field<K extends keyof InternalDocumentSettings>(key: K, value: InternalDocumentSettings[K]) { setSettings((current) => ({ ...current, [key]: value })); }
-
-  async function save(event: FormEvent) {
-    event.preventDefault(); setSaving(true); setError(null); setMessage(null);
-    try { const response = await fetch('/api/admin/document-settings', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(settings) }); const body = await parseJsonResponse<InternalDocumentSettings>(response, 'Настройки не сохранены.'); setSettings(body); setMessage('Настройки документов сохранены.'); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Настройки не сохранены.'); }
-    finally { setSaving(false); }
+  function field<K extends keyof InternalDocumentSettings>(
+    key: K,
+    value: InternalDocumentSettings[K],
+  ) {
+    setSettings((current) => ({ ...current, [key]: value }));
   }
 
-  if (loading) return <p className="py-12 text-center text-sm text-[var(--sp-ink-tertiary)]">Загрузка реквизитов…</p>;
-  const textFields: Array<{ key: keyof InternalDocumentSettings; label: string; placeholder?: string; wide?: boolean }> = [
-    { key: 'documentTitle', label: 'Название документа' }, { key: 'numberPrefix', label: 'Префикс номера' }, { key: 'companyName', label: 'Название магазина' }, { key: 'legalName', label: 'Юридическое наименование' }, { key: 'taxId', label: 'ИНН / СТИР' }, { key: 'phone', label: 'Телефон' }, { key: 'email', label: 'Email' }, { key: 'address', label: 'Адрес', wide: true },
-  ];
-  return <div className="admin-page mx-auto max-w-5xl"><header className="border-b border-[var(--sp-line)] pb-5"><h1 className="font-extended text-2xl font-bold tracking-[-0.025em]">Внутренние документы</h1><p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">Реквизиты для PDF-накладной по заказу. Документ предназначен только для внутреннего учёта.</p></header>{error || message ? <p role={error ? 'alert' : 'status'} className={`rounded-lg border px-4 py-3 text-sm ${error ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-400/30 bg-emerald-500/8 text-[var(--sp-success)]'}`}>{error || message}</p> : null}<form onSubmit={save} className="space-y-5"><section className="admin-panel p-5 md:p-6"><div className="flex gap-3"><FileText className="mt-0.5 size-5 text-[var(--sp-brand)]" /><div><h2 className="font-extended text-lg font-bold">Организация</h2><p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">Эти данные печатаются в шапке каждой накладной.</p></div></div><div className="mt-5 grid gap-4 md:grid-cols-2">{textFields.map((item) => <label key={item.key} className={`text-xs font-bold ${item.wide ? 'md:col-span-2' : ''}`}>{item.label}<input value={String(settings[item.key] || '')} onChange={(event) => field(item.key, event.target.value as never)} className="admin-control mt-2 text-sm" /></label>)}</div><label className="mt-4 block text-xs font-bold">Банковские реквизиты<textarea value={settings.bankDetails || ''} onChange={(event) => field('bankDetails', event.target.value)} rows={3} className="admin-control mt-2 p-3 text-sm" /></label></section><section className="admin-panel p-5 md:p-6"><div className="flex gap-3"><Stamp className="mt-0.5 size-5 text-[var(--sp-brand)]" /><div><h2 className="font-extended text-lg font-bold">Подпись и примечание</h2><p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">Настройте нижнюю часть документа.</p></div></div><label className="mt-5 block text-xs font-bold">Текст внизу<textarea value={settings.footerText || ''} onChange={(event) => field('footerText', event.target.value)} rows={2} className="admin-control mt-2 p-3 text-sm" /></label><div className="mt-4 flex flex-wrap gap-5"><label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={settings.showSignatureFields} onChange={(event) => field('showSignatureFields', event.target.checked)} className="size-4 accent-[var(--sp-brand)]" /> Поля «Отпустил» и «Получил»</label><label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={settings.showStampPlaceholder} onChange={(event) => field('showStampPlaceholder', event.target.checked)} className="size-4 accent-[var(--sp-brand)]" /> Место для печати</label></div></section><div className="flex justify-end"><button type="submit" disabled={saving} className="admin-button-primary px-6 disabled:opacity-50"><Save className="size-4" />{saving ? 'Сохраняем…' : 'Сохранить'}</button></div></form></div>;
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/document-settings', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      const body = await parseJsonResponse<InternalDocumentSettings>(
+        response,
+        'Настройки не сохранены.',
+      );
+      setSettings(body);
+      setMessage('Настройки документов сохранены.');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Настройки не сохранены.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <p className="py-12 text-center text-sm text-[var(--sp-ink-tertiary)]">
+        Загрузка реквизитов…
+      </p>
+    );
+  }
+
+  return (
+    <div className="admin-page mx-auto max-w-5xl space-y-5">
+      <header className="border-b border-[var(--sp-line)] pb-5">
+        <h1 className="font-extended text-2xl font-bold tracking-[-0.025em]">
+          Внутренние документы
+        </h1>
+        <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">
+          Реквизиты для PDF-накладной по заказу. Документ предназначен только для внутреннего учёта.
+        </p>
+      </header>
+
+      {error || message ? (
+        <p
+          role={error ? 'alert' : 'status'}
+          className={`sp-alert text-sm ${error ? 'sp-alert-danger' : 'sp-alert-success'}`}
+        >
+          {error || message}
+        </p>
+      ) : null}
+
+      <form onSubmit={save} className="space-y-5">
+        <section className="admin-panel p-5 md:p-6">
+          <div className="flex gap-3">
+            <FileText className="mt-0.5 size-5 text-[var(--sp-brand)]" />
+            <div>
+              <h2 className="font-extended text-lg font-bold">Организация</h2>
+              <p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">
+                Эти данные печатаются в шапке каждой накладной.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {textFields.map((item) => (
+              <label
+                key={item.key}
+                className={`text-xs font-bold ${item.wide ? 'md:col-span-2' : ''}`}
+              >
+                {item.label}
+                <input
+                  value={String(settings[item.key] ?? '')}
+                  onChange={(event) => field(item.key, event.target.value as never)}
+                  className="admin-control mt-2 text-sm"
+                />
+              </label>
+            ))}
+          </div>
+
+          <label className="mt-4 block text-xs font-bold">
+            Банковские реквизиты
+            <textarea
+              value={settings.bankDetails ?? ''}
+              onChange={(event) => field('bankDetails', event.target.value)}
+              rows={3}
+              className="admin-control mt-2 p-3 text-sm"
+            />
+          </label>
+        </section>
+
+        <section className="admin-panel p-5 md:p-6">
+          <div className="flex gap-3">
+            <Stamp className="mt-0.5 size-5 text-[var(--sp-brand)]" />
+            <div>
+              <h2 className="font-extended text-lg font-bold">Подпись и примечание</h2>
+              <p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">
+                Настройте нижнюю часть документа.
+              </p>
+            </div>
+          </div>
+
+          <label className="mt-5 block text-xs font-bold">
+            Текст внизу
+            <textarea
+              value={settings.footerText ?? ''}
+              onChange={(event) => field('footerText', event.target.value)}
+              rows={2}
+              className="admin-control mt-2 p-3 text-sm"
+            />
+          </label>
+
+          <div className="mt-4 flex flex-wrap gap-5">
+            <label className="flex items-center gap-2 text-xs font-bold">
+              <input
+                type="checkbox"
+                checked={settings.showSignatureFields}
+                onChange={(event) => field('showSignatureFields', event.target.checked)}
+                className="size-4 accent-[var(--sp-brand)]"
+              />
+              Поля «Отпустил» и «Получил»
+            </label>
+            <label className="flex items-center gap-2 text-xs font-bold">
+              <input
+                type="checkbox"
+                checked={settings.showStampPlaceholder}
+                onChange={(event) => field('showStampPlaceholder', event.target.checked)}
+                className="size-4 accent-[var(--sp-brand)]"
+              />
+              Место для печати
+            </label>
+          </div>
+        </section>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={saving}
+            className="admin-button-primary px-6 disabled:opacity-50"
+          >
+            <Save className="size-4" />
+            {saving ? 'Сохраняем…' : 'Сохранить'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
