@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { Category } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { ChevronRight, Package, Trash2, ShoppingBag, Layers, Shield, Hand, Film, Utensils, Wheat, Leaf, Printer } from 'lucide-react';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 interface MegaMenuProps {
   isOpen: boolean;
@@ -28,10 +29,11 @@ const iconMap: Record<string, React.ElementType> = {
 
 export function MegaMenu({ isOpen, onClose, categories }: MegaMenuProps) {
   const { getLocalizedText, language } = useLanguage();
+  const { company } = useSiteSettings();
   const copy = {
-    ru: ['Оптовые поставки с гарантией от завода SANPACK', 'Бесплатная доставка по Ташкенту от 2 000 000 сум', 'Смотреть весь каталог'],
-    uz: ['SANPACK zavodidan kafolatlangan ulgurji yetkazib berish', 'Toshkent bo‘ylab 2 000 000 so‘mdan bepul yetkazib berish', 'To‘liq katalogni ko‘rish'],
-    en: ['Guaranteed wholesale supply from SANPACK', 'Free Tashkent delivery on orders over UZS 2,000,000', 'View the full catalog'],
+    ru: [`Оптовые поставки с гарантией от ${company.name}`, 'Бесплатная доставка по Ташкенту от 2 000 000 сум', 'Смотреть весь каталог'],
+    uz: [`${company.name} tomonidan kafolatlangan ulgurji yetkazib berish`, 'Toshkent bo‘ylab 2 000 000 so‘mdan bepul yetkazib berish', 'To‘liq katalogni ko‘rish'],
+    en: [`Guaranteed wholesale supply from ${company.name}`, 'Free Tashkent delivery on orders over UZS 2,000,000', 'View the full catalog'],
   }[language];
 
   if (!isOpen) return null;

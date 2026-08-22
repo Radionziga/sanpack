@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { Category } from '@/types';
 import { Package, Trash2, ShoppingBag, Hand, Film, Wheat, Leaf, Printer, ArrowRight } from 'lucide-react';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 interface FastCategoriesProps {
   categories: Category[];
@@ -23,10 +24,11 @@ const iconMap: Record<string, React.ElementType> = {
 
 export function FastCategories({ categories }: FastCategoriesProps) {
   const { t, getLocalizedText, language } = useLanguage();
+  const { company } = useSiteSettings();
   const subtitle = {
-    ru: 'Основные направления поставки продукции SANPACK',
-    uz: 'SANPACK mahsulotlarini yetkazib berishning asosiy yo‘nalishlari',
-    en: 'SANPACK’s core supply categories',
+    ru: `Основные направления поставки продукции ${company.name}`,
+    uz: `${company.name} mahsulotlarini yetkazib berishning asosiy yo‘nalishlari`,
+    en: `${company.name}’s core supply categories`,
   }[language];
 
   return (
@@ -85,4 +87,3 @@ export function FastCategories({ categories }: FastCategoriesProps) {
     </section>
   );
 }
-

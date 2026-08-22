@@ -40,7 +40,7 @@ export function CatalogHome({
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
   const t = useTranslations('homeCatalog');
   const { getLocalizedText } = useLanguage();
-  const { contacts } = useSiteSettings();
+  const { company, contacts } = useSiteSettings();
 
   const categoryCards = useMemo(() => {
     return categories
@@ -320,7 +320,7 @@ export function CatalogHome({
                 </div>
                 <div>
                   <h3 className="font-extended text-base font-bold text-[var(--sp-ink)]">
-                    Каталог продукции SANPACK
+                    Каталог продукции {company.name}
                   </h3>
                   <p className="text-xs text-[var(--sp-ink-secondary)]">
                     Выберите формат для скачивания (PDF, A4)

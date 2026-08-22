@@ -8,11 +8,11 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export function CtaBanner() {
   const { t, language } = useLanguage();
-  const { contacts } = useSiteSettings();
+  const { company, contacts } = useSiteSettings();
   const copy = {
-    ru: ['B2B-консультация SANPACK', 'Написать в Telegram'],
-    uz: ['SANPACK B2B maslahati', 'Telegram orqali yozish'],
-    en: ['SANPACK B2B consultation', 'Message us on Telegram'],
+    ru: [`B2B-консультация ${company.name}`, 'Написать в Telegram'],
+    uz: [`${company.name} B2B maslahati`, 'Telegram orqali yozish'],
+    en: [`${company.name} B2B consultation`, 'Message us on Telegram'],
   }[language];
 
   return (

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { useLanguage } from '@/context/LanguageContext';
 import { ClientPartner } from '@/types';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 interface ClientsSectionProps {
   clients: ClientPartner[];
@@ -11,20 +12,21 @@ interface ClientsSectionProps {
 
 export function ClientsSection({ clients }: ClientsSectionProps) {
   const { t, getLocalizedText, language } = useLanguage();
+  const { company } = useSiteSettings();
   const [filter, setFilter] = useState<string>('all');
 
   const copy = {
     ru: {
       categories: ['Все клиенты', 'Рестораны и кафе', 'Отели', 'Пекарни', 'Производства'],
-      subtitle: 'Рестораны, отели, кондитерские и сетевые бизнесы Узбекистана выбирают SANPACK',
+      subtitle: `Рестораны, отели, кондитерские и сетевые бизнесы Узбекистана выбирают ${company.name}`,
     },
     uz: {
       categories: ['Barcha mijozlar', 'Restoran va kafelar', 'Mehmonxonalar', 'Novvoyxonalar', 'Ishlab chiqarish'],
-      subtitle: 'O‘zbekiston restoranlari, mehmonxonalari, qandolatchilari va tarmoqlari SANPACKni tanlaydi',
+      subtitle: `O‘zbekiston restoranlari, mehmonxonalari, qandolatchilari va tarmoqlari ${company.name}ni tanlaydi`,
     },
     en: {
       categories: ['All clients', 'Restaurants and cafés', 'Hotels', 'Bakeries', 'Production'],
-      subtitle: 'Restaurants, hotels, bakeries and multi-site businesses across Uzbekistan choose SANPACK',
+      subtitle: `Restaurants, hotels, bakeries and multi-site businesses across Uzbekistan choose ${company.name}`,
     },
   }[language];
   const categories = [

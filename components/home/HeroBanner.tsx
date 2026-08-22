@@ -11,9 +11,11 @@ import {
   ArrowRightIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export function HeroBanner() {
   const { t, fixText, language } = useLanguage();
+  const { company } = useSiteSettings();
   const copy = {
     ru: {
       eyebrow: 'Собственное производство и прямые поставки в Узбекистане',
@@ -101,14 +103,14 @@ export function HeroBanner() {
               <div className="aspect-4/3 rounded-[var(--sp-radius-control)] bg-white p-3 shadow-inner relative overflow-hidden group">
                 <Image
                   src="/catalog/page_1.png"
-                  alt="SANPACK Packaging & HoReCa"
+                  alt={`${company.name} Packaging & HoReCa`}
                   fill
                   priority
                   sizes="(min-width: 1024px) 40vw, 90vw"
                   className="object-cover rounded-[calc(var(--sp-radius-control)-2px)] group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
-                  <span className="text-[11px] font-semibold text-[var(--sp-accent)]">SANPACK HoReCa Line</span>
+                  <span className="text-[11px] font-semibold text-[var(--sp-accent)]">{company.name} HoReCa Line</span>
                   <span className="text-sm sm:text-base font-bold tracking-tight">
                     {fixText(copy.catalogCaption)}
                   </span>

@@ -5,22 +5,24 @@ import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { PrinterIcon, CheckIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 
 export function BrandingBanner() {
   const { t, fixText, language } = useLanguage();
+  const { company } = useSiteSettings();
   const copy = {
     ru: {
-      eyebrow: 'Фирменная полиграфия и брендирование SANPACK',
+      eyebrow: `Фирменная полиграфия и брендирование ${company.name}`,
       items: ['Пакеты с цветным логотипом', 'Крафт-пакеты и пищевая упаковка', 'Этикетки, стикеры и меню для ресторанов', 'Брендирование транспорта и экстерьера'],
       action: 'Узнать больше о брендировании',
     },
     uz: {
-      eyebrow: 'SANPACK brend poligrafiyasi va qadoqlash',
+      eyebrow: `${company.name} brend poligrafiyasi va qadoqlash`,
       items: ['Rangli logotipli paketlar', 'Kraft paketlar va oziq-ovqat qadoqlari', 'Restoranlar uchun yorliq, stiker va menyular', 'Transport va tashqi ko‘rinishni brendlash'],
       action: 'Brendlash haqida batafsil',
     },
     en: {
-      eyebrow: 'SANPACK branded print and packaging',
+      eyebrow: `${company.name} branded print and packaging`,
       items: ['Bags with a full-color logo', 'Kraft bags and food packaging', 'Restaurant labels, stickers and menus', 'Vehicle and exterior branding'],
       action: 'Learn more about branding',
     },
@@ -68,7 +70,7 @@ export function BrandingBanner() {
             <div className="relative rounded-[var(--sp-radius)] overflow-hidden border border-[var(--sp-line)] shadow-lg bg-[var(--sp-surface)] p-2">
               <Image
                 src="/catalog/extracted_p14_img1.jpeg"
-                alt="SANPACK Branding & Polygraphy"
+                alt={`${company.name} Branding & Polygraphy`}
                 width={800}
                 height={480}
                 sizes="(min-width: 1024px) 40vw, 90vw"
