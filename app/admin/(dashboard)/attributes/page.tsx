@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
-import { Attribute, Category, AttributeOption } from '@/types';
+import { Attribute, Category, AttributeOption, AttributeType } from '@/types';
 import { Button, CustomInput, Badge, CustomSelect } from '@/components/ui';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
@@ -21,6 +21,24 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 
+const attributeTypeOptions: Array<{ value: AttributeType; label: string }> = [
+  { value: 'text', label: 'Текстовое поле свободного ввода' },
+  { value: 'number', label: 'Числовое значение' },
+  { value: 'select', label: 'Один вариант из списка' },
+  { value: 'multiselect', label: 'Несколько вариантов из списка' },
+  { value: 'range', label: 'Числовой диапазон' },
+  { value: 'boolean', label: 'Да / нет' },
+  { value: 'color', label: 'Цвет' },
+];
+
+const attributeTypeLabels = Object.fromEntries(
+  attributeTypeOptions.map(({ value, label }) => [value, label]),
+) as Record<AttributeType, string>;
+
+function isAttributeType(value: string): value is AttributeType {
+  return attributeTypeOptions.some((option) => option.value === value);
+}
+
 export default function AdminAttributesPage() {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -34,8 +52,9 @@ export default function AdminAttributesPage() {
   const [titleRu, setTitleRu] = useState('');
   const [titleUz, setTitleUz] = useState('');
   const [titleEn, setTitleEn] = useState('');
-  const [type, setType] = useState<'select' | 'text' | 'number'>('select');
+  const [type, setType] = useState<AttributeType>('select');
   const [unit, setUnit] = useState('');
+  const [required, setRequired] = useState(false);
   const [filterable, setFilterable] = useState(true);
   const [cardVisible, setCardVisible] = useState(true);
   const [productVisible, setProductVisible] = useState(true);
@@ -100,6 +119,7 @@ export default function AdminAttributesPage() {
     setTitleEn('');
     setType('select');
     setUnit('');
+    setRequired(false);
     setFilterable(true);
     setCardVisible(true);
     setProductVisible(true);
@@ -115,8 +135,9 @@ export default function AdminAttributesPage() {
     setTitleRu(attr.titleRu);
     setTitleUz(attr.titleUz);
     setTitleEn(attr.titleEn || '');
-    setType((attr.type as any) || 'select');
+    setType(attr.type);
     setUnit(attr.unit || '');
+    setRequired(attr.required ?? false);
     setFilterable(attr.filterable);
     setCardVisible(attr.cardVisible ?? true);
     setProductVisible(attr.productVisible ?? true);
@@ -171,6 +192,7 @@ export default function AdminAttributesPage() {
       titleEn: titleEn.trim() || undefined,
       type,
       unit: unit.trim() || undefined,
+      required,
       filterable,
       cardVisible,
       productVisible,
@@ -284,7 +306,7 @@ export default function AdminAttributesPage() {
 
                       <td className="py-4 px-5">
                         <Badge variant="neutral" size="sm">
-                          {attr.type === 'select' ? 'Список' : attr.type === 'number' ? 'Число' : 'Текст'}
+                          {attributeTypeLabels[attr.type]}
                           {attr.unit ? ` (${attr.unit})` : ''}
                         </Badge>
                       </td>
@@ -435,17 +457,15 @@ export default function AdminAttributesPage() {
                 </label>
                 <CustomSelect
                   value={type}
-                  onChange={(val) => setType(val as any)}
-                  options={[
-                    { value: 'select', label: 'Выпадающий список фиксированных вариантов' },
-                    { value: 'text', label: 'Текстовое поле свободного ввода' },
-                    { value: 'number', label: 'Числовое значение' },
-                  ]}
+                  onChange={(value) => {
+                    if (isAttributeType(value)) setType(value);
+                  }}
+                  options={attributeTypeOptions}
                 />
               </div>
 
               {/* Options Builder for Select type */}
-              {type === 'select' && (
+              {(type === 'select' || type === 'multiselect') && (
                 <div className="admin-panel-muted space-y-3 p-4">
                   <h4 className="flex items-center gap-1.5 text-xs font-bold text-[var(--sp-ink)]">
                     <Tag className="h-4 w-4 text-[var(--sp-brand)]" />
@@ -540,6 +560,38 @@ export default function AdminAttributesPage() {
                     type="checkbox"
                     checked={filterable}
                     onChange={(e) => setFilterable(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--sp-brand)]"
+                  />
+                </label>
+                <label className="admin-panel-muted flex cursor-pointer items-center justify-between p-3">
+                  <div>
+                    <span className="block text-xs font-bold text-[var(--sp-ink)]">
+                      Показывать в карточке каталога
+                    </span>
+                    <span className="text-[11px] text-[var(--sp-ink-tertiary)]">
+                      Краткое значение появится в списке товаров
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={cardVisible}
+                    onChange={(event) => setCardVisible(event.target.checked)}
+                    className="h-4 w-4 accent-[var(--sp-brand)]"
+                  />
+                </label>
+                <label className="admin-panel-muted flex cursor-pointer items-center justify-between p-3">
+                  <div>
+                    <span className="block text-xs font-bold text-[var(--sp-ink)]">
+                      Показывать на странице товара
+                    </span>
+                    <span className="text-[11px] text-[var(--sp-ink-tertiary)]">
+                      Значение войдёт в подробные характеристики
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={productVisible}
+                    onChange={(event) => setProductVisible(event.target.checked)}
                     className="h-4 w-4 accent-[var(--sp-brand)]"
                   />
                 </label>

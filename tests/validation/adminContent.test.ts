@@ -64,6 +64,13 @@ describe('attribute admin validation', () => {
     if (result.success) expect(result.data.required).toBe(false);
   });
 
+  it.each(['text', 'number', 'select', 'multiselect', 'range', 'boolean', 'color'] as const)(
+    'accepts the shared attribute type %s',
+    (type) => {
+      expect(attributeMutationSchema.safeParse({ ...validAttribute, type }).success).toBe(true);
+    },
+  );
+
   it.each(['Package Weight', 'package-weight', '_weight', 'вес'])('rejects invalid key %j', (key) => {
     expect(attributeMutationSchema.safeParse({ ...validAttribute, key }).success).toBe(false);
   });
