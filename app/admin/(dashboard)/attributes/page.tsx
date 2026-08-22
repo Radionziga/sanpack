@@ -49,6 +49,7 @@ export default function AdminAttributesPage() {
   const [newOptEn, setNewOptEn] = useState('');
 
   const [notification, setNotification] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     loadData();
@@ -91,6 +92,7 @@ export default function AdminAttributesPage() {
   }
 
   const handleOpenCreateModal = () => {
+    setSaveError('');
     setEditingAttr(null);
     setKey('');
     setTitleRu('');
@@ -107,6 +109,7 @@ export default function AdminAttributesPage() {
   };
 
   const handleOpenEditModal = (attr: Attribute) => {
+    setSaveError('');
     setEditingAttr(attr);
     setKey(attr.key);
     setTitleRu(attr.titleRu);
@@ -143,12 +146,22 @@ export default function AdminAttributesPage() {
 
   const handleSaveAttribute = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!key.trim() || !titleRu.trim()) return;
+    setSaveError('');
+    if (!key.trim() || !titleRu.trim()) {
+      setSaveError('Укажите внутреннее имя и название характеристики.');
+      return;
+    }
 
     const formattedKey = key
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9_]/g, '_');
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    if (!formattedKey) {
+      setSaveError('Внутреннее имя должно содержать латинские буквы или цифры.');
+      return;
+    }
 
     const attrData: Partial<Attribute> = {
       id: editingAttr ? editingAttr.id : 'attr-' + Date.now(),
@@ -166,12 +179,16 @@ export default function AdminAttributesPage() {
       sortOrder: editingAttr ? editingAttr.sortOrder : attributes.length + 1,
     };
 
-    await AdminRepository.saveAttribute(attrData);
-    await loadData();
-    setIsModalOpen(false);
-    showToast(
-      editingAttr ? 'Характеристика успешно обновлена' : 'Новая характеристика успешно создана'
-    );
+    try {
+      await AdminRepository.saveAttribute(attrData);
+      await loadData();
+      setIsModalOpen(false);
+      showToast(
+        editingAttr ? 'Характеристика успешно обновлена' : 'Новая характеристика успешно создана'
+      );
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Характеристика не сохранена.');
+    }
   };
 
   const handleDeleteAttribute = async (id: string, title: string) => {
@@ -359,6 +376,9 @@ export default function AdminAttributesPage() {
             </div>
 
             <form onSubmit={handleSaveAttribute} className="admin-modal-body space-y-6 px-5 py-6 md:px-7">
+              {saveError ? (
+                <p role="alert" className="sp-alert sp-alert-danger text-sm">{saveError}</p>
+              ) : null}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <CustomInput
                   label="Название RU"

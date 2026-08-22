@@ -104,11 +104,12 @@ export const AdminRepository = {
   getAttributes: () => read<Attribute[]>('attributes'),
   saveAttribute(attribute: Partial<Attribute>) {
     const id = attribute.id || createId('attr');
+    const { id: _ignoredId, ...data } = attribute;
     return mutate<Attribute>({
       action: 'save',
       resource: 'attributes',
       id,
-      data: attribute,
+      data,
     });
   },
   async deleteAttribute(id: string) {
@@ -164,11 +165,12 @@ export const AdminRepository = {
   getClients: () => read<ClientPartner[]>('clients'),
   saveClient(client: Partial<ClientPartner>) {
     const id = client.id || createId('client');
+    const { id: _ignoredId, ...data } = client;
     return mutate<ClientPartner>({
       action: 'save',
       resource: 'clients',
       id,
-      data: client,
+      data,
     });
   },
   createClient(client: Omit<ClientPartner, 'id'>) {

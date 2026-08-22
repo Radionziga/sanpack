@@ -87,6 +87,45 @@ export const clientMutationSchema = z.object({
   sortOrder: z.number().int().min(0).max(100_000),
 }).strict();
 
+const attributeOptionSchema = z.object({
+  value: z.string().trim().min(1).max(160),
+  labelRu: z.string().trim().min(1).max(160),
+  labelUz: z.string().trim().min(1).max(160),
+  labelEn: z.string().trim().max(160).optional(),
+}).strict();
+
+export const attributeMutationSchema = z.object({
+  key: z.string().trim().min(1).max(80).regex(
+    /^[a-z0-9]+(?:_[a-z0-9]+)*$/,
+    'Используйте строчные латинские буквы, цифры и подчёркивания.',
+  ),
+  titleRu: z.string().trim().min(1).max(160),
+  titleUz: z.string().trim().min(1).max(160),
+  titleEn: z.string().trim().max(160).optional(),
+  type: z.enum(['text', 'number', 'select', 'multiselect', 'range', 'boolean', 'color']),
+  unit: z.string().trim().max(50).optional(),
+  options: z.array(attributeOptionSchema).max(100).optional(),
+  filterable: z.boolean(),
+  required: z.boolean().optional().default(false),
+  cardVisible: z.boolean(),
+  productVisible: z.boolean(),
+  categoryIds: z.array(z.string().trim().min(1).max(160)).max(100).optional(),
+  sortOrder: z.number().int().min(0).max(100_000),
+}).strict().superRefine((values, context) => {
+  const optionValues = new Set<string>();
+  for (const [index, option] of (values.options || []).entries()) {
+    const normalizedValue = option.value.toLocaleLowerCase();
+    if (optionValues.has(normalizedValue)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['options', index, 'value'],
+        message: 'Значения вариантов не должны повторяться.',
+      });
+    }
+    optionValues.add(normalizedValue);
+  }
+});
+
 export const designSettingsSchema = z.object({
   designVersion: z.literal(2).optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
@@ -239,6 +278,7 @@ export const productMutationSchema = z.object({
 export function validateAdminResourceData(resource: string, data: unknown) {
   if (resource === 'products') return productMutationSchema.safeParse(data);
   if (resource === 'categories') return categoryMutationSchema.safeParse(data);
+  if (resource === 'attributes') return attributeMutationSchema.safeParse(data);
   if (resource === 'clients') return clientMutationSchema.safeParse(data);
   if (resource === 'banners') return bannerMutationSchema.safeParse(data);
   if (resource === 'settings') return settingsMutationSchema.safeParse(data);

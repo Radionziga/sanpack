@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  attributeMutationSchema,
   clientMutationSchema,
   productMutationSchema,
   productVariantSchema,
@@ -39,5 +40,41 @@ describe('client admin validation', () => {
 
   it.each(['', 'logo.png', '//cdn.example.com/logo.png'])('rejects invalid logo %j', (logo) => {
     expect(clientMutationSchema.safeParse({ ...validClient, logo }).success).toBe(false);
+  });
+});
+
+describe('attribute admin validation', () => {
+  const validAttribute = {
+    key: 'package_weight',
+    titleRu: 'Вес упаковки',
+    titleUz: 'Qadoq og‘irligi',
+    type: 'select' as const,
+    options: [
+      { value: '500_g', labelRu: '500 г', labelUz: '500 g' },
+    ],
+    filterable: true,
+    cardVisible: true,
+    productVisible: true,
+    sortOrder: 1,
+  };
+
+  it('accepts a complete attribute and supplies the backward-compatible required flag', () => {
+    const result = attributeMutationSchema.safeParse(validAttribute);
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.required).toBe(false);
+  });
+
+  it.each(['Package Weight', 'package-weight', '_weight', 'вес'])('rejects invalid key %j', (key) => {
+    expect(attributeMutationSchema.safeParse({ ...validAttribute, key }).success).toBe(false);
+  });
+
+  it('rejects duplicate option values case-insensitively', () => {
+    expect(attributeMutationSchema.safeParse({
+      ...validAttribute,
+      options: [
+        ...validAttribute.options,
+        { value: '500_G', labelRu: 'Дубликат', labelUz: 'Dublikat' },
+      ],
+    }).success).toBe(false);
   });
 });
