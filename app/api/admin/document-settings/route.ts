@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   try {
     const admin = await getAdminSession();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
-    const parsed = internalDocumentSettingsSchema.safeParse(await request.json());
+    const parsed = internalDocumentSettingsSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Проверьте реквизиты документа.', issues: parsed.error.issues }, { status: 400 });
     }

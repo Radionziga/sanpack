@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const parsed = checkoutRequestSchema.safeParse(await request.json());
+    const parsed = checkoutRequestSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Проверьте имя, телефон и состав заявки.', fields: parsed.error.flatten().fieldErrors },

@@ -24,7 +24,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const input = callbackSchema.parse(await request.json());
+    const parsed = callbackSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Проверьте имя и номер телефона.' }, { status: 400 });
+    }
+    const input = parsed.data;
     const document = getAdminDb().collection('callbacks').doc();
     await document.create({
       id: document.id,
@@ -35,9 +39,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Проверьте имя и номер телефона.' }, { status: 400 });
-    }
     console.error('Callback creation failed.', error);
     return NextResponse.json(
       { error: 'Запрос не сохранён. Попробуйте ещё раз.' },

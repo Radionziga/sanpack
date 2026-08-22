@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     const admin = await requireAdmin();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
 
-    const parsed = actionSchema.safeParse(await request.json());
+    const parsed = actionSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Проверьте настройки Telegram.', issues: parsed.error.issues }, { status: 400 });
     }

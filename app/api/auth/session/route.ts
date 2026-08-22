@@ -27,7 +27,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = requestSchema.parse(await request.json());
+    const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Некорректные данные для входа.' }, { status: 400 });
+    }
+    const body = parsed.data;
     const isLocalSession = process.env.NODE_ENV !== 'production'
       && !process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
     const decoded = await getAdminAuth().verifyIdToken(body.idToken, !isLocalSession);

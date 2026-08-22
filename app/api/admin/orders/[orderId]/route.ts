@@ -22,7 +22,7 @@ export async function PATCH(
   const admin = await getAdminSession();
   if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
 
-  const parsed = mutationSchema.safeParse(await request.json());
+  const parsed = mutationSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Проверьте данные заказа.', issues: parsed.error.issues }, { status: 400 });
   }
