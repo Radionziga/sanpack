@@ -322,7 +322,7 @@ export default function ProductDetailPage({
           <div className="mb-3 flex items-center justify-between gap-2 lg:hidden">
             <Link
               href="/catalog"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-xs font-semibold text-[var(--sp-ink)] shadow-2xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-xs font-semibold text-[var(--sp-ink)] shadow-2xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95"
             >
               <ChevronLeft className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
               <span>{copy.back || t('catalog')}</span>

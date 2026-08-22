@@ -364,7 +364,7 @@ export default function AdminSettingsPage() {
                 </div>
 
                 {/* Preview Box */}
-                <div className="rounded-lg border border-[#022B1D] bg-[#03432D] p-4 flex flex-col items-center justify-center gap-1.5 min-h-[85px] shadow-sm">
+                <div className="flex min-h-[85px] flex-col items-center justify-center gap-1.5 rounded-lg border border-[var(--sp-brand-deep)] bg-[var(--sp-brand-deep)] p-4 shadow-sm">
                   <span className="text-[10px] font-bold text-emerald-300/80 uppercase tracking-wider">Предпросмотр на тёмном фоне (футер)</span>
                   <BrandLogo src={logoDark || undefined} label={currentCompany?.name} variant="white" className="h-7" />
                 </div>

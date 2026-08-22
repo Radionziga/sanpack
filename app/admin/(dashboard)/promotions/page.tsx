@@ -312,21 +312,21 @@ export default function AdminPromotionsPage() {
                 <button
                   type="button"
                   onClick={() => setPreviewMode('desktop')}
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors ${previewMode === 'desktop' ? 'bg-[var(--sp-brand)] text-white' : 'text-[var(--sp-ink-tertiary)] hover:text-[var(--sp-ink)]'}`}
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors ${previewMode === 'desktop' ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'text-[var(--sp-ink-tertiary)] hover:text-[var(--sp-ink)]'}`}
                 >
                   <Monitor className="size-3" /> Desktop
                 </button>
                 <button
                   type="button"
                   onClick={() => setPreviewMode('mobile')}
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors ${previewMode === 'mobile' ? 'bg-[var(--sp-brand)] text-white' : 'text-[var(--sp-ink-tertiary)] hover:text-[var(--sp-ink)]'}`}
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors ${previewMode === 'mobile' ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'text-[var(--sp-ink-tertiary)] hover:text-[var(--sp-ink)]'}`}
                 >
                   <Smartphone className="size-3" /> Mobile
                 </button>
               </div>
             </div>
 
-            <div className={`relative mx-auto overflow-hidden rounded-lg border border-[var(--sp-line)] bg-[#0d2a1c] ${previewMode === 'desktop' ? 'aspect-[24/7] w-full' : 'aspect-[16/9] max-w-sm'}`}>
+            <div className={`relative mx-auto overflow-hidden rounded-lg border border-[var(--sp-line)] bg-[var(--sp-brand-deep)] ${previewMode === 'desktop' ? 'aspect-[24/7] w-full' : 'aspect-[16/9] max-w-sm'}`}>
               {(previewMode === 'desktop' ? desktopImage : (mobileImage || desktopImage)) ? (
                 <Image
                   src={previewMode === 'desktop' ? desktopImage : (mobileImage || desktopImage)}
@@ -335,7 +335,7 @@ export default function AdminPromotionsPage() {
                   className="object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-white/50">
+                <div className="flex h-full w-full items-center justify-center text-xs text-[var(--sp-on-brand-deep)] opacity-50">
                   Загрузите изображение для предпросмотра
                 </div>
               )}

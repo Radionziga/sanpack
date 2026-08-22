@@ -128,7 +128,7 @@ function SearchResultsContent() {
 export default function SearchPage() {
   const { language } = useLanguage();
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F7F6]">
+    <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header />
       <Suspense fallback={<div className="p-10 text-center text-xs">{pageCopy[language].search.loading}</div>}>
         <SearchResultsContent />

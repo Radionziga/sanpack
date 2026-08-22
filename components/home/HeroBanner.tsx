@@ -41,7 +41,7 @@ export function HeroBanner() {
   }[language];
 
   return (
-    <section className="relative bg-gradient-to-br from-[var(--sp-brand-deep)] via-[var(--sp-brand)] to-[#111815] text-white overflow-hidden py-12 md:py-16">
+    <section className="relative overflow-hidden bg-gradient-to-br from-[var(--sp-brand-deep)] via-[var(--sp-brand)] to-[var(--sp-brand-deep)] py-12 text-[var(--sp-on-brand-deep)] md:py-16">
       {/* Background Subtle Accent Pattern */}
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
 
@@ -49,30 +49,30 @@ export function HeroBanner() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left Text Column */}
           <div className="lg:col-span-7 space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--sp-radius-control)] bg-white/10 backdrop-blur-md text-[var(--sp-accent)] text-xs font-semibold border border-white/10">
+            <div className="inline-flex items-center gap-2 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] px-3 py-1 text-xs font-semibold text-[var(--sp-accent)] backdrop-blur-md">
               <BuildingOffice2Icon className="w-4 h-4 text-[var(--sp-accent)]" />
               <span>{fixText(copy.eyebrow)}</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-[1.15] text-white tracking-tight font-extended">
+            <h1 className="font-extended text-3xl font-bold leading-[1.15] tracking-tight text-[var(--sp-on-brand-deep)] sm:text-4xl md:text-5xl">
               {t('heroTitle')}
             </h1>
 
-            <p className="text-sm sm:text-base text-white/85 leading-relaxed max-w-xl font-normal">
+            <p className="max-w-xl text-sm font-normal leading-relaxed text-[var(--sp-on-brand-deep)] opacity-85 sm:text-base">
               {t('heroSub')}
             </p>
 
             {/* Micro Advantages Bullet Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-              <div className="flex items-center gap-2 text-white/80 font-medium">
+              <div className="flex items-center gap-2 font-medium text-[var(--sp-on-brand-deep)] opacity-80">
                 <CheckCircleIcon className="w-4 h-4 text-[var(--sp-accent)] shrink-0" />
                 <span>{fixText(copy.bullets[0])}</span>
               </div>
-              <div className="flex items-center gap-2 text-white/80 font-medium">
+              <div className="flex items-center gap-2 font-medium text-[var(--sp-on-brand-deep)] opacity-80">
                 <CheckCircleIcon className="w-4 h-4 text-[var(--sp-accent)] shrink-0" />
                 <span>{fixText(copy.bullets[1])}</span>
               </div>
-              <div className="flex items-center gap-2 text-white/80 font-medium">
+              <div className="flex items-center gap-2 font-medium text-[var(--sp-on-brand-deep)] opacity-80">
                 <CheckCircleIcon className="w-4 h-4 text-[var(--sp-accent)] shrink-0" />
                 <span>{fixText(copy.bullets[2])}</span>
               </div>
@@ -82,7 +82,7 @@ export function HeroBanner() {
             <div className="flex flex-wrap items-center gap-3 pt-3">
               <Link
                 href="/catalog"
-                className="px-5 py-3 bg-[var(--sp-accent)] hover:bg-white text-[var(--sp-brand-deep)] font-bold text-xs rounded-[var(--sp-radius-control)] shadow-sm transition-all flex items-center gap-2 group active:scale-95"
+                className="group flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-accent)] px-5 py-3 text-xs font-bold text-[var(--sp-on-accent)] shadow-sm transition-all hover:opacity-90 active:scale-95"
               >
                 <span>{t('heroBtnCatalog')}</span>
                 <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -90,7 +90,7 @@ export function HeroBanner() {
 
               <Link
                 href="/request"
-                className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-xs rounded-[var(--sp-radius-control)] transition-all backdrop-blur-md"
+                className="rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-brand-deep)_20%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] px-5 py-3 text-xs font-semibold text-[var(--sp-on-brand-deep)] backdrop-blur-md transition-all hover:bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_18%,transparent)]"
               >
                 {t('heroBtnQuote')}
               </Link>
@@ -99,8 +99,8 @@ export function HeroBanner() {
 
           {/* Right Showcase Composite Box */}
           <div className="lg:col-span-5 relative">
-            <div className="relative rounded-[var(--sp-radius)] overflow-hidden border border-white/15 bg-white/5 backdrop-blur-md p-5 shadow-xl space-y-3">
-              <div className="aspect-4/3 rounded-[var(--sp-radius-control)] bg-white p-3 shadow-inner relative overflow-hidden group">
+            <div className="relative space-y-3 overflow-hidden rounded-[var(--sp-radius)] border border-[color-mix(in_srgb,var(--sp-on-brand-deep)_15%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_5%,transparent)] p-5 shadow-xl backdrop-blur-md">
+              <div className="group relative aspect-4/3 overflow-hidden rounded-[var(--sp-radius-control)] bg-[var(--sp-surface)] p-3 shadow-inner">
                 <Image
                   src="/catalog/page_1.png"
                   alt={`${company.name} Packaging & HoReCa`}
@@ -118,12 +118,12 @@ export function HeroBanner() {
               </div>
 
               {/* Floating Badge */}
-              <div className="flex items-center justify-between bg-white/10 p-3 rounded-[var(--sp-radius-control)] border border-white/10 text-xs">
+              <div className="flex items-center justify-between rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_10%,transparent)] p-3 text-xs">
                 <div className="flex items-center gap-2.5">
                   <ShieldCheckIcon className="w-5 h-5 text-[var(--sp-accent)]" />
                   <div>
-                    <p className="font-bold text-white">{fixText(copy.quality)}</p>
-                    <p className="text-[11px] text-white/70">{fixText(copy.standard)}</p>
+                    <p className="font-bold text-[var(--sp-on-brand-deep)]">{fixText(copy.quality)}</p>
+                    <p className="text-[11px] text-[var(--sp-on-brand-deep)] opacity-70">{fixText(copy.standard)}</p>
                   </div>
                 </div>
                 <TruckIcon className="w-5 h-5 text-[var(--sp-accent)] shrink-0" />
