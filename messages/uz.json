@@ -92,5 +92,11 @@
       "supplyFooter": "HoReCa ta’minoti",
       "photoComingSoon": "Rasm tez orada joylanadi"
     }
+  },
+  "productGallery": {
+    "zoom": "Rasmni kattalashtirish",
+    "close": "Yopish",
+    "thumbnails": "Mahsulotning boshqa rasmlari",
+    "thumbnail": "{index}-rasm"
   }
 }

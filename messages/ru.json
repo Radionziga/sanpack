@@ -92,5 +92,11 @@
       "supplyFooter": "Поставки HoReCa",
       "photoComingSoon": "Фото скоро появится"
     }
+  },
+  "productGallery": {
+    "zoom": "Увеличить изображение",
+    "close": "Закрыть",
+    "thumbnails": "Другие фотографии товара",
+    "thumbnail": "Фотография {index}"
   }
 }

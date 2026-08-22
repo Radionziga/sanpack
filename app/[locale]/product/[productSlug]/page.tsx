@@ -52,6 +52,7 @@ import {
   getProductPriceLabel,
   getProductSalesUnitLabel,
 } from '@/lib/catalog/productPresentation';
+import { getProductGalleryImages } from '@/lib/catalog/productGallery';
 
 export default function ProductDetailPage({
   params,
@@ -286,9 +287,10 @@ export default function ProductDetailPage({
   const priceLabel = getProductPriceLabel(product, language);
   const salesUnitLabel = getProductSalesUnitLabel(product, language);
   const managerSku = selectedVariant?.sku || product.sku;
-  const galleryImages = [selectedVariant?.image, ...(product.images || [])]
-    .filter((image): image is string => Boolean(image))
-    .filter((image, index, images) => images.indexOf(image) === index);
+  const galleryImages = getProductGalleryImages(
+    [product.mainImage, ...(product.images || [])],
+    selectedVariant?.image,
+  );
   const quantityLabel = t('quantity').replace(/:\s*$/, '');
 
   const handleAddToCart = () => {

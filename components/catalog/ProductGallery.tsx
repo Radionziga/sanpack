@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Maximize2, X } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useTranslations } from 'next-intl';
 import { ProductImage } from '@/components/catalog/ProductImage';
 import { hasProductImage } from '@/lib/catalog/productImages';
 
@@ -12,13 +12,12 @@ interface ProductGalleryProps {
 }
 
 export function ProductGallery({ images, title }: ProductGalleryProps) {
-  const { language } = useLanguage();
-  const zoomTitle = { ru: 'Увеличить', uz: 'Kattalashtirish', en: 'Enlarge image' }[language];
-  const closeTitle = { ru: 'Закрыть', uz: 'Yopish', en: 'Close' }[language];
+  const t = useTranslations('productGallery');
   const availableImages = images.filter(hasProductImage);
-  const [selectedImage, setSelectedImage] = useState('');
-  const activeImage = availableImages.includes(selectedImage)
-    ? selectedImage
+  const imageScope = availableImages.join('\n');
+  const [selection, setSelection] = useState({ scope: '', image: '' });
+  const activeImage = selection.scope === imageScope && availableImages.includes(selection.image)
+    ? selection.image
     : availableImages[0] || '';
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const zoomTriggerRef = useRef<HTMLButtonElement>(null);
@@ -76,8 +75,8 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
             aria-haspopup="dialog"
             aria-expanded={isZoomOpen}
             className="sp-icon-button absolute right-3 top-3 size-11 cursor-pointer border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-soft)] sm:right-4 sm:top-4"
-            title={zoomTitle}
-            aria-label={zoomTitle}
+            title={t('zoom')}
+            aria-label={t('zoom')}
           >
             <Maximize2 className="size-4" aria-hidden="true" />
           </button>
@@ -85,18 +84,22 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       </div>
 
       {/* Thumbnails */}
-      {availableImages.length > 1 && (
-        <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+      {availableImages.length > 0 && (
+        <div
+          role="group"
+          className="no-scrollbar flex min-h-[4.75rem] items-center gap-3 overflow-x-auto px-1 pb-2 pt-1"
+          aria-label={t('thumbnails')}
+        >
           {availableImages.map((img, idx) => (
             <button
               type="button"
-              key={idx}
-              onClick={() => setSelectedImage(img)}
-              aria-label={`${title} — ${idx + 1}`}
+              key={img}
+              onClick={() => setSelection({ scope: imageScope, image: img })}
+              aria-label={`${title} — ${t('thumbnail', { index: idx + 1 })}`}
               aria-pressed={activeImage === img}
-              className={`relative size-16 shrink-0 cursor-pointer overflow-hidden rounded-[var(--sp-radius-control)] border bg-[var(--sp-surface)] p-1 transition-[border-color,opacity,transform] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${
+              className={`relative size-16 shrink-0 cursor-pointer overflow-hidden rounded-[var(--sp-radius-control)] border-2 bg-[var(--sp-surface)] p-1 transition-[border-color,opacity,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${
                 activeImage === img
-                  ? 'scale-[1.03] border-[var(--sp-brand)] ring-2 ring-[var(--sp-brand-soft)]'
+                  ? 'border-[var(--sp-brand)] shadow-[0_0_0_2px_var(--sp-brand-soft)]'
                   : 'border-[var(--sp-line)] opacity-70 hover:border-[var(--sp-line-strong)] hover:opacity-100'
               }`}
             >
@@ -119,20 +122,20 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
             type="button"
             tabIndex={-1}
             onClick={() => setIsZoomOpen(false)}
-            aria-label={closeTitle}
+            aria-label={t('close')}
             className="absolute inset-0 cursor-pointer bg-black/80 backdrop-blur-sm"
           />
           <div
             role="dialog"
             aria-modal="true"
-            aria-label={zoomTitle}
+            aria-label={t('zoom')}
             className="relative flex h-full w-full items-center justify-center bg-[var(--sp-surface-raised)] p-4 pt-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] sm:h-[min(90dvh,900px)] sm:max-w-5xl sm:rounded-[var(--sp-radius-card)] sm:border sm:border-[var(--sp-line)] sm:p-8"
           >
             <button
               ref={closeButtonRef}
               type="button"
               onClick={() => setIsZoomOpen(false)}
-              aria-label={closeTitle}
+              aria-label={t('close')}
               className="sp-icon-button absolute right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-10 size-11 cursor-pointer border border-[var(--sp-line)] bg-[var(--sp-surface)] shadow-[var(--sp-shadow-soft)] sm:right-4 sm:top-4"
             >
               <X className="size-5" aria-hidden="true" />

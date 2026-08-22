@@ -92,5 +92,11 @@
       "supplyFooter": "HoReCa supplies",
       "photoComingSoon": "Photo coming soon"
     }
+  },
+  "productGallery": {
+    "zoom": "Enlarge image",
+    "close": "Close",
+    "thumbnails": "Other product photos",
+    "thumbnail": "Photo {index}"
   }
 }
