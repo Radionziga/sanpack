@@ -6,6 +6,7 @@ import {
   getPublicSettings,
 } from '@/lib/repositories/serverCatalogRepository';
 import { createCatalogPdf } from '@/lib/documents/createCatalogPdf';
+import { getCatalogFilename } from '@/lib/documents/catalogIdentity';
 import type { Language } from '@/types';
 
 export const runtime = 'nodejs';
@@ -45,9 +46,7 @@ export async function GET(request: Request) {
       categoryId,
     });
 
-    const filename = withPrices
-      ? `sanpack-catalog-price-list-${language}.pdf`
-      : `sanpack-catalog-presentation-${language}.pdf`;
+    const filename = getCatalogFilename(withPrices, language);
 
     return new Response(new Uint8Array(pdfBuffer), {
       status: 200,

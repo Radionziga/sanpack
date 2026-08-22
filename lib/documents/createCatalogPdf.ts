@@ -6,6 +6,10 @@ import sharp from 'sharp';
 import pdfMake from 'pdfmake';
 import type { Content, Margins, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
 import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
+import {
+  getCatalogCompanyName,
+  getCatalogSiteLabel,
+} from '@/lib/documents/catalogIdentity';
 
 function initPdfFonts() {
   const robotoDir = path.join(process.cwd(), 'node_modules', 'pdfmake', 'fonts', 'Roboto');
@@ -123,6 +127,11 @@ export async function createCatalogPdf(
 ): Promise<Buffer> {
   const withPrices = options.withPrices !== false;
   const lang = options.language || 'ru';
+  const companyName = getCatalogCompanyName(settings);
+  const siteLabel = getCatalogSiteLabel(process.env.NEXT_PUBLIC_SITE_URL);
+  const phone1 = settings.contacts.phone1.trim();
+  const phone2 = settings.contacts.phone2.trim();
+  const email = settings.contacts.email.trim();
 
   const brandGreen = '#0F6E43';
   const darkGreen = '#0B5332';
@@ -184,7 +193,7 @@ export async function createCatalogPdf(
             margin: [14, 8, 14, 8] as Margins,
             columns: [
               {
-                text: 'SANPACK',
+                text: companyName,
                 fontSize: 15,
                 bold: true,
                 color: '#FFFFFF',
@@ -212,13 +221,13 @@ export async function createCatalogPdf(
       margin: [28, 10, 28, 0] as Margins,
       columns: [
         {
-          text: `${settings.contacts?.phone1 || '+998 99 851 05 06'}    ${settings.contacts?.phone2 || '+998 99 232 39 99'}`,
+          text: [phone1, phone2].filter(Boolean).join('    '),
           fontSize: 8,
           color: secondaryInk,
           bold: true,
         },
         {
-          text: `sanpack.uz   |   Стр. ${currentPage} из ${pageCount}`,
+          text: `${siteLabel ? `${siteLabel}   |   ` : ''}Стр. ${currentPage} из ${pageCount}`,
           fontSize: 8,
           color: secondaryInk,
           alignment: 'right',
@@ -230,11 +239,11 @@ export async function createCatalogPdf(
   const docContent: Content[] = [];
 
   // ==========================================
-  // PAGE 1: COVER PAGE (Exact SANPACK Style)
+  // PAGE 1: COVER PAGE
   // ==========================================
   const coverStack: Content[] = [
     {
-      text: 'SANPACK',
+      text: companyName,
       fontSize: 38,
       bold: true,
       color: '#FFFFFF',
@@ -643,14 +652,14 @@ export async function createCatalogPdf(
                     margin: [0, 0, 0, 6] as Margins,
                   },
                   {
-                    text: 'SANPACK совместно с производственными партнёрами предлагает комплексные услуги по брендированию и полиграфии для HoReCa:\n\n• Разработка и изготовление брендированных мусорных мешков и пакетов «майка» с логотипом\n• Печать меню, визиток, флаеров, буклетов, каталогов, блокнотов и конвертов\n• Картонные коробки для пиццы, фастфуда, стаканчики и пергамент с вашей фирменной айдентикой\n• Самоклеящиеся стикеры, этикетки и маркировка для пищевой продукции\n• Корпоративный текстиль, фартуки, мерч и оформление транспорта доставки',
+                    text: `${companyName} совместно с производственными партнёрами предлагает комплексные услуги по брендированию и полиграфии для HoReCa:\n\n• Разработка и изготовление брендированных мусорных мешков и пакетов «майка» с логотипом\n• Печать меню, визиток, флаеров, буклетов, каталогов, блокнотов и конвертов\n• Картонные коробки для пиццы, фастфуда, стаканчики и пергамент с вашей фирменной айдентикой\n• Самоклеящиеся стикеры, этикетки и маркировка для пищевой продукции\n• Корпоративный текстиль, фартуки, мерч и оформление транспорта доставки`,
                     fontSize: 8.5,
                     color: darkInk,
                     lineHeight: 1.35,
                   },
                   {
                     text: '\nДля расчета тиража и индивидуального коммерческого предложения свяжитесь с отделом продаж:\n' +
-                      `${settings.contacts?.phone1 || '+998 99 851 05 06'}  |  ${settings.contacts?.phone2 || '+998 99 232 39 99'}  |  info@sanpack.uz`,
+                      [phone1, phone2, email].filter(Boolean).join('  |  '),
                     fontSize: 8.5,
                     bold: true,
                     color: darkGreen,
@@ -678,10 +687,10 @@ export async function createCatalogPdf(
     pageMargins: [28, 20, 28, 32],
     language: lang === 'uz' ? 'uz-UZ' : lang === 'en' ? 'en-US' : 'ru-RU',
     info: {
-      title: `SANPACK Каталог продукции 2026${withPrices ? ' (Прайс-лист)' : ''}`,
-      author: 'SANPACK Distribution',
+      title: `${companyName} — Каталог продукции${withPrices ? ' (Прайс-лист)' : ''}`,
+      author: companyName,
       subject: 'Оптовый каталог и комплексные поставки для HoReCa',
-      creator: 'SANPACK Platform',
+      creator: 'Commerce Platform',
     },
     defaultStyle: { font: 'Roboto', fontSize: 8.5, color: darkInk, lineHeight: 1.2 },
     footer: footerBuilder,

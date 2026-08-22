@@ -20,6 +20,10 @@ import { SanpackLogo } from '@/components/ui/SanpackLogo';
 import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
 import { formatMoney } from '@/lib/catalog/productPresentation';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
+import {
+  getCatalogCompanyName,
+  getCatalogSiteLabel,
+} from '@/lib/documents/catalogIdentity';
 
 interface CatalogPrintDocumentProps {
   initialProducts: Product[];
@@ -96,11 +100,13 @@ export function CatalogPrintDocument({
   const [selectedCategory, setSelectedCategory] = useState<string>(initialOptions.categoryId || '');
   const [scale, setScale] = useState<number>(embeddedInAdmin ? 0.78 : 0.85);
   const [copied, setCopied] = useState<boolean>(false);
+  const companyName = settings ? getCatalogCompanyName(settings) : 'Storefront';
+  const website = getCatalogSiteLabel(process.env.NEXT_PUBLIC_SITE_URL);
 
   // Set page title for nice PDF export filename
   useEffect(() => {
     const modeStr = withPrices ? 'price-list' : 'presentation';
-    document.title = `SANPACK-Catalog-${modeStr}-${language.toUpperCase()}`;
+    document.title = `Catalog-${modeStr}-${language.toUpperCase()}`;
   }, [withPrices, language]);
 
   // Sort categories
@@ -248,14 +254,23 @@ export function CatalogPrintDocument({
   const totalDocumentPages = categoryPages.length + 1;
 
   // Contact info helpers
-  const phone1 = settings?.contacts?.phone1 || '+998 99 851 05 06';
-  const phone2 = settings?.contacts?.phone2 || '+998 99 232 39 99';
-  const email = settings?.contacts?.email || 'info@sanpack.uz';
-  const website = 'sanpack.uz';
+  const phone1 = settings?.contacts?.phone1?.trim() || '';
+  const phone2 = settings?.contacts?.phone2?.trim() || '';
+  const email = settings?.contacts?.email?.trim() || '';
   const address =
-    language === 'uz'
-      ? settings?.contacts?.addressUz || 'Toshkent sh., Sergeli tumani, Yangi Sergeli ko‘ch., 14A'
-      : settings?.contacts?.addressRu || 'г. Ташкент, Сергелийский р-н, ул. Янги Сергели, 14А';
+    (language === 'uz'
+      ? settings?.contacts?.addressUz
+      : language === 'en'
+        ? settings?.contacts?.addressEn
+        : settings?.contacts?.addressRu
+    )?.trim() || '';
+  const workingHours =
+    (language === 'uz'
+      ? settings?.contacts?.workingHoursUz
+      : language === 'en'
+        ? settings?.contacts?.workingHoursEn
+        : settings?.contacts?.workingHoursRu
+    )?.trim() || '';
 
   const handleCopyLink = () => {
     if (typeof window !== 'undefined' && navigator.clipboard) {
@@ -273,7 +288,7 @@ export function CatalogPrintDocument({
   return (
     <div className={`min-h-screen text-[#151B18] font-sans antialiased flex flex-col items-center ${embeddedInAdmin ? 'bg-transparent' : 'bg-[#EFF2F0]'}`}>
       {/* =========================================================================
-          INTEGRATED CONTROL TOOLBAR IN SANPACK BRAND STYLE (NO BLUE/DARK TINTS)
+          INTEGRATED CONTROL TOOLBAR
           ========================================================================= */}
       <aside aria-label="Панель управления каталогом" className="no-print sticky top-2 z-40 w-full max-w-6xl px-2 sm:px-4 mb-4">
         <div className="bg-white border border-[#DCE2DE] rounded-2xl shadow-sm p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
@@ -291,7 +306,7 @@ export function CatalogPrintDocument({
             <div>
               <div className="text-xs font-bold text-[#03432D] uppercase tracking-wider flex items-center gap-1.5">
                 <FileText className="size-4 text-[#03432D]" />
-                <span>SANPACK Каталог А4</span>
+                <span>{companyName} — Каталог А4</span>
               </div>
               <div className="text-[11px] text-[#4C5751] font-medium">
                 {totalDocumentPages} стр. • {filteredProducts.length} позиций
@@ -543,13 +558,13 @@ export function CatalogPrintDocument({
             PAGE 1: COVER PAGE (ИЗУМРУДНЫЙ ТИТУЛЬНЫЙ ЛИСТ В ФИРМЕННЫХ ЦВЕТАХ)
             ======================================================================= */}
         <div className="a4-page a4-page-cover justify-between">
-          {/* Cover Header Bar (Clean SANPACK DISTRIBUTION without LLC) */}
+          {/* Cover Header Bar */}
           <div className="flex justify-between items-center border-b border-white/20 pb-3.5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
-              SANPACK DISTRIBUTION
+              {companyName}
             </span>
             <span className="text-[11px] font-semibold text-white uppercase tracking-wider font-mono">
-              sanpack.uz
+              {website}
             </span>
           </div>
 
@@ -617,9 +632,7 @@ export function CatalogPrintDocument({
               <MapPin className="size-4 text-[#79B245] shrink-0 mt-0.5" />
               <div className="text-[11px] leading-snug">
                 <div className="font-semibold text-white">{address}</div>
-                <div className="text-white/70 mt-0.5">
-                  {language === 'uz' ? 'Dush–Shan 9:00–18:00' : 'Пн–Сб 9:00–18:00'}
-                </div>
+                <div className="text-white/70 mt-0.5">{workingHours}</div>
               </div>
             </div>
           </div>
