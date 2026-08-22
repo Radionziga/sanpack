@@ -23,8 +23,8 @@ const assetUrlSchema = z.union([
 const buttonTextSchema = z.string().trim().max(80, 'Текст кнопки должен быть короче 80 символов.');
 
 const bannerFormSchema = z.object({
-  titleRu: z.string().trim().max(180),
-  titleUz: z.string().trim().max(180),
+  titleRu: z.string().trim().min(1, 'Укажите заголовок на русском.').max(180),
+  titleUz: z.string().trim().min(1, 'Укажите заголовок на узбекском.').max(180),
   titleEn: z.string().trim().max(180),
   subtitleRu: z.string().trim().max(300),
   subtitleUz: z.string().trim().max(300),
@@ -376,9 +376,10 @@ export default function AdminPromotionsPage() {
             <div className="grid gap-4 md:grid-cols-3">
               {(['titleRu', 'titleUz', 'titleEn'] as const).map((name, index) => (
                 <label key={name} className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
-                  Заголовок {['RU', 'UZ', 'EN'][index]}
+                  Заголовок {['RU *', 'UZ *', 'EN'][index]}
                   <input
                     {...register(name)}
+                    required={index < 2}
                     placeholder={['Свежее мясо по лучшим ценам', 'Eng yaxshi narxlarda yangi go‘sht', 'Fresh meat at best prices'][index]}
                     aria-invalid={Boolean(errors[name])}
                     className="admin-control mt-1.5 text-sm font-normal"
