@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import { Maximize2, X } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { ProductImage } from '@/components/catalog/ProductImage';
+import { hasProductImage } from '@/lib/catalog/productImages';
 
 interface ProductGalleryProps {
   images: string[];
@@ -14,7 +15,11 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
   const { language } = useLanguage();
   const zoomTitle = { ru: 'Увеличить', uz: 'Kattalashtirish', en: 'Enlarge image' }[language];
   const closeTitle = { ru: 'Закрыть', uz: 'Yopish', en: 'Close' }[language];
-  const [activeImage, setActiveImage] = useState(images[0] || '/catalog/product-placeholder.svg');
+  const availableImages = images.filter(hasProductImage);
+  const [selectedImage, setSelectedImage] = useState('');
+  const activeImage = availableImages.includes(selectedImage)
+    ? selectedImage
+    : availableImages[0] || '';
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const zoomTriggerRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -53,38 +58,40 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
     <div className="space-y-4">
       {/* Main Image Stage */}
       <div className="group relative aspect-square overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] sm:border sm:border-[var(--sp-line)]">
-        <Image
-          src={activeImage}
+        <ProductImage
+          source={activeImage}
           alt={title}
-          fill
           loading="eager"
           fetchPriority="high"
           sizes="(min-width: 1024px) 45vw, 90vw"
-          className="object-contain p-3 transition-transform duration-300 motion-reduce:transition-none sm:p-6 md:group-hover:scale-[1.025]"
+          variant="detail"
+          imageClassName="object-contain p-3 transition-transform duration-300 motion-reduce:transition-none sm:p-6 md:group-hover:scale-[1.025]"
         />
 
-        <button
-          ref={zoomTriggerRef}
-          type="button"
-          onClick={() => setIsZoomOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={isZoomOpen}
-          className="sp-icon-button absolute right-3 top-3 size-11 cursor-pointer border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-soft)] sm:right-4 sm:top-4"
-          title={zoomTitle}
-          aria-label={zoomTitle}
-        >
-          <Maximize2 className="size-4" aria-hidden="true" />
-        </button>
+        {hasProductImage(activeImage) ? (
+          <button
+            ref={zoomTriggerRef}
+            type="button"
+            onClick={() => setIsZoomOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={isZoomOpen}
+            className="sp-icon-button absolute right-3 top-3 size-11 cursor-pointer border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] shadow-[var(--sp-shadow-soft)] sm:right-4 sm:top-4"
+            title={zoomTitle}
+            aria-label={zoomTitle}
+          >
+            <Maximize2 className="size-4" aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
 
       {/* Thumbnails */}
-      {images.length > 1 && (
+      {availableImages.length > 1 && (
         <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
-          {images.map((img, idx) => (
+          {availableImages.map((img, idx) => (
             <button
               type="button"
               key={idx}
-              onClick={() => setActiveImage(img)}
+              onClick={() => setSelectedImage(img)}
               aria-label={`${title} — ${idx + 1}`}
               aria-pressed={activeImage === img}
               className={`relative size-16 shrink-0 cursor-pointer overflow-hidden rounded-[var(--sp-radius-control)] border bg-[var(--sp-surface)] p-1 transition-[border-color,opacity,transform] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${
@@ -93,12 +100,12 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
                   : 'border-[var(--sp-line)] opacity-70 hover:border-[var(--sp-line-strong)] hover:opacity-100'
               }`}
             >
-              <Image
-                src={img}
+              <ProductImage
+                source={img}
                 alt={`${title} — ${idx + 1}`}
-                fill
                 sizes="80px"
-                className="object-contain p-1"
+                variant="compact"
+                imageClassName="object-contain p-1"
               />
             </button>
           ))}
@@ -131,12 +138,12 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
               <X className="size-5" aria-hidden="true" />
             </button>
             <div className="relative h-full w-full">
-              <Image
-                src={activeImage}
+              <ProductImage
+                source={activeImage}
                 alt={title}
-                fill
                 sizes="(min-width: 640px) 90vw, 100vw"
-                className="object-contain"
+                variant="detail"
+                imageClassName="object-contain"
               />
             </div>
           </div>

@@ -43,6 +43,7 @@ import { contactPhoneHref } from '@/lib/settings/contacts';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Product, Category } from '@/types';
 import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
+import { ProductImage } from '@/components/catalog/ProductImage';
 
 type MobilePanel = 'search' | 'more' | null;
 
@@ -529,12 +530,12 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
                                       className="flex items-center gap-3 p-3 transition-colors active:bg-[var(--sp-surface-hover)]"
                                     >
                                       <div className="relative size-12 shrink-0 overflow-hidden rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line)] bg-white">
-                                        <Image
-                                          src={product.mainImage || '/catalog/product-placeholder.svg'}
+                                        <ProductImage
+                                          source={product.mainImage}
                                           alt={title}
-                                          fill
                                           sizes="48px"
-                                          className="object-contain p-1"
+                                          variant="compact"
+                                          imageClassName="object-contain p-1"
                                         />
                                       </div>
                                       <div className="min-w-0 flex-1">

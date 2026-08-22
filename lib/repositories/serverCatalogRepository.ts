@@ -100,7 +100,7 @@ const getCachedPublicProducts = unstable_cache(
   async () => filterPublicProducts(
     await readCollection<Product>('products', initialProducts)
   ),
-  ['public-products-v8-fail-honest-2026-08-22'],
+  ['public-products-v9-seed-images-2026-08-22'],
   { revalidate: 300, tags: ['products'] }
 );
 

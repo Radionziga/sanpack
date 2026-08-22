@@ -25,6 +25,7 @@ import {
   getCatalogDocumentTheme,
   getCatalogSiteLabel,
 } from '@/lib/documents/catalogIdentity';
+import { translations } from '@/lib/i18n/translations';
 
 interface CatalogPrintDocumentProps {
   initialProducts: Product[];
@@ -811,7 +812,16 @@ export function CatalogPrintDocument({
                               loading="eager"
                             />
                           ) : (
-                            <Package className="size-10 text-[#AEB9B2]" />
+                            <div
+                              role="img"
+                              aria-label={`${title}. ${translations[language].photoComingSoon}`}
+                              className="flex flex-col items-center gap-1.5 px-3 text-center text-[#64748B]"
+                            >
+                              <Package className="size-8 text-[#7A9184]" aria-hidden="true" />
+                              <span className="text-[9px] font-semibold leading-tight">
+                                {translations[language].photoComingSoon}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>

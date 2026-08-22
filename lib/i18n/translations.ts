@@ -83,6 +83,8 @@ export const translations = {
     outOfStock: 'Нет в наличии',
     onOrder: 'Под заказ',
     minOrder: 'Мин. заказ:',
+    photoComingSoon: 'Фото скоро появится',
+    photoComingSoonDescription: 'Описание и характеристики уже доступны',
     
     // Product Page
     specifications: 'Характеристики',
@@ -240,6 +242,8 @@ export const translations = {
     outOfStock: 'Mavjud emas',
     onOrder: 'Buyurtma berish mumkin',
     minOrder: 'Min. buyurtma:',
+    photoComingSoon: 'Rasm tez orada',
+    photoComingSoonDescription: 'Tavsif va xususiyatlar hozir mavjud',
 
     // Product Page
     specifications: 'Xususiyatlari',
@@ -390,6 +394,8 @@ export const translations = {
     outOfStock: 'Out of stock',
     onOrder: 'Available to order',
     minOrder: 'Minimum order',
+    photoComingSoon: 'Photo coming soon',
+    photoComingSoonDescription: 'Description and specifications are already available',
     specifications: 'Specifications',
     wholesalePrices: 'Wholesale pricing',
     chooseVariant: 'Choose a variant',

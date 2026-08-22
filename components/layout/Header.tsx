@@ -32,6 +32,7 @@ import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { useMobileStorefrontChrome } from '@/components/layout/MobileStorefrontChrome';
 import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
+import { ProductImage } from '@/components/catalog/ProductImage';
 
 export function Header({
   initialCategories = [],
@@ -354,12 +355,12 @@ export function Header({
                                       className="group flex items-center gap-3 p-2.5 transition-colors hover:bg-[var(--sp-surface-inset)]"
                                     >
                                       <div className="relative size-10 shrink-0 overflow-hidden rounded-lg border border-[var(--sp-line)] bg-white">
-                                        <Image
-                                          src={product.mainImage || '/catalog/product-placeholder.svg'}
+                                        <ProductImage
+                                          source={product.mainImage}
                                           alt={title}
-                                          fill
                                           sizes="40px"
-                                          className="object-contain"
+                                          variant="compact"
+                                          imageClassName="object-contain"
                                         />
                                       </div>
                                       <div className="flex-1 min-w-0">

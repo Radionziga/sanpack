@@ -1,7 +1,7 @@
 import type { Attribute, Category, Product, QuantityUnit } from '@/types';
+import { getSeedProductImage } from '@/lib/catalog/seedProductImages';
 
 const IMPORTED_AT = '2026-08-12T00:00:00.000Z';
-const PLACEHOLDER_IMAGE = '/catalog/product-placeholder.svg';
 
 type PriceRow = {
   code: string;
@@ -350,11 +350,13 @@ function slugify(value: string) {
 export const priceList2026Products: Product[] = priceRows.map((entry, index) => {
   const category = categoryById.get(entry.categoryId);
   if (!category) throw new Error(`Не найдена категория ${entry.categoryId} для ${entry.code}.`);
+  const sku = `SP-${entry.code}`;
+  const productImage = getSeedProductImage(sku);
 
   return {
     id: `price-2026-${entry.code.toLowerCase()}`,
     slug: `${slugify(entry.name)}-${entry.code.toLowerCase()}`,
-    sku: `SP-${entry.code}`,
+    sku,
     status: 'published',
     brandName: entry.brandName,
     categoryId: entry.categoryId,
@@ -368,8 +370,8 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
     descriptionRu: 'Товар из актуального прайс-листа SANPACK. Доступность и условия поставки уточняйте у менеджера.',
     descriptionUz: 'SANPACK amaldagi narxlar ro‘yxatidagi mahsulot. Mavjudligi va yetkazib berish shartlarini menejerdan aniqlashtiring.',
     descriptionEn: 'Product from the current SANPACK price list. Confirm availability and delivery terms with a manager.',
-    images: [PLACEHOLDER_IMAGE],
-    mainImage: PLACEHOLDER_IMAGE,
+    images: productImage ? [productImage] : [],
+    mainImage: productImage || '',
     attributes: {
       ...entry.attributes,
       ...(entry.brandName ? { brand: entry.brandName } : {}),

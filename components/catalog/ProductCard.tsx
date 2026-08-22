@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import { Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
@@ -22,6 +21,7 @@ import {
   getProductSupportingText,
 } from '@/lib/catalog/productPresentation';
 import { isProductOrderable } from '@/lib/commerce/productOffer';
+import { ProductImage } from '@/components/catalog/ProductImage';
 
 interface ProductCardProps {
   product: Product;
@@ -90,14 +90,13 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
             href={`/product/${product.slug}`}
             className="relative block aspect-[4/3] overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-white md:aspect-square"
           >
-            <Image
-              src={product.mainImage || '/catalog/product-placeholder.svg'}
+            <ProductImage
+              source={product.mainImage}
               alt={title}
-              fill
               sizes="(max-width: 767px) 100vw, 168px"
               loading={eagerImage ? 'eager' : 'lazy'}
-              priority={eagerImage}
-              className="object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+              fetchPriority={eagerImage ? 'high' : undefined}
+              imageClassName="object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             />
           </Link>
           <button
@@ -165,14 +164,13 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
           href={`/product/${product.slug}`}
           className="relative block aspect-square overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-white"
         >
-          <Image
-            src={product.mainImage || '/catalog/product-placeholder.svg'}
+          <ProductImage
+            source={product.mainImage}
             alt={title}
-            fill
             sizes="(max-width: 767px) calc(50vw - 24px), (max-width: 1024px) 33vw, 280px"
             loading={eagerImage ? 'eager' : 'lazy'}
-            priority={eagerImage}
-            className="object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            fetchPriority={eagerImage ? 'high' : undefined}
+            imageClassName="object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
           />
         </Link>
 
