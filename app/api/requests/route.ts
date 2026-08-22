@@ -7,6 +7,7 @@ import { getCustomerSession } from '@/lib/auth/customerSession';
 import { checkRateLimit } from '@/lib/security/rateLimit';
 import { checkoutRequestSchema } from '@/lib/validation/order';
 import { calculateOrderTotals, createOrderSnapshots } from '@/lib/orders/orderService';
+import { getOrderInputErrorMessage } from '@/lib/orders/orderErrors';
 import { formatUzbekPhone, normalizeUzbekPhone } from '@/lib/orders/phone';
 import type { RequestOrder } from '@/types';
 import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
@@ -137,13 +138,9 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Проверьте заполненные поля.' }, { status: 400 });
     }
-    if (error instanceof Error && (
-      error.message.startsWith('Укажите номер')
-      || error.message.includes('товар')
-      || error.message.includes('количество')
-      || error.message.includes('Количество')
-    )) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    const inputError = getOrderInputErrorMessage(error);
+    if (inputError) {
+      return NextResponse.json({ error: inputError }, { status: 400 });
     }
     console.error('Order creation failed.', error);
     return NextResponse.json(

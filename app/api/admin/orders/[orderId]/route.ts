@@ -5,6 +5,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
 import { adminOrderUpdateSchema, orderStatusSchema } from '@/lib/validation/order';
 import { calculateOrderTotals, createOrderSnapshots } from '@/lib/orders/orderService';
+import { getOrderInputErrorMessage } from '@/lib/orders/orderErrors';
 import { formatUzbekPhone, normalizeUzbekPhone } from '@/lib/orders/phone';
 import type { RequestItem, RequestOrder } from '@/types';
 
@@ -107,10 +108,14 @@ export async function PATCH(
     const updated = await reference.get();
     return NextResponse.json({ id: updated.id, ...updated.data() });
   } catch (error) {
+    const inputError = getOrderInputErrorMessage(error);
+    if (inputError) {
+      return NextResponse.json({ error: inputError }, { status: 400 });
+    }
     console.error('Admin order update failed.', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Заказ не был обновлён.' },
-      { status: 400 }
+      { error: 'Заказ не был обновлён. Повторите попытку позже.' },
+      { status: 503 }
     );
   }
 }
