@@ -51,5 +51,46 @@
     "errorTitle": "Каталог временно недоступен",
     "errorDescription": "Не удалось получить актуальные данные. Попробуйте обновить страницу немного позже.",
     "resetFilters": "Показать все товары"
+  },
+  "catalogPdf": {
+    "downloadDialog": {
+      "title": "Каталог продукции {company}",
+      "description": "Выберите версию каталога формата A4",
+      "close": "Закрыть",
+      "priceListBadge": "Прайс-лист",
+      "withPricesTitle": "Каталог с оптовыми ценами",
+      "withPricesDescription": "Артикулы, параметры, фасовка и актуальные цены в сумах",
+      "presentationBadge": "Презентация",
+      "withoutPricesTitle": "Каталог без цен",
+      "withoutPricesDescription": "Для презентации конечным клиентам и партнёрам",
+      "cancel": "Отмена"
+    },
+    "studio": {
+      "controlPanel": "Панель управления каталогом",
+      "backToSite": "Вернуться в каталог",
+      "a4Catalog": "Каталог A4",
+      "pages": "стр.",
+      "products": "позиций",
+      "withPrices": "С ценами",
+      "withoutPrices": "Без цен",
+      "allSections": "Все разделы",
+      "allInSection": "Все",
+      "productsShort": "тов.",
+      "zoomOut": "Уменьшить масштаб",
+      "zoomIn": "Увеличить масштаб",
+      "copyLink": "Ссылка",
+      "copyLinkTitle": "Скопировать прямую ссылку на каталог",
+      "copied": "Скопировано",
+      "openFullscreen": "На весь экран",
+      "openFullscreenTitle": "Открыть каталог в новой вкладке",
+      "print": "Печать / Сохранить в PDF",
+      "businessSupply": "Комплексные поставки для HoReCa и бизнеса",
+      "catalogTitle": "Каталог продукции",
+      "priceListTitle": "Оптовый прайс-лист продукции",
+      "presentationTitle": "Презентационный каталог",
+      "packageQuantity": "{count} шт. в упаковке",
+      "supplyFooter": "Поставки HoReCa",
+      "photoComingSoon": "Фото скоро появится"
+    }
   }
 }

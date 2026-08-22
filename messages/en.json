@@ -51,5 +51,46 @@
     "errorTitle": "The catalog is temporarily unavailable",
     "errorDescription": "We could not load current data. Please refresh the page a little later.",
     "resetFilters": "Show all products"
+  },
+  "catalogPdf": {
+    "downloadDialog": {
+      "title": "{company} product catalog",
+      "description": "Choose an A4 catalog version",
+      "close": "Close",
+      "priceListBadge": "Price list",
+      "withPricesTitle": "Catalog with wholesale prices",
+      "withPricesDescription": "SKUs, specifications, pack sizes and current prices in UZS",
+      "presentationBadge": "Presentation",
+      "withoutPricesTitle": "Catalog without prices",
+      "withoutPricesDescription": "For presentations to customers and business partners",
+      "cancel": "Cancel"
+    },
+    "studio": {
+      "controlPanel": "Catalog controls",
+      "backToSite": "Back to catalog",
+      "a4Catalog": "A4 catalog",
+      "pages": "pages",
+      "products": "products",
+      "withPrices": "With prices",
+      "withoutPrices": "Without prices",
+      "allSections": "All sections",
+      "allInSection": "All",
+      "productsShort": "items",
+      "zoomOut": "Zoom out",
+      "zoomIn": "Zoom in",
+      "copyLink": "Link",
+      "copyLinkTitle": "Copy a direct link to the catalog",
+      "copied": "Copied",
+      "openFullscreen": "Full screen",
+      "openFullscreenTitle": "Open the catalog in a new tab",
+      "print": "Print / Save as PDF",
+      "businessSupply": "Complete supplies for HoReCa and business",
+      "catalogTitle": "Product catalog",
+      "priceListTitle": "Wholesale product price list",
+      "presentationTitle": "Presentation catalog",
+      "packageQuantity": "{count} per pack",
+      "supplyFooter": "HoReCa supplies",
+      "photoComingSoon": "Photo coming soon"
+    }
   }
 }

@@ -23,9 +23,14 @@ import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 import {
   getCatalogCompanyName,
   getCatalogDocumentTheme,
+  getCatalogFilename,
+  getCatalogPrintPath,
   getCatalogSiteLabel,
 } from '@/lib/documents/catalogIdentity';
-import { translations } from '@/lib/i18n/translations';
+import {
+  formatCatalogPdfMessage,
+  getCatalogPdfMessages,
+} from '@/lib/i18n/catalogPdfMessages';
 
 interface CatalogPrintDocumentProps {
   initialProducts: Product[];
@@ -102,6 +107,7 @@ export function CatalogPrintDocument({
   const [selectedCategory, setSelectedCategory] = useState<string>(initialOptions.categoryId || '');
   const [scale, setScale] = useState<number>(embeddedInAdmin ? 0.78 : 0.85);
   const [copied, setCopied] = useState<boolean>(false);
+  const copy = getCatalogPdfMessages(language).studio;
   const companyName = settings ? getCatalogCompanyName(settings) : 'Storefront';
   const website = getCatalogSiteLabel(process.env.NEXT_PUBLIC_SITE_URL);
   const documentTheme = getCatalogDocumentTheme(settings?.design);
@@ -115,8 +121,7 @@ export function CatalogPrintDocument({
 
   // Set page title for nice PDF export filename
   useEffect(() => {
-    const modeStr = withPrices ? 'price-list' : 'presentation';
-    document.title = `Catalog-${modeStr}-${language.toUpperCase()}`;
+    document.title = getCatalogFilename(withPrices, language).replace(/\.pdf$/i, '');
   }, [withPrices, language]);
 
   // Sort categories
@@ -285,10 +290,10 @@ export function CatalogPrintDocument({
   const handleCopyLink = () => {
     if (typeof window !== 'undefined' && navigator.clipboard) {
       const origin = window.location.origin;
-      const url = new URL(`${origin}/ru/catalog/print`);
-      url.searchParams.set('prices', withPrices ? '1' : '0');
-      url.searchParams.set('lang', language);
-      if (selectedCategory) url.searchParams.set('category', selectedCategory);
+      const url = new URL(
+        getCatalogPrintPath(withPrices, language, selectedCategory || undefined),
+        origin,
+      );
       navigator.clipboard.writeText(url.toString());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -300,15 +305,16 @@ export function CatalogPrintDocument({
       {/* =========================================================================
           INTEGRATED CONTROL TOOLBAR
           ========================================================================= */}
-      <aside aria-label="Панель управления каталогом" className="no-print sticky top-2 z-40 w-full max-w-6xl px-2 sm:px-4 mb-4">
+      <aside aria-label={copy.controlPanel} className="no-print sticky top-2 z-40 mb-4 w-full max-w-6xl px-2 sm:px-4">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sp-radius)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 shadow-sm sm:p-4">
           {/* Left Group: Status / Filter info */}
           <div className="flex items-center gap-3">
             {!embeddedInAdmin && (
               <Link
-                href="/catalog"
+                href={`/${language}/catalog`}
                 className="rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-2 text-[var(--sp-ink)] transition hover:bg-[var(--sp-surface-hover)]"
-                title="Вернуться на сайт"
+                title={copy.backToSite}
+                aria-label={copy.backToSite}
               >
                 <ArrowLeft className="size-4" />
               </Link>
@@ -316,10 +322,10 @@ export function CatalogPrintDocument({
             <div>
               <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--sp-brand)]">
                 <FileText className="size-4 text-[var(--sp-brand)]" />
-                <span>{companyName} — Каталог А4</span>
+                <span>{companyName} — {copy.a4Catalog}</span>
               </div>
               <div className="text-[11px] font-medium text-[var(--sp-ink-secondary)]">
-                {totalDocumentPages} стр. • {filteredProducts.length} позиций
+                {totalDocumentPages} {copy.pages} • {filteredProducts.length} {copy.products}
               </div>
             </div>
           </div>
@@ -337,7 +343,7 @@ export function CatalogPrintDocument({
                     : 'text-[var(--sp-ink-secondary)] hover:text-[var(--sp-ink)]'
                 }`}
               >
-                С ценами
+                {copy.withPrices}
               </button>
               <button
                 type="button"
@@ -348,7 +354,7 @@ export function CatalogPrintDocument({
                     : 'text-[var(--sp-ink-secondary)] hover:text-[var(--sp-ink)]'
                 }`}
               >
-                Без цен
+                {copy.withoutPrices}
               </button>
             </div>
 
@@ -376,7 +382,7 @@ export function CatalogPrintDocument({
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="max-w-[260px] cursor-pointer truncate rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-1.5 text-xs font-medium text-[var(--sp-ink)] shadow-sm outline-none focus:border-[var(--sp-brand)]"
             >
-              <option value="">Все разделы ({initialProducts.length} тов.)</option>
+              <option value="">{copy.allSections} ({initialProducts.length} {copy.productsShort})</option>
               {parentCategories.map((parent) => {
                 const children = sortedCategories.filter((c) => c.parentId === parent.id);
                 const parentChildIds = new Set([parent.id, ...children.map((ch) => ch.id)]);
@@ -390,7 +396,7 @@ export function CatalogPrintDocument({
                     label={`${getLocalizedCategoryTitle(parent, language)} (${parentTotalProds})`}
                   >
                     <option value={parent.id} className="font-bold">
-                      📁 Все: {getLocalizedCategoryTitle(parent, language)} ({parentTotalProds})
+                      {copy.allInSection}: {getLocalizedCategoryTitle(parent, language)} ({parentTotalProds})
                     </option>
                     {children.map((child) => {
                       const childProds = initialProducts.filter(
@@ -398,7 +404,7 @@ export function CatalogPrintDocument({
                       ).length;
                       return (
                         <option key={child.id} value={child.id}>
-                          &nbsp;&nbsp;↳ {getLocalizedCategoryTitle(child, language)} ({childProds})
+                          — {getLocalizedCategoryTitle(child, language)} ({childProds})
                         </option>
                       );
                     })}
@@ -416,7 +422,8 @@ export function CatalogPrintDocument({
                 type="button"
                 onClick={() => setScale((s) => Math.max(0.4, s - 0.1))}
                 className="p-1 hover:text-[var(--sp-ink)]"
-                title="Уменьшить масштаб"
+                title={copy.zoomOut}
+                aria-label={copy.zoomOut}
               >
                 <ZoomOut className="size-3.5" />
               </button>
@@ -425,7 +432,8 @@ export function CatalogPrintDocument({
                 type="button"
                 onClick={() => setScale((s) => Math.min(1.2, s + 0.1))}
                 className="p-1 hover:text-[var(--sp-ink)]"
-                title="Увеличить масштаб"
+                title={copy.zoomIn}
+                aria-label={copy.zoomIn}
               >
                 <ZoomIn className="size-3.5" />
               </button>
@@ -436,22 +444,22 @@ export function CatalogPrintDocument({
               type="button"
               onClick={handleCopyLink}
               className="flex items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-2 text-xs font-semibold text-[var(--sp-ink)] shadow-sm transition hover:bg-[var(--sp-surface-hover)] active:scale-95"
-              title="Скопировать прямую ссылку на каталог"
+              title={copy.copyLinkTitle}
             >
               {copied ? <Check className="size-3.5 text-[var(--sp-brand)]" /> : <Share2 className="size-3.5" />}
-              <span className="hidden sm:inline">{copied ? 'Скопировано' : 'Ссылка'}</span>
+              <span className="hidden sm:inline">{copied ? copy.copied : copy.copyLink}</span>
             </button>
 
             {/* Open Fullscreen link */}
             <a
-              href={`/ru/catalog/print?prices=${withPrices ? '1' : '0'}&lang=${language}${selectedCategory ? `&category=${selectedCategory}` : ''}`}
+              href={getCatalogPrintPath(withPrices, language, selectedCategory || undefined)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-2 text-xs font-semibold text-[var(--sp-ink)] shadow-sm transition hover:bg-[var(--sp-surface-hover)] active:scale-95"
-              title="Открыть каталог в новой вкладке"
+              title={copy.openFullscreenTitle}
             >
               <ExternalLink className="size-3.5" />
-              <span className="hidden md:inline">На весь экран</span>
+              <span className="hidden md:inline">{copy.openFullscreen}</span>
             </a>
 
             {/* PRINT / SAVE PDF BUTTON */}
@@ -461,7 +469,7 @@ export function CatalogPrintDocument({
               className="flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 py-2 text-xs font-bold text-[var(--sp-on-brand)] shadow-sm transition hover:opacity-90 active:scale-95"
             >
               <Printer className="size-4" />
-              <span>Печать / Сохранить в PDF</span>
+              <span>{copy.print}</span>
             </button>
           </div>
         </div>
@@ -593,30 +601,23 @@ export function CatalogPrintDocument({
 
             {/* Subtitle Company Tagline */}
             <div className="mb-6 text-sm font-medium uppercase tracking-wider text-[var(--catalog-on-brand-deep)] opacity-85">
-              {language === 'uz'
-                ? 'HoReCa va biznes uchun kompleks ta’minot'
-                : 'Комплексные поставки для HoReCa и бизнеса'}
+              {copy.businessSupply}
             </div>
 
             {/* Main Title */}
             <h1 className="mb-3 text-4xl font-bold uppercase leading-tight tracking-normal text-[var(--catalog-on-brand-deep)] sm:text-5xl">
-              {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
+              {copy.catalogTitle}
             </h1>
 
             {/* Subtitle / Mode */}
             <h2 className="mb-10 text-lg font-medium uppercase tracking-wide text-[var(--catalog-on-brand-deep)] opacity-90 sm:text-xl">
-              {withPrices
-                ? language === 'uz'
-                  ? 'Ulgurji narxlar ro‘yxati (Prays-list)'
-                  : 'Оптовый прайс-лист продукции'
-                : language === 'uz'
-                  ? 'Taqdimot katalogi'
-                  : 'Презентационный каталог'}
+              {withPrices ? copy.priceListTitle : copy.presentationTitle}
             </h2>
 
             {/* Clean Date / Year */}
             <div className="text-xs font-semibold uppercase tracking-widest text-[var(--catalog-on-brand-deep)] opacity-70">
-              {new Intl.DateTimeFormat(language === 'uz' ? 'uz-UZ' : 'ru-RU', {
+              {new Intl.DateTimeFormat(
+                language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-US' : 'ru-RU', {
                 month: 'long',
                 year: 'numeric',
               }).format(new Date())}
@@ -683,9 +684,11 @@ export function CatalogPrintDocument({
           const categoryTitle = getLocalizedCategoryTitle(category, language);
 
           const categorySubtitle =
-            language === 'uz'
-              ? category.titleRu
-              : category.titleUz;
+            language === 'ru'
+              ? category.titleUz
+              : language === 'uz'
+                ? category.titleRu
+                : '';
 
           // Calculate total slots for an even, balanced grid matrix
           const totalSlots = Math.ceil(pageProds.length / layoutCols) * layoutCols;
@@ -705,7 +708,7 @@ export function CatalogPrintDocument({
                   />
                   <div className="h-5 w-px bg-[var(--catalog-on-brand)] opacity-30" />
                   <div className="text-[11px] font-semibold uppercase leading-none tracking-wider text-[var(--catalog-on-brand)] opacity-90">
-                    {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
+                    {copy.catalogTitle}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-right font-mono text-[11px] text-[var(--catalog-on-brand)]">
@@ -748,9 +751,9 @@ export function CatalogPrintDocument({
                     }
                     if (product.attributes?.package_quantity) {
                       specs.push(
-                        language === 'uz'
-                          ? `${product.attributes.package_quantity} dona qadoqda`
-                          : `${product.attributes.package_quantity} шт в упаковке`
+                        formatCatalogPdfMessage(copy.packageQuantity, {
+                          count: String(product.attributes.package_quantity),
+                        }),
                       );
                     }
                     if (product.attributes?.material) {
@@ -814,12 +817,12 @@ export function CatalogPrintDocument({
                           ) : (
                             <div
                               role="img"
-                              aria-label={`${title}. ${translations[language].photoComingSoon}`}
+                              aria-label={`${title}. ${copy.photoComingSoon}`}
                               className="flex flex-col items-center gap-1.5 px-3 text-center text-[#64748B]"
                             >
                               <Package className="size-8 text-[#7A9184]" aria-hidden="true" />
                               <span className="text-[9px] font-semibold leading-tight">
-                                {translations[language].photoComingSoon}
+                                {copy.photoComingSoon}
                               </span>
                             </div>
                           )}
@@ -842,9 +845,7 @@ export function CatalogPrintDocument({
               <footer className="mt-auto pt-3 border-t border-[#DCE2DE] flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-semibold text-[#929C96] uppercase tracking-wider">
-                    {language === 'uz'
-                      ? `${companyName} • HoReCa ta’minoti`
-                      : `${companyName} • Поставки HoReCa`}
+                    {companyName} • {copy.supplyFooter}
                   </span>
                 </div>
 

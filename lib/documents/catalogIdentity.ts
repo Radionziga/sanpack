@@ -23,6 +23,19 @@ export function getCatalogFilename(withPrices: boolean, language: Language): str
   return `catalog-${documentType}-${language}.pdf`;
 }
 
+export function getCatalogPrintPath(
+  withPrices: boolean,
+  language: Language,
+  category?: string,
+): string {
+  const searchParams = new URLSearchParams({
+    prices: withPrices ? '1' : '0',
+    lang: language,
+  });
+  if (category) searchParams.set('category', category);
+  return `/${language}/catalog/print?${searchParams.toString()}`;
+}
+
 export function getCatalogDocumentTheme(design?: {
   primaryColor?: string;
   secondaryColor?: string;

@@ -3,6 +3,7 @@ import {
   getCatalogCompanyName,
   getCatalogDocumentTheme,
   getCatalogFilename,
+  getCatalogPrintPath,
   getCatalogSiteLabel,
 } from '@/lib/documents/catalogIdentity';
 
@@ -24,6 +25,13 @@ describe('catalog document identity', () => {
   it('creates neutral and predictable download filenames', () => {
     expect(getCatalogFilename(true, 'ru')).toBe('catalog-price-list-ru.pdf');
     expect(getCatalogFilename(false, 'uz')).toBe('catalog-presentation-uz.pdf');
+  });
+
+  it('creates a locale-aware link to the shared catalog print studio', () => {
+    expect(getCatalogPrintPath(true, 'en')).toBe('/en/catalog/print?prices=1&lang=en');
+    expect(getCatalogPrintPath(false, 'uz', 'cat-dairy')).toBe(
+      '/uz/catalog/print?prices=0&lang=uz&category=cat-dairy',
+    );
   });
 
   it('derives accessible document colors from storefront settings', () => {

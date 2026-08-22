@@ -317,7 +317,7 @@ export default function AdminProductsPage() {
         action={(
           <div className="flex flex-wrap items-center gap-2">
             <a
-              href="/api/catalog/pdf?prices=1"
+              href="/ru/catalog/print?prices=1&lang=ru"
               target="_blank"
               rel="noreferrer"
               className="admin-button-secondary inline-flex items-center gap-1.5 text-xs font-semibold"
@@ -327,7 +327,7 @@ export default function AdminProductsPage() {
               PDF с ценами
             </a>
             <a
-              href="/api/catalog/pdf?prices=0"
+              href="/ru/catalog/print?prices=0&lang=ru"
               target="_blank"
               rel="noreferrer"
               className="admin-button-secondary inline-flex items-center gap-1.5 text-xs font-semibold"

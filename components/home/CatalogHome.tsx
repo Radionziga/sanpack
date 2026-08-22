@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import {
@@ -10,6 +10,7 @@ import {
   PackageSearch,
   PhoneCall,
   Send,
+  X,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { ProductCard } from '@/components/catalog/ProductCard';
@@ -18,6 +19,7 @@ import type { Banner, Category, Language, Product } from '@/types';
 import { PromoCarousel } from '@/components/home/PromoCarousel';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref } from '@/lib/settings/contacts';
+import { getCatalogPrintPath } from '@/lib/documents/catalogIdentity';
 
 interface CatalogHomeProps {
   products: Product[];
@@ -39,8 +41,55 @@ export function CatalogHome({
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
   const t = useTranslations('homeCatalog');
+  const tPdf = useTranslations('catalogPdf.downloadDialog');
   const { getLocalizedText } = useLanguage();
   const { company, contacts } = useSiteSettings();
+  const pdfDialogRef = useRef<HTMLDivElement>(null);
+  const pdfDialogCloseRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!pdfModalOpen) return;
+
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusFrame = window.requestAnimationFrame(() => pdfDialogCloseRef.current?.focus());
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setPdfModalOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab' || !pdfDialogRef.current) return;
+      const focusable = Array.from(
+        pdfDialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable.at(-1)!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [pdfModalOpen]);
 
   const categoryCards = useMemo(() => {
     return categories
@@ -304,42 +353,46 @@ export function CatalogHome({
       {/* PDF Download Choice Modal */}
       {pdfModalOpen && (
         <div
-          role="dialog"
-          aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setPdfModalOpen(false)}
         >
           <div
+            ref={pdfDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="catalog-pdf-dialog-title"
+            aria-describedby="catalog-pdf-dialog-description"
             className="w-full max-w-md rounded-2xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-6 shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--sp-brand-subtle)] text-[var(--sp-brand)]">
-                  <FileText className="size-5" />
+                  <FileText className="size-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="font-extended text-base font-bold text-[var(--sp-ink)]">
-                    Каталог продукции {company.name}
+                  <h3 id="catalog-pdf-dialog-title" className="font-extended text-base font-bold text-[var(--sp-ink)]">
+                    {tPdf('title', { company: company.name })}
                   </h3>
-                  <p className="text-xs text-[var(--sp-ink-secondary)]">
-                    Выберите формат для скачивания (PDF, A4)
+                  <p id="catalog-pdf-dialog-description" className="text-xs text-[var(--sp-ink-secondary)]">
+                    {tPdf('description')}
                   </p>
                 </div>
               </div>
               <button
+                ref={pdfDialogCloseRef}
                 type="button"
                 onClick={() => setPdfModalOpen(false)}
-                className="rounded-lg p-1 text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-hover)] hover:text-[var(--sp-ink)]"
-                aria-label="Закрыть"
+                className="sp-icon-button size-10 text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-hover)] hover:text-[var(--sp-ink)]"
+                aria-label={tPdf('close')}
               >
-                ✕
+                <X className="size-4" aria-hidden="true" />
               </button>
             </div>
 
             <div className="mt-5 space-y-3">
               <a
-                href="/api/catalog/pdf?prices=1&download=1"
+                href={getCatalogPrintPath(true, locale)}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setPdfModalOpen(false)}
@@ -347,20 +400,20 @@ export function CatalogHome({
               >
                 <div className="pr-3">
                   <span className="inline-block rounded bg-[var(--sp-brand)] px-2 py-0.5 text-[10px] font-bold uppercase text-[var(--sp-on-brand)]">
-                    Прайс-лист
+                    {tPdf('priceListBadge')}
                   </span>
                   <p className="mt-1 font-semibold text-sm text-[var(--sp-ink)]">
-                    Каталог с оптовыми ценами
+                    {tPdf('withPricesTitle')}
                   </p>
                   <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">
-                    Артикулы, параметры, фасовка и актуальные цены в сумах
+                    {tPdf('withPricesDescription')}
                   </p>
                 </div>
-                <Download className="size-5 shrink-0 text-[var(--sp-brand)] transition-transform group-hover:translate-y-0.5" />
+                <Download className="size-5 shrink-0 text-[var(--sp-brand)] transition-transform group-hover:translate-y-0.5" aria-hidden="true" />
               </a>
 
               <a
-                href="/api/catalog/pdf?prices=0&download=1"
+                href={getCatalogPrintPath(false, locale)}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setPdfModalOpen(false)}
@@ -368,16 +421,16 @@ export function CatalogHome({
               >
                 <div className="pr-3">
                   <span className="inline-block rounded bg-zinc-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                    Презентация
+                    {tPdf('presentationBadge')}
                   </span>
                   <p className="mt-1 font-semibold text-sm text-[var(--sp-ink)]">
-                    Каталог без цен
+                    {tPdf('withoutPricesTitle')}
                   </p>
                   <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">
-                    Удобно для показа конечным клиентам и партнерам
+                    {tPdf('withoutPricesDescription')}
                   </p>
                 </div>
-                <Download className="size-5 shrink-0 text-[var(--sp-ink-secondary)] transition-transform group-hover:translate-y-0.5" />
+                <Download className="size-5 shrink-0 text-[var(--sp-ink-secondary)] transition-transform group-hover:translate-y-0.5" aria-hidden="true" />
               </a>
             </div>
 
@@ -387,7 +440,7 @@ export function CatalogHome({
                 onClick={() => setPdfModalOpen(false)}
                 className="rounded-lg px-4 py-2 text-xs font-semibold text-[var(--sp-ink-secondary)] hover:text-[var(--sp-ink)]"
               >
-                Отмена
+                {tPdf('cancel')}
               </button>
             </div>
           </div>

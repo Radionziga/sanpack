@@ -51,5 +51,46 @@
     "errorTitle": "Katalog vaqtincha mavjud emas",
     "errorDescription": "Dolzarb ma’lumotlarni olishning iloji bo‘lmadi. Sahifani birozdan keyin yangilang.",
     "resetFilters": "Barcha mahsulotlarni ko‘rsatish"
+  },
+  "catalogPdf": {
+    "downloadDialog": {
+      "title": "{company} mahsulotlar katalogi",
+      "description": "A4 formatidagi katalog turini tanlang",
+      "close": "Yopish",
+      "priceListBadge": "Narxlar ro‘yxati",
+      "withPricesTitle": "Ulgurji narxlar bilan katalog",
+      "withPricesDescription": "Artikullar, xususiyatlar, qadoqlash va so‘mdagi amaldagi narxlar",
+      "presentationBadge": "Taqdimot",
+      "withoutPricesTitle": "Narxlarsiz katalog",
+      "withoutPricesDescription": "Yakuniy mijozlar va hamkorlarga taqdim etish uchun",
+      "cancel": "Bekor qilish"
+    },
+    "studio": {
+      "controlPanel": "Katalog boshqaruv paneli",
+      "backToSite": "Katalogga qaytish",
+      "a4Catalog": "A4 katalog",
+      "pages": "sahifa",
+      "products": "mahsulot",
+      "withPrices": "Narxlar bilan",
+      "withoutPrices": "Narxlarsiz",
+      "allSections": "Barcha bo‘limlar",
+      "allInSection": "Barchasi",
+      "productsShort": "ta",
+      "zoomOut": "Masshtabni kichraytirish",
+      "zoomIn": "Masshtabni kattalashtirish",
+      "copyLink": "Havola",
+      "copyLinkTitle": "Katalogga to‘g‘ridan-to‘g‘ri havolani nusxalash",
+      "copied": "Nusxalandi",
+      "openFullscreen": "To‘liq ekran",
+      "openFullscreenTitle": "Katalogni yangi oynada ochish",
+      "print": "Chop etish / PDF sifatida saqlash",
+      "businessSupply": "HoReCa va biznes uchun kompleks ta’minot",
+      "catalogTitle": "Mahsulotlar katalogi",
+      "priceListTitle": "Ulgurji narxlar ro‘yxati",
+      "presentationTitle": "Taqdimot katalogi",
+      "packageQuantity": "Qadoqda {count} dona",
+      "supplyFooter": "HoReCa ta’minoti",
+      "photoComingSoon": "Rasm tez orada joylanadi"
+    }
   }
 }
