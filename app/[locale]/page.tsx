@@ -8,7 +8,6 @@ import {
   getPublicBanners,
 } from '@/lib/repositories/serverCatalogRepository';
 import type { Banner, Category, Language, Product } from '@/types';
-import { initialBanners } from '@/lib/seedData';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,8 +41,6 @@ export default async function HomePage({
   const activeCategories = categories
     .filter((category) => category.status === 'active')
     .sort((a, b) => a.sortOrder - b.sortOrder);
-  const publicBanners = banners.length > 0 ? banners : initialBanners;
-
   return (
     <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header
@@ -54,7 +51,7 @@ export default async function HomePage({
         <CatalogHome
           products={publishedProducts}
           categories={activeCategories}
-          banners={publicBanners}
+          banners={banners}
           locale={locale}
           catalogPdfUrl={process.env.NEXT_PUBLIC_CATALOG_PDF_URL}
           dataUnavailable={dataUnavailable}

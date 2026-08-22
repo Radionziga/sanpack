@@ -22,7 +22,6 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) return {};
 
-  const settings = await getPublicSettings();
   const fallbackTitle = locale === 'uz'
     ? 'Onlayn katalog'
     : locale === 'en'
@@ -33,6 +32,15 @@ export async function generateMetadata({
     : locale === 'en'
       ? 'Online catalog of products and services.'
       : 'Онлайн-каталог товаров и услуг.';
+  let settings;
+  try {
+    settings = await getPublicSettings();
+  } catch (error) {
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      console.error('Public settings could not be loaded for metadata.', error);
+    }
+    return { title: fallbackTitle, description: fallbackDescription };
+  }
   const title = locale === 'uz'
     ? settings.seo?.defaultTitleUz || fallbackTitle
     : locale === 'en'
@@ -75,10 +83,38 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  const [messages, settings] = await Promise.all([
-    getMessages(),
-    getPublicSettings(),
-  ]);
+  const messages = await getMessages();
+  let settings;
+  try {
+    settings = await getPublicSettings();
+  } catch (error) {
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      console.error('Public settings could not be loaded for the storefront.', error);
+    }
+    const copy = locale === 'uz'
+      ? {
+          title: 'Katalog vaqtincha ishlamayapti',
+          description: 'Hozirgi maʼlumotlarni yuklab bo‘lmadi. Birozdan keyin sahifani yangilang.',
+        }
+      : locale === 'en'
+        ? {
+            title: 'Catalog temporarily unavailable',
+            description: 'Current data could not be loaded. Please refresh the page a little later.',
+          }
+        : {
+            title: 'Каталог временно недоступен',
+            description: 'Не удалось загрузить актуальные данные. Обновите страницу немного позже.',
+          };
+
+    return (
+      <main className="grid min-h-screen place-items-center bg-slate-50 px-6 text-slate-950">
+        <section className="max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-semibold">{copy.title}</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">{copy.description}</p>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <NextIntlClientProvider messages={messages}>
