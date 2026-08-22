@@ -7,25 +7,37 @@ documents.
 
 ## Local development
 
-Requirements: Node.js 22 and npm.
+Requirements: Node.js 20.9 or newer and npm. The repository does not require a
+separate Node version manager or another package manager.
 
 1. Copy `.env.example` to `.env.local` and fill the Firebase web app values.
-2. Install dependencies with `npm install`.
+2. Install the locked dependency tree with `npm ci`.
 3. Start the application with `npm run dev`.
 4. Open `http://localhost:3000`.
 
-The storefront is available at `/ru`. The route structure remains ready for
-additional locales, but the first production version uses Russian only.
+The storefront is available in Russian, Uzbek and English at `/ru`, `/uz` and
+`/en`. Localized content can explicitly fall back to Russian when a translation
+is absent; the UI does not treat identical Russian text as a completed
+translation.
+
+Normal development reads the configured Firebase project. For an isolated
+demo, set `SANPACK_USE_SEED_DATA=true`; bundled seed data is never an implicit
+fallback for Firebase failures.
 
 ## Firebase
 
 The repository targets one Firebase project: `stamply-4df8a`.
 
-- Enable Email/Password and Anonymous providers in Firebase Authentication.
+- Enable Email/Password for administrator sign-in.
 - Create administrator accounts manually in Firebase Authentication. Public
   registration is intentionally unavailable.
-- Anonymous Authentication gives each buyer a private same-browser order
-  history. A phone number is contact data, not proof of identity.
+- Guest checkout does not create an authenticated order-history identity. A
+  phone number is contact data, not proof of identity. Buyer history requires
+  the optional Telegram sign-in flow.
+- Administrator roles come from `admins/{uid}` documents. Keep
+  `SANPACK_ENFORCE_ADMIN_DOCUMENTS=false` only as a migration compatibility
+  mode; enable strict enforcement after every production administrator document
+  has been verified.
 - Deploy Firestore rules with `npm exec firebase deploy -- --only firestore:rules`.
 
 For local server operations, Application Default Credentials or
@@ -66,5 +78,10 @@ Useful checks:
 ```bash
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
+
+Bag-designer generation currently uses a process-local limiter and idempotent
+Firestore drafts. Distributed limiting and cleanup scheduling are intentionally
+not selected yet; see `docs/operations/bag-designer-cost-control.md`.

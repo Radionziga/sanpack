@@ -16,13 +16,9 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId
   );
 }
 
-const CLIENT_APP_NAME = 'sanpack-client';
+const CLIENT_APP_NAME = 'storefront-client';
 const app = getApps().find((candidate) => candidate.name === CLIENT_APP_NAME)
   ?? initializeApp(firebaseConfig, CLIENT_APP_NAME);
-
-const CUSTOMER_APP_NAME = 'sanpack-customer';
-const customerApp = getApps().find((candidate) => candidate.name === CUSTOMER_APP_NAME)
-  ?? initializeApp(firebaseConfig, CUSTOMER_APP_NAME);
 
 function getBrowserAuth(firebaseApp: typeof app) {
   try {
@@ -33,5 +29,4 @@ function getBrowserAuth(firebaseApp: typeof app) {
 }
 
 export const auth = getBrowserAuth(app);
-export const customerAuth = getBrowserAuth(customerApp);
 export default app;
