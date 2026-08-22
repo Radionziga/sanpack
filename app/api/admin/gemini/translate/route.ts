@@ -17,7 +17,7 @@ function translationError(error: unknown) {
   if (/fetch|timeout|aborted/i.test(message)) {
     return 'Не удалось связаться с Gemini. Попробуйте ещё раз.';
   }
-  return message || 'Не удалось подготовить переводы.';
+  return 'Не удалось подготовить переводы. Попробуйте ещё раз.';
 }
 
 export async function POST(request: Request) {

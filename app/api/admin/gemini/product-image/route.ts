@@ -35,7 +35,7 @@ function publicError(error: unknown) {
   if (/fetch|timeout|aborted/i.test(message)) {
     return 'Gemini отвечает слишком долго. Попробуйте ещё раз.';
   }
-  return message || 'Изображение не создано. Попробуйте ещё раз.';
+  return 'Изображение не создано. Попробуйте ещё раз.';
 }
 
 function buildPrompt(data: z.infer<typeof requestSchema>) {
