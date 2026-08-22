@@ -43,7 +43,7 @@ export default function AdminClientsPage() {
   const handleCreate = () => {
     setEditingClient({
       name: '',
-      logo: 'https://picsum.photos/seed/sanpack-partner/300/150',
+      logo: '',
       category: 'restaurant',
       descriptionRu: 'Партнёр магазина',
       descriptionUz: 'Do‘kon hamkori',
@@ -171,9 +171,10 @@ export default function AdminClientsPage() {
             </div>
 
             <div>
-              <label className="font-bold block mb-1">URL логотипа</label>
+              <label className="font-bold block mb-1">URL логотипа *</label>
               <input
                 type="text"
+                required
                 value={editingClient.logo || ''}
                 onChange={(e) => setEditingClient({ ...editingClient, logo: e.target.value })}
                 className="admin-control mt-1.5 text-sm font-normal"

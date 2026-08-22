@@ -66,6 +66,27 @@ export const bannerMutationSchema = z.object({
   }
 });
 
+export const clientMutationSchema = z.object({
+  name: z.string().trim().min(1, 'Укажите название партнёра.').max(160),
+  logo: assetUrl,
+  category: z.enum([
+    'restaurant',
+    'cafe',
+    'hotel',
+    'bakery',
+    'distributor',
+    'production',
+    'shop',
+    'partner',
+  ]),
+  descriptionRu: optionalText,
+  descriptionUz: optionalText,
+  descriptionEn: optionalText,
+  website: optionalUrl,
+  caseStudy: optionalText,
+  sortOrder: z.number().int().min(0).max(100_000),
+}).strict();
+
 export const designSettingsSchema = z.object({
   designVersion: z.literal(2).optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
@@ -218,6 +239,7 @@ export const productMutationSchema = z.object({
 export function validateAdminResourceData(resource: string, data: unknown) {
   if (resource === 'products') return productMutationSchema.safeParse(data);
   if (resource === 'categories') return categoryMutationSchema.safeParse(data);
+  if (resource === 'clients') return clientMutationSchema.safeParse(data);
   if (resource === 'banners') return bannerMutationSchema.safeParse(data);
   if (resource === 'settings') return settingsMutationSchema.safeParse(data);
   return { success: true, data } as const;
