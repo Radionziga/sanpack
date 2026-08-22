@@ -258,14 +258,14 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
       </nav>
 
       <div className="grid overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,.92fr)]">
-        <div className="border-b border-[var(--sp-line)] bg-[#F4F5F3] p-4 lg:border-b-0 lg:border-r lg:p-7">
+        <div className="border-b border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 lg:border-b-0 lg:border-r lg:p-7">
           <div className="sticky top-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
               <div>
                 <p className="font-bold text-[var(--sp-ink)]">{BAG_TYPE_LABELS[bagType]}</p>
                 <p className="mt-1 text-[var(--sp-ink-tertiary)]">Эскиз меняет пропорции вместе с размером</p>
               </div>
-              <p className="rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-white px-3 py-2 font-bold text-[#46514C]">
+              <p className="rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 py-2 font-bold text-[var(--sp-ink-secondary)]">
                 {width} × {height} см{bagType === 'tshirt' && gusset > 0 ? ` · складка ${gusset} см` : ''}
               </p>
             </div>
@@ -275,7 +275,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
               svgRef={svgRef}
               onLogoPositionChange={(x, y) => { setLogoX(x); setLogoY(y); setResult(null); }}
             />
-            <p className="mt-2 text-center text-xs leading-5 text-[#68736E]">Технический эскиз показывает пропорции и область печати. На следующем этапе логотип можно перемещать прямо по пакету.</p>
+            <p className="mt-2 text-center text-xs leading-5 text-[var(--sp-ink-tertiary)]">Технический эскиз показывает пропорции и область печати. На следующем этапе логотип можно перемещать прямо по пакету.</p>
           </div>
         </div>
 
@@ -396,12 +396,12 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
                   </div>
                 )}
                 {result && !submitted ? <button type="button" disabled={busy} onClick={() => void submit()} className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-bold text-[var(--sp-on-brand)] disabled:opacity-50"><Phone className="size-4" aria-hidden="true" /> Получить расчёт</button> : null}
-                {submitted ? <div role="status" className="mt-4 rounded-[var(--sp-radius-control)] border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800"><PackageCheck className="mb-2 size-5" aria-hidden="true" />{submitted}</div> : null}
+                {submitted ? <div role="status" className="mt-4 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-success)_32%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-success)_8%,var(--sp-surface))] p-4 text-sm text-[var(--sp-success)]"><PackageCheck className="mb-2 size-5" aria-hidden="true" />{submitted}</div> : null}
               </div>
             ) : null}
           </div>
 
-          <div aria-live="polite">{error ? <p role="alert" className="mt-4 rounded-[var(--sp-radius-control)] border border-red-300 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}</div>
+          <div aria-live="polite">{error ? <p role="alert" className="mt-4 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-danger)_32%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-danger)_8%,var(--sp-surface))] p-3 text-sm text-[var(--sp-danger)]">{error}</p> : null}</div>
           <div className="mt-6 flex gap-3 border-t border-[var(--sp-line)] pt-5">
             <button type="button" onClick={() => { setError(''); setStep((value) => Math.max(0, value - 1)); }} disabled={step === 0} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] text-xs font-bold disabled:opacity-35"><ChevronLeft className="size-4" aria-hidden="true" /> Назад</button>
             {step < 2 ? <button type="button" onClick={goForward} className="inline-flex min-h-11 flex-[1.5] items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-xs font-bold text-[var(--sp-on-brand)]">{step === 0 ? 'Перейти к логотипу' : 'Перейти к визуализации'} <ChevronRight className="size-4" aria-hidden="true" /></button> : null}
