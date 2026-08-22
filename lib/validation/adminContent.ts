@@ -2,13 +2,17 @@ import { z } from 'zod';
 
 const optionalText = z.string().trim().max(500).optional();
 const optionalButtonText = z.string().trim().max(80).optional();
+const httpUrl = z.string().trim().url().refine(
+  (value) => /^https?:\/\//i.test(value),
+  'Используйте полный HTTP(S) URL.',
+);
 const optionalUrl = z.union([
-  z.string().trim().url(),
+  httpUrl,
   z.string().trim().regex(/^\/(?!\/)/, 'Используйте внутренний путь или полный URL.'),
   z.literal(''),
 ]).optional();
 const assetUrl = z.union([
-  z.string().trim().url(),
+  httpUrl,
   z.string().trim().regex(/^\/(?!\/)/, 'Используйте внутренний путь или полный URL.'),
 ]);
 
@@ -150,7 +154,7 @@ export const contactSettingsSchema = z.object({
   cityRu: z.string().trim().min(2, 'Укажите город.').max(160),
   cityUz: z.string().trim().max(160),
   cityEn: z.string().trim().max(160).optional(),
-  mapIframe: z.union([z.string().trim().url('Вставьте полную ссылку на встроенную карту.'), z.literal('')]).optional(),
+  mapIframe: z.union([httpUrl, z.literal('')]).optional(),
 }).strict();
 
 export const companySettingsSchema = z.object({
@@ -202,6 +206,58 @@ const productAttributeValueSchema = z.union([
   z.array(z.string().trim().min(1).max(500)).max(100),
 ]);
 
+const productSeoSchema = z.object({
+  titleRu: z.string().trim().max(200).optional(),
+  titleUz: z.string().trim().max(200).optional(),
+  titleEn: z.string().trim().max(200).optional(),
+  descriptionRu: z.string().trim().max(1_000).optional(),
+  descriptionUz: z.string().trim().max(1_000).optional(),
+  descriptionEn: z.string().trim().max(1_000).optional(),
+}).strict();
+
+const productDocumentSchema = z.object({
+  id: z.string().trim().min(1).max(160),
+  titleRu: z.string().trim().min(1).max(200),
+  titleUz: z.string().trim().min(1).max(200),
+  titleEn: z.string().trim().max(200).optional(),
+  url: assetUrl,
+  type: z.string().trim().min(1).max(80),
+  size: z.string().trim().max(80).optional(),
+}).strict();
+
+const stockStatusSchema = z.enum([
+  'in_stock',
+  'out_of_stock',
+  'on_order',
+  'temporarily_unavailable',
+  'discontinued',
+]);
+
+const productAvailabilitySchema = z.enum([
+  'in_stock',
+  'on_order',
+  'temporarily_unavailable',
+  'discontinued',
+  'unavailable',
+  'informational',
+]);
+
+const quantityUnitSchema = z.enum([
+  'piece',
+  'gram',
+  'kilogram',
+  'milliliter',
+  'liter',
+  'meter',
+  'square_meter',
+  'pack',
+  'roll',
+  'box',
+  'set',
+  'service',
+  'custom',
+]);
+
 export const productVariantSchema = z.object({
   id: z.string().trim().min(1).max(160),
   sku: z.string().trim().min(1).max(160),
@@ -211,20 +267,13 @@ export const productVariantSchema = z.object({
   price: z.number().nonnegative().max(1_000_000_000_000).optional(),
   oldPrice: z.number().nonnegative().max(1_000_000_000_000).optional(),
   wholesaleTiers: z.array(wholesaleTierSchema).max(100).optional(),
-  stockStatus: z.enum(['in_stock', 'out_of_stock', 'on_order', 'temporarily_unavailable', 'discontinued']),
+  stockStatus: stockStatusSchema,
   stockQuantity: z.number().nonnegative().max(1_000_000_000).optional(),
   attributes: z.record(z.string().trim().min(1).max(160), z.string().trim().max(500)),
   image: optionalUrl,
   minOrder: z.number().positive().max(1_000_000_000).optional(),
   priceMode: z.enum(['fixed', 'from', 'request', 'informational']).optional(),
-  availability: z.enum([
-    'in_stock',
-    'on_order',
-    'temporarily_unavailable',
-    'discontinued',
-    'unavailable',
-    'informational',
-  ]).optional(),
+  availability: productAvailabilitySchema.optional(),
   quantityStep: z.number().positive().max(1_000_000_000).optional(),
   minQuantity: z.number().positive().max(1_000_000_000).optional(),
   maxQuantity: z.number().positive().max(1_000_000_000).optional(),
@@ -247,17 +296,60 @@ export const productVariantSchema = z.object({
 });
 
 export const productMutationSchema = z.object({
+  id: z.string().trim().min(1).max(160).optional(),
+  slug: z.string().trim().min(1).max(180).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
+  sku: z.string().trim().min(1).max(160).optional(),
+  status: z.enum(['draft', 'published', 'hidden', 'archived']).optional(),
+  brandId: z.string().trim().max(160).optional(),
+  brandName: z.string().trim().max(200).optional(),
+  categoryId: z.string().trim().min(1).max(160).optional(),
+  categorySlug: z.string().trim().max(180).optional(),
+  titleRu: z.string().trim().min(1).max(200).optional(),
+  titleUz: z.string().trim().min(1).max(200).optional(),
+  titleEn: z.string().trim().max(200).optional(),
+  shortDescriptionRu: z.string().trim().max(2_000).optional(),
+  shortDescriptionUz: z.string().trim().max(2_000).optional(),
+  shortDescriptionEn: z.string().trim().max(2_000).optional(),
+  descriptionRu: z.string().trim().max(20_000).optional(),
+  descriptionUz: z.string().trim().max(20_000).optional(),
+  descriptionEn: z.string().trim().max(20_000).optional(),
+  images: z.array(assetUrl).max(100).optional(),
+  imagePaths: z.array(z.string().trim().max(500)).max(100).optional(),
+  mainImage: optionalUrl,
+  mainImagePath: z.string().trim().max(500).optional(),
   attributes: z.record(
     z.string().trim().min(1).max(160),
     productAttributeValueSchema,
   ).optional(),
+  price: z.number().nonnegative().max(1_000_000_000_000).optional(),
+  oldPrice: z.number().nonnegative().max(1_000_000_000_000).optional(),
+  wholesaleTiers: z.array(wholesaleTierSchema).max(100).optional(),
+  currency: z.string().trim().min(1).max(20).optional(),
+  showPrice: z.boolean().optional(),
+  stockStatus: stockStatusSchema.optional(),
+  stockQuantity: z.number().nonnegative().max(1_000_000_000).optional(),
   salesUnit: z.string().trim().min(1).max(80).optional(),
+  unitCode: quantityUnitSchema.optional(),
   minimumOrder: z.number().positive().max(1_000_000_000).optional(),
   quantityStep: z.number().positive().max(1_000_000_000).optional(),
   maximumOrder: z.number().positive().max(1_000_000_000).optional(),
+  catchWeight: z.boolean().optional(),
   priceMode: z.enum(['fixed', 'from', 'request', 'informational']).optional(),
+  availability: productAvailabilitySchema.optional(),
   orderPackaging: productOrderPackagingSchema.optional(),
   variants: z.array(productVariantSchema).max(100).optional(),
+  featured: z.boolean().optional(),
+  newProduct: z.boolean().optional(),
+  ownProduction: z.boolean().optional(),
+  relatedProductIds: z.array(z.string().trim().min(1).max(160)).max(100).optional(),
+  accessoryProductIds: z.array(z.string().trim().min(1).max(160)).max(100).optional(),
+  documents: z.array(productDocumentSchema).max(100).optional(),
+  seo: productSeoSchema.optional(),
+  sortOrder: z.number().int().min(0).max(100_000).optional(),
+  createdAt: z.string().trim().max(100).optional(),
+  updatedAt: z.string().trim().max(100).optional(),
+  createdBy: z.string().trim().max(160).optional(),
+  updatedBy: z.string().trim().max(160).optional(),
 }).passthrough().superRefine((values, context) => {
   if (
     values.maximumOrder !== undefined &&

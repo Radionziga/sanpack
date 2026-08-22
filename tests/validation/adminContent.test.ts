@@ -5,7 +5,7 @@ import {
   productMutationSchema,
   productVariantSchema,
 } from '@/lib/validation/adminContent';
-import { createVariant } from '@/tests/fixtures/products';
+import { createProduct, createVariant } from '@/tests/fixtures/products';
 
 describe('commerce admin validation', () => {
   it.each(['fixed', 'from', 'request', 'informational'] as const)(
@@ -41,6 +41,19 @@ describe('commerce admin validation', () => {
     'informational',
   ] as const)('accepts the shared variant availability %s', (availability) => {
     expect(productVariantSchema.safeParse(createVariant({ availability })).success).toBe(true);
+  });
+
+  it('accepts a complete product from the shared TypeScript model', () => {
+    expect(productMutationSchema.safeParse(createProduct()).success).toBe(true);
+  });
+
+  it.each([
+    { field: 'slug', patch: { slug: 'Bad slug' } },
+    { field: 'images', patch: { images: ['javascript:alert(1)'] } },
+    { field: 'showPrice', patch: { showPrice: 'yes' } },
+    { field: 'status', patch: { status: 'deleted' } },
+  ])('rejects an invalid known product field: $field', ({ patch }) => {
+    expect(productMutationSchema.safeParse(patch).success).toBe(false);
   });
 });
 

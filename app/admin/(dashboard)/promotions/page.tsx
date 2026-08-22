@@ -12,8 +12,12 @@ import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import type { Banner } from '@/types';
 
+const httpUrlSchema = z.string().url().refine(
+  (value) => /^https?:\/\//i.test(value),
+  'Используйте полный HTTP(S) URL.',
+);
 const assetUrlSchema = z.union([
-  z.string().url(),
+  httpUrlSchema,
   z.string().regex(/^\/(?!\/)/),
 ]);
 const buttonTextSchema = z.string().trim().max(80, 'Текст кнопки должен быть короче 80 символов.');
@@ -32,7 +36,7 @@ const bannerFormSchema = z.object({
   buttonTextRu: buttonTextSchema,
   buttonTextUz: buttonTextSchema,
   buttonTextEn: buttonTextSchema,
-  link: z.union([z.string().url(), z.string().regex(/^\/(?!\/)/), z.literal('')]),
+  link: z.union([httpUrlSchema, z.string().regex(/^\/(?!\/)/), z.literal('')]),
   sortOrder: z.number().int().min(0).max(100_000),
   active: z.boolean(),
 }).superRefine((values, context) => {
