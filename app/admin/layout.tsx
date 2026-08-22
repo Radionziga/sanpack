@@ -1,5 +1,5 @@
 import { AuthProvider } from '@/context/AuthContext';
-import { SanpackTheme } from '@/components/theme/SanpackTheme';
+import { StorefrontTheme } from '@/components/theme/StorefrontTheme';
 import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
 import type { SiteSettings } from '@/types';
 import '../globals.css';
@@ -37,9 +37,9 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   return (
     <html lang="ru" className={storefrontFontVariables}>
       <body suppressHydrationWarning>
-        <SanpackTheme design={design}>
+        <StorefrontTheme design={design}>
           <AuthProvider>{children}</AuthProvider>
-        </SanpackTheme>
+        </StorefrontTheme>
       </body>
     </html>
   );

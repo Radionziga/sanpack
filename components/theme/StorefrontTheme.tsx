@@ -4,7 +4,7 @@ import { accessibleForeground, darkenHex, normalizeHex } from '@/lib/theme/color
 
 type ThemeStyle = CSSProperties & Record<`--${string}`, string>;
 
-export function SanpackTheme({
+export function StorefrontTheme({
   design,
   children,
 }: {
@@ -44,7 +44,7 @@ export function SanpackTheme({
 
   return (
     <div
-      data-sanpack-theme={design.themeMode || 'light'}
+      data-storefront-theme={design.themeMode || 'light'}
       data-font-pair={design.fontPair || 'brand'}
       style={style}
       className="min-h-screen bg-[var(--sp-canvas)] text-[var(--sp-ink)]"

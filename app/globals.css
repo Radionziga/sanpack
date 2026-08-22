@@ -73,7 +73,7 @@
     --sp-radius: 8px;
     --sp-mobile-nav-height: 4rem;
     /* Safe defaults for overlays rendered outside the themed app shell.
-       Inside SanpackTheme these aliases resolve against its configured radius. */
+       Inside StorefrontTheme these aliases resolve against its configured radius. */
     --sp-radius-nested: max(0px, calc(var(--sp-radius) - 4px));
     --sp-radius-control: var(--sp-radius);
     --sp-radius-control-inner: var(--sp-radius-nested);
@@ -378,7 +378,7 @@
   }
 }
 
-[data-sanpack-theme] {
+[data-storefront-theme] {
   /* One configurable radius for every standalone surface and control.
      A smaller value is reserved exclusively for a child placed inside
      another rounded surface: inner radius = outer radius - inset. */
@@ -418,7 +418,7 @@
   --sp-font-ui: var(--font-inter), sans-serif;
 }
 
-[data-sanpack-theme="dark"] {
+[data-storefront-theme="dark"] {
   --sp-canvas: #0F1311;
   --sp-surface: #151A17;
   --sp-surface-raised: #1A201C;
@@ -439,14 +439,14 @@
   color-scheme: dark;
 }
 
-[data-sanpack-theme] :focus-visible {
+[data-storefront-theme] :focus-visible {
   outline: 2px solid var(--sp-focus);
   outline-offset: 2px;
 }
 
-[data-sanpack-theme] .sp-field-input,
-[data-sanpack-theme] .sp-field-input:focus,
-[data-sanpack-theme] .sp-field-input:focus-visible {
+[data-storefront-theme] .sp-field-input,
+[data-storefront-theme] .sp-field-input:focus,
+[data-storefront-theme] .sp-field-input:focus-visible {
   appearance: none;
   -webkit-appearance: none;
   border: 0;
@@ -464,50 +464,50 @@ input[type="search"]::-webkit-search-results-decoration {
 }
 
 /* Compatibility bridge while legacy catalog surfaces move to semantic tokens. */
-[data-sanpack-theme] [class~="text-[#0F6E43]"] {
+[data-storefront-theme] [class~="text-[#0F6E43]"] {
   color: var(--sp-brand) !important;
 }
 
-[data-sanpack-theme] [class~="bg-[#0F6E43]"] {
+[data-storefront-theme] [class~="bg-[#0F6E43]"] {
   background-color: var(--sp-brand) !important;
   color: var(--sp-on-brand);
 }
 
-[data-sanpack-theme] [class~="bg-[#0B5735]"],
-[data-sanpack-theme] [class~="bg-[#093E25]"] {
+[data-storefront-theme] [class~="bg-[#0B5735]"],
+[data-storefront-theme] [class~="bg-[#093E25]"] {
   background-color: var(--sp-brand-deep) !important;
 }
 
-[data-sanpack-theme="dark"] .bg-white,
-[data-sanpack-theme="dark"] .bg-slate-50,
-[data-sanpack-theme="dark"] [class~="bg-[#F8FAFC]"],
-[data-sanpack-theme="dark"] [class~="bg-[#F5F7F6]"],
-[data-sanpack-theme="dark"] [class~="bg-[#F4F7F5]"] {
+[data-storefront-theme="dark"] .bg-white,
+[data-storefront-theme="dark"] .bg-slate-50,
+[data-storefront-theme="dark"] [class~="bg-[#F8FAFC]"],
+[data-storefront-theme="dark"] [class~="bg-[#F5F7F6]"],
+[data-storefront-theme="dark"] [class~="bg-[#F4F7F5]"] {
   background-color: var(--sp-surface) !important;
 }
 
-[data-sanpack-theme="dark"] .bg-slate-100,
-[data-sanpack-theme="dark"] [class~="bg-[#F2F7F4]"] {
+[data-storefront-theme="dark"] .bg-slate-100,
+[data-storefront-theme="dark"] [class~="bg-[#F2F7F4]"] {
   background-color: var(--sp-surface-inset) !important;
 }
 
-[data-sanpack-theme="dark"] .text-slate-900,
-[data-sanpack-theme="dark"] .text-slate-800,
-[data-sanpack-theme="dark"] .text-slate-700,
-[data-sanpack-theme="dark"] [class~="text-[#222B35]"],
-[data-sanpack-theme="dark"] [class~="text-[#18231E]"] {
+[data-storefront-theme="dark"] .text-slate-900,
+[data-storefront-theme="dark"] .text-slate-800,
+[data-storefront-theme="dark"] .text-slate-700,
+[data-storefront-theme="dark"] [class~="text-[#222B35]"],
+[data-storefront-theme="dark"] [class~="text-[#18231E]"] {
   color: var(--sp-ink) !important;
 }
 
-[data-sanpack-theme="dark"] .text-slate-600,
-[data-sanpack-theme="dark"] .text-slate-500,
-[data-sanpack-theme="dark"] [class~="text-[#5C6A75]"],
-[data-sanpack-theme="dark"] [class~="text-[#68736D]"] {
+[data-storefront-theme="dark"] .text-slate-600,
+[data-storefront-theme="dark"] .text-slate-500,
+[data-storefront-theme="dark"] [class~="text-[#5C6A75]"],
+[data-storefront-theme="dark"] [class~="text-[#68736D]"] {
   color: var(--sp-ink-secondary) !important;
 }
 
-[data-sanpack-theme="dark"] .border-slate-100,
-[data-sanpack-theme="dark"] .border-slate-200 {
+[data-storefront-theme="dark"] .border-slate-100,
+[data-storefront-theme="dark"] .border-slate-200 {
   border-color: var(--sp-line) !important;
 }
 

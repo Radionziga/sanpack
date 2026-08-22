@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { PublicProviders } from '@/components/PublicProviders';
 import { routing } from '@/i18n/routing';
 import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
-import { SanpackTheme } from '@/components/theme/SanpackTheme';
+import { StorefrontTheme } from '@/components/theme/StorefrontTheme';
 import Script from 'next/script';
 import { TelegramMiniAppBridge } from '@/components/telegram/TelegramMiniAppBridge';
 import '../globals.css';
@@ -132,11 +132,11 @@ export default async function LocaleLayout({
     <html lang={locale} className={storefrontFontVariables}>
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
-          <SanpackTheme design={settings.design}>
+          <StorefrontTheme design={settings.design}>
             <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
             <TelegramMiniAppBridge />
             <PublicProviders locale={locale} settings={settings}>{children}</PublicProviders>
-          </SanpackTheme>
+          </StorefrontTheme>
         </NextIntlClientProvider>
       </body>
     </html>

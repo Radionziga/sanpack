@@ -96,7 +96,7 @@ export function CustomSelect({
       : direction === 'last'
         ? enabledIndexes.at(-1) ?? 0
         : (selectedIndex >= 0 && !options[selectedIndex]?.disabled ? selectedIndex : enabledIndexes[0]);
-    setPortalRoot(triggerRef.current?.closest<HTMLElement>('[data-sanpack-theme]') ?? document.body);
+    setPortalRoot(triggerRef.current?.closest<HTMLElement>('[data-storefront-theme]') ?? document.body);
     setActiveIndex(nextIndex);
     setIsOpen(true);
     requestAnimationFrame(() => {
