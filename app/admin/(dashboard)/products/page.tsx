@@ -8,6 +8,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { ProductVariantsEditor } from '@/components/admin/ProductVariantsEditor';
+import { ProductAttributeField } from '@/components/admin/ProductAttributeField';
 import { deleteUploadedMedia, MediaUploadField } from '@/components/admin/MediaUploadField';
 import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star, FileText, Download } from 'lucide-react';
 import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
@@ -912,7 +913,6 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {attributes.map((attr) => {
                   const rawVal = editingProduct.attributes?.[attr.key];
-                  const currentValue = rawVal !== undefined && rawVal !== null ? String(rawVal) : '';
                   return (
                     <div key={attr.id} className="admin-panel-muted space-y-1.5 p-3">
                       <div className="flex items-center justify-between">
@@ -922,65 +922,16 @@ export default function AdminProductsPage() {
                         <span className="text-[9px] text-[var(--sp-ink-tertiary)]">Для фильтра каталога</span>
                       </div>
 
-                      {attr.type === 'select' && attr.options && attr.options.length > 0 ? (
-                        <div className="space-y-1">
-                          <CustomSelect
-                            value={attr.options.some((o) => o.value === currentValue) ? currentValue : currentValue ? '__custom__' : ''}
-                            onChange={(val) => {
-                              if (val !== '__custom__') {
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  attributes: {
-                                    ...(editingProduct.attributes || {}),
-                                    [attr.key]: val,
-                                  },
-                                });
-                              }
-                            }}
-                            options={[
-                              { value: '', label: 'Не выбрано' },
-                              ...attr.options.map((opt) => ({ value: opt.value, label: opt.labelRu })),
-                              { value: '__custom__', label: 'Своё значение…' },
-                            ]}
-                            size="sm"
-                            ariaLabel={attr.titleRu}
-                          />
-
-                          {(!attr.options.some((o) => o.value === currentValue) || currentValue === '__custom__') && (
-                            <input
-                              type="text"
-                              value={currentValue === '__custom__' ? '' : currentValue}
-                              onChange={(e) =>
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  attributes: {
-                                    ...(editingProduct.attributes || {}),
-                                    [attr.key]: e.target.value,
-                                  },
-                                })
-                              }
-                              placeholder="Введите своё значение (например: 15 мкм)"
-                              className="admin-control min-h-10 text-xs font-semibold text-[var(--sp-brand)]"
-                            />
-                          )}
-                        </div>
-                      ) : (
-                        <input
-                          type="text"
-                          value={currentValue}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              attributes: {
-                                ...(editingProduct.attributes || {}),
-                                [attr.key]: e.target.value,
-                              },
-                            })
-                          }
-                          placeholder={`Введите ${attr.titleRu.toLowerCase()}`}
-                          className="admin-control min-h-10 text-xs"
-                        />
-                      )}
+                      <ProductAttributeField
+                        attribute={attr}
+                        value={rawVal}
+                        onChange={(value) => {
+                          const nextAttributes = { ...(editingProduct.attributes || {}) };
+                          if (value === undefined) delete nextAttributes[attr.key];
+                          else nextAttributes[attr.key] = value;
+                          setEditingProduct({ ...editingProduct, attributes: nextAttributes });
+                        }}
+                      />
                     </div>
                   );
                 })}

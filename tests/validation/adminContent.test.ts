@@ -20,6 +20,17 @@ describe('commerce admin validation', () => {
     expect(productMutationSchema.safeParse({ priceMode }).success).toBe(false);
     expect(productVariantSchema.safeParse({ ...createVariant(), priceMode }).success).toBe(false);
   });
+
+  it('accepts the product attribute value types used by the shared model', () => {
+    expect(productMutationSchema.safeParse({
+      attributes: {
+        label: 'Reusable',
+        weight: 0,
+        available: false,
+        colors: ['red', 'blue'],
+      },
+    }).success).toBe(true);
+  });
 });
 
 describe('client admin validation', () => {

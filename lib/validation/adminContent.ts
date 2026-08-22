@@ -195,6 +195,13 @@ const wholesaleTierSchema = z.object({
   nameEn: z.string().trim().max(160).optional(),
 }).strict();
 
+const productAttributeValueSchema = z.union([
+  z.string().trim().max(500),
+  z.number().finite().min(-1_000_000_000_000).max(1_000_000_000_000),
+  z.boolean(),
+  z.array(z.string().trim().min(1).max(500)).max(100),
+]);
+
 export const productVariantSchema = z.object({
   id: z.string().trim().min(1).max(160),
   sku: z.string().trim().min(1).max(160),
@@ -233,6 +240,10 @@ export const productVariantSchema = z.object({
 });
 
 export const productMutationSchema = z.object({
+  attributes: z.record(
+    z.string().trim().min(1).max(160),
+    productAttributeValueSchema,
+  ).optional(),
   salesUnit: z.string().trim().min(1).max(80).optional(),
   minimumOrder: z.number().positive().max(1_000_000_000).optional(),
   quantityStep: z.number().positive().max(1_000_000_000).optional(),
