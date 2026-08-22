@@ -91,9 +91,9 @@ export default function AdminClientsPage() {
       />
 
       {loadError ? (
-        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between">
+        <div role="alert" className="sp-alert sp-alert-danger flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-start gap-2"><TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />{loadError}</p>
-          <button type="button" onClick={() => void loadClients()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 text-xs font-bold"><RefreshCw className="size-4" aria-hidden="true" />Повторить</button>
+          <button type="button" onClick={() => void loadClients()} className="admin-button-secondary min-h-10 px-4 text-[var(--sp-danger)]"><RefreshCw className="size-4" aria-hidden="true" />Повторить</button>
         </div>
       ) : null}
 

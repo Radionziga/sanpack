@@ -293,6 +293,30 @@
     box-shadow: var(--sp-shadow-soft);
   }
 
+  .sp-alert {
+    border: 1px solid;
+    border-radius: var(--sp-radius-control);
+    padding: 0.75rem 1rem;
+  }
+
+  .sp-alert-danger {
+    border-color: color-mix(in srgb, var(--sp-danger) 32%, var(--sp-line));
+    background: color-mix(in srgb, var(--sp-danger) 8%, var(--sp-surface));
+    color: var(--sp-danger);
+  }
+
+  .sp-alert-success {
+    border-color: color-mix(in srgb, var(--sp-success) 32%, var(--sp-line));
+    background: color-mix(in srgb, var(--sp-success) 8%, var(--sp-surface));
+    color: var(--sp-success);
+  }
+
+  .sp-alert-warning {
+    border-color: color-mix(in srgb, var(--sp-warning) 32%, var(--sp-line));
+    background: color-mix(in srgb, var(--sp-warning) 8%, var(--sp-surface));
+    color: var(--sp-warning);
+  }
+
   .sp-icon-button:focus-visible {
     outline: 2px solid var(--sp-focus);
     outline-offset: 2px;

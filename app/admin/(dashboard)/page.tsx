@@ -64,15 +64,15 @@ export default function AdminOverviewPage() {
       />
 
       {loadError && (
-        <section role="alert" className="flex flex-col gap-4 rounded-2xl border border-red-300/50 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between">
+        <section role="alert" className="sp-alert sp-alert-danger flex flex-col gap-4 text-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <TriangleAlert className="mt-0.5 size-5 shrink-0 text-red-600" aria-hidden="true" />
+            <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
             <div>
               <p className="font-bold">Обзор магазина пока не загрузился</p>
-              <p className="mt-1 text-xs leading-5 text-red-800">{loadError}</p>
+              <p className="mt-1 text-xs leading-5">{loadError}</p>
             </div>
           </div>
-          <button type="button" onClick={retryLoadStats} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 text-xs font-bold text-red-800 hover:bg-red-100">
+          <button type="button" onClick={retryLoadStats} className="admin-button-secondary min-h-10 shrink-0 px-4 text-[var(--sp-danger)]">
             <RefreshCw className="size-4" aria-hidden="true" /> Повторить
           </button>
         </section>
