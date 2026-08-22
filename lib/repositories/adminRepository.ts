@@ -42,7 +42,7 @@ function createId(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
-export const SanpackRepository = {
+export const AdminRepository = {
   seedFirestoreForced() {
     return mutate<{ success: boolean; message: string }>({ action: 'seed' });
   },

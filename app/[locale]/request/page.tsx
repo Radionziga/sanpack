@@ -22,7 +22,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { formatMoney, formatProductQuantity } from '@/lib/catalog/productPresentation';
-import { PublicSanpackRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Language } from '@/types';
 
 interface CustomerStatus {
@@ -283,7 +283,7 @@ export default function RequestPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const created = await PublicSanpackRepository.createRequest({
+      const created = await PublicRepository.createRequest({
         contactName: contactName.trim(),
         phone: phone.trim(),
         items: items.map((item) => ({

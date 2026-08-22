@@ -40,7 +40,7 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { CallbackModal } from '@/components/modals/CallbackModal';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { contactPhoneHref } from '@/lib/settings/contacts';
-import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Product, Category } from '@/types';
 import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 
@@ -187,8 +187,8 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     if (products.length > 0 || catalogRequestRef.current) return;
 
     const request = Promise.all([
-      SanpackRepository.getProducts(),
-      SanpackRepository.getCategories(),
+      PublicRepository.getProducts(),
+      PublicRepository.getCategories(),
     ])
       .then(([nextProducts, nextCategories]) => {
         if (!isMountedRef.current) return;

@@ -6,7 +6,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { Clock3, Mail, MapPin, MessageCircle, Phone, Save } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AiTranslateButton, type TranslationLanguage } from '@/components/admin/AiTranslateButton';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { contactSettingsSchema } from '@/lib/validation/adminContent';
 import type { SiteSettings } from '@/types';
 
@@ -81,7 +81,7 @@ export default function ContactSettingsPage() {
 
   useEffect(() => {
     let active = true;
-    SanpackRepository.getSettings()
+    AdminRepository.getSettings()
       .then((settings) => {
         if (active) reset(settings.contacts);
       })
@@ -98,7 +98,7 @@ export default function ContactSettingsPage() {
     setNotice('');
     setPageError('');
     try {
-      await SanpackRepository.saveSettings({ contacts });
+      await AdminRepository.saveSettings({ contacts });
       setNotice('Контакты сохранены и будут использоваться в шапке, подвале и на странице контактов.');
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Контакты не сохранены.');

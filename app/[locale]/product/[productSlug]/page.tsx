@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 import { ProductGallery } from '@/components/catalog/ProductGallery';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { ProductDetailSkeleton } from '@/components/catalog/ProductDetailSkeleton';
-import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { Attribute, Product, ProductVariant } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
@@ -166,8 +166,8 @@ export default function ProductDetailPage({
       setLoadState('loading');
       try {
         const [all, definitions] = await Promise.all([
-          SanpackRepository.getProducts(),
-          SanpackRepository.getAttributes(),
+          PublicRepository.getProducts(),
+          PublicRepository.getAttributes(),
         ]);
         if (cancelled) return;
 

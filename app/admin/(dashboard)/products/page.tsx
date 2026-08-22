@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { Product, Category, Attribute } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
@@ -132,9 +132,9 @@ export default function AdminProductsPage() {
     setLoadError('');
     try {
       const [p, c, a] = await Promise.all([
-        SanpackRepository.getProducts(),
-        SanpackRepository.getCategories(),
-        SanpackRepository.getAttributes(),
+        AdminRepository.getProducts(),
+        AdminRepository.getCategories(),
+        AdminRepository.getAttributes(),
       ]);
       setProducts(p);
       setCategories(c);
@@ -232,7 +232,7 @@ export default function AdminProductsPage() {
   const handleDelete = async (id: string) => {
     if (confirm('Вы действительно хотите удалить этот товар из каталога?')) {
       const product = products.find((item) => item.id === id);
-      await SanpackRepository.deleteProduct(id);
+      await AdminRepository.deleteProduct(id);
       for (const path of getManagedMediaPaths(product)) {
         await deleteUploadedMedia(path).catch((error) => {
           console.warn('Could not remove product image.', error);
@@ -265,9 +265,9 @@ export default function AdminProductsPage() {
 
     try {
       if (draft.id) {
-        await SanpackRepository.updateProduct(draft.id, draft);
+        await AdminRepository.updateProduct(draft.id, draft);
       } else {
-        await SanpackRepository.createProduct(draft as Omit<Product, 'id' | 'createdAt' | 'updatedAt'>);
+        await AdminRepository.createProduct(draft as Omit<Product, 'id' | 'createdAt' | 'updatedAt'>);
       }
       const draftPaths = getManagedMediaPaths(draft);
       for (const previousPath of getManagedMediaPaths(previousProduct)) {

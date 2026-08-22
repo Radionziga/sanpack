@@ -5,7 +5,7 @@ import { ArrowLeft, Clock3, LogOut, PackageCheck, Send } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { PublicSanpackRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { RequestOrder } from '@/types';
 
 function formatDate(value: string) {
@@ -35,7 +35,7 @@ export default function OrdersPage() {
         }
         setAuthenticated(status.authenticated);
         setCustomerName(status.customer?.name || '');
-        if (status.authenticated) setOrders(await PublicSanpackRepository.getMyRequests());
+        if (status.authenticated) setOrders(await PublicRepository.getMyRequests());
       })
       .catch((reason) => setError(reason instanceof Error ? reason.message : 'Не удалось загрузить заявки.'));
   }, []);

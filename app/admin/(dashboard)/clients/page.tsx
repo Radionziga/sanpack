@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { ClientPartner } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -32,7 +32,7 @@ export default function AdminClientsPage() {
     setLoading(true);
     setLoadError('');
     try {
-      setClients(await SanpackRepository.getClients());
+      setClients(await AdminRepository.getClients());
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить партнёров.');
     } finally {
@@ -57,9 +57,9 @@ export default function AdminClientsPage() {
     if (!editingClient) return;
 
     if (editingClient.id) {
-      await SanpackRepository.updateClient(editingClient.id, editingClient);
+      await AdminRepository.updateClient(editingClient.id, editingClient);
     } else {
-      await SanpackRepository.createClient(editingClient as Omit<ClientPartner, 'id' | 'createdAt'>);
+      await AdminRepository.createClient(editingClient as Omit<ClientPartner, 'id' | 'createdAt'>);
     }
 
     setIsModalOpen(false);
@@ -69,7 +69,7 @@ export default function AdminClientsPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Удалить партнёра?')) {
-      await SanpackRepository.deleteClient(id);
+      await AdminRepository.deleteClient(id);
       loadClients();
     }
   };

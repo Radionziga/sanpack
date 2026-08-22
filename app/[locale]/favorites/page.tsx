@@ -5,7 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/catalog/ProductCard';
-import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { Product } from '@/types';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -27,7 +27,7 @@ export default function FavoritesPage() {
         setLoading(false);
         return;
       }
-      const all = await SanpackRepository.getProducts();
+      const all = await PublicRepository.getProducts();
       setFavProducts(all.filter((p) => favoriteIds.includes(p.id)));
       setLoading(false);
     }

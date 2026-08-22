@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { Attribute, Category, AttributeOption } from '@/types';
 import { Button, CustomInput, Badge, CustomSelect } from '@/components/ui';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -73,8 +73,8 @@ export default function AdminAttributesPage() {
     setLoadError('');
     try {
       const [attrs, cats] = await Promise.all([
-        SanpackRepository.getAttributes(),
-        SanpackRepository.getCategories(),
+        AdminRepository.getAttributes(),
+        AdminRepository.getCategories(),
       ]);
       setAttributes(attrs.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
       setCategories(cats);
@@ -166,7 +166,7 @@ export default function AdminAttributesPage() {
       sortOrder: editingAttr ? editingAttr.sortOrder : attributes.length + 1,
     };
 
-    await SanpackRepository.saveAttribute(attrData);
+    await AdminRepository.saveAttribute(attrData);
     await loadData();
     setIsModalOpen(false);
     showToast(
@@ -176,7 +176,7 @@ export default function AdminAttributesPage() {
 
   const handleDeleteAttribute = async (id: string, title: string) => {
     if (confirm(`Вы уверены, что хотите удалить характеристику "${title}"?`)) {
-      await SanpackRepository.deleteAttribute(id);
+      await AdminRepository.deleteAttribute(id);
       await loadData();
       showToast('Характеристика удалена');
     }

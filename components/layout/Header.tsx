@@ -24,7 +24,7 @@ import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { CallbackModal } from '@/components/modals/CallbackModal';
 import { MegaMenu } from '@/components/layout/MegaMenu';
-import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { Category, Product } from '@/types';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
@@ -104,7 +104,7 @@ export function Header({
 
   useEffect(() => {
     if (initialCategories.length === 0) {
-      SanpackRepository.getCategories().then(setCategories).catch(() => setCategories([]));
+      PublicRepository.getCategories().then(setCategories).catch(() => setCategories([]));
     }
   }, [initialCategories.length]);
 
@@ -122,7 +122,7 @@ export function Header({
     if (q.length >= 1) {
       const loadProducts = catalogProducts.length > 0
         ? Promise.resolve(catalogProducts)
-        : SanpackRepository.getProducts().then((products) => {
+        : PublicRepository.getProducts().then((products) => {
             setCatalogProducts(products);
             return products;
           });

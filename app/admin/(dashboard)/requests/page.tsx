@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { FileDown, History, PackagePlus, Pencil, Phone, Save, X } from 'lucide-react';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import type { Product, RequestItem, RequestOrder } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { getProductOrderRule } from '@/lib/commerce/orderQuantities';
@@ -36,8 +36,8 @@ export default function AdminRequestsPage() {
   useEffect(() => {
     let active = true;
     Promise.all([
-      SanpackRepository.getRequests(),
-      SanpackRepository.getProducts(),
+      AdminRepository.getRequests(),
+      AdminRepository.getProducts(),
     ]).then(([nextOrders, nextProducts]) => {
       if (!active) return;
       setOrders(nextOrders);
@@ -97,7 +97,7 @@ export default function AdminRequestsPage() {
   async function quickStatus(order: RequestOrder, status: RequestOrder['status']) {
     setError(null);
     try {
-      const updated = await SanpackRepository.updateRequestStatus(order.id, status);
+      const updated = await AdminRepository.updateRequestStatus(order.id, status);
       setOrders((current) => current.map((item) => item.id === updated.id ? updated : item));
       if (selected?.id === updated.id) setSelected(updated);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Статус не обновлён.'); }
@@ -107,7 +107,7 @@ export default function AdminRequestsPage() {
     if (!selected) return;
     setSaving(true); setError(null); setNotice(null);
     try {
-      const updated = await SanpackRepository.updateRequest(selected.id, {
+      const updated = await AdminRepository.updateRequest(selected.id, {
         contactName: selected.contactName,
         phone: selected.phone,
         status: selected.status,

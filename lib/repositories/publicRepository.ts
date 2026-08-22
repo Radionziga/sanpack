@@ -18,7 +18,7 @@ async function read<T>(resource: string): Promise<T> {
   return parseJsonResponse<T>(response, 'Не удалось загрузить данные каталога.');
 }
 
-export const PublicSanpackRepository = {
+export const PublicRepository = {
   getProducts: () => read<Product[]>('products'),
   getCategories: () => read<Category[]>('categories'),
   getAttributes: () => read<Attribute[]>('attributes'),

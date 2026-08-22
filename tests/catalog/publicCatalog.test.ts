@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { filterPublicProducts } from '@/lib/catalog/publicProducts';
-import { PublicSanpackRepository } from '@/lib/repositories/publicRepository';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import type { Product } from '@/types';
 import { createProduct } from '@/tests/fixtures/products';
 
@@ -37,15 +37,15 @@ describe('public product contract', () => {
   it('does not find a non-public product by slug', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json(products)));
 
-    await expect(PublicSanpackRepository.getProductBySlug(hidden.slug)).resolves.toBeNull();
-    await expect(PublicSanpackRepository.getProductBySlug(published.slug)).resolves.toEqual(published);
+    await expect(PublicRepository.getProductBySlug(hidden.slug)).resolves.toBeNull();
+    await expect(PublicRepository.getProductBySlug(published.slug)).resolves.toEqual(published);
   });
 
   it('does not find a non-public product by id', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json(products)));
 
-    await expect(PublicSanpackRepository.getProductById(draft.id)).resolves.toBeNull();
-    await expect(PublicSanpackRepository.getProductById(published.id)).resolves.toEqual(published);
+    await expect(PublicRepository.getProductById(draft.id)).resolves.toBeNull();
+    await expect(PublicRepository.getProductById(published.id)).resolves.toEqual(published);
   });
 });
 
@@ -64,7 +64,7 @@ describe('admin product contract', () => {
     const fetchMock = vi.fn(async () => Response.json(products));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(SanpackRepository.getProducts()).resolves.toEqual(products);
+    await expect(AdminRepository.getProducts()).resolves.toEqual(products);
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/admin/data?resource=products',
       expect.objectContaining({ cache: 'no-store' }),

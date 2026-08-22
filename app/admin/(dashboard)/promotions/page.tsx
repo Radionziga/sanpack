@@ -9,7 +9,7 @@ import { ArrowRight, Eye, EyeOff, ImagePlus, Monitor, Plus, Save, Smartphone, Sp
 import { MediaUploadField, deleteUploadedMedia } from '@/components/admin/MediaUploadField';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import type { Banner } from '@/types';
 
 const assetUrlSchema = z.union([
@@ -143,7 +143,7 @@ export default function AdminPromotionsPage() {
     setLoading(true);
     setPageError('');
     try {
-      const data = await SanpackRepository.getBanners();
+      const data = await AdminRepository.getBanners();
       const sorted = data.slice().sort((a, b) => a.sortOrder - b.sortOrder);
       setBanners(sorted);
       return sorted;
@@ -157,7 +157,7 @@ export default function AdminPromotionsPage() {
 
   useEffect(() => {
     let active = true;
-    SanpackRepository.getBanners()
+    AdminRepository.getBanners()
       .then((data) => {
         if (active) setBanners(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
       })
@@ -196,8 +196,8 @@ export default function AdminPromotionsPage() {
     try {
       const previous = selectedId ? banners.find((banner) => banner.id === selectedId) : undefined;
       const saved = selectedId
-        ? await SanpackRepository.updateBanner(selectedId, payload)
-        : await SanpackRepository.saveBanner(payload);
+        ? await AdminRepository.updateBanner(selectedId, payload)
+        : await AdminRepository.saveBanner(payload);
       setSelectedId(saved.id);
       reset(toFormValues(saved));
       await loadBanners();
@@ -219,7 +219,7 @@ export default function AdminPromotionsPage() {
     setPageError('');
     setNotice('');
     try {
-      await SanpackRepository.deleteBanner(banner.id);
+      await AdminRepository.deleteBanner(banner.id);
       const paths = [banner.imageDesktopPath, banner.imageMobilePath].filter(Boolean) as string[];
       const cleanup = await Promise.allSettled(paths.map(deleteUploadedMedia));
       const mediaCleanupFailed = cleanup.some((result) => result.status === 'rejected');

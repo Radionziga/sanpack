@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ClientsSection } from '@/components/home/ClientsSection';
-import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { ClientPartner } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { pageCopy } from '@/lib/i18n/pageCopy';
@@ -16,7 +16,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<ClientPartner[]>([]);
 
   useEffect(() => {
-    SanpackRepository.getClients().then(setClients);
+    PublicRepository.getClients().then(setClients);
   }, []);
 
   const reviews = copy.reviews;

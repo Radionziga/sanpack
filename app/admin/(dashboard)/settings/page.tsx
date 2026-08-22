@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch, type UseFormRegisterReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { Check, Image as ImageIcon, Loader2, Moon, Palette, RotateCcw, Save, Sun, Type, Upload } from 'lucide-react';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { accessibleForeground, contrastRatio, normalizeHex } from '@/lib/theme/colors';
 import { SanpackLogo } from '@/components/ui/SanpackLogo';
 import type { SiteSettings } from '@/types';
@@ -162,7 +162,7 @@ export default function AdminSettingsPage() {
     let active = true;
     const load = async () => {
       try {
-        const settings = await SanpackRepository.getSettings();
+        const settings = await AdminRepository.getSettings();
         if (!active) return;
         setCurrentCompany(settings.company || null);
         reset({
@@ -240,7 +240,7 @@ export default function AdminSettingsPage() {
       logoDark: values.logoDark?.trim() || '',
     };
     try {
-      await SanpackRepository.saveSettings({ design, company } as Partial<SiteSettings>);
+      await AdminRepository.saveSettings({ design, company } as Partial<SiteSettings>);
       setNotice('Настройки сохранены. Логотипы (для светлого и тёмного фона), цвета, тема, шрифты и геометрия успешно обновлены.');
       router.refresh();
     } catch (error) {

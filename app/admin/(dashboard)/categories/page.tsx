@@ -7,7 +7,7 @@ import { MediaUploadField, deleteUploadedMedia } from '@/components/admin/MediaU
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import type { Category } from '@/types';
 
 const newCategory: Partial<Category> = {
@@ -43,7 +43,7 @@ export default function AdminCategoriesPage() {
     setLoading(true);
     setPageError('');
     try {
-      const data = await SanpackRepository.getCategories();
+      const data = await AdminRepository.getCategories();
       setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Не удалось загрузить категории.');
@@ -54,7 +54,7 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => {
     let active = true;
-    SanpackRepository.getCategories()
+    AdminRepository.getCategories()
       .then((data) => {
         if (active) setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
       })
@@ -100,8 +100,8 @@ export default function AdminCategoriesPage() {
         sortOrder: Number(editingCategory.sortOrder || 0),
       };
       const saved = editingCategory.id
-        ? await SanpackRepository.updateCategory(editingCategory.id, payload)
-        : await SanpackRepository.saveCategory(payload);
+        ? await AdminRepository.updateCategory(editingCategory.id, payload)
+        : await AdminRepository.saveCategory(payload);
       setEditingCategory(saved);
       await loadCategories();
       let cleanupFailed = false;
@@ -127,7 +127,7 @@ export default function AdminCategoriesPage() {
     setPageError('');
     setNotice('');
     try {
-      await SanpackRepository.deleteCategory(category.id);
+      await AdminRepository.deleteCategory(category.id);
       let cleanupFailed = false;
       if (category.imagePath) {
         try {

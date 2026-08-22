@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { SanpackRepository } from '@/lib/repositories/sanpackRepository';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { RequestOrder, Product } from '@/types';
 import { FileSpreadsheet, Package, Clock, Factory, RefreshCw, TriangleAlert } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui';
 
 function fetchOverviewStats() {
   return Promise.all([
-    SanpackRepository.getRequests(),
-    SanpackRepository.getProducts(),
+    AdminRepository.getRequests(),
+    AdminRepository.getProducts(),
   ]);
 }
 

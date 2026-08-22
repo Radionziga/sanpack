@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
-import { PublicSanpackRepository as SanpackRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Attribute, Category, Product } from '@/types';
 import { CategorySidebar } from '@/components/catalog/CategorySidebar';
 import { FilterSidebar } from '@/components/catalog/FilterSidebar';
@@ -210,9 +210,9 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
     async function loadCatalog() {
       try {
         const [nextProducts, nextCategories, nextAttributes] = await Promise.all([
-          SanpackRepository.getProducts(),
-          SanpackRepository.getCategories(),
-          SanpackRepository.getAttributes(),
+          PublicRepository.getProducts(),
+          PublicRepository.getCategories(),
+          PublicRepository.getAttributes(),
         ]);
         if (cancelled) return;
         setProducts(nextProducts);
