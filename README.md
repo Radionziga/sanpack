@@ -85,3 +85,6 @@ npm run build
 Bag-designer generation currently uses a process-local limiter and idempotent
 Firestore drafts. Distributed limiting and cleanup scheduling are intentionally
 not selected yet; see `docs/operations/bag-designer-cost-control.md`.
+
+The current cleanup classification and retained operational artifacts are
+documented in `docs/cleanup-audit-2026-08-22.md`.
