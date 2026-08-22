@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { Check, Image as ImageIcon, Loader2, Moon, Palette, RotateCcw, Save, Sun, Type, Upload } from 'lucide-react';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { accessibleForeground, contrastRatio, normalizeHex } from '@/lib/theme/colors';
-import { SanpackLogo } from '@/components/ui/SanpackLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import type { SiteSettings } from '@/types';
 
 const DEFAULT_PRIMARY = '#0F6E43';
@@ -304,7 +304,7 @@ export default function AdminSettingsPage() {
                       type="button"
                       onClick={() => setValue('logo', '', { shouldDirty: true })}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-ink-secondary)] hover:text-red-600 transition-colors shrink-0"
-                      title="Сбросить к стандартному фирменному векторному логотипу"
+                      title="Убрать пользовательский логотип"
                     >
                       <RotateCcw className="size-3" />
                       <span>Сбросить</span>
@@ -315,7 +315,7 @@ export default function AdminSettingsPage() {
                 {/* Preview Box */}
                 <div className="rounded-lg border border-gray-200 bg-white p-4 flex flex-col items-center justify-center gap-1.5 min-h-[85px] shadow-sm">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Предпросмотр на белом фоне (шапка)</span>
-                  <SanpackLogo src={logo || undefined} variant="green" className="h-7" />
+                  <BrandLogo src={logo || undefined} label={currentCompany?.name} variant="green" className="h-7" />
                 </div>
 
                 {/* Controls */}
@@ -355,7 +355,7 @@ export default function AdminSettingsPage() {
                       type="button"
                       onClick={() => setValue('logoDark', '', { shouldDirty: true })}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-ink-secondary)] hover:text-red-600 transition-colors shrink-0"
-                      title="Сбросить к стандартному белому векторному логотипу"
+                      title="Убрать пользовательский логотип"
                     >
                       <RotateCcw className="size-3" />
                       <span>Сбросить</span>
@@ -366,7 +366,7 @@ export default function AdminSettingsPage() {
                 {/* Preview Box */}
                 <div className="rounded-lg border border-[#022B1D] bg-[#03432D] p-4 flex flex-col items-center justify-center gap-1.5 min-h-[85px] shadow-sm">
                   <span className="text-[10px] font-bold text-emerald-300/80 uppercase tracking-wider">Предпросмотр на тёмном фоне (футер)</span>
-                  <SanpackLogo src={logoDark || undefined} variant="white" className="h-7" />
+                  <BrandLogo src={logoDark || undefined} label={currentCompany?.name} variant="white" className="h-7" />
                 </div>
 
                 {/* Controls */}

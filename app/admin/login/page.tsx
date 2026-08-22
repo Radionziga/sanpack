@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, EyeOff, KeyRound, Layers3, LoaderCircle, LockKeyhole, Mail, ShoppingBag, TriangleAlert } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { SanpackLogo } from '@/components/ui/SanpackLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -55,7 +55,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--sp-line)] bg-[var(--sp-surface)] md:grid md:min-h-[540px] md:grid-cols-[0.88fr_1.12fr]">
         <section className="relative flex flex-col justify-between overflow-hidden bg-[var(--sp-brand-deep)] p-6 text-[var(--sp-on-brand-deep)] sm:p-8 md:p-10">
           <div className="relative z-10">
-            <SanpackLogo variant="white" className="h-7" />
+            <BrandLogo label="Storefront Admin" variant="white" className="h-7" />
             <p className="mt-4 max-w-xs text-sm leading-6 text-white/68">Всё необходимое для управления магазином в одном месте.</p>
           </div>
 

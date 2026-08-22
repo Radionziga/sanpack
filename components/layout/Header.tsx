@@ -26,7 +26,7 @@ import { CallbackModal } from '@/components/modals/CallbackModal';
 import { MegaMenu } from '@/components/layout/MegaMenu';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { Category, Product } from '@/types';
-import { SanpackLogo } from '@/components/ui/SanpackLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
@@ -262,9 +262,10 @@ export function Header({
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 md:gap-4">
             {/* Logo */}
             <Link href="/" className="shrink-0 flex items-center py-0.5" aria-label={`${siteSettings.company.name} — на главную`}>
-              <SanpackLogo
+              <BrandLogo
                 src={siteSettings.company?.logo}
                 srcDark={siteSettings.company?.logoDark}
+                label={siteSettings.company.name}
                 variant="green"
                 className="h-8 sm:h-8.5 md:h-8.5 lg:h-9"
               />

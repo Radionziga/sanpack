@@ -4,7 +4,7 @@ import React from 'react';
 import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react';
-import { SanpackLogo } from '@/components/ui/SanpackLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
 
@@ -34,9 +34,10 @@ export function Footer() {
           {/* Company information */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="inline-block max-w-full" aria-label={`${company.name} — на главную`}>
-              <SanpackLogo
+              <BrandLogo
                 src={company?.logo}
                 srcDark={company?.logoDark}
+                label={company.name}
                 variant="white"
                 className="h-6 sm:h-8"
               />

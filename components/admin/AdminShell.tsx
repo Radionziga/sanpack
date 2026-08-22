@@ -21,7 +21,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { SanpackLogo } from '@/components/ui/SanpackLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 
 const navigation = [
   {
@@ -81,7 +81,7 @@ export default function AdminShell({ children, adminEmail }: { children: ReactNo
         <div className="flex h-full flex-col">
           <div className="flex min-h-16 items-center justify-between gap-4 px-4 md:min-h-20 md:px-6">
             <Link href="/admin" aria-label="Главная админ-панели" className="min-w-0 flex-1 text-[var(--sp-brand)]">
-              <SanpackLogo variant="currentColor" className="h-auto w-full max-w-[196px]" />
+              <BrandLogo label="Storefront Admin" variant="currentColor" className="h-auto w-full max-w-[196px]" />
             </Link>
             <details className="group relative md:hidden">
               <summary className="flex size-10 cursor-pointer list-none items-center justify-center rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)] marker:content-none" aria-label="Меню администратора">

@@ -16,7 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import Link from 'next/link';
-import { SanpackLogo } from '@/components/ui/SanpackLogo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
 import { formatMoney } from '@/lib/catalog/productPresentation';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
@@ -572,7 +572,13 @@ export function CatalogPrintDocument({
           <div className="my-auto text-center flex flex-col items-center py-8">
             {/* Logo */}
             <div className="mb-10">
-              <SanpackLogo variant="white" className="h-20 sm:h-24" />
+              <BrandLogo
+                src={settings?.company.logo}
+                srcDark={settings?.company.logoDark}
+                label={companyName}
+                variant="white"
+                className="h-20 sm:h-24"
+              />
             </div>
 
             {/* Subtitle Company Tagline */}
@@ -680,7 +686,13 @@ export function CatalogPrintDocument({
               {/* TOP SOLID GREEN HEADER BANNER (SPACIOUS, NO OVERFLOW) */}
               <header className="bg-[#03432D] text-white px-5 py-3 rounded-none flex justify-between items-center shrink-0 mb-4">
                 <div className="flex items-center gap-3.5 shrink-0">
-                  <SanpackLogo variant="white" className="h-7 sm:h-8" />
+                  <BrandLogo
+                    src={settings?.company.logo}
+                    srcDark={settings?.company.logoDark}
+                    label={companyName}
+                    variant="white"
+                    className="h-7 sm:h-8"
+                  />
                   <div className="h-5 w-px bg-white/30" />
                   <div className="text-[11px] font-semibold text-white/90 uppercase tracking-wider leading-none">
                     {language === 'uz' ? 'Mahsulotlar katalogi' : 'Каталог продукции'}
