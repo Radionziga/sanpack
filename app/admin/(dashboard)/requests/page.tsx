@@ -7,6 +7,7 @@ import type { Product, RequestItem, RequestOrder } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { getProductPriceMode, getProductUnitPrice } from '@/lib/commerce/productOffer';
+import { formatOrderAmount, getOrderAmountOrZero } from '@/lib/orders/orderAmounts';
 
 const statuses: Array<{ value: RequestOrder['status']; label: string }> = [
   { value: 'new', label: 'Новый' },
@@ -14,10 +15,6 @@ const statuses: Array<{ value: RequestOrder['status']; label: string }> = [
   { value: 'fulfilled', label: 'Завершён' },
   { value: 'cancelled', label: 'Отменён' },
 ];
-
-function formatMoney(value: number) {
-  return `${new Intl.NumberFormat('ru-RU').format(value)} сум`;
-}
 
 function statusLabel(value: RequestOrder['status']) {
   return statuses.find((status) => status.value === value)?.label || value;
@@ -53,7 +50,7 @@ export default function AdminRequestsPage() {
   const filtered = filter === 'all' ? orders : orders.filter((order) => order.status === filter);
   const calculatedSubtotal = useMemo(() => selected?.items.reduce(
     (sum, item) => sum + (item.price === undefined ? 0 : item.price * item.quantity), 0
-  ) || 0, [selected]);
+  ) ?? 0, [selected]);
 
   function patchSelected(patch: Partial<RequestOrder>) {
     setSelected((current) => current ? { ...current, ...patch } : current);
@@ -112,7 +109,7 @@ export default function AdminRequestsPage() {
         phone: selected.phone,
         status: selected.status,
         notes: selected.notes || '',
-        adjustment: selected.adjustment || 0,
+        adjustment: getOrderAmountOrZero(selected.adjustment),
         items: selected.items.map((item) => ({
           lineId: item.lineId,
           productId: item.productId,
@@ -144,7 +141,7 @@ export default function AdminRequestsPage() {
       <section className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">
         {loading ? <p className="p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Загрузка заказов…</p> : filtered.length === 0 ? <p className="p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Заказов в этом разделе нет.</p> : (
           <div className="overflow-x-auto"><table className="w-full min-w-[880px] text-left text-xs"><thead className="border-b border-[var(--sp-line)] bg-[var(--sp-surface-inset)] text-[var(--sp-ink-tertiary)]"><tr><th className="p-3.5">Номер</th><th className="p-3.5">Клиент</th><th className="p-3.5">Телефон</th><th className="p-3.5">Состав</th><th className="p-3.5">Сумма</th><th className="p-3.5">Статус</th><th className="p-3.5">Дата</th><th className="p-3.5 text-right">Действие</th></tr></thead>
-            <tbody className="divide-y divide-[var(--sp-line)]">{filtered.map((order) => <tr key={order.id} className="hover:bg-[var(--sp-surface-inset)]"><td className="p-3.5 font-mono font-bold text-[var(--sp-brand)]">{order.requestNumber}</td><td className="p-3.5 font-bold">{order.contactName}</td><td className="p-3.5"><a href={`tel:${order.phoneNormalized || order.phone}`} className="inline-flex items-center gap-1.5"><Phone className="size-3.5" />{order.phone}</a></td><td className="p-3.5">{order.items.length} поз.</td><td className="p-3.5 font-bold">{order.total ? formatMoney(order.total) : 'По запросу'}</td><td className="p-3.5"><CustomSelect value={order.status} onChange={(value) => void quickStatus(order, value as RequestOrder['status'])} options={statuses} size="sm" ariaLabel="Статус заказа" className="min-w-32" /></td><td className="p-3.5 text-[var(--sp-ink-tertiary)]">{new Date(order.createdAt).toLocaleString('ru-RU')}</td><td className="p-3.5 text-right"><button type="button" onClick={() => { setSelected(order); setNotice(null); }} className="admin-button-secondary min-h-9"><Pencil className="size-3.5" /> Открыть</button></td></tr>)}</tbody>
+            <tbody className="divide-y divide-[var(--sp-line)]">{filtered.map((order) => <tr key={order.id} className="hover:bg-[var(--sp-surface-inset)]"><td className="p-3.5 font-mono font-bold text-[var(--sp-brand)]">{order.requestNumber}</td><td className="p-3.5 font-bold">{order.contactName}</td><td className="p-3.5"><a href={`tel:${order.phoneNormalized || order.phone}`} className="inline-flex items-center gap-1.5"><Phone className="size-3.5" />{order.phone}</a></td><td className="p-3.5">{order.items.length} поз.</td><td className="p-3.5 font-bold">{formatOrderAmount(order.total)}</td><td className="p-3.5"><CustomSelect value={order.status} onChange={(value) => void quickStatus(order, value as RequestOrder['status'])} options={statuses} size="sm" ariaLabel="Статус заказа" className="min-w-32" /></td><td className="p-3.5 text-[var(--sp-ink-tertiary)]">{new Date(order.createdAt).toLocaleString('ru-RU')}</td><td className="p-3.5 text-right"><button type="button" onClick={() => { setSelected(order); setNotice(null); }} className="admin-button-secondary min-h-9"><Pencil className="size-3.5" /> Открыть</button></td></tr>)}</tbody>
           </table></div>
         )}
       </section>
@@ -160,7 +157,7 @@ export default function AdminRequestsPage() {
             <label className="block text-xs font-bold">Внутренний комментарий<textarea value={selected.notes || ''} onChange={(event) => patchSelected({ notes: event.target.value })} rows={3} className="admin-control mt-2 p-3 text-sm" /></label>
             <section className="admin-panel p-4"><h3 className="flex items-center gap-2 text-xs font-bold"><History className="size-4 text-[var(--sp-brand)]" /> История изменений</h3><div className="mt-3 space-y-2">{(selected.auditTrail || []).slice().reverse().map((entry) => <div key={entry.id} className="admin-panel-muted p-3 text-[10px]"><p className="font-bold text-[var(--sp-ink)]">{entry.summary}</p><p className="mt-0.5 text-[var(--sp-ink-tertiary)]">{entry.actorLabel} · {new Date(entry.createdAt).toLocaleString('ru-RU')}</p></div>)}</div></section>
           </div>
-          <aside className="border-t border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 lg:border-l lg:border-t-0"><CustomSelect label="Статус" value={selected.status} onChange={(value) => patchSelected({ status: value as RequestOrder['status'] })} options={statuses} /><label className="mt-4 block text-xs font-bold">Корректировка суммы<input type="number" step="1" value={selected.adjustment || 0} onChange={(event) => patchSelected({ adjustment: Number(event.target.value) })} className="admin-control mt-2 text-sm" /><span className="mt-1 block text-[10px] font-normal text-[var(--sp-ink-tertiary)]">Скидка вводится отрицательным числом.</span></label><div className="mt-5 space-y-2 border-t border-[var(--sp-line)] pt-4 text-xs"><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Товары</span><span>{formatMoney(calculatedSubtotal)}</span></div><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Корректировка</span><span>{formatMoney(selected.adjustment || 0)}</span></div><div className="flex justify-between border-t border-[var(--sp-line)] pt-3 text-base font-bold"><span>Итого</span><span>{formatMoney(Math.max(0, calculatedSubtotal + (selected.adjustment || 0)))}</span></div></div><a href={`/api/admin/orders/${encodeURIComponent(selected.id)}/document`} target="_blank" className="admin-button-secondary mt-5 w-full"><FileDown className="size-4" /> Внутренняя накладная</a><button type="button" disabled={saving} onClick={() => void saveOrder()} className="admin-button-primary mt-3 w-full disabled:opacity-50"><Save className="size-4" /> {saving ? 'Сохраняем…' : 'Сохранить изменения'}</button><p className="mt-4 text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">Первоначальный состав заявки сохранён отдельно и не изменяется.</p></aside>
+          <aside className="border-t border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 lg:border-l lg:border-t-0"><CustomSelect label="Статус" value={selected.status} onChange={(value) => patchSelected({ status: value as RequestOrder['status'] })} options={statuses} /><label className="mt-4 block text-xs font-bold">Корректировка суммы<input type="number" step="1" value={getOrderAmountOrZero(selected.adjustment)} onChange={(event) => patchSelected({ adjustment: Number(event.target.value) })} className="admin-control mt-2 text-sm" /><span className="mt-1 block text-[10px] font-normal text-[var(--sp-ink-tertiary)]">Скидка вводится отрицательным числом.</span></label><div className="mt-5 space-y-2 border-t border-[var(--sp-line)] pt-4 text-xs"><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Товары</span><span>{formatOrderAmount(calculatedSubtotal)}</span></div><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Корректировка</span><span>{formatOrderAmount(getOrderAmountOrZero(selected.adjustment))}</span></div><div className="flex justify-between border-t border-[var(--sp-line)] pt-3 text-base font-bold"><span>Итого</span><span>{formatOrderAmount(Math.max(0, calculatedSubtotal + getOrderAmountOrZero(selected.adjustment)))}</span></div></div><a href={`/api/admin/orders/${encodeURIComponent(selected.id)}/document`} target="_blank" className="admin-button-secondary mt-5 w-full"><FileDown className="size-4" /> Внутренняя накладная</a><button type="button" disabled={saving} onClick={() => void saveOrder()} className="admin-button-primary mt-3 w-full disabled:opacity-50"><Save className="size-4" /> {saving ? 'Сохраняем…' : 'Сохранить изменения'}</button><p className="mt-4 text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">Первоначальный состав заявки сохранён отдельно и не изменяется.</p></aside>
         </div>
       </div></div> : null}
     </div>

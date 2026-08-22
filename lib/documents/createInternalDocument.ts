@@ -5,6 +5,7 @@ import robotoFonts from 'pdfmake/fonts/Roboto';
 import path from 'node:path';
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import type { InternalDocumentSettings, RequestOrder } from '@/types';
+import { formatOrderAmount, getOrderAmountOrZero } from '@/lib/orders/orderAmounts';
 
 pdfMake.addFonts(robotoFonts);
 const allowedFontPaths = new Set(
@@ -12,10 +13,6 @@ const allowedFontPaths = new Set(
 );
 pdfMake.setLocalAccessPolicy((filePath) => allowedFontPaths.has(path.resolve(filePath)));
 pdfMake.setUrlAccessPolicy(() => false);
-
-function money(value?: number) {
-  return value === undefined ? 'По запросу' : `${new Intl.NumberFormat('ru-RU').format(value)} сум`;
-}
 
 export async function createInternalDocument(
   order: RequestOrder,
@@ -30,8 +27,8 @@ export async function createInternalDocument(
     ] },
     { text: item.unit, alignment: 'center' },
     { text: String(item.quantity), alignment: 'right' },
-    { text: money(item.price), alignment: 'right' },
-    { text: money(item.price === undefined ? undefined : item.price * item.quantity), alignment: 'right', bold: true },
+    { text: formatOrderAmount(item.price), alignment: 'right' },
+    { text: formatOrderAmount(item.price === undefined ? undefined : item.price * item.quantity), alignment: 'right', bold: true },
   ]);
 
   const document: TDocumentDefinitions = {
@@ -123,9 +120,9 @@ export async function createInternalDocument(
             table: {
               widths: ['*', 90],
               body: [
-                [{ text: 'Товары', color: '#66716B' }, { text: hasKnownPrices ? money(order.subtotal || 0) : 'По запросу', alignment: 'right' }],
-                [{ text: 'Корректировка', color: '#66716B' }, { text: money(order.adjustment || 0), alignment: 'right' }],
-                [{ text: 'Итого', bold: true, fontSize: 11 }, { text: hasKnownPrices ? money(order.total || 0) : 'По запросу', bold: true, fontSize: 11, alignment: 'right', color: '#0F6E43' }],
+                [{ text: 'Товары', color: '#66716B' }, { text: hasKnownPrices ? formatOrderAmount(getOrderAmountOrZero(order.subtotal)) : 'По запросу', alignment: 'right' }],
+                [{ text: 'Корректировка', color: '#66716B' }, { text: formatOrderAmount(getOrderAmountOrZero(order.adjustment)), alignment: 'right' }],
+                [{ text: 'Итого', bold: true, fontSize: 11 }, { text: hasKnownPrices ? formatOrderAmount(getOrderAmountOrZero(order.total)) : 'По запросу', bold: true, fontSize: 11, alignment: 'right', color: '#0F6E43' }],
               ],
             },
             layout: 'noBorders',
