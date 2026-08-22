@@ -1,10 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Language } from '@/types';
 import { translations, TranslationKeys } from '@/lib/i18n/translations';
 import { fixPrepositions } from '@/lib/utils/formatText';
+import { getPathLanguage } from '@/lib/i18n/pathLocale';
 
 interface LanguageContextType {
   language: Language;
@@ -23,16 +24,11 @@ export function LanguageProvider({
   children: React.ReactNode;
   initialLanguage: Language;
 }) {
-  const [language, setLanguageState] = useState<Language>(initialLanguage);
   const pathname = usePathname();
   const router = useRouter();
-
-  useEffect(() => {
-    document.documentElement.lang = language;
-  }, [language]);
+  const language = getPathLanguage(pathname, initialLanguage);
 
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
     const segments = pathname.split('/');
     segments[1] = lang;
     router.push(segments.join('/') || `/${lang}`);

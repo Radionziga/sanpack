@@ -2,6 +2,19 @@ import { AuthProvider } from '@/context/AuthContext';
 import { SanpackTheme } from '@/components/theme/SanpackTheme';
 import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
 import type { SiteSettings } from '@/types';
+import '../globals.css';
+import { storefrontFontVariables } from '../fonts';
+
+export const metadata = {
+  title: 'Панель управления',
+  robots: { index: false, follow: false },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+} as const;
 
 const neutralAdminDesign: SiteSettings['design'] = {
   designVersion: 2,
@@ -22,8 +35,12 @@ export default async function AdminRootLayout({ children }: { children: React.Re
     }
   }
   return (
-    <SanpackTheme design={design}>
-      <AuthProvider>{children}</AuthProvider>
-    </SanpackTheme>
+    <html lang="ru" className={storefrontFontVariables}>
+      <body suppressHydrationWarning>
+        <SanpackTheme design={design}>
+          <AuthProvider>{children}</AuthProvider>
+        </SanpackTheme>
+      </body>
+    </html>
   );
 }

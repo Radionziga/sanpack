@@ -9,6 +9,14 @@ import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
 import { SanpackTheme } from '@/components/theme/SanpackTheme';
 import Script from 'next/script';
 import { TelegramMiniAppBridge } from '@/components/telegram/TelegramMiniAppBridge';
+import '../globals.css';
+import { storefrontFontVariables } from '../fonts';
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+} as const;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -107,22 +115,30 @@ export default async function LocaleLayout({
           };
 
     return (
-      <main className="grid min-h-screen place-items-center bg-slate-50 px-6 text-slate-950">
-        <section className="max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold">{copy.title}</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">{copy.description}</p>
-        </section>
-      </main>
+      <html lang={locale} className={storefrontFontVariables}>
+        <body suppressHydrationWarning>
+          <main className="grid min-h-screen place-items-center bg-slate-50 px-6 text-slate-950">
+            <section className="max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+              <h1 className="text-2xl font-semibold">{copy.title}</h1>
+              <p className="mt-3 text-sm leading-6 text-slate-600">{copy.description}</p>
+            </section>
+          </main>
+        </body>
+      </html>
     );
   }
 
   return (
-    <NextIntlClientProvider messages={messages}>
-      <SanpackTheme design={settings.design}>
-        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
-        <TelegramMiniAppBridge />
-        <PublicProviders locale={locale} settings={settings}>{children}</PublicProviders>
-      </SanpackTheme>
-    </NextIntlClientProvider>
+    <html lang={locale} className={storefrontFontVariables}>
+      <body suppressHydrationWarning>
+        <NextIntlClientProvider messages={messages}>
+          <SanpackTheme design={settings.design}>
+            <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
+            <TelegramMiniAppBridge />
+            <PublicProviders locale={locale} settings={settings}>{children}</PublicProviders>
+          </SanpackTheme>
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }
