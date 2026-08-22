@@ -45,6 +45,7 @@
     --sp-lime: var(--sp-secondary);
     --sp-danger: #B4233A;
     --sp-success: #0F6E43;
+    --sp-warning: #A75B00;
     --sp-control: #EDF2EF;
     --sp-control-bg: var(--sp-control);
     --sp-control-border: #CAD5CE;
@@ -285,6 +286,13 @@
     color: var(--sp-ink);
   }
 
+  .sp-card {
+    border: 1px solid var(--sp-line);
+    border-radius: var(--sp-radius-card);
+    background: var(--sp-surface);
+    box-shadow: var(--sp-shadow-soft);
+  }
+
   .sp-icon-button:focus-visible {
     outline: 2px solid var(--sp-focus);
     outline-offset: 2px;
@@ -417,8 +425,9 @@
   --sp-line-strong: #566159;
   --sp-control: #101512;
   --sp-control-border: #3A433D;
-  --sp-danger: #FF8092;
-  --sp-success: #78D7A4;
+    --sp-danger: #FF8092;
+    --sp-success: #78D7A4;
+    --sp-warning: #FFBF69;
   --sp-focus: color-mix(in srgb, var(--sp-brand) 68%, white);
   --sp-shadow-raised: 0 14px 34px rgb(0 0 0 / 22%);
   color-scheme: dark;

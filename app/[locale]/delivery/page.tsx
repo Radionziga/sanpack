@@ -12,66 +12,66 @@ export default function DeliveryPage() {
   const copy = pageCopy[language].delivery;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F7F6]">
+    <div className="min-h-screen flex flex-col bg-[var(--sp-canvas)]">
       <Header />
 
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-4 space-y-12">
           <div>
-            <h1 className="text-3xl font-bold text-[#18231E]">{t('delivery')}</h1>
-            <p className="text-xs text-[#68736D] mt-1">
+            <h1 className="text-3xl font-bold text-[var(--sp-ink)]">{t('delivery')}</h1>
+            <p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">
               {copy.intro}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-[#EAF5EF] text-[#006F3C] flex items-center justify-center">
+            <div className="sp-card space-y-3 p-6">
+              <div className="flex size-12 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]">
                 <Truck className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-[#18231E]">{copy.cards[0][0]}</h3>
-              <p className="text-xs text-[#68736D] leading-relaxed">
+              <h3 className="text-base font-bold text-[var(--sp-ink)]">{copy.cards[0][0]}</h3>
+              <p className="text-xs leading-relaxed text-[var(--sp-ink-tertiary)]">
                 {copy.cards[0][1]}
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-[#EAF5EF] text-[#006F3C] flex items-center justify-center">
+            <div className="sp-card space-y-3 p-6">
+              <div className="flex size-12 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]">
                 <MapPin className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-[#18231E]">{copy.cards[1][0]}</h3>
-              <p className="text-xs text-[#68736D] leading-relaxed">
+              <h3 className="text-base font-bold text-[var(--sp-ink)]">{copy.cards[1][0]}</h3>
+              <p className="text-xs leading-relaxed text-[var(--sp-ink-tertiary)]">
                 {copy.cards[1][1]}
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-[#EAF5EF] text-[#006F3C] flex items-center justify-center">
+            <div className="sp-card space-y-3 p-6">
+              <div className="flex size-12 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]">
                 <Clock className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-[#18231E]">{copy.cards[2][0]}</h3>
-              <p className="text-xs text-[#68736D] leading-relaxed">
+              <h3 className="text-base font-bold text-[var(--sp-ink)]">{copy.cards[2][0]}</h3>
+              <p className="text-xs leading-relaxed text-[var(--sp-ink-tertiary)]">
                 {copy.cards[2][1]}
               </p>
             </div>
           </div>
 
           {/* Payment Terms */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 space-y-4">
-            <h2 className="text-xl font-bold text-[#18231E]">{copy.paymentTitle}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-700">
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-3">
-                <CreditCard className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
+          <div className="sp-card space-y-4 p-6 sm:p-8">
+            <h2 className="text-xl font-bold text-[var(--sp-ink)]">{copy.paymentTitle}</h2>
+            <div className="grid grid-cols-1 gap-4 text-xs text-[var(--sp-ink-secondary)] md:grid-cols-2">
+              <div className="flex items-start gap-3 rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4">
+                <CreditCard className="mt-0.5 size-5 shrink-0 text-[var(--sp-brand)]" />
                 <div>
-                  <h4 className="font-bold text-[#18231E] mb-1">{copy.payments[0][0]}</h4>
+                  <h4 className="mb-1 font-bold text-[var(--sp-ink)]">{copy.payments[0][0]}</h4>
                   <p>{copy.payments[0][1]}</p>
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#006F3C] shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4">
+                <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-[var(--sp-brand)]" />
                 <div>
-                  <h4 className="font-bold text-[#18231E] mb-1">{copy.payments[1][0]}</h4>
+                  <h4 className="mb-1 font-bold text-[var(--sp-ink)]">{copy.payments[1][0]}</h4>
                   <p>{copy.payments[1][1]}</p>
                 </div>
               </div>
