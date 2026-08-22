@@ -187,7 +187,7 @@ export default function IntegrationsPage() {
         <h2 className="font-extended text-xl font-bold tracking-[-0.02em]">Telegram</h2>
         <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">Вход покупателей, магазин внутри Telegram и уведомления о новых заявках настраиваются независимо.</p>
       </header>
-      {error || notice ? <p role={error ? 'alert' : 'status'} className={`rounded-lg border px-4 py-3 text-sm ${error ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-400/30 bg-emerald-500/8 text-[var(--sp-success)]'}`}>{error || notice}</p> : null}
+      {error || notice ? <p role={error ? 'alert' : 'status'} className={`sp-alert text-sm ${error ? 'sp-alert-danger' : 'sp-alert-success'}`}>{error || notice}</p> : null}
       <div className="space-y-5">
         <form onSubmit={(event) => { event.preventDefault(); void save(); }} className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6">
           <div className="flex items-start justify-between gap-4">

@@ -44,7 +44,7 @@ export function BagDesignerAdmin() {
   }
 
   return <div className="grid gap-6">
-    {error || notice ? <p role={error ? 'alert' : 'status'} className={`rounded-[var(--sp-radius-control)] border px-4 py-3 text-sm ${error ? 'border-red-300 bg-red-50 text-red-700' : 'border-emerald-300 bg-emerald-50 text-emerald-800'}`}>{error || notice}</p> : null}
+    {error || notice ? <p role={error ? 'alert' : 'status'} className={`sp-alert text-sm ${error ? 'sp-alert-danger' : 'sp-alert-success'}`}>{error || notice}</p> : null}
     <section className="admin-panel p-5 md:p-6">
       <div className="flex flex-col gap-4 border-b border-[var(--sp-line)] pb-5 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="font-extended text-xl font-bold">Настройки конструктора</h2><p className="mt-1 max-w-2xl text-sm text-[var(--sp-ink-tertiary)]">Формы пакетов фиксированы. Здесь меняются только доступные размеры, цвета и минимальный тираж.</p></div><label className="flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] px-4 text-xs font-bold"><input type="checkbox" checked={settings.enabled} onChange={(event) => setSettings({ ...settings, enabled: event.target.checked })} className="size-4 accent-[var(--sp-brand)]" /> Показывать на сайте</label></div>
       <label className="mt-5 block max-w-sm text-xs font-bold">Минимальный тираж, шт.<input type="number" min="1" step="100" value={settings.minimumQuantity} onChange={(event) => setSettings({ ...settings, minimumQuantity: Number(event.target.value) })} className="admin-control mt-2" /></label>

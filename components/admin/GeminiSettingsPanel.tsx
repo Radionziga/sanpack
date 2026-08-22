@@ -141,7 +141,7 @@ export function GeminiSettingsPanel() {
         </label>
       </div>
 
-      {error || notice ? <p role={error ? 'alert' : 'status'} className={`mt-5 rounded-[var(--sp-radius-control)] border px-4 py-3 text-sm ${error ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-400/30 bg-emerald-500/8 text-[var(--sp-success)]'}`}>{error || notice}</p> : null}
+      {error || notice ? <p role={error ? 'alert' : 'status'} className={`sp-alert mt-5 text-sm ${error ? 'sp-alert-danger' : 'sp-alert-success'}`}>{error || notice}</p> : null}
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <label className="text-xs font-bold">

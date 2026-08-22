@@ -139,7 +139,7 @@ export default function AdminRequestsPage() {
           ))}
         </div>
       </header>
-      {error || notice ? <p role={error ? 'alert' : 'status'} className={`rounded-lg border px-4 py-3 text-sm ${error ? 'border-red-300/50 bg-red-500/8 text-[var(--sp-danger)]' : 'border-emerald-400/30 bg-emerald-500/8 text-[var(--sp-success)]'}`}>{error || notice}</p> : null}
+      {error || notice ? <p role={error ? 'alert' : 'status'} className={`sp-alert text-sm ${error ? 'sp-alert-danger' : 'sp-alert-success'}`}>{error || notice}</p> : null}
 
       <section className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">
         {loading ? <p className="p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Загрузка заказов…</p> : filtered.length === 0 ? <p className="p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Заказов в этом разделе нет.</p> : (
