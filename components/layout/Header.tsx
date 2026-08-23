@@ -17,6 +17,7 @@ import {
   ChevronDownIcon,
   PaperAirplaneIcon,
   ArrowRightIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
@@ -477,6 +478,15 @@ export function Header({
               </Link>
 
               <LanguageSwitcher className="hidden md:block" />
+
+              <Link
+                href="/profile"
+                className="hidden size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] md:flex"
+                title={language === 'ru' ? 'Профиль' : language === 'uz' ? 'Profil' : 'Profile'}
+                aria-label={language === 'ru' ? 'Профиль' : language === 'uz' ? 'Profil' : 'Profile'}
+              >
+                <UserCircleIcon className="size-5" aria-hidden="true" />
+              </Link>
 
               {/* Mobile search entry point. Secondary navigation lives in the bottom bar. */}
               <button

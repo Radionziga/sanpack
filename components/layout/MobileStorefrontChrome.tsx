@@ -39,7 +39,6 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { CallbackModal } from '@/components/modals/CallbackModal';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { contactPhoneHref } from '@/lib/settings/contacts';
-import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Product, Category } from '@/types';
 import { formatMoney, getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { ProductImage } from '@/components/catalog/ProductImage';
@@ -94,16 +93,14 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
   const { contacts, modules } = useSiteSettings();
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [products] = useState<Product[]>([]);
+  const [categories] = useState<Category[]>([]);
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isTextEntryFocused, setIsTextEntryFocused] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelTriggerRef = useRef<HTMLElement | null>(null);
-  const catalogRequestRef = useRef<Promise<void> | null>(null);
-  const isMountedRef = useRef(false);
   const normalizedPathname = normalizePathname(pathname);
 
   const copy = {
@@ -193,41 +190,6 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     },
   }[language];
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  const loadCatalog = useCallback(() => {
-    if (products.length > 0 || catalogRequestRef.current) return;
-
-    const request = Promise.all([
-      PublicRepository.getProducts(),
-      PublicRepository.getCategories(),
-    ])
-      .then(([nextProducts, nextCategories]) => {
-        if (!isMountedRef.current) return;
-        setProducts(nextProducts);
-        setCategories(nextCategories);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (catalogRequestRef.current === request) {
-          catalogRequestRef.current = null;
-        }
-      });
-
-    catalogRequestRef.current = request;
-  }, [products.length]);
-
-  const openPanel = useCallback((panel: Exclude<MobilePanel, null>) => {
-    panelTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    if (panel === 'search') loadCatalog();
-    setActivePanel(panel);
-  }, [loadCatalog]);
-
   const closePanel = useCallback(() => {
     setActivePanel(null);
     window.requestAnimationFrame(() => panelTriggerRef.current?.focus());
@@ -293,12 +255,9 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
   }, [activePanel, closePanel]);
 
   const contextValue = useMemo(
-    () => ({ openSearch: () => openPanel('search') }),
-    [openPanel],
+    () => ({ openSearch: () => router.push('/search') }),
+    [router],
   );
-
-  const secondaryRoutes = ['/about', '/clients', '/delivery', '/branding', '/contacts', '/favorites', '/bag-designer'];
-  const isMoreActive = secondaryRoutes.some((route) => normalizedPathname.startsWith(route));
 
   const navigationItems = [
     {
@@ -319,8 +278,8 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     },
     {
       key: 'search',
-      href: null,
-      panel: 'search' as const,
+      href: '/search' as const,
+      panel: null,
       label: copy.search,
       icon: Search,
       active: activePanel === 'search' || normalizedPathname.startsWith('/search'),
@@ -335,11 +294,11 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     },
     {
       key: 'profile',
-      href: null,
-      panel: 'more' as const,
+      href: '/profile' as const,
+      panel: null,
       label: copy.profile,
       icon: UserRound,
-      active: activePanel === 'more' || isMoreActive,
+      active: normalizedPathname.startsWith('/profile'),
     },
   ];
 
@@ -477,27 +436,10 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
             const className = `relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 font-compact text-[10px] font-medium transition-colors active:bg-[var(--sp-surface-inset)] ${
               item.active ? 'text-[var(--sp-brand)]' : 'text-[var(--sp-ink-tertiary)]'
             }`;
-            return item.href ? (
-              <Link
-                key={item.key}
-                href={item.href}
-                aria-current={item.active ? 'page' : undefined}
-                className={className}
-              >
+            return (
+              <Link key={item.key} href={item.href} aria-current={item.active ? 'page' : undefined} className={className}>
                 {content}
               </Link>
-            ) : (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => openPanel(item.panel!)}
-                aria-haspopup="dialog"
-                aria-expanded={activePanel === item.panel}
-                aria-current={item.active ? 'page' : undefined}
-                className={className}
-              >
-                {content}
-              </button>
             );
           })}
         </div>

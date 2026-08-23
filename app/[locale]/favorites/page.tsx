@@ -39,8 +39,8 @@ export default function FavoritesPage() {
       <Header />
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10">
-        <div className="mb-8 flex items-center justify-between border-b border-[var(--sp-line)] pb-4">
-          <div>
+        <div className="mb-8 flex flex-col gap-4 border-b border-[var(--sp-line)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl">
               {t('favorites')}
             </h1>
@@ -52,9 +52,9 @@ export default function FavoritesPage() {
           {favProducts.length > 0 && (
             <button
               onClick={clearFavorites}
-              className="flex min-h-10 items-center gap-1.5 rounded-[var(--sp-radius-control)] px-3 text-xs font-medium text-[var(--sp-danger)] transition-colors hover:bg-red-500/8"
+              className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-danger)_34%,var(--sp-line))] bg-[var(--sp-surface)] px-4 text-xs font-semibold text-[var(--sp-danger)] transition-[background-color,border-color] hover:border-[var(--sp-danger)] hover:bg-[color-mix(in_srgb,var(--sp-danger)_7%,var(--sp-surface))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] sm:shrink-0"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="size-4" aria-hidden="true" />
               <span>{copy.clear}</span>
             </button>
           )}

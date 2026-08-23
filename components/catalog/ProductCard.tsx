@@ -4,24 +4,22 @@ import React from 'react';
 import { Link } from '@/i18n/navigation';
 import { Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
-import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import {
   AdjustmentsHorizontalIcon,
   HeartIcon,
-  ShoppingCartIcon,
-  CheckIcon,
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 
 import { useToast } from '@/context/ToastContext';
-import { getMinimumOrderLabel, getProductOrderRule } from '@/lib/commerce/orderQuantities';
+import { getMinimumOrderLabel } from '@/lib/commerce/orderQuantities';
 import {
   getProductCatalogPriceText,
   getProductSupportingText,
 } from '@/lib/catalog/productPresentation';
 import { isProductOrderable } from '@/lib/commerce/productOffer';
 import { ProductImage } from '@/components/catalog/ProductImage';
+import { ProductCartControl } from '@/components/catalog/ProductCartControl';
 
 interface ProductCardProps {
   product: Product;
@@ -42,16 +40,15 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
     en: ['Add to favorites', 'Remove from favorites'],
   }[language];
   const compactActionCopy = {
-    ru: { add: 'В заявку', added: 'Добавлено', choose: 'Выбрать' },
-    uz: { add: 'Arizaga', added: 'Qo‘shildi', choose: 'Tanlash' },
-    en: { add: 'Add', added: 'Added', choose: 'Choose' },
+    ru: { choose: 'Выбрать' },
+    uz: { choose: 'Tanlash' },
+    en: { choose: 'Choose' },
   }[language];
   const chooseVariantCopy = {
     ru: 'Выбрать вариант',
     uz: 'Variantni tanlash',
     en: 'Choose variant',
   }[language];
-  const { addItem, isInCart } = useRequestCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { showToast } = useToast();
 
@@ -60,18 +57,8 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
   const favorited = isFavorite(product.id);
   const hasVariants = Boolean(product.variants?.length);
   const orderable = isProductOrderable(product);
-  const inCart = isInCart(product.id);
-  const orderRule = getProductOrderRule(product, language);
   const minimumOrderLabel = getMinimumOrderLabel(product, language);
   const price = getProductCatalogPriceText(product, language);
-
-  const handleAddToCart = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (hasVariants) return;
-    addItem(product, undefined, orderRule.minimumQuantity);
-    showToast(copy[0], title);
-  };
 
   const handleToggleFavorite = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -138,20 +125,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
               <AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />
               <span>{hasVariants ? chooseVariantCopy : t('details')}</span>
             </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              className={`flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 ${
-                inCart
-                  ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
-                  : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
-              }`}
-            >
-              {inCart ? <CheckIcon className="size-4" /> : <ShoppingCartIcon className="size-4" />}
-              <span>{inCart ? t('inRequestCart') : t('addToRequest')}</span>
-            </button>
-          )}
+          ) : <ProductCartControl product={product} />}
         </div>
       </article>
     );
@@ -214,21 +188,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
               <span className="sm:hidden">{hasVariants ? compactActionCopy.choose : t('details')}</span>
               <span className="hidden sm:inline">{hasVariants ? chooseVariantCopy : t('details')}</span>
             </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              className={`flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] px-2 text-xs font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm ${
-                inCart
-                  ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
-                  : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
-              }`}
-            >
-              {inCart ? <CheckIcon className="size-4" /> : <ShoppingCartIcon className="size-4" />}
-              <span className="sm:hidden">{inCart ? compactActionCopy.added : compactActionCopy.add}</span>
-              <span className="hidden sm:inline">{inCart ? t('inRequestCart') : t('addToRequest')}</span>
-            </button>
-          )}
+          ) : <ProductCartControl product={product} />}
         </div>
       </div>
     </article>

@@ -6,13 +6,13 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ProductGallery } from '@/components/catalog/ProductGallery';
 import { ProductCard } from '@/components/catalog/ProductCard';
+import { ProductCartControl } from '@/components/catalog/ProductCartControl';
 import { ProductDetailSkeleton } from '@/components/catalog/ProductDetailSkeleton';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { Attribute, Product, ProductVariant } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
-import { motion } from 'motion/react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -91,6 +91,8 @@ export default function ProductDetailPage({
       increase: 'Увеличить количество',
       selectVariant: 'Сначала выберите вариант',
       informational: 'Только информация',
+      showMore: 'Развернуть описание',
+      showLess: 'Свернуть описание',
     },
     uz: {
       notFound: 'Mahsulot topilmadi',
@@ -120,6 +122,8 @@ export default function ProductDetailPage({
       increase: 'Miqdorni oshirish',
       selectVariant: 'Avval variantni tanlang',
       informational: 'Faqat ma’lumot uchun',
+      showMore: 'Tavsifni ochish',
+      showLess: 'Tavsifni yopish',
     },
     en: {
       notFound: 'Product not found',
@@ -149,9 +153,11 @@ export default function ProductDetailPage({
       increase: 'Increase quantity',
       selectVariant: 'Choose a variant first',
       informational: 'Information only',
+      showMore: 'Read description',
+      showLess: 'Hide description',
     },
   }[language];
-  const { addItem, isInCart } = useRequestCart();
+  const { items } = useRequestCart();
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -252,12 +258,21 @@ export default function ProductDetailPage({
 
   const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
   const description = getProductDescriptionText(product, language);
+  const shortDescription = getLocalizedText(
+    product.shortDescriptionRu,
+    product.shortDescriptionUz,
+    product.shortDescriptionEn,
+  );
   const favorited = isFavorite(product.id);
   const variantRequired = Boolean(product.variants?.length && !selectedVariant);
-  const inCart = isInCart(product.id, selectedVariant?.id);
+  const cartItem = items.find(
+    (item) => item.productId === product.id && item.variantId === selectedVariant?.id,
+  );
+  const inCart = Boolean(cartItem);
   const orderRule = getProductOrderRule(product, language, selectedVariant || undefined);
   const orderSummary = getOrderRuleSummary(product, language, selectedVariant || undefined);
   const orderable = isProductOrderable(product, selectedVariant || undefined);
+  const effectiveQuantity = cartItem?.quantity ?? quantity;
 
   // Dynamic price computation considering wholesale tiers
   const activeTiers = selectedVariant?.wholesaleTiers || product.wholesaleTiers || [];
@@ -272,13 +287,13 @@ export default function ProductDetailPage({
   if (activeTiers.length > 0) {
     // Find matching tier
     const sortedTiers = [...activeTiers].sort((a, b) => b.minQuantity - a.minQuantity);
-    const matchedTier = sortedTiers.find((t) => quantity >= t.minQuantity);
+    const matchedTier = sortedTiers.find((t) => effectiveQuantity >= t.minQuantity);
     if (matchedTier) {
       unitPrice = matchedTier.price;
     }
   }
 
-  const totalPrice = unitPrice * quantity;
+  const totalPrice = unitPrice * effectiveQuantity;
 
   const visibleAttributes = getPresentedProductAttributes(
     product,
@@ -295,11 +310,6 @@ export default function ProductDetailPage({
     selectedVariant?.image,
   );
   const quantityLabel = t('quantity').replace(/:\s*$/, '');
-
-  const handleAddToCart = () => {
-    if (variantRequired || !orderable) return;
-    addItem(product, selectedVariant || undefined, quantity);
-  };
 
   const handleSelectVariant = (variant: ProductVariant) => {
     setSelectedVariant(variant);
@@ -339,6 +349,17 @@ export default function ProductDetailPage({
           <h1 className="mb-4 break-words text-xl font-bold leading-snug tracking-tight text-[var(--sp-ink)] lg:hidden">
             {title}
           </h1>
+
+          {(shortDescription || description) ? (
+            <details className="group mb-5 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-4 py-3 text-sm leading-6 text-[var(--sp-ink-secondary)] lg:hidden">
+              <summary className="cursor-pointer list-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] [&::-webkit-details-marker]:hidden">
+                <span className="line-clamp-2 group-open:hidden">{shortDescription || description}</span>
+                <span className="mt-1.5 inline-flex min-h-7 items-center font-semibold text-[var(--sp-brand)] group-open:hidden">{copy.showMore}</span>
+                <span className="hidden min-h-7 items-center font-semibold text-[var(--sp-brand)] group-open:inline-flex">{copy.showLess}</span>
+              </summary>
+              <p className="mt-2 border-t border-[var(--sp-line-soft)] pt-3">{description || shortDescription}</p>
+            </details>
+          ) : null}
 
           {/* Product Hero Top Grid */}
           <div className="mb-8 grid grid-cols-1 gap-5 lg:mb-12 lg:grid-cols-12 lg:gap-8">
@@ -411,7 +432,13 @@ export default function ProductDetailPage({
                   <label htmlFor="product-quantity" className="block text-xs font-semibold text-[var(--sp-ink)]">
                     {quantityLabel} ({salesUnitLabel})
                   </label>
-                  <div className="flex items-center overflow-hidden rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)]">
+                  {inCart && !variantRequired ? (
+                    <ProductCartControl
+                      product={product}
+                      variant={selectedVariant || undefined}
+                      size="detail"
+                    />
+                  ) : <div className="flex items-center overflow-hidden rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)]">
                     <button
                       type="button"
                       onClick={() => setQuantity((q) => Math.max(orderRule.minimumQuantity, q - orderRule.quantityStep))}
@@ -448,7 +475,7 @@ export default function ProductDetailPage({
                     >
                       <Plus className="size-4" aria-hidden="true" />
                     </button>
-                  </div>
+                  </div>}
                 </div>
 
                 {/* Price Total Calculation */}
@@ -465,40 +492,24 @@ export default function ProductDetailPage({
 
                 {/* Action Buttons */}
                 <div className="space-y-2 pt-1">
-                  <motion.button
-                    type="button"
-                    disabled={variantRequired || !orderable}
-                    aria-describedby={variantRequired ? 'variant-selection-hint' : undefined}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={handleAddToCart}
-                    className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-raised)] transition-colors disabled:cursor-not-allowed disabled:bg-[var(--sp-control)] disabled:text-[var(--sp-ink-tertiary)] disabled:shadow-none ${
-                      inCart && !variantRequired
-                        ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
-                        : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'
-                    }`}
-                  >
-                    {variantRequired ? (
-                      <>
-                        <ShoppingCart className="w-4 h-4" aria-hidden="true" />
-                        <span>{copy.selectVariant}</span>
-                      </>
-                    ) : !orderable ? (
-                      <>
-                        <AlertCircle className="w-4 h-4" aria-hidden="true" />
-                        <span>{copy.informational}</span>
-                      </>
-                    ) : inCart ? (
-                      <>
-                        <Check className="w-4 h-4" aria-hidden="true" />
-                        <span>{copy.added}</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="w-4 h-4" aria-hidden="true" />
-                        <span>{t('addToRequest')}</span>
-                      </>
-                    )}
-                  </motion.button>
+                  {variantRequired || !orderable ? (
+                    <button
+                      type="button"
+                      disabled
+                      aria-describedby={variantRequired ? 'variant-selection-hint' : undefined}
+                      className="flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-control)] px-4 text-sm font-semibold text-[var(--sp-ink-tertiary)]"
+                    >
+                      {orderable ? <ShoppingCart className="size-4" aria-hidden="true" /> : <AlertCircle className="size-4" aria-hidden="true" />}
+                      <span>{variantRequired ? copy.selectVariant : copy.informational}</span>
+                    </button>
+                  ) : (
+                    <ProductCartControl
+                      product={product}
+                      variant={selectedVariant || undefined}
+                      initialQuantity={quantity}
+                      size="detail"
+                    />
+                  )}
 
                   <button
                     type="button"
@@ -807,25 +818,23 @@ export default function ProductDetailPage({
                   : t('priceOnRequest')}
               </span>
             </div>
-            {inCart && !variantRequired ? (
-              <Link
-                href="/request"
-                className="flex min-h-12 min-w-[9.75rem] items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-deep)] px-4 text-sm font-semibold text-[var(--sp-on-brand-deep)] shadow-[var(--sp-shadow-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)]"
-              >
-                <ShoppingCart className="size-4" aria-hidden="true" />
-                <span>{copy.openCart}</span>
-              </Link>
-            ) : (
-              <motion.button
+            {variantRequired || !orderable ? (
+              <button
                 type="button"
-                disabled={variantRequired || !orderable}
-                whileTap={{ scale: 0.97 }}
-                onClick={handleAddToCart}
-                className="flex min-h-12 min-w-[9.75rem] cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] disabled:cursor-not-allowed disabled:bg-[var(--sp-control)] disabled:text-[var(--sp-ink-tertiary)] disabled:shadow-none"
+                disabled
+                className="flex min-h-12 min-w-[9.75rem] cursor-not-allowed items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-control)] px-4 text-sm font-semibold text-[var(--sp-ink-tertiary)]"
               >
                 {orderable ? <ShoppingCart className="size-4" aria-hidden="true" /> : <AlertCircle className="size-4" aria-hidden="true" />}
-                <span>{variantRequired ? copy.selectVariant : orderable ? t('addToRequest') : copy.informational}</span>
-              </motion.button>
+                <span>{variantRequired ? copy.selectVariant : copy.informational}</span>
+              </button>
+            ) : (
+              <ProductCartControl
+                product={product}
+                variant={selectedVariant || undefined}
+                initialQuantity={quantity}
+                size="detail"
+                className="min-w-[10.5rem]"
+              />
             )}
           </div>
         </div>

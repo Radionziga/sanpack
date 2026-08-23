@@ -24,6 +24,7 @@ import { getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQu
 import { formatMoney, formatProductQuantity } from '@/lib/catalog/productPresentation';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Language } from '@/types';
+import { readCustomerProfileDraft } from '@/lib/customer/profileDraft';
 
 interface CustomerStatus {
   authenticated: boolean;
@@ -220,6 +221,12 @@ export default function RequestPage() {
 
     let draftName = '';
     let draftPhone = '';
+
+    const profileDraft = readCustomerProfileDraft();
+    if (profileDraft) {
+      draftName = profileDraft.name;
+      draftPhone = profileDraft.phone;
+    }
 
     try {
       const draft = window.sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
