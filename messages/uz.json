@@ -98,5 +98,41 @@
     "close": "Yopish",
     "thumbnails": "Mahsulotning boshqa rasmlari",
     "thumbnail": "{index}-rasm"
+  },
+  "catalogListing": {
+    "catalog": "Katalog",
+    "allProducts": "Barcha mahsulotlar",
+    "back": "Orqaga",
+    "filters": "Filtrlar",
+    "closeFilters": "Filtrlarni yopish",
+    "selected": "Tanlangan",
+    "reset": "Tozalash",
+    "empty": "Mos mahsulotlar topilmadi",
+    "emptyText": "Filtrlarni o‘zgartiring yoki boshqa kategoriyani tanlang.",
+    "searchEmptyText": "Qidiruv so‘rovini o‘zgartiring yoki tanlangan filtrlarni tozalang.",
+    "show": "Mahsulotlarni ko‘rsatish",
+    "error": "Katalogni yuklab bo‘lmadi",
+    "errorText": "Internet aloqasini tekshirib, qayta urinib ko‘ring.",
+    "retry": "Qayta urinish",
+    "grid": "Katak ko‘rinishi",
+    "list": "Ro‘yxat ko‘rinishi",
+    "home": "Bosh sahifa",
+    "found": "Topilgan mahsulotlar:",
+    "sortBy": "Saralash",
+    "sortPopular": "Ommabopligi bo‘yicha",
+    "sortNewest": "Avval yangilari",
+    "sortName": "Nomi bo‘yicha",
+    "sortPriceAsc": "Avval arzonlari",
+    "sortPriceDesc": "Avval qimmatlari",
+    "searchTitle": "«{query}» bo‘yicha qidiruv natijalari",
+    "searchWithoutQuery": "Qidiruv satriga so‘rov kiriting"
+  },
+  "catalogFilters": {
+    "title": "Filtrlar",
+    "reset": "Barchasini tozalash",
+    "inStockOnly": "Faqat mavjudlari",
+    "ownProductionOnly": "O‘z ishlab chiqarishimiz",
+    "showLess": "Yashirish",
+    "showMore": "Yana ko‘rsatish"
   }
 }

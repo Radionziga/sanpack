@@ -98,5 +98,41 @@
     "close": "Close",
     "thumbnails": "Other product photos",
     "thumbnail": "Photo {index}"
+  },
+  "catalogListing": {
+    "catalog": "Catalog",
+    "allProducts": "All products",
+    "back": "Back",
+    "filters": "Filters",
+    "closeFilters": "Close filters",
+    "selected": "Selected",
+    "reset": "Reset",
+    "empty": "No matching products",
+    "emptyText": "Change the filters or choose another category.",
+    "searchEmptyText": "Change your search or reset the selected filters.",
+    "show": "Show products",
+    "error": "Could not load the catalog",
+    "errorText": "Check your connection and try again.",
+    "retry": "Try again",
+    "grid": "Grid view",
+    "list": "List view",
+    "home": "Home",
+    "found": "Products found:",
+    "sortBy": "Sort",
+    "sortPopular": "Most popular",
+    "sortNewest": "Newest first",
+    "sortName": "By name",
+    "sortPriceAsc": "Lowest price first",
+    "sortPriceDesc": "Highest price first",
+    "searchTitle": "Search results for “{query}”",
+    "searchWithoutQuery": "Enter a query in the search field"
+  },
+  "catalogFilters": {
+    "title": "Filters",
+    "reset": "Reset all",
+    "inStockOnly": "In stock only",
+    "ownProductionOnly": "Manufactured by SANPACK",
+    "showLess": "Show less",
+    "showMore": "Show more"
   }
 }

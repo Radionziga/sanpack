@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Attribute, Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { Filter, RotateCcw, Check, ChevronDown, ChevronUp } from 'lucide-react';
@@ -33,23 +34,19 @@ export function FilterSidebar({
   embedded = false,
   hideHeader = false,
 }: FilterSidebarProps) {
-  const { t, getLocalizedText, language } = useLanguage();
-  const visibilityCopy = {
-    ru: { hide: 'Скрыть', more: 'Показать ещё' },
-    uz: { hide: 'Yashirish', more: 'Yana ko‘rsatish' },
-    en: { hide: 'Show less', more: 'Show more' },
-  }[language];
+  const t = useTranslations('catalogFilters');
+  const { getLocalizedText, language } = useLanguage();
 
-  // State to track collapsed attribute groups (key -> boolean)
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  // Keep the long attribute list compact until a user needs a group.
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   // State to track expanded "show more" options per group
   const [showAllOptions, setShowAllOptions] = useState<Record<string, boolean>>({});
 
-  const toggleGroupCollapse = (key: string) => {
-    setCollapsedGroups((prev) => ({
+  const toggleGroup = (key: string, isExpanded: boolean) => {
+    setExpandedGroups((prev) => ({
       ...prev,
-      [key]: !prev[key],
+      [key]: !isExpanded,
     }));
   };
 
@@ -81,8 +78,8 @@ export function FilterSidebar({
       {/* Sidebar Header */}
       {!hideHeader ? <div className="flex items-center justify-between border-b border-[var(--sp-line-soft)] pb-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-[var(--sp-ink)]">
-          <Filter className="size-4 text-[var(--sp-brand)]" />
-          <span>{t('filterTitle')}</span>
+          <Filter className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
+          <span>{t('title')}</span>
           {activeAttributeCount > 0 && (
             <span className="rounded-[var(--sp-radius-control-inner)] border border-[color-mix(in_srgb,var(--sp-brand)_22%,var(--sp-line))] bg-[var(--sp-brand-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--sp-brand)]">
               {activeAttributeCount}
@@ -92,18 +89,19 @@ export function FilterSidebar({
 
         {hasActiveFilters && (
           <button
+            type="button"
             onClick={onReset}
-            className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 transition-colors"
+            className="flex min-h-9 cursor-pointer items-center gap-1 rounded-[var(--sp-radius-control-inner)] px-2 text-[11px] font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-800"
           >
-            <RotateCcw className="w-3 h-3" />
-            <span>{t('resetFilters')}</span>
+            <RotateCcw className="size-3" aria-hidden="true" />
+            <span>{t('reset')}</span>
           </button>
         )}
       </div> : null}
 
       {/* Quick Toggles */}
       <div className="space-y-2">
-        <label className="flex cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5 transition-colors hover:border-[var(--sp-line)]">
+        <label className="flex min-h-11 cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5 transition-colors hover:border-[var(--sp-line)]">
           <span className="text-xs font-medium text-[var(--sp-ink)]">
             {t('inStockOnly')}
           </span>
@@ -115,7 +113,7 @@ export function FilterSidebar({
           />
         </label>
 
-        <label className="flex cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5 transition-colors hover:border-[var(--sp-line)]">
+        <label className="flex min-h-11 cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5 transition-colors hover:border-[var(--sp-line)]">
           <span className="text-xs font-medium text-[var(--sp-ink)]">
             {t('ownProductionOnly')}
           </span>
@@ -184,7 +182,7 @@ export function FilterSidebar({
 
           if (visibleOptions.length === 0) return null;
 
-          const isCollapsed = collapsedGroups[attr.key] === true && currentVals.length === 0;
+          const isExpanded = expandedGroups[attr.key] === true || currentVals.length > 0;
           const isShowMore = showAllOptions[attr.key] === true;
           const INITIAL_LIMIT = 5;
           const displayedOptions = isShowMore ? visibleOptions : visibleOptions.slice(0, INITIAL_LIMIT);
@@ -195,8 +193,9 @@ export function FilterSidebar({
               {/* Accordion Group Header */}
               <button
                 type="button"
-                onClick={() => toggleGroupCollapse(attr.key)}
-                className="group flex w-full select-none items-center justify-between py-1 text-left text-xs font-semibold text-[var(--sp-ink)] transition-colors hover:text-[var(--sp-brand)]"
+                onClick={() => toggleGroup(attr.key, isExpanded)}
+                aria-expanded={isExpanded}
+                className="group flex min-h-11 w-full select-none items-center justify-between py-2 text-left text-xs font-semibold text-[var(--sp-ink)] transition-colors hover:text-[var(--sp-brand)]"
               >
                 <div className="flex items-center gap-2">
                   <span className="uppercase tracking-wider">
@@ -215,34 +214,40 @@ export function FilterSidebar({
                 </div>
 
                 <div className="text-[var(--sp-ink-muted)] transition-transform duration-200 group-hover:text-[var(--sp-brand)]">
-                  {isCollapsed ? (
-                    <ChevronDown className="w-4 h-4" />
+                  {isExpanded ? (
+                    <ChevronUp className="size-4" aria-hidden="true" />
                   ) : (
-                    <ChevronUp className="w-4 h-4" />
+                    <ChevronDown className="size-4" aria-hidden="true" />
                   )}
                 </div>
               </button>
 
               {/* Collapsible Content */}
-              {!isCollapsed && (
+              {isExpanded && (
                 <div className="mt-2 space-y-1.5 transition-all">
                   {displayedOptions.map((opt) => {
                     const isSelected = currentVals.includes(opt.value);
                     return (
                       <label
                         key={opt.value}
-                        onClick={() => handleToggleValue(attr.key, opt.value)}
-                        className="group flex cursor-pointer select-none items-center justify-between rounded-[var(--sp-radius-control-inner)] px-1 py-1 text-xs text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
+                        className="group flex min-h-9 cursor-pointer select-none items-center justify-between rounded-[var(--sp-radius-control-inner)] px-1 py-1 text-xs text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
                       >
                         <div className="flex items-center gap-2 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleValue(attr.key, opt.value)}
+                            className="peer sr-only"
+                          />
                           <div
-                            className={`flex size-4 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] border transition-colors ${
+                            aria-hidden="true"
+                            className={`flex size-4 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] border transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--sp-focus)] ${
                               isSelected
                                 ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)]'
                                 : 'border-[var(--sp-line-strong)] bg-[var(--sp-surface)] group-hover:border-[var(--sp-brand)]'
                             }`}
                           >
-                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                            {isSelected && <Check className="size-3 stroke-[3]" />}
                           </div>
                           <span
                             className={`truncate ${
@@ -267,11 +272,11 @@ export function FilterSidebar({
                     <button
                       type="button"
                       onClick={() => toggleShowMore(attr.key)}
-                      className="block pt-1 text-[11px] font-medium text-[var(--sp-brand)] hover:underline"
+                      className="block min-h-9 cursor-pointer rounded-[var(--sp-radius-control-inner)] px-1 pt-1 text-[11px] font-medium text-[var(--sp-brand)] hover:underline"
                     >
                       {isShowMore
-                        ? visibilityCopy.hide
-                        : `+ ${visibilityCopy.more} ${visibleOptions.length - INITIAL_LIMIT}`}
+                        ? t('showLess')
+                        : `+ ${t('showMore')} ${visibleOptions.length - INITIAL_LIMIT}`}
                     </button>
                   )}
                 </div>

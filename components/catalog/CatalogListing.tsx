@@ -7,6 +7,7 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   ChevronLeft,
   ChevronRight,
@@ -22,70 +23,17 @@ import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Attribute, Category, Product } from '@/types';
-import { CategorySidebar } from '@/components/catalog/CategorySidebar';
 import { FilterSidebar } from '@/components/catalog/FilterSidebar';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { filterProductsBySearch } from '@/lib/catalog/productSearch';
 
 interface CatalogListingProps {
   activeCategorySlug?: string;
+  searchQuery?: string;
 }
 
 type LoadState = 'loading' | 'ready' | 'error';
-
-const copyByLanguage = {
-  ru: {
-    catalog: 'Каталог',
-    all: 'Все товары',
-    back: 'Назад',
-    filters: 'Фильтры',
-    closeFilters: 'Закрыть фильтры',
-    active: 'Выбрано',
-    resetAll: 'Сбросить',
-    empty: 'Подходящих товаров нет',
-    emptyText: 'Измените фильтры или выберите другую категорию.',
-    show: 'Показать товары',
-    error: 'Не удалось загрузить каталог',
-    errorText: 'Проверьте соединение и попробуйте ещё раз.',
-    retry: 'Попробовать снова',
-    grid: 'Показать плиткой',
-    list: 'Показать списком',
-  },
-  uz: {
-    catalog: 'Katalog',
-    all: 'Barcha mahsulotlar',
-    back: 'Orqaga',
-    filters: 'Filtrlar',
-    closeFilters: 'Filtrlarni yopish',
-    active: 'Tanlangan',
-    resetAll: 'Tozalash',
-    empty: 'Mos mahsulotlar topilmadi',
-    emptyText: 'Filtrlarni o‘zgartiring yoki boshqa kategoriyani tanlang.',
-    show: 'Mahsulotlarni ko‘rsatish',
-    error: 'Katalogni yuklab bo‘lmadi',
-    errorText: 'Internet aloqasini tekshirib, qayta urinib ko‘ring.',
-    retry: 'Qayta urinish',
-    grid: 'Katak ko‘rinishi',
-    list: 'Ro‘yxat ko‘rinishi',
-  },
-  en: {
-    catalog: 'Catalog',
-    all: 'All products',
-    back: 'Back',
-    filters: 'Filters',
-    closeFilters: 'Close filters',
-    active: 'Selected',
-    resetAll: 'Reset',
-    empty: 'No matching products',
-    emptyText: 'Change the filters or choose another category.',
-    show: 'Show products',
-    error: 'Could not load the catalog',
-    errorText: 'Check your connection and try again.',
-    retry: 'Try again',
-    grid: 'Grid view',
-    list: 'List view',
-  },
-} as const;
 
 function CatalogSkeleton() {
   return (
@@ -105,15 +53,15 @@ function CatalogSkeleton() {
   );
 }
 
-function MobileCategoryRail({
+function CategoryRail({
   categories,
   activeCategory,
 }: {
   categories: Category[];
   activeCategory: Category | null;
 }) {
-  const { getLocalizedText, language } = useLanguage();
-  const copy = copyByLanguage[language];
+  const { getLocalizedText } = useLanguage();
+  const t = useTranslations('catalogListing');
   const parents = useMemo(
     () => categories.filter((category) => !category.parentId && category.status === 'active'),
     [categories],
@@ -126,13 +74,13 @@ function MobileCategoryRail({
     : [];
 
   const railClassName =
-    '-mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
+    '-mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden';
   const itemClassName =
     'flex min-h-11 shrink-0 snap-start items-center rounded-[var(--sp-radius-control)] border px-3.5 text-sm font-medium transition-colors';
 
   return (
-    <div className="space-y-2 lg:hidden">
-      <nav className={railClassName} aria-label={copy.catalog}>
+    <div className="space-y-2">
+      <nav className={railClassName} aria-label={t('catalog')}>
         <Link
           href="/catalog"
           aria-current={!activeCategory ? 'page' : undefined}
@@ -142,7 +90,7 @@ function MobileCategoryRail({
               : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)]'
           }`}
         >
-          {copy.all}
+          {t('allProducts')}
         </Link>
         {parents.map((category) => {
           const isActive = activeParent?.id === category.id;
@@ -188,9 +136,9 @@ function MobileCategoryRail({
   );
 }
 
-export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
-  const { t, getLocalizedText, language } = useLanguage();
-  const copy = copyByLanguage[language];
+export function CatalogListing({ activeCategorySlug, searchQuery }: CatalogListingProps) {
+  const t = useTranslations('catalogListing');
+  const { getLocalizedText, language } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
@@ -259,16 +207,21 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
 
   const parentTitle = parentCategory
     ? getLocalizedText(parentCategory.titleRu, parentCategory.titleUz, parentCategory.titleEn)
-    : copy.catalog;
+    : t('catalog');
 
   const scopedProducts = useMemo(() => {
-    if (!currentCategory) return products;
-    const childIds = categories
-      .filter((category) => category.parentId === currentCategory.id)
-      .map((category) => category.id);
-    const categoryIds = new Set([currentCategory.id, ...childIds]);
-    return products.filter((product) => categoryIds.has(product.categoryId));
-  }, [categories, currentCategory, products]);
+    let nextProducts = products;
+    if (currentCategory) {
+      const childIds = categories
+        .filter((category) => category.parentId === currentCategory.id)
+        .map((category) => category.id);
+      const categoryIds = new Set([currentCategory.id, ...childIds]);
+      nextProducts = products.filter((product) => categoryIds.has(product.categoryId));
+    }
+    return searchQuery === undefined
+      ? nextProducts
+      : filterProductsBySearch(nextProducts, searchQuery);
+  }, [categories, currentCategory, products, searchQuery]);
 
   const filteredProducts = useMemo(() => {
     return scopedProducts
@@ -302,9 +255,14 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
     Number(inStockOnly) +
     Number(ownProductionOnly) +
     Object.values(selectedFilters).reduce((total, values) => total + values.length, 0);
-  const categoryTitle = currentCategory
-    ? getLocalizedText(currentCategory.titleRu, currentCategory.titleUz, currentCategory.titleEn)
-    : copy.catalog;
+  const normalizedSearchQuery = searchQuery?.trim() || '';
+  const categoryTitle = searchQuery !== undefined
+    ? normalizedSearchQuery
+      ? t('searchTitle', { query: normalizedSearchQuery })
+      : t('searchWithoutQuery')
+    : currentCategory
+      ? getLocalizedText(currentCategory.titleRu, currentCategory.titleUz, currentCategory.titleEn)
+      : t('catalog');
   const categoryDescription = currentCategory
     ? getLocalizedText(currentCategory.descriptionRu, currentCategory.descriptionUz, currentCategory.descriptionEn)
     : '';
@@ -364,25 +322,25 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
               <Link
                 href={parentCategory ? `/catalog/${parentCategory.slug}` : '/catalog'}
                 className="flex size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] shadow-xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95 md:hidden"
-                aria-label={copy.back}
-                title={copy.back}
+                aria-label={t('back')}
+                title={t('back')}
               >
                 <ChevronLeft className="size-5 text-[var(--sp-brand)]" aria-hidden="true" />
               </Link>
             ) : null}
             <div className="min-w-0 flex-1">
-              <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl truncate">
+              <h1 className="text-pretty break-words font-extended text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] sm:text-3xl">
                 {categoryTitle}
               </h1>
             </div>
           </div>
           {categoryDescription ? <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--sp-ink-secondary)]">{categoryDescription}</p> : null}
           <p className="mt-1.5 text-xs font-medium text-[var(--sp-ink-secondary)]">
-            {t('foundItems')} <span className="font-semibold tabular-nums text-[var(--sp-brand)]">{filteredProducts.length}</span>
+            {t('found')} <span className="font-semibold tabular-nums text-[var(--sp-brand)]">{filteredProducts.length}</span>
           </p>
         </div>
 
-        <MobileCategoryRail categories={categories} activeCategory={currentCategory} />
+        <CategoryRail categories={categories} activeCategory={currentCategory} />
 
         <div className="sticky top-[56px] z-20 -mx-4 mt-3 border-y border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-canvas)_96%,transparent)] px-4 py-2.5 backdrop-blur-xl md:static md:mx-0 md:mt-6 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
           <div className="flex items-center gap-2 md:justify-end">
@@ -394,7 +352,7 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
               className="relative flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-sm font-semibold text-[var(--sp-ink)] shadow-[var(--sp-shadow-soft)] lg:hidden"
             >
               <Filter className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
-              <span>{copy.filters}</span>
+              <span>{t('filters')}</span>
               {activeFilterCount > 0 ? (
                 <span className="flex min-h-5 min-w-5 items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-1 text-[10px] tabular-nums text-[var(--sp-on-brand)]">{activeFilterCount}</span>
               ) : null}
@@ -415,11 +373,11 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
               className="min-w-0 flex-1 md:w-52 md:flex-none"
             />
 
-            <div className="hidden h-11 items-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-1 md:flex">
-              <button type="button" onClick={() => setViewMode('grid')} aria-label={copy.grid} aria-pressed={viewMode === 'grid'} className={`flex size-9 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${viewMode === 'grid' ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-inset)]'}`}>
+            <div className="hidden h-12 items-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-1 md:flex">
+              <button type="button" onClick={() => setViewMode('grid')} aria-label={t('grid')} aria-pressed={viewMode === 'grid'} className={`flex size-10 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${viewMode === 'grid' ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-inset)]'}`}>
                 <Grid2X2 className="size-4" aria-hidden="true" />
               </button>
-              <button type="button" onClick={() => setViewMode('list')} aria-label={copy.list} aria-pressed={viewMode === 'list'} className={`flex size-9 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${viewMode === 'list' ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-inset)]'}`}>
+              <button type="button" onClick={() => setViewMode('list')} aria-label={t('list')} aria-pressed={viewMode === 'list'} className={`flex size-10 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control-inner)] transition-colors ${viewMode === 'list' ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-inset)]'}`}>
                 <List className="size-4" aria-hidden="true" />
               </button>
             </div>
@@ -427,8 +385,8 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
         </div>
 
         <div className="mt-5 grid gap-8 lg:grid-cols-12">
-          <aside className="hidden space-y-6 lg:col-span-3 lg:block">
-            <CategorySidebar categories={categories} activeSlug={activeCategorySlug} />
+          <aside className="hidden lg:col-span-3 lg:block">
+            <div className="sticky top-24">
             <FilterSidebar
               attributes={attributes}
               products={scopedProducts}
@@ -440,14 +398,15 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
               onOwnProductionChange={setOwnProductionOnly}
               onReset={resetFilters}
             />
+            </div>
           </aside>
 
           <div className="min-w-0 lg:col-span-9">
             {activeFilterCount > 0 ? (
               <div className="mb-4 flex items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 py-2.5">
-                <span className="min-w-0 flex-1 text-xs font-medium text-[var(--sp-ink-secondary)]">{copy.active}: {activeFilterCount}</span>
+                <span className="min-w-0 flex-1 text-xs font-medium text-[var(--sp-ink-secondary)]">{t('selected')}: {activeFilterCount}</span>
                 <button type="button" onClick={resetFilters} className="flex min-h-9 cursor-pointer items-center gap-1.5 rounded-[var(--sp-radius-control-inner)] px-2 text-xs font-semibold text-[var(--sp-brand)] transition-colors hover:bg-[var(--sp-brand-soft)]">
-                  <RotateCcw className="size-3.5" aria-hidden="true" />{copy.resetAll}
+                  <RotateCcw className="size-3.5" aria-hidden="true" />{t('reset')}
                 </button>
               </div>
             ) : null}
@@ -457,18 +416,18 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
             {loadState === 'error' ? (
               <div className="mx-auto max-w-md py-12 text-center" role="alert">
                 <div className="mx-auto flex size-14 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] text-[var(--sp-brand)]"><RefreshCw className="size-6" aria-hidden="true" /></div>
-                <h2 className="mt-5 font-extended text-xl font-bold text-[var(--sp-ink)]">{copy.error}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--sp-ink-secondary)]">{copy.errorText}</p>
-                <button type="button" onClick={() => { setLoadState('loading'); setLoadAttempt((current) => current + 1); }} className="mt-5 min-h-11 cursor-pointer rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)]">{copy.retry}</button>
+                <h2 className="mt-5 font-extended text-xl font-bold text-[var(--sp-ink)]">{t('error')}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--sp-ink-secondary)]">{t('errorText')}</p>
+                <button type="button" onClick={() => { setLoadState('loading'); setLoadAttempt((current) => current + 1); }} className="mt-5 min-h-11 cursor-pointer rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)]">{t('retry')}</button>
               </div>
             ) : null}
 
             {loadState === 'ready' && filteredProducts.length === 0 ? (
               <div className="mx-auto max-w-md py-12 text-center">
                 <div className="mx-auto flex size-14 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] text-[var(--sp-ink-muted)]"><Search className="size-6" aria-hidden="true" /></div>
-                <h2 className="mt-5 font-extended text-xl font-bold text-[var(--sp-ink)]">{copy.empty}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--sp-ink-secondary)]">{copy.emptyText}</p>
-                {activeFilterCount > 0 ? <button type="button" onClick={resetFilters} className="mt-5 min-h-11 cursor-pointer rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)]">{copy.resetAll}</button> : null}
+                <h2 className="mt-5 font-extended text-xl font-bold text-[var(--sp-ink)]">{t('empty')}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--sp-ink-secondary)]">{t(searchQuery !== undefined ? 'searchEmptyText' : 'emptyText')}</p>
+                {activeFilterCount > 0 ? <button type="button" onClick={resetFilters} className="mt-5 min-h-11 cursor-pointer rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)]">{t('reset')}</button> : null}
               </div>
             ) : null}
 
@@ -483,7 +442,7 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
 
       {isMobileFilterOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button type="button" aria-label={copy.closeFilters} onClick={() => setIsMobileFilterOpen(false)} className="absolute inset-0 cursor-pointer bg-black/45" />
+          <button type="button" aria-label={t('closeFilters')} onClick={() => setIsMobileFilterOpen(false)} className="absolute inset-0 cursor-pointer bg-black/45" />
           <section
             role="dialog"
             aria-modal="true"
@@ -493,10 +452,10 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
           >
             <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--sp-line)] px-4 py-3">
               <div>
-                <h2 id="mobile-filter-title" className="font-extended text-lg font-bold text-[var(--sp-ink)]">{copy.filters}</h2>
-                <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">{t('foundItems')} {filteredProducts.length}</p>
+                <h2 id="mobile-filter-title" className="font-extended text-lg font-bold text-[var(--sp-ink)]">{t('filters')}</h2>
+                <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">{t('found')} {filteredProducts.length}</p>
               </div>
-              <button ref={filterCloseRef} type="button" onClick={() => setIsMobileFilterOpen(false)} aria-label={copy.closeFilters} className="sp-icon-button size-11 shrink-0"><X className="size-5" aria-hidden="true" /></button>
+              <button ref={filterCloseRef} type="button" onClick={() => setIsMobileFilterOpen(false)} aria-label={t('closeFilters')} className="sp-icon-button size-11 shrink-0"><X className="size-5" aria-hidden="true" /></button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
               <FilterSidebar
@@ -514,8 +473,8 @@ export function CatalogListing({ activeCategorySlug }: CatalogListingProps) {
               />
             </div>
             <div className="flex shrink-0 gap-2 border-t border-[var(--sp-line)] bg-[var(--sp-surface)] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-              {activeFilterCount > 0 ? <button type="button" onClick={resetFilters} className="min-h-12 cursor-pointer rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] px-4 text-sm font-semibold text-[var(--sp-ink)]">{copy.resetAll}</button> : null}
-              <button type="button" onClick={() => setIsMobileFilterOpen(false)} className="min-h-12 flex-1 cursor-pointer rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)]">{copy.show} ({filteredProducts.length})</button>
+              {activeFilterCount > 0 ? <button type="button" onClick={resetFilters} className="min-h-12 cursor-pointer rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] px-4 text-sm font-semibold text-[var(--sp-ink)]">{t('reset')}</button> : null}
+              <button type="button" onClick={() => setIsMobileFilterOpen(false)} className="min-h-12 flex-1 cursor-pointer rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)]">{t('show')} ({filteredProducts.length})</button>
             </div>
           </section>
         </div>
