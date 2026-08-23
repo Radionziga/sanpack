@@ -158,7 +158,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
   }
 
   return (
-    <article className="group flex h-full min-w-0 flex-col rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-2 transition-[border-color,box-shadow,transform] duration-200 hover:border-[color-mix(in_srgb,var(--sp-brand)_42%,var(--sp-line))] hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0 sm:p-3 md:hover:-translate-y-1">
+    <article className="group flex h-full min-w-0 flex-col rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-2 transition-[border-color,box-shadow] duration-200 hover:border-[color-mix(in_srgb,var(--sp-brand)_42%,var(--sp-line))] hover:shadow-[var(--sp-shadow-soft)] sm:p-3">
       <div className="relative">
         <Link
           href={`/product/${product.slug}`}
@@ -187,7 +187,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
 
       <div className="flex flex-1 flex-col px-0.5 pb-0.5 pt-2.5 sm:px-1 sm:pb-1 sm:pt-4">
         <Link href={`/product/${product.slug}`} className="w-fit max-w-full">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-[var(--sp-ink)] transition-colors group-hover:text-[var(--sp-brand)] sm:text-base">
+          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug tracking-tight text-[var(--sp-ink)] transition-colors group-hover:text-[var(--sp-brand)] sm:min-h-[2.75rem] sm:text-base">
             {title}
           </h3>
         </Link>
@@ -199,7 +199,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
         ) : null}
 
 
-        <div className="mt-auto flex flex-col gap-2.5 border-t border-[var(--sp-line-soft)] pt-3 sm:gap-3 sm:pt-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mt-auto flex flex-col gap-2.5 border-t border-[var(--sp-line-soft)] pt-3 sm:gap-3 sm:pt-4">
           <div className="min-w-0">
             <span className="block text-sm font-semibold tracking-tight text-[var(--sp-brand)] sm:text-base">{price}</span>
             <span className="mt-0.5 block text-[11px] leading-snug text-[var(--sp-ink-muted)] sm:text-xs">{minimumOrderLabel}</span>
@@ -208,7 +208,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
           {hasVariants || !orderable ? (
             <Link
               href={`/product/${product.slug}`}
-              className="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-2 text-xs font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm lg:w-auto"
+              className="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-2 text-xs font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm"
             >
               <AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />
               <span className="sm:hidden">{hasVariants ? compactActionCopy.choose : t('details')}</span>
@@ -218,7 +218,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
             <button
               type="button"
               onClick={handleAddToCart}
-              className={`flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] px-2 text-xs font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm lg:w-auto ${
+              className={`flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] px-2 text-xs font-semibold shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm ${
                 inCart
                   ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]'
                   : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]'

@@ -110,15 +110,24 @@ export function CatalogHome({
           image: category.image || categoryProducts[0]?.mainImage,
         };
       })
-      .filter((item) => item.count > 0 || !item.category.parentId)
+      .filter((item) => item.category.parentId && item.count > 0)
       .sort((a, b) => (a.category.sortOrder ?? 99) - (b.category.sortOrder ?? 99));
   }, [categories, products]);
 
-  // Top level categories for filtering the main catalog section
-  const mainCategories = useMemo(
-    () => categories.filter((c) => !c.parentId && c.slug !== 'branding-polygraphy'),
-    [categories]
-  );
+  // Real product groups are more useful here than the two broad parent sections.
+  const mainCategories = useMemo(() => {
+    const categoriesWithProducts = categories.filter((category) => (
+      Boolean(category.parentId)
+      && category.status === 'active'
+      && products.some((product) => (
+        product.categoryId === category.id || product.categorySlug === category.slug
+      ))
+    ));
+
+    return categoriesWithProducts
+      .sort((left, right) => (left.sortOrder ?? 99) - (right.sortOrder ?? 99))
+      .slice(0, 12);
+  }, [categories, products]);
 
   // Filtered products for main catalog section (concise 8-item preview grid)
   const displayedCatalogProducts = useMemo(() => {
@@ -128,15 +137,10 @@ export function CatalogHome({
     const cat = categories.find((c) => c.slug === selectedCategorySlug);
     if (!cat) return products.slice(0, 8);
 
-    const subcategoryIds = new Set(
-      categories.filter((c) => c.parentId === cat.id).map((c) => c.id)
-    );
-    subcategoryIds.add(cat.id);
-
     return products
       .filter(
         (p) =>
-          subcategoryIds.has(p.categoryId) ||
+          p.categoryId === cat.id ||
           p.categorySlug === cat.slug ||
           p.categorySlug === selectedCategorySlug
       )

@@ -11,6 +11,13 @@ export function StorefrontTheme({
   design: SiteSettings['design'];
   children: ReactNode;
 }) {
+  const legacyBrandTheme = !design.fontPair || design.fontPair === 'brand';
+  const fontPair = legacyBrandTheme ? 'modern' : design.fontPair;
+  const configuredRadius = design.borderRadius ?? 14;
+  // The original storefront shipped with brand + 8px. Treat that exact pair as
+  // the legacy preset so existing installations adopt the approved softer UI
+  // without a production settings write. Explicit custom radii remain intact.
+  const radius = legacyBrandTheme && configuredRadius === 8 ? 14 : configuredRadius;
   const primary = normalizeHex(design.primaryColor || '#0F6E43');
   // Before design v2 secondaryColor stored an auto-generated dark primary shade.
   // Existing Firestore documents therefore receive the new SANPACK lime accent once.
@@ -39,13 +46,13 @@ export function StorefrontTheme({
     '--sp-cta-ink': accessibleForeground(primaryStrong),
     '--sp-cta-action': secondary,
     '--sp-cta-action-ink': accessibleForeground(secondary),
-    '--sp-radius': `${Math.min(32, Math.max(0, design.borderRadius ?? 8))}px`,
+    '--sp-radius': `${Math.min(32, Math.max(0, radius))}px`,
   };
 
   return (
     <div
       data-storefront-theme={design.themeMode || 'light'}
-      data-font-pair={design.fontPair || 'brand'}
+      data-font-pair={fontPair}
       style={style}
       className="min-h-screen bg-[var(--sp-canvas)] text-[var(--sp-ink)]"
     >

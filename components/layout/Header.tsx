@@ -16,7 +16,6 @@ import {
   XMarkIcon,
   ChevronDownIcon,
   PaperAirplaneIcon,
-  DocumentTextIcon,
   ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { useLanguage } from '@/context/LanguageContext';
@@ -436,16 +435,8 @@ export function Header({
               </div>
             </div>
 
-            {/* Actions: Request, Favorites, Request Cart, Lang */}
+            {/* Actions: Favorites, Cart, Language */}
             <div className="flex shrink-0 items-center gap-1 md:gap-2">
-              <Link
-                href="/request"
-                className="hidden h-10 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3.5 text-xs font-semibold text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] lg:flex"
-              >
-                <DocumentTextIcon className="size-4" aria-hidden="true" />
-                <span>{t('leaveRequest')}</span>
-              </Link>
-
               {/* Favorites */}
               <Link
                 href="/favorites"
@@ -464,7 +455,7 @@ export function Header({
                 )}
               </Link>
 
-              {/* Request Cart */}
+              {/* Cart */}
               <Link
                 href="/request"
                 className="group relative hidden h-10 shrink-0 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] md:flex"

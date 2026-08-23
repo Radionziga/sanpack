@@ -3,7 +3,6 @@
 import {
   ChevronRight,
   Clock3,
-  Ellipsis,
   Heart,
   House,
   Info,
@@ -15,6 +14,7 @@ import {
   Send,
   ShoppingCart,
   Truck,
+  UserRound,
   Users,
   X,
   ArrowRight,
@@ -33,7 +33,6 @@ import {
 } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
-import { useFavorites } from '@/context/FavoritesContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
@@ -42,7 +41,7 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { contactPhoneHref } from '@/lib/settings/contacts';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Product, Category } from '@/types';
-import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
+import { formatMoney, getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { ProductImage } from '@/components/catalog/ProductImage';
 
 type MobilePanel = 'search' | 'more' | null;
@@ -91,8 +90,7 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { language, t, getLocalizedText } = useLanguage();
-  const { items } = useRequestCart();
-  const { count: favoriteCount } = useFavorites();
+  const { items, totalAmount } = useRequestCart();
   const { contacts, modules } = useSiteSettings();
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,7 +108,8 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
 
   const copy = {
     ru: {
-      more: 'Ещё',
+      profile: 'Профиль',
+      profileTitle: 'Профиль и настройки',
       search: 'Поиск',
       searchTitle: 'Поиск по каталогу',
       searchPlaceholder: 'Название товара, категория, артикул…',
@@ -130,9 +129,15 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
       tryAnother: 'Попробуйте изменить запрос или выберите из популярных вариантов:',
       viewAllResults: 'Смотреть все результаты в каталоге',
       sku: 'Арт.',
+      cart: 'Корзина',
+      preliminary: 'Предварительно',
+      priceOnRequest: 'Цена по запросу',
+      requestPrices: 'есть позиции по запросу',
+      openCart: 'Открыть корзину',
     },
     uz: {
-      more: 'Yana',
+      profile: 'Profil',
+      profileTitle: 'Profil va sozlamalar',
       search: 'Qidirish',
       searchTitle: 'Katalog bo‘yicha qidirish',
       searchPlaceholder: 'Mahsulot nomi, kategoriya, artikul…',
@@ -152,9 +157,15 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
       tryAnother: 'So‘rovni o‘zgartirib ko‘ring yoki quyidagi variantlardan birini tanlang:',
       viewAllResults: 'Katalogda barcha natijalarni ko‘rish',
       sku: 'Art.',
+      cart: 'Savat',
+      preliminary: 'Dastlabki summa',
+      priceOnRequest: 'Narx so‘rov asosida',
+      requestPrices: 'so‘rov asosidagi narxlar bor',
+      openCart: 'Savatni ochish',
     },
     en: {
-      more: 'More',
+      profile: 'Profile',
+      profileTitle: 'Profile and settings',
       search: 'Search',
       searchTitle: 'Search the catalog',
       searchPlaceholder: 'Product name, category, SKU…',
@@ -174,6 +185,11 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
       tryAnother: 'Try a different term or select from popular options below:',
       viewAllResults: 'View all results in catalog',
       sku: 'SKU',
+      cart: 'Cart',
+      preliminary: 'Preliminary',
+      priceOnRequest: 'Price on request',
+      requestPrices: 'includes request-only prices',
+      openCart: 'Open cart',
     },
   }[language];
 
@@ -281,10 +297,14 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     [openPanel],
   );
 
+  const secondaryRoutes = ['/about', '/clients', '/delivery', '/branding', '/contacts', '/favorites', '/bag-designer'];
+  const isMoreActive = secondaryRoutes.some((route) => normalizedPathname.startsWith(route));
+
   const navigationItems = [
     {
       key: 'home',
       href: '/' as const,
+      panel: null,
       label: t('home'),
       icon: House,
       active: normalizedPathname === '/',
@@ -292,30 +312,46 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     {
       key: 'catalog',
       href: '/catalog' as const,
+      panel: null,
       label: t('catalog'),
       icon: LayoutGrid,
-      active: ['/catalog', '/product', '/search'].some((route) => normalizedPathname.startsWith(route)),
+      active: ['/catalog', '/product'].some((route) => normalizedPathname.startsWith(route)),
     },
     {
-      key: 'favorites',
-      href: '/favorites' as const,
-      label: t('favorites'),
-      icon: Heart,
-      count: favoriteCount,
-      active: normalizedPathname.startsWith('/favorites'),
+      key: 'search',
+      href: null,
+      panel: 'search' as const,
+      label: copy.search,
+      icon: Search,
+      active: activePanel === 'search' || normalizedPathname.startsWith('/search'),
     },
     {
-      key: 'request',
+      key: 'cart',
       href: '/request' as const,
-      label: language === 'uz' ? 'Savat' : language === 'en' ? 'Cart' : 'Корзина',
+      panel: null,
+      label: copy.cart,
       icon: ShoppingCart,
-      count: items.length,
       active: normalizedPathname.startsWith('/request'),
+    },
+    {
+      key: 'profile',
+      href: null,
+      panel: 'more' as const,
+      label: copy.profile,
+      icon: UserRound,
+      active: activePanel === 'more' || isMoreActive,
     },
   ];
 
-  const secondaryRoutes = ['/about', '/clients', '/delivery', '/branding', '/contacts', '/orders', '/bag-designer'];
-  const isMoreActive = secondaryRoutes.some((route) => normalizedPathname.startsWith(route));
+  const hasRequestOnlyPrices = items.some((item) => item.price === undefined);
+  const shouldShowCartDock = items.length > 0
+    && !normalizedPathname.startsWith('/request')
+    && !normalizedPathname.startsWith('/product')
+    && !isTextEntryFocused
+    && activePanel === null;
+  const formattedCartAmount = totalAmount > 0
+    ? formatMoney(totalAmount, language, 'UZS')
+    : copy.priceOnRequest;
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -362,6 +398,8 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
   }, [searchQuery, products, language]);
 
   const moreLinks = [
+    { href: '/favorites' as const, label: t('favorites'), icon: Heart },
+    { href: '/orders' as const, label: copy.orders, icon: Clock3 },
     { href: '/about' as const, label: t('about'), icon: Info },
     { href: '/clients' as const, label: t('clients'), icon: Users },
     { href: '/delivery' as const, label: t('delivery'), icon: Truck },
@@ -370,12 +408,47 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     ...(modules?.bagDesigner?.enabled ?? true
       ? [{ href: '/bag-designer' as const, label: copy.bagDesigner, icon: PackageSearch }]
       : []),
-    { href: '/orders' as const, label: copy.orders, icon: Clock3 },
   ];
 
   return (
     <MobileStorefrontChromeContext.Provider value={contextValue}>
       {children}
+
+      {shouldShowCartDock ? <div className="h-[var(--sp-mobile-cart-dock-height)] md:hidden" aria-hidden="true" /> : null}
+
+      <AnimatePresence>
+        {shouldShowCartDock ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-x-0 z-[39] px-[max(0.75rem,env(safe-area-inset-left))] md:hidden"
+            style={{ bottom: 'calc(var(--sp-mobile-nav-height) + env(safe-area-inset-bottom) + 0.625rem)' }}
+          >
+            <Link
+              href="/request"
+              aria-label={copy.openCart}
+              className="mx-auto grid min-h-16 max-w-lg grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--sp-radius-card)] bg-[var(--sp-brand)] px-3 py-2 text-[var(--sp-on-brand)] shadow-[0_14px_34px_rgb(8_49_30/24%)] transition-transform active:scale-[0.985]"
+            >
+              <span className="relative flex size-10 items-center justify-center rounded-[var(--sp-radius-control)] bg-[color-mix(in_srgb,var(--sp-on-brand)_12%,transparent)]" aria-hidden="true">
+                <ShoppingCart className="size-5" />
+                <span className="absolute -right-1.5 -top-1 flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--sp-accent)] px-1 text-[9px] font-bold tabular-nums text-[var(--sp-on-accent)]">
+                  {items.length > 99 ? '99+' : items.length}
+                </span>
+              </span>
+              <span className="min-w-0">
+                <strong className="block truncate font-compact text-xs font-bold">{copy.cart}</strong>
+                <span className="mt-0.5 block truncate text-[10px] text-[color-mix(in_srgb,var(--sp-on-brand)_78%,transparent)]">
+                  {totalAmount > 0 ? `${copy.preliminary}: ${formattedCartAmount}` : formattedCartAmount}
+                  {hasRequestOnlyPrices && totalAmount > 0 ? ` · ${copy.requestPrices}` : ''}
+                </span>
+              </span>
+              <ArrowRight className="size-5" aria-hidden="true" />
+            </Link>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <nav
         aria-label={copy.navigation}
@@ -387,42 +460,46 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
         <div className="mx-auto grid h-[var(--sp-mobile-nav-height)] max-w-lg grid-cols-5">
           {navigationItems.map((item) => {
             const Icon = item.icon;
-            return (
-              <Link
-                key={item.key}
-                href={item.href}
-                aria-current={item.active ? 'page' : undefined}
-                className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 font-compact text-[10px] font-medium transition-colors active:bg-[var(--sp-surface-inset)] ${
-                  item.active ? 'text-[var(--sp-brand)]' : 'text-[var(--sp-ink-tertiary)]'
-                }`}
-              >
+            const content = (
+              <>
                 {item.active ? <span className="absolute inset-x-3 top-0 h-0.5 bg-[var(--sp-brand)]" aria-hidden="true" /> : null}
                 <span className="relative">
                   <Icon className="size-5" strokeWidth={item.active ? 2.25 : 1.8} aria-hidden="true" />
-                  {item.count && item.count > 0 ? (
-                    <span className="absolute -right-2.5 -top-1.5 flex min-h-[17px] min-w-[17px] items-center justify-center rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-surface)] bg-[var(--sp-brand)] px-1 text-[9px] font-semibold tabular-nums text-[var(--sp-on-brand)]">
-                      {item.count > 99 ? '99+' : item.count}
+                  {item.key === 'cart' && items.length > 0 ? (
+                    <span className="absolute -right-2.5 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[var(--sp-accent)] px-1 text-[8px] font-bold tabular-nums text-[var(--sp-on-accent)]">
+                      {items.length > 99 ? '99+' : items.length}
                     </span>
                   ) : null}
                 </span>
                 <span className="w-full truncate text-center leading-4">{item.label}</span>
+              </>
+            );
+            const className = `relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 font-compact text-[10px] font-medium transition-colors active:bg-[var(--sp-surface-inset)] ${
+              item.active ? 'text-[var(--sp-brand)]' : 'text-[var(--sp-ink-tertiary)]'
+            }`;
+            return item.href ? (
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-current={item.active ? 'page' : undefined}
+                className={className}
+              >
+                {content}
               </Link>
+            ) : (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => openPanel(item.panel!)}
+                aria-haspopup="dialog"
+                aria-expanded={activePanel === item.panel}
+                aria-current={item.active ? 'page' : undefined}
+                className={className}
+              >
+                {content}
+              </button>
             );
           })}
-
-          <button
-            type="button"
-            onClick={() => openPanel('more')}
-            aria-haspopup="dialog"
-            aria-expanded={activePanel === 'more'}
-            className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 font-compact text-[10px] font-medium transition-colors active:bg-[var(--sp-surface-inset)] ${
-              isMoreActive ? 'text-[var(--sp-brand)]' : 'text-[var(--sp-ink-tertiary)]'
-            }`}
-          >
-            {isMoreActive ? <span className="absolute inset-x-3 top-0 h-0.5 bg-[var(--sp-brand)]" aria-hidden="true" /> : null}
-            <Ellipsis className="size-5" strokeWidth={isMoreActive ? 2.25 : 1.8} aria-hidden="true" />
-            <span className="w-full truncate text-center leading-4">{copy.more}</span>
-          </button>
         </div>
       </nav>
 
@@ -455,7 +532,7 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
               {/* Panel Header */}
               <div className="flex min-h-14 items-center justify-between gap-3 border-b border-[var(--sp-line)] px-4 py-1">
                 <h2 id="mobile-storefront-panel-title" className="font-extended text-base font-bold text-[var(--sp-ink)]">
-                  {activePanel === 'search' ? copy.searchTitle : copy.menuTitle}
+                  {activePanel === 'search' ? copy.searchTitle : copy.profileTitle}
                 </h2>
                 <button
                   ref={closeButtonRef}
@@ -654,18 +731,6 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
               ) : (
                 <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4">
                   <div className="mx-auto max-w-lg">
-                    <div className="mb-4 flex items-center justify-between gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3">
-                      <span className="text-sm font-medium text-[var(--sp-ink-secondary)]">{copy.search}</span>
-                      <button
-                        type="button"
-                        onClick={() => openPanel('search')}
-                        className="sp-icon-button size-11 border border-[var(--sp-line)] bg-[var(--sp-surface)]"
-                        aria-label={copy.searchTitle}
-                      >
-                        <Search className="size-5" aria-hidden="true" />
-                      </button>
-                    </div>
-
                     <nav aria-label={copy.menuTitle} className="divide-y divide-[var(--sp-line-soft)] border-y border-[var(--sp-line)]">
                       {moreLinks.map(({ href, label, icon: Icon }) => (
                         <Link

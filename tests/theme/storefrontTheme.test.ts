@@ -5,6 +5,7 @@ import type { SiteSettings } from '@/types';
 
 type ThemeElement = ReactElement<{
   'data-storefront-theme': string;
+  'data-font-pair': string;
   style: CSSProperties & Record<`--${string}`, string>;
 }>;
 
@@ -42,5 +43,22 @@ describe('StorefrontTheme contract', () => {
   it('bounds unexpected radius values at the design-system limits', () => {
     expect(renderTheme('light', -4).props.style['--sp-radius']).toBe('0px');
     expect(renderTheme('dark', 48).props.style['--sp-radius']).toBe('32px');
+  });
+
+  it('maps the legacy brand preset to the approved modern storefront defaults', () => {
+    const element = StorefrontTheme({
+      design: {
+        designVersion: 2,
+        primaryColor: '#0F6E43',
+        secondaryColor: '#DCE9AF',
+        borderRadius: 8,
+        themeMode: 'light',
+        fontPair: 'brand',
+      },
+      children: null,
+    }) as ThemeElement;
+
+    expect(element.props['data-font-pair']).toBe('modern');
+    expect(element.props.style['--sp-radius']).toBe('14px');
   });
 });

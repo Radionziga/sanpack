@@ -5,6 +5,7 @@ export const initialSiteSettings: SiteSettings = {
   company: {
     name: 'SANPACK',
     logo: '/logo-sanpack.svg',
+    logoDark: '/logo-white.svg',
     favicon: '/favicon.ico',
     descriptionRu: 'Комплексный поставщик упаковки, расходных материалов и продуктов питания для HoReCa',
     descriptionUz: 'HoReCa uchun qadoqlash, sarf materiallari va oziq-ovqat mahsulotlarining kompleks yetkazib beruvchisi',
@@ -38,9 +39,9 @@ export const initialSiteSettings: SiteSettings = {
     designVersion: 2,
     primaryColor: '#0F6E43',
     secondaryColor: '#DCE9AF',
-    borderRadius: 8,
+    borderRadius: 14,
     themeMode: 'light',
-    fontPair: 'brand',
+    fontPair: 'modern',
   },
   seo: {
     defaultTitleRu: 'SANPACK — Упаковка, расходные материалы и продукты для HoReCa в Ташкенте',

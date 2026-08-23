@@ -84,7 +84,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       </div>
 
       {/* Thumbnails */}
-      {availableImages.length > 0 && (
+      {availableImages.length > 1 && (
         <div
           role="group"
           className="no-scrollbar flex min-h-[4.75rem] items-center gap-3 overflow-x-auto px-1 pb-2 pt-1"

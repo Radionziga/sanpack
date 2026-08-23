@@ -22,20 +22,13 @@ const settingsFormSchema = z.object({
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
   borderRadius: z.number().int().min(0).max(32),
   themeMode: z.enum(['light', 'dark']),
-  fontPair: z.enum(['brand', 'modern', 'editorial', 'neutral']),
+  fontPair: z.enum(['modern', 'editorial', 'neutral']),
 });
 
 type SettingsForm = z.infer<typeof settingsFormSchema>;
 type PreviewStyle = CSSProperties & Record<`--${string}`, string>;
 
 const fontPairs = [
-  {
-    value: 'brand',
-    title: 'Фирменная',
-    description: 'MTS Wide + MTS Text',
-    heading: "'MTS Wide', var(--font-manrope), sans-serif",
-    body: "'MTS Text', var(--font-inter), sans-serif",
-  },
   {
     value: 'modern',
     title: 'Современная',
@@ -139,9 +132,9 @@ export default function AdminSettingsPage() {
       logoDark: '',
       primaryColor: DEFAULT_PRIMARY,
       secondaryColor: DEFAULT_SECONDARY,
-      borderRadius: 8,
+      borderRadius: 14,
       themeMode: 'light',
-      fontPair: 'brand',
+      fontPair: 'modern',
     },
   });
 
@@ -149,9 +142,9 @@ export default function AdminSettingsPage() {
   const logoDark = useWatch({ control, name: 'logoDark', defaultValue: '' });
   const primaryColor = useWatch({ control, name: 'primaryColor', defaultValue: DEFAULT_PRIMARY });
   const secondaryColor = useWatch({ control, name: 'secondaryColor', defaultValue: DEFAULT_SECONDARY });
-  const borderRadius = useWatch({ control, name: 'borderRadius', defaultValue: 8 });
+  const borderRadius = useWatch({ control, name: 'borderRadius', defaultValue: 14 });
   const themeMode = useWatch({ control, name: 'themeMode', defaultValue: 'light' });
-  const fontPair = useWatch({ control, name: 'fontPair', defaultValue: 'brand' });
+  const fontPair = useWatch({ control, name: 'fontPair', defaultValue: 'modern' });
   const selectedFonts = fontPairs.find((pair) => pair.value === fontPair) || fontPairs[0];
 
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -172,9 +165,13 @@ export default function AdminSettingsPage() {
           secondaryColor: settings.design?.designVersion === 2
             ? settings.design.secondaryColor || DEFAULT_SECONDARY
             : DEFAULT_SECONDARY,
-          borderRadius: settings.design?.borderRadius ?? 8,
+          borderRadius: settings.design?.fontPair === 'brand' && settings.design?.borderRadius === 8
+            ? 14
+            : settings.design?.borderRadius ?? 14,
           themeMode: settings.design?.themeMode || 'light',
-          fontPair: settings.design?.fontPair || 'brand',
+          fontPair: settings.design?.fontPair && settings.design.fontPair !== 'brand'
+            ? settings.design.fontPair
+            : 'modern',
         });
       } catch (error) {
         if (active) setPageError(error instanceof Error ? error.message : 'Не удалось загрузить настройки.');
@@ -253,9 +250,9 @@ export default function AdminSettingsPage() {
     '--preview-on-primary': accessibleForeground(primaryColor),
     '--preview-secondary': normalizeHex(secondaryColor, DEFAULT_SECONDARY),
     '--preview-on-secondary': accessibleForeground(normalizeHex(secondaryColor, DEFAULT_SECONDARY)),
-    '--preview-radius-outer': `${(borderRadius ?? 8) + Math.min(borderRadius ?? 8, 8)}px`,
-    '--preview-radius': `${borderRadius ?? 8}px`,
-    '--preview-radius-inner': `${Math.max(0, (borderRadius ?? 8) - 2)}px`,
+    '--preview-radius-outer': `${(borderRadius ?? 14) + Math.min(borderRadius ?? 14, 8)}px`,
+    '--preview-radius': `${borderRadius ?? 14}px`,
+    '--preview-radius-inner': `${Math.max(0, (borderRadius ?? 14) - 4)}px`,
     '--preview-heading': selectedFonts.heading,
     '--preview-body': selectedFonts.body,
   };
@@ -456,7 +453,7 @@ export default function AdminSettingsPage() {
                   <Type className="mt-0.5 size-5 text-[var(--sp-brand)]" aria-hidden="true" />
                   <div>
                     <legend className="font-extended text-lg font-bold text-[var(--sp-ink)]">Шрифтовая пара</legend>
-                    <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Готовые пары поддерживают кириллицу и латиницу. Шрифты хранятся в сборке и не зависят от внешнего Google Fonts API.</p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Manrope + Inter — рекомендуемая пара витрины. MTS остаётся внутри фирменных логотипов и промо-материалов. Все варианты хранятся в сборке и не зависят от внешнего Google Fonts API.</p>
                   </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -480,7 +477,7 @@ export default function AdminSettingsPage() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">Скругление</h2>
-                  <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">0 px создаёт строгую геометрию, 32 px — мягкий интерфейс. Пилюли остаются только там, где форма передаёт смысл.</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Значение задаёт радиус контролов; карточки и крупные секции получают согласованно более мягкое скругление. Рекомендуемое значение — 14 px.</p>
                 </div>
                 <output className="min-w-14 rounded-md border border-[var(--sp-line)] bg-[var(--sp-control)] px-2 py-1 text-center font-mono text-xs text-[var(--sp-ink)]">{borderRadius} px</output>
               </div>

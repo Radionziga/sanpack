@@ -36,7 +36,7 @@ export function Footer() {
             <Link href="/" className="inline-block max-w-full" aria-label={`${company.name} — на главную`}>
               <BrandLogo
                 src={company?.logo}
-                srcDark={company?.logoDark}
+                srcDark={company?.logoDark || '/logo-white.svg'}
                 label={company.name}
                 variant="white"
                 className="h-6 sm:h-8"

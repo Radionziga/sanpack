@@ -284,10 +284,29 @@ function capitalize(value: string, language: Language) {
   return `${trimmed.charAt(0).toLocaleUpperCase(localeByLanguage[language])}${trimmed.slice(1)}`;
 }
 
+function formatDeterministicNumber(
+  value: number,
+  language: Language,
+  maximumFractionDigits: number,
+) {
+  const group = language === 'en' ? ',' : '\u00a0';
+  const decimal = language === 'en' ? '.' : ',';
+
+  // Node and Chromium currently ship different grouping data for uz-UZ.
+  // Start from the stable en-US parts and localize separators ourselves so
+  // server-rendered prices always match the hydrated client output.
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits })
+    .formatToParts(value)
+    .map((part) => {
+      if (part.type === 'group') return group;
+      if (part.type === 'decimal') return decimal;
+      return part.value;
+    })
+    .join('');
+}
+
 function formatNumber(value: number, language: Language) {
-  return new Intl.NumberFormat(localeByLanguage[language], {
-    maximumFractionDigits: 3,
-  }).format(value);
+  return formatDeterministicNumber(value, language, 3);
 }
 
 function parseNumericValue(value: string) {
@@ -300,9 +319,7 @@ export function formatMoney(
   language: Language,
   currency = 'UZS',
 ) {
-  const formatted = new Intl.NumberFormat(localeByLanguage[language], {
-    maximumFractionDigits: 0,
-  }).format(value);
+  const formatted = formatDeterministicNumber(value, language, 0);
   const normalizedCurrency = currency.trim().toLocaleLowerCase('ru-RU');
   const isUzbekSom = normalizedCurrency === 'uzs'
     || normalizedCurrency === 'сум'

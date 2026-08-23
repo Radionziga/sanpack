@@ -11,9 +11,12 @@
 
 @layer base {
   :root {
-    --sp-font-heading: 'MTS Wide', var(--font-manrope), sans-serif;
-    --sp-font-body: 'MTS Text', var(--font-inter), sans-serif;
-    --sp-font-ui: 'MTS Compact', var(--font-inter), sans-serif;
+    --sp-font-heading: var(--font-manrope), sans-serif;
+    --sp-font-body: var(--font-inter), sans-serif;
+    --sp-font-ui: var(--font-inter), sans-serif;
+    --sp-font-brand-heading: 'MTS Wide', var(--font-manrope), sans-serif;
+    --sp-font-brand-body: 'MTS Text', var(--font-inter), sans-serif;
+    --sp-font-brand-ui: 'MTS Compact', var(--font-inter), sans-serif;
     --sp-primary: #0F6E43;
     --sp-primary-strong: #0A4B2E;
     --sp-secondary: #DCE9AF;
@@ -56,8 +59,13 @@
     --sp-cta-action-ink: var(--sp-on-secondary);
     --sp-shadow-raised: 0 12px 32px rgb(21 27 24 / 7%);
     --sp-shadow-soft: 0 4px 14px rgb(21 27 24 / 6%);
-    --sp-radius: 8px;
+    --sp-radius: 14px;
     --sp-mobile-nav-height: 4rem;
+    --sp-mobile-cart-dock-height: 4.75rem;
+    --sp-category-green: #DDEEDD;
+    --sp-category-sand: #F1E9D7;
+    --sp-category-blue: #DCEAF3;
+    --sp-category-peach: #F3E1D9;
     /* Safe defaults for overlays rendered outside the themed app shell.
        Inside StorefrontTheme these aliases resolve against its configured radius. */
     --sp-radius-nested: max(0px, calc(var(--sp-radius) - 4px));
@@ -93,6 +101,18 @@
 
   p {
     text-wrap: pretty;
+  }
+
+  .font-brand-heading {
+    font-family: var(--sp-font-brand-heading);
+  }
+
+  .font-brand-body {
+    font-family: var(--sp-font-brand-body);
+  }
+
+  .font-brand-ui {
+    font-family: var(--sp-font-brand-ui);
   }
 
   /* Global input resets to eliminate default browser square focus outlines */
@@ -396,25 +416,40 @@
 }
 
 [data-storefront-theme] {
-  /* One configurable radius for every standalone surface and control.
-     A smaller value is reserved exclusively for a child placed inside
-     another rounded surface: inner radius = outer radius - inset. */
+  /* Admin controls the base control radius. Cards and larger sections derive
+     a slightly softer concentric radius while nested children stay smaller. */
   --sp-radius-nested: max(0px, calc(var(--sp-radius) - 4px));
   --radius-sm: var(--sp-radius-nested);
   --radius-md: var(--sp-radius);
-  --radius-lg: var(--sp-radius);
-  --radius-xl: var(--sp-radius);
-  --radius-2xl: var(--sp-radius);
-  --radius-3xl: var(--sp-radius);
+  --radius-lg: min(20px, calc(var(--sp-radius) + 2px));
+  --radius-xl: min(22px, calc(var(--sp-radius) + 4px));
+  --radius-2xl: min(24px, calc(var(--sp-radius) + 6px));
+  --radius-3xl: min(28px, calc(var(--sp-radius) + 10px));
   /* Legacy aliases kept while older admin surfaces move to the shared scale. */
   --sp-radius-sm: var(--sp-radius);
   --sp-radius-md: var(--sp-radius);
   --sp-radius-lg: var(--sp-radius);
   --sp-radius-xl: var(--sp-radius);
-  --sp-radius-card: var(--sp-radius);
+  --sp-radius-card: min(22px, calc(var(--sp-radius) + 4px));
   --sp-radius-control: var(--sp-radius);
   --sp-radius-control-inner: var(--sp-radius-nested);
+  /* The theme variables live on this storefront boundary, while <body> sits
+     outside it. Re-apply the family here so inherited text is resolved from
+     the selected storefront pair instead of the document-level fallback. */
+  font-family: var(--sp-font-body);
   color-scheme: light;
+}
+
+[data-storefront-theme] :where(h1, h2, h3, h4, h5, h6, .heading-font, .font-extended) {
+  font-family: var(--sp-font-heading);
+}
+
+[data-storefront-theme] :where(.font-sans, .font-text, .font-wide) {
+  font-family: var(--sp-font-body);
+}
+
+[data-storefront-theme] .font-compact {
+  font-family: var(--sp-font-ui);
 }
 
 [data-font-pair="modern"] {
@@ -449,6 +484,10 @@
   --sp-line-strong: #566159;
   --sp-control: #101512;
   --sp-control-border: #3A433D;
+  --sp-category-green: #203A2A;
+  --sp-category-sand: #3A3224;
+  --sp-category-blue: #223744;
+  --sp-category-peach: #402E27;
     --sp-danger: #FF8092;
     --sp-success: #78D7A4;
     --sp-warning: #FFBF69;

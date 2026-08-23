@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatMoney,
   getPresentedProductAttributes,
   getProductPriceLabel,
   getProductSalesUnitLabel,
@@ -49,6 +50,12 @@ describe('2026 seed catalogue localization', () => {
     expect(getProductSalesUnitLabel(product!, 'en')).toBe('pack');
     expect(getProductPriceLabel(product!, 'uz')).toBe('Qadoq uchun narx');
     expect(getProductPriceLabel(product!, 'en')).toBe('Price per pack');
+  });
+
+  it('formats money identically across server and browser locale datasets', () => {
+    expect(formatMoney(285000, 'ru')).toBe('285\u00a0000\u00a0сум');
+    expect(formatMoney(285000, 'uz')).toBe('285\u00a0000\u00a0so‘m');
+    expect(formatMoney(285000, 'en')).toBe('285,000\u00a0UZS');
   });
 
   it('does not leak Russian attribute values into Uzbek or English presentation', () => {

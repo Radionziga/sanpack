@@ -48,7 +48,7 @@ export function BrandLogo({
     <span
       role="img"
       aria-label={`${label} — логотип`}
-      className={`${className} inline-flex max-w-full shrink-0 select-none items-center font-extended text-lg font-bold uppercase leading-none tracking-wide ${tone}`}
+      className={`${className} inline-flex max-w-full shrink-0 select-none items-center font-brand-heading text-lg font-bold uppercase leading-none tracking-wide ${tone}`}
     >
       {label}
     </span>

@@ -66,12 +66,18 @@ function CategoryRail({
     () => categories.filter((category) => !category.parentId && category.status === 'active'),
     [categories],
   );
+  const leaves = useMemo(
+    () => categories
+      .filter((category) => category.parentId && category.status === 'active')
+      .sort((left, right) => (left.sortOrder ?? 99) - (right.sortOrder ?? 99)),
+    [categories],
+  );
   const activeParent = activeCategory?.parentId
     ? categories.find((category) => category.id === activeCategory.parentId) ?? null
     : activeCategory;
   const children = activeParent
     ? categories.filter((category) => category.parentId === activeParent.id && category.status === 'active')
-    : [];
+    : leaves;
 
   const railClassName =
     '-mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden';
@@ -92,7 +98,7 @@ function CategoryRail({
         >
           {t('allProducts')}
         </Link>
-        {parents.map((category) => {
+        {activeCategory && parents.map((category) => {
           const isActive = activeParent?.id === category.id;
           return (
             <Link
@@ -101,7 +107,7 @@ function CategoryRail({
               aria-current={isActive ? 'page' : undefined}
               className={`${itemClassName} ${
                 isActive
-                  ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]'
+                    ? 'border-[var(--sp-line-strong)] bg-[var(--sp-surface-inset)] text-[var(--sp-ink)]'
                   : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)]'
               }`}
             >

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter } from '@/i18n/navigation';
+import { ensureTelegramMiniAppSession } from '@/lib/telegram/miniAppSession';
 
 export function TelegramMiniAppBridge() {
   const pathname = usePathname();
@@ -14,6 +15,7 @@ export function TelegramMiniAppBridge() {
     try {
       webApp.ready();
       webApp.expand();
+      void ensureTelegramMiniAppSession();
 
       // Check if user is at root home page
       const isHome = pathname === '/' || pathname === '';

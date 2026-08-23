@@ -74,6 +74,7 @@ export default function ProductDetailPage({
       total: 'Итого',
       added: 'Добавлено в заявку',
       inRequest: 'В заявке',
+      openCart: 'Открыть корзину',
       favorite: 'В избранном',
       manager: 'Быстрая связь с менеджером',
       message: 'Здравствуйте! Интересует товар',
@@ -102,6 +103,7 @@ export default function ProductDetailPage({
       total: 'Jami',
       added: 'Arizaga qo‘shildi',
       inRequest: 'Arizada',
+      openCart: 'Savatni ochish',
       favorite: 'Tanlanganlarda',
       manager: 'Menejer bilan tezkor aloqa',
       message: 'Salom! Meni ushbu mahsulot qiziqtiradi',
@@ -130,6 +132,7 @@ export default function ProductDetailPage({
       total: 'Total',
       added: 'Added to request',
       inRequest: 'In request',
+      openCart: 'Open cart',
       favorite: 'In favorites',
       manager: 'Contact a manager',
       message: 'Hello! I am interested in this product',
@@ -323,10 +326,10 @@ export default function ProductDetailPage({
           </nav>
 
           {/* Mobile Back Button */}
-          <div className="mb-3 flex items-center justify-between gap-2 lg:hidden">
+          <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
             <Link
               href="/catalog"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-xs font-semibold text-[var(--sp-ink)] shadow-2xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95"
+              className="inline-flex min-h-10 items-center gap-1.5 text-sm font-medium text-[var(--sp-ink-secondary)] transition-colors hover:text-[var(--sp-brand)]"
             >
               <ChevronLeft className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
               <span>{copy.back || t('catalog')}</span>
@@ -804,16 +807,26 @@ export default function ProductDetailPage({
                   : t('priceOnRequest')}
               </span>
             </div>
-            <motion.button
-              type="button"
-              disabled={variantRequired}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleAddToCart}
-              className={`flex min-h-12 min-w-[9.75rem] cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-sm font-semibold shadow-[var(--sp-shadow-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] disabled:cursor-not-allowed disabled:bg-[var(--sp-control)] disabled:text-[var(--sp-ink-tertiary)] disabled:shadow-none ${inCart && !variantRequired ? 'bg-[var(--sp-brand-deep)] text-[var(--sp-on-brand-deep)]' : 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'}`}
-            >
-              {inCart && !variantRequired ? <Check className="size-4" aria-hidden="true" /> : <ShoppingCart className="size-4" aria-hidden="true" />}
-              <span>{variantRequired ? copy.selectVariant : inCart ? copy.inRequest : t('addToRequest')}</span>
-            </motion.button>
+            {inCart && !variantRequired ? (
+              <Link
+                href="/request"
+                className="flex min-h-12 min-w-[9.75rem] items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-deep)] px-4 text-sm font-semibold text-[var(--sp-on-brand-deep)] shadow-[var(--sp-shadow-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)]"
+              >
+                <ShoppingCart className="size-4" aria-hidden="true" />
+                <span>{copy.openCart}</span>
+              </Link>
+            ) : (
+              <motion.button
+                type="button"
+                disabled={variantRequired || !orderable}
+                whileTap={{ scale: 0.97 }}
+                onClick={handleAddToCart}
+                className="flex min-h-12 min-w-[9.75rem] cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] disabled:cursor-not-allowed disabled:bg-[var(--sp-control)] disabled:text-[var(--sp-ink-tertiary)] disabled:shadow-none"
+              >
+                {orderable ? <ShoppingCart className="size-4" aria-hidden="true" /> : <AlertCircle className="size-4" aria-hidden="true" />}
+                <span>{variantRequired ? copy.selectVariant : orderable ? t('addToRequest') : copy.informational}</span>
+              </motion.button>
+            )}
           </div>
         </div>
       ) : null}
