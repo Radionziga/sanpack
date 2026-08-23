@@ -268,6 +268,8 @@ export interface RequestOrder {
   };
   deliveryType?: string;
   deliveryAddress?: string;
+  deliveryDate?: string;
+  deliveryWindow?: string;
   paymentMethod?: string;
   notes?: string;
   items: RequestItem[];

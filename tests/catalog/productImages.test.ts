@@ -1,7 +1,12 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { hasProductImage, PRODUCT_IMAGE_PLACEHOLDER } from '@/lib/catalog/productImages';
+import {
+  GENERATED_PRODUCT_IMAGES,
+  hasProductImage,
+  PRODUCT_IMAGE_PLACEHOLDER,
+  withGeneratedProductImage,
+} from '@/lib/catalog/productImages';
 import { getSeedProductImage } from '@/lib/catalog/seedProductImages';
 import { priceList2026Products } from '@/lib/catalog/sanpackPriceLists2026';
 
@@ -35,5 +40,15 @@ describe('product images', () => {
         `${product.sku} references missing ${product.mainImage}`,
       ).toBe(true);
     }
+  });
+
+  it('adds reviewed generated images only when Firestore has no real image', () => {
+    const id = 'price-2026-vb-001';
+    const generated = withGeneratedProductImage({ id, mainImage: '', images: [] });
+    expect(generated.mainImage).toBe(GENERATED_PRODUCT_IMAGES[id]);
+    expect(existsSync(join(process.cwd(), 'public', generated.mainImage!))).toBe(true);
+
+    const existing = { id, mainImage: '/catalog/extracted_p12_img1.jpeg', images: ['/catalog/extracted_p12_img1.jpeg'] };
+    expect(withGeneratedProductImage(existing)).toBe(existing);
   });
 });

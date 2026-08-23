@@ -4,8 +4,12 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Image from 'next/image';
 import {
   ArrowLeft,
+  CalendarDays,
   CheckCircle2,
+  Clock3,
   LoaderCircle,
+  MapPin,
+  MessageSquareText,
   Minus,
   Phone,
   Plus,
@@ -28,15 +32,19 @@ import { readCustomerProfileDraft } from '@/lib/customer/profileDraft';
 
 interface CustomerStatus {
   authenticated: boolean;
-  customer: { name: string; username: string; picture: string; phone: string } | null;
+  customer: { name: string; username: string; picture: string; phone: string; address?: string } | null;
 }
 
 interface FieldErrors {
   name?: string;
   phone?: string;
+  address?: string;
+  date?: string;
+  window?: string;
 }
 
 const CHECKOUT_DRAFT_KEY = 'sanpack_checkout_draft_v1';
+const DELIVERY_WINDOWS = ['09:00-13:00', '13:00-17:00', '17:00-21:00'] as const;
 
 const checkoutCopy = {
   ru: {
@@ -67,6 +75,18 @@ const checkoutCopy = {
     phonePlaceholder: '+998 90 123 45 67',
     nameError: 'Укажите имя — минимум два символа.',
     phoneError: 'Укажите номер Узбекистана в формате +998 XX XXX XX XX.',
+    deliveryTitle: 'Доставка',
+    deliveryHint: 'Выберите удобную дату и интервал. Менеджер подтвердит доступность после получения заявки.',
+    address: 'Адрес доставки',
+    addressPlaceholder: 'Город, улица, дом или ориентир',
+    addressError: 'Укажите адрес доставки — минимум пять символов.',
+    date: 'Дата доставки',
+    dateError: 'Выберите дату доставки.',
+    time: 'Время доставки',
+    timeError: 'Выберите интервал доставки.',
+    comment: 'Комментарий курьеру или менеджеру',
+    commentOptional: 'Необязательно',
+    commentPlaceholder: 'Например: позвонить за 30 минут до приезда',
     estimated: 'Предварительная сумма',
     priceOnRequest: 'По запросу',
     estimateHint: 'Итоговые цены и условия менеджер подтвердит после получения заявки.',
@@ -111,6 +131,18 @@ const checkoutCopy = {
     phonePlaceholder: '+998 90 123 45 67',
     nameError: 'Ismingizni kiriting — kamida ikki belgi.',
     phoneError: 'O‘zbekiston raqamini +998 XX XXX XX XX formatida kiriting.',
+    deliveryTitle: 'Yetkazib berish',
+    deliveryHint: 'Qulay sana va vaqt oralig‘ini tanlang. Menejer arizadan so‘ng mavjudligini tasdiqlaydi.',
+    address: 'Yetkazib berish manzili',
+    addressPlaceholder: 'Shahar, ko‘cha, uy yoki mo‘ljal',
+    addressError: 'Yetkazib berish manzilini kiriting — kamida besh belgi.',
+    date: 'Yetkazib berish sanasi',
+    dateError: 'Yetkazib berish sanasini tanlang.',
+    time: 'Yetkazib berish vaqti',
+    timeError: 'Yetkazib berish vaqtini tanlang.',
+    comment: 'Kuryer yoki menejer uchun izoh',
+    commentOptional: 'Ixtiyoriy',
+    commentPlaceholder: 'Masalan: kelishdan 30 daqiqa oldin qo‘ng‘iroq qiling',
     estimated: 'Taxminiy summa',
     priceOnRequest: 'So‘rov bo‘yicha',
     estimateHint: 'Yakuniy narx va shartlarni menejer arizani olgach tasdiqlaydi.',
@@ -155,6 +187,18 @@ const checkoutCopy = {
     phonePlaceholder: '+998 90 123 45 67',
     nameError: 'Enter your name using at least two characters.',
     phoneError: 'Enter an Uzbekistan number in the +998 XX XXX XX XX format.',
+    deliveryTitle: 'Delivery',
+    deliveryHint: 'Choose a convenient date and time window. The manager will confirm availability after receiving the request.',
+    address: 'Delivery address',
+    addressPlaceholder: 'City, street, building, or landmark',
+    addressError: 'Enter a delivery address using at least five characters.',
+    date: 'Delivery date',
+    dateError: 'Choose a delivery date.',
+    time: 'Delivery time',
+    timeError: 'Choose a delivery window.',
+    comment: 'Note for the courier or manager',
+    commentOptional: 'Optional',
+    commentPlaceholder: 'For example: call 30 minutes before arrival',
     estimated: 'Estimated total',
     priceOnRequest: 'On request',
     estimateHint: 'The manager will confirm final prices and terms after receiving the request.',
@@ -196,6 +240,10 @@ export default function RequestPage() {
   const { items, updateQuantity, removeItem, clearCart, totalAmount, isHydrated } = useRequestCart();
   const [contactName, setContactName] = useState('');
   const [phone, setPhone] = useState('+998 ');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [deliveryWindow, setDeliveryWindow] = useState('');
+  const [notes, setNotes] = useState('');
   const [customer, setCustomer] = useState<CustomerStatus>({ authenticated: false, customer: null });
   const [customerChecked, setCustomerChecked] = useState(false);
   const [isMiniApp, setIsMiniApp] = useState(false);
@@ -208,6 +256,7 @@ export default function RequestPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const nameInputRef = useRef<HTMLInputElement>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -221,19 +270,35 @@ export default function RequestPage() {
 
     let draftName = '';
     let draftPhone = '';
+    let draftAddress = '';
+    let draftDate = '';
+    let draftWindow = '';
+    let draftNotes = '';
 
     const profileDraft = readCustomerProfileDraft();
     if (profileDraft) {
       draftName = profileDraft.name;
       draftPhone = profileDraft.phone;
+      draftAddress = profileDraft.address || '';
     }
 
     try {
       const draft = window.sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
       if (draft) {
-        const parsed = JSON.parse(draft) as { contactName?: unknown; phone?: unknown };
+        const parsed = JSON.parse(draft) as {
+          contactName?: unknown;
+          phone?: unknown;
+          deliveryAddress?: unknown;
+          deliveryDate?: unknown;
+          deliveryWindow?: unknown;
+          notes?: unknown;
+        };
         if (typeof parsed.contactName === 'string') draftName = parsed.contactName;
         if (typeof parsed.phone === 'string') draftPhone = parsed.phone;
+        if (typeof parsed.deliveryAddress === 'string') draftAddress = parsed.deliveryAddress;
+        if (typeof parsed.deliveryDate === 'string') draftDate = parsed.deliveryDate;
+        if (typeof parsed.deliveryWindow === 'string') draftWindow = parsed.deliveryWindow;
+        if (typeof parsed.notes === 'string') draftNotes = parsed.notes;
       }
     } catch {
       window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
@@ -244,6 +309,10 @@ export default function RequestPage() {
       setIsMiniApp(Boolean(window.Telegram?.WebApp?.initData));
       if (draftName) setContactName(draftName);
       if (draftPhone) setPhone(draftPhone);
+      if (draftAddress) setDeliveryAddress(draftAddress);
+      if (draftDate) setDeliveryDate(draftDate);
+      if (draftWindow) setDeliveryWindow(draftWindow);
+      if (draftNotes) setNotes(draftNotes);
     });
 
     fetch('/api/auth/customer', { cache: 'no-store' })
@@ -253,6 +322,7 @@ export default function RequestPage() {
         setCustomer(status);
         if (status.customer?.name) setContactName((current) => current || status.customer?.name || '');
         if (status.customer?.phone) setPhone((current) => current === '+998 ' ? status.customer?.phone || current : current);
+        if (status.customer?.address) setDeliveryAddress((current) => current || status.customer?.address || '');
       })
       .catch(() => undefined)
       .finally(() => setCustomerChecked(true));
@@ -263,7 +333,14 @@ export default function RequestPage() {
   }, [submittedRequestNumber]);
 
   function loginWithTelegram() {
-    window.sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify({ contactName, phone }));
+    window.sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify({
+      contactName,
+      phone,
+      deliveryAddress,
+      deliveryDate,
+      deliveryWindow,
+      notes,
+    }));
     const returnTo = window.location.pathname;
     window.location.replace(
       new URL(`/api/auth/telegram/start?returnTo=${encodeURIComponent(returnTo)}`, window.location.origin).toString(),
@@ -275,10 +352,14 @@ export default function RequestPage() {
     if (contactName.trim().length < 2) nextErrors.name = copy.nameError;
     const phoneDigits = phone.replace(/\D/g, '');
     if (!/^998\d{9}$/.test(phoneDigits)) nextErrors.phone = copy.phoneError;
+    if (deliveryAddress.trim().length < 5) nextErrors.address = copy.addressError;
+    if (!deliveryDate) nextErrors.date = copy.dateError;
+    if (!deliveryWindow) nextErrors.window = copy.timeError;
     setFieldErrors(nextErrors);
 
     if (nextErrors.name) nameInputRef.current?.focus();
     else if (nextErrors.phone) phoneInputRef.current?.focus();
+    else if (nextErrors.address) addressInputRef.current?.focus();
 
     return Object.keys(nextErrors).length === 0;
   }
@@ -293,6 +374,10 @@ export default function RequestPage() {
       const created = await PublicRepository.createRequest({
         contactName: contactName.trim(),
         phone: phone.trim(),
+        deliveryAddress: deliveryAddress.trim(),
+        deliveryDate,
+        deliveryWindow,
+        notes: notes.trim() || undefined,
         items: items.map((item) => ({
           productId: item.productId,
           variantId: item.variantId,
@@ -465,6 +550,109 @@ export default function RequestPage() {
                 </aside>
 
                 <section className="order-2 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 sm:p-6 lg:order-1">
+                  <div className="border-b border-[var(--sp-line-soft)] pb-6">
+                    <div className="flex items-start gap-3">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] text-[var(--sp-brand)]">
+                        <MapPin className="size-5" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <h2 className="font-extended text-lg font-bold">{copy.deliveryTitle}</h2>
+                        <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--sp-ink-tertiary)]">{copy.deliveryHint}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5">
+                      <label htmlFor="checkout-address" className="block text-xs font-medium">{copy.address}</label>
+                      <div className={`mt-2 flex min-h-12 items-center gap-2 rounded-[var(--sp-radius-control)] border bg-[var(--sp-control)] px-3 transition-[border-color,box-shadow] focus-within:border-[var(--sp-brand)] focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--sp-brand)_18%,transparent)] ${fieldErrors.address ? 'border-[var(--sp-danger)]' : 'border-[var(--sp-line-strong)]'}`}>
+                        <MapPin className="size-4 shrink-0 text-[var(--sp-ink-muted)]" aria-hidden="true" />
+                        <input
+                          ref={addressInputRef}
+                          id="checkout-address"
+                          name="deliveryAddress"
+                          required
+                          minLength={5}
+                          maxLength={500}
+                          value={deliveryAddress}
+                          onFocus={() => setIsTextEntryFocused(true)}
+                          onBlur={() => setIsTextEntryFocused(false)}
+                          onChange={(event) => {
+                            setDeliveryAddress(event.target.value);
+                            if (fieldErrors.address) setFieldErrors((current) => ({ ...current, address: undefined }));
+                          }}
+                          autoComplete="street-address"
+                          aria-invalid={fieldErrors.address ? true : undefined}
+                          aria-describedby={fieldErrors.address ? 'checkout-address-error' : undefined}
+                          className="sp-field-input min-w-0 w-full bg-transparent py-3 text-base"
+                          placeholder={copy.addressPlaceholder}
+                        />
+                      </div>
+                      {fieldErrors.address ? <p id="checkout-address-error" className="mt-1.5 text-xs leading-5 text-[var(--sp-danger)]">{fieldErrors.address}</p> : null}
+                    </div>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(190px,0.75fr)_minmax(0,1.25fr)]">
+                      <div>
+                        <label htmlFor="checkout-date" className="flex items-center gap-2 text-xs font-medium"><CalendarDays className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />{copy.date}</label>
+                        <input
+                          id="checkout-date"
+                          name="deliveryDate"
+                          required
+                          type="date"
+                          min={new Date().toISOString().slice(0, 10)}
+                          value={deliveryDate}
+                          onFocus={() => setIsTextEntryFocused(true)}
+                          onBlur={() => setIsTextEntryFocused(false)}
+                          onChange={(event) => {
+                            setDeliveryDate(event.target.value);
+                            if (fieldErrors.date) setFieldErrors((current) => ({ ...current, date: undefined }));
+                          }}
+                          aria-invalid={fieldErrors.date ? true : undefined}
+                          className={`admin-control mt-2 min-h-12 bg-[var(--sp-control)] px-3 text-base ${fieldErrors.date ? 'border-[var(--sp-danger)]' : ''}`}
+                        />
+                        {fieldErrors.date ? <p className="mt-1.5 text-xs leading-5 text-[var(--sp-danger)]">{fieldErrors.date}</p> : null}
+                      </div>
+                      <fieldset>
+                        <legend className="flex items-center gap-2 text-xs font-medium"><Clock3 className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />{copy.time}</legend>
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                          {DELIVERY_WINDOWS.map((window) => (
+                            <button
+                              key={window}
+                              type="button"
+                              onClick={() => {
+                                setDeliveryWindow(window);
+                                if (fieldErrors.window) setFieldErrors((current) => ({ ...current, window: undefined }));
+                              }}
+                              aria-pressed={deliveryWindow === window}
+                              className={`min-h-12 rounded-[var(--sp-radius-control)] border px-2 text-[11px] font-semibold tabular-nums transition-colors ${deliveryWindow === window ? 'border-[var(--sp-brand)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] text-[var(--sp-brand)]' : 'border-[var(--sp-line-strong)] bg-[var(--sp-control)] text-[var(--sp-ink-secondary)] hover:border-[var(--sp-brand)]'}`}
+                            >
+                              {window.replace('-', '–')}
+                            </button>
+                          ))}
+                        </div>
+                        {fieldErrors.window ? <p className="mt-1.5 text-xs leading-5 text-[var(--sp-danger)]">{fieldErrors.window}</p> : null}
+                      </fieldset>
+                    </div>
+
+                    <div className="mt-4">
+                      <label htmlFor="checkout-notes" className="flex items-center gap-2 text-xs font-medium">
+                        <MessageSquareText className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
+                        {copy.comment}
+                        <span className="font-normal text-[var(--sp-ink-tertiary)]">{copy.commentOptional}</span>
+                      </label>
+                      <textarea
+                        id="checkout-notes"
+                        name="notes"
+                        maxLength={1_000}
+                        rows={3}
+                        value={notes}
+                        onFocus={() => setIsTextEntryFocused(true)}
+                        onBlur={() => setIsTextEntryFocused(false)}
+                        onChange={(event) => setNotes(event.target.value)}
+                        className="admin-control mt-2 resize-y bg-[var(--sp-control)] p-3 text-base"
+                        placeholder={copy.commentPlaceholder}
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
                     <h2 className="font-extended text-lg font-bold">{copy.items} <span className="text-[var(--sp-ink-tertiary)]">{items.length}</span></h2>
                     {!isConfirmingClear ? (

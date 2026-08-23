@@ -17,6 +17,10 @@ export const checkoutLineSchema = z.object({
 export const checkoutRequestSchema = z.object({
   contactName: z.string().trim().min(2).max(120),
   phone: z.string().trim().min(7).max(32),
+  deliveryAddress: z.string().trim().min(5).max(500),
+  deliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  deliveryWindow: z.enum(['09:00-13:00', '13:00-17:00', '17:00-21:00']),
+  notes: z.string().trim().max(1_000).optional().default(''),
   items: z.array(checkoutLineSchema).min(1).max(100),
   telegramInitData: z.string().max(16_000).optional(),
 }).strict();
@@ -30,6 +34,9 @@ export const adminOrderUpdateSchema = z.object({
   contactName: z.string().trim().min(2).max(120),
   phone: z.string().trim().min(7).max(32),
   status: orderStatusSchema,
+  deliveryAddress: z.string().trim().max(500).optional().default(''),
+  deliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')).default(''),
+  deliveryWindow: z.enum(['09:00-13:00', '13:00-17:00', '17:00-21:00']).optional().or(z.literal('')).default(''),
   notes: z.string().trim().max(2_000).optional().default(''),
   adjustment: z.number().min(-1_000_000_000_000).max(1_000_000_000_000).default(0),
   items: z.array(adminOrderLineSchema).min(1).max(200),

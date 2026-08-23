@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Clock3, LogOut, PackageCheck, Send } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Clock3, LogOut, MapPin, PackageCheck, Send } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -39,18 +39,21 @@ export default function OrdersPage() {
       logout: 'Выйти', loading: 'Загружаем историю…', loginError: 'Не удалось войти через Telegram. Попробуйте ещё раз.',
       loadError: 'Не удалось загрузить заявки.', loginTitle: 'Войдите через Telegram', loginText: 'После входа вы увидите заявки, связанные с этим Telegram-аккаунтом.',
       login: 'Войти через Telegram', empty: 'Заявок пока нет', openCatalog: 'Открыть каталог', request: 'Заявка', accepted: 'Заявка принята. Менеджер свяжется с вами.', total: 'Предварительная сумма',
+      delivery: 'Доставка', address: 'Адрес',
     },
     uz: {
       catalog: 'Katalog', title: 'Mening arizalarim', intro: 'Telegram akkauntingiz orqali yuborilgan arizalar shu yerda saqlanadi.',
       logout: 'Chiqish', loading: 'Tarix yuklanmoqda…', loginError: 'Telegram orqali kirib bo‘lmadi. Qayta urinib ko‘ring.',
       loadError: 'Arizalarni yuklab bo‘lmadi.', loginTitle: 'Telegram orqali kiring', loginText: 'Kirgandan so‘ng Telegram akkauntingizga bog‘langan arizalarni ko‘rasiz.',
       login: 'Telegram orqali kirish', empty: 'Hozircha arizalar yo‘q', openCatalog: 'Katalogni ochish', request: 'Ariza', accepted: 'Ariza qabul qilindi. Menejer siz bilan bog‘lanadi.', total: 'Dastlabki summa',
+      delivery: 'Yetkazib berish', address: 'Manzil',
     },
     en: {
       catalog: 'Catalog', title: 'My requests', intro: 'Requests placed with your Telegram account are saved here.',
       logout: 'Sign out', loading: 'Loading history…', loginError: 'Telegram sign-in failed. Please try again.',
       loadError: 'We could not load your requests.', loginTitle: 'Sign in with Telegram', loginText: 'After signing in, you will see requests linked to this Telegram account.',
       login: 'Sign in with Telegram', empty: 'No requests yet', openCatalog: 'Open catalog', request: 'Request', accepted: 'Your request has been received. A manager will contact you.', total: 'Preliminary total',
+      delivery: 'Delivery', address: 'Address',
     },
   }[language];
   const [orders, setOrders] = useState<RequestOrder[]>([]);
@@ -112,6 +115,7 @@ export default function OrdersPage() {
             <article key={order.id} className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--sp-line)] pb-4"><div><span className="text-[10px] uppercase tracking-[0.08em] text-[var(--sp-ink-tertiary)]">{copy.request}</span><h2 className="mt-1 font-mono text-base font-bold text-[var(--sp-brand)]">{order.requestNumber}</h2></div><time className="text-xs text-[var(--sp-ink-tertiary)]">{formatDate(order.createdAt, language)}</time></div>
               <div className="mt-4 space-y-3">{(order.originalItems ?? order.items).map((item) => <div key={item.lineId || `${item.productId}-${item.variantId || 'base'}`} className="flex items-start justify-between gap-4 text-sm"><div className="min-w-0"><p className="font-semibold">{getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn)}</p>{item.variantTitleRu ? <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">{getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn)}</p> : null}</div><span className="shrink-0 text-xs font-semibold">{item.quantity} {localizeUnit(item.unit, language)}</span></div>)}</div>
+              {order.deliveryAddress || order.deliveryDate || order.deliveryWindow ? <div className="mt-5 grid gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3 text-xs text-[var(--sp-ink-secondary)] sm:grid-cols-2"><p className="flex items-start gap-2"><MapPin className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.address}</strong>{order.deliveryAddress || '—'}</span></p><p className="flex items-start gap-2"><CalendarDays className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.delivery}</strong>{order.deliveryDate ? new Intl.DateTimeFormat(localeCodes[language], { dateStyle: 'medium' }).format(new Date(`${order.deliveryDate}T12:00:00`)) : '—'}{order.deliveryWindow ? ` · ${order.deliveryWindow.replace('-', '–')}` : ''}</span></p></div> : null}
               {typeof order.total === 'number' && order.total > 0 ? <div className="mt-5 flex items-center justify-between border-t border-[var(--sp-line)] pt-4 text-sm"><span className="text-[var(--sp-ink-secondary)]">{copy.total}</span><strong className="text-base tabular-nums text-[var(--sp-brand)]">{formatMoney(order.total, language, order.currency || 'UZS')}</strong></div> : null}
               <p className="mt-4 flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 py-2.5 text-xs text-[var(--sp-ink-secondary)]"><PackageCheck className="size-4 text-[var(--sp-brand)]" />{copy.accepted}</p>
             </article>

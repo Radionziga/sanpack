@@ -34,6 +34,10 @@ export const PublicRepository = {
   async createRequest(data: {
     contactName: string;
     phone: string;
+    deliveryAddress: string;
+    deliveryDate: string;
+    deliveryWindow: string;
+    notes?: string;
     items: Array<Pick<RequestOrder['items'][number], 'productId' | 'variantId' | 'quantity' | 'comment'>>;
     telegramInitData?: string;
   }): Promise<RequestOrder> {

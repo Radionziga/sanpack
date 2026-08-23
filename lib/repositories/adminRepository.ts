@@ -145,6 +145,9 @@ export const AdminRepository = {
     contactName: string;
     phone: string;
     status: RequestOrder['status'];
+    deliveryAddress: string;
+    deliveryDate: string;
+    deliveryWindow: string;
     notes?: string;
     adjustment: number;
     items: Array<{

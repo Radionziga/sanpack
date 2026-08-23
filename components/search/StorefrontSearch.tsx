@@ -59,8 +59,6 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  useEffect(() => setQuery(initialQuery), [initialQuery]);
-
   useEffect(() => {
     let cancelled = false;
     Promise.all([PublicRepository.getProducts(), PublicRepository.getCategories()])

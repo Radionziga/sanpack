@@ -19,6 +19,7 @@ import {
 } from '@/lib/seedData';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { filterPublicProducts } from '@/lib/catalog/publicProducts';
+import { withGeneratedProductImage } from '@/lib/catalog/productImages';
 import {
   assertPublicDataReadAllowed,
   loadPublicData,
@@ -99,8 +100,8 @@ async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
 const getCachedPublicProducts = unstable_cache(
   async () => filterPublicProducts(
     await readCollection<Product>('products', initialProducts)
-  ),
-  ['public-products-v9-seed-images-2026-08-22'],
+  ).map(withGeneratedProductImage),
+  ['public-products-v10-generated-fallbacks-2026-08-23'],
   { revalidate: 300, tags: ['products'] }
 );
 

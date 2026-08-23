@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const parsed = checkoutRequestSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Проверьте имя, телефон и состав заявки.', fields: parsed.error.flatten().fieldErrors },
+        { error: 'Проверьте контактные данные, доставку и состав заявки.', fields: parsed.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
@@ -93,6 +93,11 @@ export async function POST(request: Request) {
       contactName: parsed.data.contactName,
       phone: formatUzbekPhone(phoneNormalized),
       phoneNormalized,
+      deliveryType: 'delivery',
+      deliveryAddress: parsed.data.deliveryAddress,
+      deliveryDate: parsed.data.deliveryDate,
+      deliveryWindow: parsed.data.deliveryWindow,
+      notes: parsed.data.notes,
       customerUid: customer?.sub || (telegramUser ? `telegram:${telegramUser.id}` : `phone:${phoneNormalized}`),
       source: telegramUser ? 'telegram_mini_app' : 'web',
       ...(telegramUser ? { telegramUser } : {}),

@@ -118,7 +118,12 @@ function CategoryRail({
       </nav>
 
       {children.length > 0 ? (
-        <nav className={railClassName} aria-label={getLocalizedText(activeParent!.titleRu, activeParent!.titleUz, activeParent!.titleEn)}>
+        <nav
+          className={railClassName}
+          aria-label={activeParent
+            ? getLocalizedText(activeParent.titleRu, activeParent.titleUz, activeParent.titleEn)
+            : t('allProducts')}
+        >
           {children.map((category) => {
             const isActive = activeCategory?.id === category.id;
             return (

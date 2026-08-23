@@ -88,6 +88,17 @@ export async function createInternalDocument(
         ],
         margin: [0, 0, 0, 18],
       },
+      order.deliveryAddress || order.deliveryDate || order.deliveryWindow ? {
+        table: {
+          widths: [70, '*'],
+          body: [
+            [{ text: 'Доставка', color: '#66716B', bold: true }, { text: [order.deliveryDate || '', order.deliveryWindow?.replace('-', '–') || ''].filter(Boolean).join(' · ') || 'Не указана' }],
+            [{ text: 'Адрес', color: '#66716B', bold: true }, { text: order.deliveryAddress || 'Не указан' }],
+          ],
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 16],
+      } : { text: '' },
       {
         table: {
           headerRows: 1,

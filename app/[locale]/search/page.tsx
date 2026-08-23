@@ -9,7 +9,7 @@ import { StorefrontSearch } from '@/components/search/StorefrontSearch';
 function SearchResultsContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
-  return <StorefrontSearch initialQuery={query} />;
+  return <StorefrontSearch key={query} initialQuery={query} />;
 }
 
 function SearchLoading() {
