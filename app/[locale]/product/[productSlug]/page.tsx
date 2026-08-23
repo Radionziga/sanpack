@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, useRef } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -54,6 +54,49 @@ import {
 } from '@/lib/catalog/productPresentation';
 import { getProductGalleryImages } from '@/lib/catalog/productGallery';
 
+function MobileProductDescription({
+  text,
+  showMore,
+  showLess,
+}: {
+  text: string;
+  showMore: string;
+  showLess: string;
+}) {
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+
+  useEffect(() => {
+    const element = textRef.current;
+    if (!element || expanded) return;
+    const measure = () => setCanExpand(element.scrollHeight > element.clientHeight + 1);
+    const frame = window.requestAnimationFrame(measure);
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [expanded, text]);
+
+  return (
+    <section className="rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-4 py-3 text-sm leading-6 text-[var(--sp-ink-secondary)] md:hidden">
+      <p ref={textRef} className={expanded ? undefined : 'line-clamp-3'}>{text}</p>
+      {canExpand || expanded ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+          className="mt-1.5 inline-flex min-h-9 items-center font-semibold text-[var(--sp-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)]"
+        >
+          {expanded ? showLess : showMore}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
 export default function ProductDetailPage({
   params,
 }: {
@@ -93,6 +136,7 @@ export default function ProductDetailPage({
       informational: 'Только информация',
       showMore: 'Развернуть описание',
       showLess: 'Свернуть описание',
+      additionalInfo: 'Дополнительная информация',
     },
     uz: {
       notFound: 'Mahsulot topilmadi',
@@ -124,6 +168,7 @@ export default function ProductDetailPage({
       informational: 'Faqat ma’lumot uchun',
       showMore: 'Tavsifni ochish',
       showLess: 'Tavsifni yopish',
+      additionalInfo: 'Qo‘shimcha ma’lumot',
     },
     en: {
       notFound: 'Product not found',
@@ -155,6 +200,7 @@ export default function ProductDetailPage({
       informational: 'Information only',
       showMore: 'Read description',
       showLess: 'Hide description',
+      additionalInfo: 'Additional information',
     },
   }[language];
   const { items } = useRequestCart();
@@ -320,8 +366,8 @@ export default function ProductDetailPage({
     <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header />
 
-      <main className="flex-1 pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+5.5rem)] pt-5 md:py-8">
-        <div className="mx-auto max-w-7xl px-4">
+      <main className="flex-1 pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+5.5rem)] md:py-8">
+        <div className="mx-auto max-w-7xl md:px-4">
           {/* Breadcrumbs */}
           <nav aria-label="Breadcrumb" className="mb-6 hidden flex-wrap items-center gap-2 text-xs font-medium text-[var(--sp-ink-tertiary)] md:flex">
             <Link href="/" className="transition-colors hover:text-[var(--sp-brand)]">
@@ -335,41 +381,83 @@ export default function ProductDetailPage({
             <span className="max-w-xs truncate font-semibold text-[var(--sp-ink)]" aria-current="page">{title}</span>
           </nav>
 
-          {/* Mobile Back Button */}
-          <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
-            <Link
-              href="/catalog"
-              className="inline-flex min-h-10 items-center gap-1.5 text-sm font-medium text-[var(--sp-ink-secondary)] transition-colors hover:text-[var(--sp-brand)]"
-            >
-              <ChevronLeft className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
-              <span>{copy.back || t('catalog')}</span>
-            </Link>
-          </div>
-
-          <h1 className="mb-4 break-words text-xl font-bold leading-snug tracking-tight text-[var(--sp-ink)] lg:hidden">
+          <h1 className="mb-4 hidden break-words text-xl font-bold leading-snug tracking-tight text-[var(--sp-ink)] md:block lg:hidden">
             {title}
           </h1>
 
-          {(shortDescription || description) ? (
-            <details className="group mb-5 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-4 py-3 text-sm leading-6 text-[var(--sp-ink-secondary)] lg:hidden">
-              <summary className="cursor-pointer list-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] [&::-webkit-details-marker]:hidden">
-                <span className="line-clamp-2 group-open:hidden">{shortDescription || description}</span>
-                <span className="mt-1.5 inline-flex min-h-7 items-center font-semibold text-[var(--sp-brand)] group-open:hidden">{copy.showMore}</span>
-                <span className="hidden min-h-7 items-center font-semibold text-[var(--sp-brand)] group-open:inline-flex">{copy.showLess}</span>
-              </summary>
-              <p className="mt-2 border-t border-[var(--sp-line-soft)] pt-3">{description || shortDescription}</p>
-            </details>
-          ) : null}
-
           {/* Product Hero Top Grid */}
-          <div className="mb-8 grid grid-cols-1 gap-5 lg:mb-12 lg:grid-cols-12 lg:gap-8">
+          <div className="mb-8 grid grid-cols-1 gap-0 md:gap-5 lg:mb-12 lg:grid-cols-12 lg:gap-8">
             {/* Col 1: Gallery */}
-            <div className="order-1 lg:order-none lg:col-span-5">
-              <ProductGallery images={galleryImages} title={title} />
+            <div className="relative order-1 lg:order-none lg:col-span-5">
+              <ProductGallery images={galleryImages} title={title} mobileEdgeToEdge />
+              <Link
+                href="/catalog"
+                aria-label={copy.back || t('catalog')}
+                title={copy.back || t('catalog')}
+                className="sp-icon-button absolute left-[max(0.75rem,env(safe-area-inset-left))] top-3 z-20 size-11 border border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_92%,transparent)] text-[var(--sp-ink)] shadow-[var(--sp-shadow-raised)] backdrop-blur-md active:bg-[var(--sp-surface-inset)] md:hidden"
+              >
+                <ChevronLeft className="size-5" aria-hidden="true" />
+              </Link>
+            </div>
+
+            <div className="order-2 space-y-4 px-4 pt-5 md:hidden">
+              <h1 className="break-words text-xl font-bold leading-snug tracking-tight text-[var(--sp-ink)]">
+                {title}
+              </h1>
+
+              <MobileProductDescription
+                text={description || shortDescription || copy.noDescription}
+                showMore={copy.showMore}
+                showLess={copy.showLess}
+              />
+
+              {product.variants && product.variants.length > 0 ? (
+                <section id="mobile-product-variant-picker" className="space-y-2 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4">
+                  <h2 className="text-sm font-semibold text-[var(--sp-ink)]">{t('chooseVariant')}</h2>
+                  <div className="grid gap-2">
+                    {product.variants.map((variant) => {
+                      const isSelected = selectedVariant?.id === variant.id;
+                      return (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          onClick={() => handleSelectVariant(variant)}
+                          aria-pressed={isSelected}
+                          className={`flex min-h-12 items-center justify-between gap-3 rounded-[var(--sp-radius-control)] border px-3 py-2 text-left text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${
+                            isSelected
+                              ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)] font-semibold text-[var(--sp-brand)]'
+                              : 'border-[var(--sp-line)] text-[var(--sp-ink-secondary)]'
+                          }`}
+                        >
+                          <span>{getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn)}</span>
+                          <span className="shrink-0 tabular-nums">
+                            {product.showPrice && variant.price
+                              ? formatMoney(variant.price, language, product.currency)
+                              : isSelected ? <Check className="size-4" aria-hidden="true" /> : null}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => toggleFavorite(product.id)}
+                className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border px-4 text-sm font-semibold ${
+                  favorited
+                    ? 'border-[color-mix(in_srgb,var(--sp-danger)_28%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-danger)_7%,var(--sp-surface))] text-[var(--sp-danger)]'
+                    : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)]'
+                }`}
+              >
+                <Heart className={`size-4 ${favorited ? 'fill-current' : ''}`} aria-hidden="true" />
+                <span>{favorited ? copy.favorite : t('favorites')}</span>
+              </button>
             </div>
 
             {/* Col 3: Sticky Commercial Action Box */}
-            <div className="order-2 lg:order-3 lg:col-span-3">
+            <div className="order-3 hidden md:block lg:order-3 lg:col-span-3">
               <div className="space-y-5 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-raised)] sm:p-6 lg:sticky lg:top-24">
                 <div>
                   <span className="mb-1 block text-xs font-medium text-[var(--sp-ink-tertiary)]">
@@ -553,7 +641,7 @@ export default function ProductDetailPage({
             </div>
 
             {/* Col 2: Info & Specs */}
-            <div className="order-3 space-y-5 lg:order-2 lg:col-span-4">
+            <div className="order-4 hidden space-y-5 md:block lg:order-2 lg:col-span-4">
               <div className="hidden lg:block">
                 <h1 className="break-words text-xl font-bold leading-snug tracking-tight text-[var(--sp-ink)] sm:text-2xl">
                   {title}
@@ -608,71 +696,73 @@ export default function ProductDetailPage({
             </div>
           </div>
 
-          {/* Mobile details use progressive disclosure instead of desktop tabs. */}
-          <div className="mb-8 space-y-2 md:hidden">
-            <details open className="group rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)]">
-              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[var(--sp-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] [&::-webkit-details-marker]:hidden">
-                {t('tabDescription')}
-                <ChevronDown className="size-4 shrink-0 text-[var(--sp-ink-tertiary)] transition-transform group-open:rotate-180" aria-hidden="true" />
-              </summary>
-              <div className="border-t border-[var(--sp-line-soft)] px-4 py-4 text-sm leading-7 text-[var(--sp-ink-secondary)]">
-                <p>{description || copy.noDescription}</p>
+          {/* One compact mobile disclosure keeps secondary information together. */}
+          <details className="group mx-4 mb-8 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] md:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[var(--sp-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] [&::-webkit-details-marker]:hidden">
+              {copy.additionalInfo}
+              <ChevronDown className="size-4 shrink-0 text-[var(--sp-ink-tertiary)] transition-transform group-open:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="space-y-5 border-t border-[var(--sp-line-soft)] px-4 py-4 text-xs leading-relaxed text-[var(--sp-ink-secondary)]">
+              <div className="flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] p-3 font-semibold text-[var(--sp-brand)]">
+                <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
+                <span>{product.stockStatus === 'in_stock' ? copy.stock : copy.order}</span>
               </div>
-            </details>
 
-            {visibleAttributes.length > 0 ? (
-              <details className="group rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)]">
-                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[var(--sp-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] [&::-webkit-details-marker]:hidden">
-                  {t('tabSpecs')}
-                  <ChevronDown className="size-4 shrink-0 text-[var(--sp-ink-tertiary)] transition-transform group-open:rotate-180" aria-hidden="true" />
-                </summary>
-                <dl className="divide-y divide-[var(--sp-line-soft)] border-t border-[var(--sp-line-soft)] px-4 text-xs">
-                  {visibleAttributes.map((attribute) => (
-                    <div key={attribute.key} className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-4 py-3">
-                      <dt className="text-[var(--sp-ink-secondary)]">{attribute.label}</dt>
-                      <dd className="break-words text-right font-semibold text-[var(--sp-ink)]">{attribute.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </details>
-            ) : null}
+              {activeTiers.length > 0 ? (
+                <section>
+                  <h3 className="mb-2 text-sm font-semibold text-[var(--sp-ink)]">{copy.tiers}</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {activeTiers.map((tier) => (
+                      <div key={tier.minQuantity} className="rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-2 text-center">
+                        <div>{copy.from} {formatProductQuantity(product, tier.minQuantity, language)}</div>
+                        <strong className="text-[var(--sp-brand)]">{formatMoney(tier.price, language, product.currency)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
 
-            <details className="group rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)]">
-              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[var(--sp-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] [&::-webkit-details-marker]:hidden">
-                {t('tabDelivery')}
-                <ChevronDown className="size-4 shrink-0 text-[var(--sp-ink-tertiary)] transition-transform group-open:rotate-180" aria-hidden="true" />
-              </summary>
-              <div className="space-y-4 border-t border-[var(--sp-line-soft)] px-4 py-4 text-xs leading-relaxed text-[var(--sp-ink-secondary)]">
+              {visibleAttributes.length > 0 ? (
+                <section>
+                  <h3 className="mb-1 text-sm font-semibold text-[var(--sp-ink)]">{t('tabSpecs')}</h3>
+                  <dl className="divide-y divide-[var(--sp-line-soft)]">
+                    {visibleAttributes.map((attribute) => (
+                      <div key={attribute.key} className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-4 py-2.5">
+                        <dt>{attribute.label}</dt>
+                        <dd className="break-words text-right font-semibold text-[var(--sp-ink)]">{attribute.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              ) : null}
+
+              <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-[var(--sp-ink)]">{t('tabDelivery')}</h3>
                 <div className="flex items-start gap-3">
                   <Truck className="mt-0.5 size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" />
-                  <div><h3 className="text-sm font-semibold text-[var(--sp-ink)]">{copy.cityDelivery}</h3><p>{copy.cityDeliveryText}</p></div>
+                  <div><strong className="text-[var(--sp-ink)]">{copy.cityDelivery}</strong><p>{copy.cityDeliveryText}</p></div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="mt-0.5 size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" />
-                  <div><h3 className="text-sm font-semibold text-[var(--sp-ink)]">{copy.regions}</h3><p>{copy.regionsText}</p></div>
+                  <div><strong className="text-[var(--sp-ink)]">{copy.regions}</strong><p>{copy.regionsText}</p></div>
                 </div>
-              </div>
-            </details>
+              </section>
 
-            <details className="group rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)]">
-              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[var(--sp-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] [&::-webkit-details-marker]:hidden">
-                {t('tabDocs')}
-                <ChevronDown className="size-4 shrink-0 text-[var(--sp-ink-tertiary)] transition-transform group-open:rotate-180" aria-hidden="true" />
-              </summary>
-              <div className="border-t border-[var(--sp-line-soft)] px-4 py-4">
+              <section>
+                <h3 className="mb-2 text-sm font-semibold text-[var(--sp-ink)]">{t('tabDocs')}</h3>
                 {product.documents && product.documents.length > 0 ? (
                   <div className="space-y-2">
                     {product.documents.map((doc) => (
-                      <a key={doc.id} href={doc.url} className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3 text-xs font-semibold text-[var(--sp-ink)]">
+                      <a key={doc.id} href={doc.url} className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3 font-semibold text-[var(--sp-ink)]">
                         <span className="flex min-w-0 items-center gap-3"><FileText className="size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" /><span>{getLocalizedText(doc.titleRu, doc.titleUz, doc.titleEn)}</span></span>
                         <Download className="size-4 shrink-0 text-[var(--sp-ink-tertiary)]" aria-hidden="true" />
                       </a>
                     ))}
                   </div>
-                ) : <p className="text-xs leading-5 text-[var(--sp-ink-secondary)]">{copy.docs}</p>}
-              </div>
-            </details>
-          </div>
+                ) : <p>{copy.docs}</p>}
+              </section>
+            </div>
+          </details>
 
           {/* Details Tabs Section */}
           <div className="mb-12 hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 shadow-[var(--sp-shadow-raised)] sm:p-6 md:block md:p-8">
@@ -795,7 +885,7 @@ export default function ProductDetailPage({
 
           {/* Related Products */}
           {relatedProducts.length > 0 && (
-            <section className="space-y-6">
+            <section className="mx-4 space-y-6 md:mx-0">
               <h2 className="text-xl font-bold tracking-tight text-[var(--sp-ink)]">{t('relatedProducts')}</h2>
               <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4 lg:gap-6">
                 {relatedProducts.map((p) => (
@@ -811,30 +901,44 @@ export default function ProductDetailPage({
         <div className="fixed inset-x-0 z-30 border-t border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_97%,transparent)] px-[max(0.75rem,env(safe-area-inset-left))] py-2 shadow-[0_-12px_28px_rgb(21_27_24/10%)] backdrop-blur-xl md:hidden" style={{ bottom: 'calc(var(--sp-mobile-nav-height) + env(safe-area-inset-bottom))' }}>
           <div className="mx-auto flex max-w-lg items-center gap-3">
             <div className="min-w-0 flex-1" aria-live="polite">
-              <span className="block truncate text-[10px] font-medium text-[var(--sp-ink-tertiary)]">{product.showPrice && unitPrice > 0 ? copy.total : priceLabel}</span>
+              <span className="block truncate text-[10px] font-medium text-[var(--sp-ink-tertiary)]">{priceLabel}</span>
               <span className="block truncate text-base font-bold tabular-nums text-[var(--sp-brand)]">
                 {product.showPrice && unitPrice > 0
-                  ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(variantRequired ? unitPrice : totalPrice, language, product.currency)}`
+                  ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(unitPrice, language, product.currency)}`
                   : t('priceOnRequest')}
               </span>
             </div>
-            {variantRequired || !orderable ? (
+            {variantRequired ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const picker = document.getElementById('mobile-product-variant-picker');
+                  picker?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  window.setTimeout(() => picker?.querySelector<HTMLButtonElement>('button')?.focus(), 350);
+                }}
+                className="flex min-h-12 min-w-[9.75rem] items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)]"
+              >
+                <ShoppingCart className="size-4" aria-hidden="true" />
+                <span>{copy.selectVariant}</span>
+              </button>
+            ) : !orderable ? (
               <button
                 type="button"
                 disabled
                 className="flex min-h-12 min-w-[9.75rem] cursor-not-allowed items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-control)] px-4 text-sm font-semibold text-[var(--sp-ink-tertiary)]"
               >
-                {orderable ? <ShoppingCart className="size-4" aria-hidden="true" /> : <AlertCircle className="size-4" aria-hidden="true" />}
-                <span>{variantRequired ? copy.selectVariant : copy.informational}</span>
+                <AlertCircle className="size-4" aria-hidden="true" />
+                <span>{copy.informational}</span>
               </button>
             ) : (
-              <ProductCartControl
-                product={product}
-                variant={selectedVariant || undefined}
-                initialQuantity={quantity}
-                size="detail"
-                className="min-w-[10.5rem]"
-              />
+              <div className="w-[10.5rem] shrink-0">
+                <ProductCartControl
+                  product={product}
+                  variant={selectedVariant || undefined}
+                  initialQuantity={quantity}
+                  size="detail"
+                />
+              </div>
             )}
           </div>
         </div>

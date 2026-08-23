@@ -31,6 +31,9 @@ import { filterProductsBySearch } from '@/lib/catalog/productSearch';
 interface CatalogListingProps {
   activeCategorySlug?: string;
   searchQuery?: string;
+  initialProducts?: Product[];
+  initialCategories?: Category[];
+  initialAttributes?: Attribute[];
 }
 
 type LoadState = 'loading' | 'ready' | 'error';
@@ -147,13 +150,20 @@ function CategoryRail({
   );
 }
 
-export function CatalogListing({ activeCategorySlug, searchQuery }: CatalogListingProps) {
+export function CatalogListing({
+  activeCategorySlug,
+  searchQuery,
+  initialProducts,
+  initialCategories,
+  initialAttributes,
+}: CatalogListingProps) {
   const t = useTranslations('catalogListing');
   const { getLocalizedText, language } = useLanguage();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
-  const [loadState, setLoadState] = useState<LoadState>('loading');
+  const hasInitialCatalog = Boolean(initialProducts && initialCategories && initialAttributes);
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
+  const [categories, setCategories] = useState<Category[]>(initialCategories ?? []);
+  const [attributes, setAttributes] = useState<Attribute[]>(initialAttributes ?? []);
+  const [loadState, setLoadState] = useState<LoadState>(hasInitialCatalog ? 'ready' : 'loading');
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('popular');
@@ -165,6 +175,7 @@ export function CatalogListing({ activeCategorySlug, searchQuery }: CatalogListi
   const filterCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    if (hasInitialCatalog && loadAttempt === 0) return;
     let cancelled = false;
     async function loadCatalog() {
       try {
@@ -186,7 +197,7 @@ export function CatalogListing({ activeCategorySlug, searchQuery }: CatalogListi
     return () => {
       cancelled = true;
     };
-  }, [loadAttempt]);
+  }, [hasInitialCatalog, loadAttempt]);
 
   useEffect(() => {
     if (!isMobileFilterOpen) return;
@@ -347,7 +358,11 @@ export function CatalogListing({ activeCategorySlug, searchQuery }: CatalogListi
           </div>
           {categoryDescription ? <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--sp-ink-secondary)]">{categoryDescription}</p> : null}
           <p className="mt-1.5 text-xs font-medium text-[var(--sp-ink-secondary)]">
-            {t('found')} <span className="font-semibold tabular-nums text-[var(--sp-brand)]">{filteredProducts.length}</span>
+            {loadState === 'ready' ? (
+              <>{t('found')} <span className="font-semibold tabular-nums text-[var(--sp-brand)]">{filteredProducts.length}</span></>
+            ) : (
+              <span className="inline-block h-3 w-24 animate-pulse rounded bg-[var(--sp-surface-inset)]" aria-hidden="true" />
+            )}
           </p>
         </div>
 

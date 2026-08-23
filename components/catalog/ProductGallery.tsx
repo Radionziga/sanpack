@@ -9,9 +9,10 @@ import { hasProductImage } from '@/lib/catalog/productImages';
 interface ProductGalleryProps {
   images: string[];
   title: string;
+  mobileEdgeToEdge?: boolean;
 }
 
-export function ProductGallery({ images, title }: ProductGalleryProps) {
+export function ProductGallery({ images, title, mobileEdgeToEdge = false }: ProductGalleryProps) {
   const t = useTranslations('productGallery');
   const availableImages = images.filter(hasProductImage);
   const imageScope = availableImages.join('\n');
@@ -54,9 +55,13 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
   }, [isZoomOpen]);
 
   return (
-    <div className="space-y-4">
+    <div className={mobileEdgeToEdge ? 'space-y-0 md:space-y-4' : 'space-y-4'}>
       {/* Main Image Stage */}
-      <div className="group relative aspect-square overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] sm:border sm:border-[var(--sp-line)]">
+      <div className={`group relative aspect-square overflow-hidden bg-[var(--sp-surface)] ${
+        mobileEdgeToEdge
+          ? 'border-b border-[var(--sp-line)] md:rounded-[var(--sp-radius-card)] md:border'
+          : 'rounded-[var(--sp-radius-card)] sm:border sm:border-[var(--sp-line)]'
+      }`}>
         <ProductImage
           source={activeImage}
           alt={title}
@@ -64,7 +69,9 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
           fetchPriority="high"
           sizes="(min-width: 1024px) 45vw, 90vw"
           variant="detail"
-          imageClassName="object-contain p-3 transition-transform duration-300 motion-reduce:transition-none sm:p-6 md:group-hover:scale-[1.025]"
+          imageClassName={`object-contain transition-transform duration-300 motion-reduce:transition-none md:group-hover:scale-[1.025] ${
+            mobileEdgeToEdge ? 'p-0 md:p-6' : 'p-3 sm:p-6'
+          }`}
         />
 
         {hasProductImage(activeImage) ? (
@@ -87,7 +94,9 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       {availableImages.length > 1 && (
         <div
           role="group"
-          className="no-scrollbar flex min-h-[4.75rem] items-center gap-3 overflow-x-auto px-1 pb-2 pt-1"
+          className={`no-scrollbar flex min-h-[4.75rem] items-center gap-3 overflow-x-auto pb-2 ${
+            mobileEdgeToEdge ? 'px-4 pt-3 md:px-1 md:pt-1' : 'px-1 pt-1'
+          }`}
           aria-label={t('thumbnails')}
         >
           {availableImages.map((img, idx) => (

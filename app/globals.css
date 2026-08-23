@@ -66,6 +66,7 @@
     --sp-category-sand: #F1E9D7;
     --sp-category-blue: #DCEAF3;
     --sp-category-peach: #F3E1D9;
+    --sp-bento-feature-ink: #14231C;
     /* Safe defaults for overlays rendered outside the themed app shell.
        Inside StorefrontTheme these aliases resolve against its configured radius. */
     --sp-radius-nested: max(0px, calc(var(--sp-radius) - 4px));
@@ -304,6 +305,14 @@
   .sp-icon-button:hover {
     background: var(--sp-surface-inset);
     color: var(--sp-ink);
+  }
+
+  .sp-bento-feature-overlay {
+    background: linear-gradient(90deg, rgb(247 248 243 / 96%) 0%, rgb(247 248 243 / 82%) 38%, rgb(247 248 243 / 20%) 70%, transparent 88%);
+  }
+
+  .sp-bento-category-overlay {
+    background: linear-gradient(180deg, rgb(6 24 16 / 68%) 0%, rgb(6 24 16 / 8%) 46%, rgb(6 24 16 / 64%) 100%);
   }
 
   .sp-card {

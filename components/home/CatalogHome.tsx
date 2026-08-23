@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import {
   ArrowRight,
   Download,
   FileText,
-  PackageSearch,
   PhoneCall,
   Send,
   X,
@@ -17,6 +15,7 @@ import { ProductCard } from '@/components/catalog/ProductCard';
 import { useLanguage } from '@/context/LanguageContext';
 import type { Banner, Category, Language, Product } from '@/types';
 import { PromoCarousel } from '@/components/home/PromoCarousel';
+import { CategoryBento } from '@/components/home/CategoryBento';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref } from '@/lib/settings/contacts';
 import { getCatalogPrintPath } from '@/lib/documents/catalogIdentity';
@@ -91,8 +90,7 @@ export function CatalogHome({
     };
   }, [pdfModalOpen]);
 
-  const categoryCards = useMemo(() => {
-    return categories
+  const categoryCards = useMemo(() => categories
       .map((category) => {
         const subcategories = categories.filter((c) => c.parentId === category.id);
         const childCategoryIds = new Set([category.id, ...subcategories.map((c) => c.id)]);
@@ -110,9 +108,18 @@ export function CatalogHome({
           image: category.image || categoryProducts[0]?.mainImage,
         };
       })
-      .filter((item) => item.category.parentId && item.count > 0)
-      .sort((a, b) => (a.category.sortOrder ?? 99) - (b.category.sortOrder ?? 99));
-  }, [categories, products]);
+      .filter((item) => item.category.status === 'active' && item.count > 0)
+      .sort((a, b) => (a.category.sortOrder ?? 99) - (b.category.sortOrder ?? 99)), [categories, products]);
+
+  const parentCategoryCards = useMemo(
+    () => categoryCards.filter((item) => !item.category.parentId),
+    [categoryCards],
+  );
+
+  const childCategoryCards = useMemo(
+    () => categoryCards.filter((item) => Boolean(item.category.parentId)),
+    [categoryCards],
+  );
 
   // Real product groups are more useful here than the two broad parent sections.
   const mainCategories = useMemo(() => {
@@ -154,71 +161,13 @@ export function CatalogHome({
         <PromoCarousel banners={banners} locale={locale} />
       </section>
 
-      {/* Categories Horizontal Slider */}
-      <section className="border-y border-[var(--sp-line)] bg-[var(--sp-surface)] py-8 md:py-10">
-        <div className="mx-auto max-w-7xl px-4">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <h2 className="font-extended text-xl sm:text-2xl font-bold tracking-[-0.025em] text-[var(--sp-ink)] md:text-[28px]">
-                {t('categoriesTitle')}
-              </h2>
-              <p className="mt-1.5 text-xs sm:text-sm text-[var(--sp-ink-secondary)]">{t('categoriesDescription')}</p>
-            </div>
-            <Link
-              href="/catalog"
-              className="hidden shrink-0 items-center gap-1.5 font-compact text-xs font-semibold text-[var(--sp-brand)] transition-opacity hover:opacity-75 sm:inline-flex"
-            >
-              {t('allCategories')}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-
-          {categoryCards.length > 0 ? (
-            <div className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden">
-              <div className="no-scrollbar flex snap-x gap-3 overflow-x-auto py-1 pl-[max(1rem,calc((100vw-80rem)/2+1rem))] pr-4">
-                {categoryCards.map(({ category, count, image }, index) => (
-                  <Link
-                    key={category.id}
-                    href={`/catalog/${category.slug}`}
-                    className="group relative aspect-[4/3] min-w-[220px] max-w-[220px] snap-start overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[var(--sp-brand)] hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0 sm:min-w-[240px] sm:max-w-[240px] md:min-w-[260px] md:max-w-[260px]"
-                  >
-                    {/* Full Card Image */}
-                    {image ? (
-                      <Image
-                        src={image}
-                        alt={getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
-                        fill
-                        sizes="(max-width: 768px) 240px, 260px"
-                        loading={index < 4 ? 'eager' : 'lazy'}
-                        priority={index < 2}
-                        className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-[var(--sp-surface-inset)]">
-                        <PackageSearch className="h-16 w-16 text-[var(--sp-ink-muted)]" aria-hidden="true" />
-                      </div>
-                    )}
-
-                    {/* Clean Top-Left Text */}
-                    <div className="relative z-10 p-3.5 sm:p-4 max-w-[90%]">
-                      <h3 className="line-clamp-2 font-compact text-xs sm:text-sm font-bold leading-snug text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.75)]">
-                        {getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
-                      </h3>
-                      <p className="mt-0.5 text-[10px] sm:text-[11px] font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]">
-                        {t('itemsCount', { count })}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-[var(--sp-radius-card)] border border-dashed border-[var(--sp-line-strong)] bg-[var(--sp-surface-inset)] px-6 py-10 text-center text-sm text-[var(--sp-ink-secondary)]">
-              {dataUnavailable ? t('errorDescription') : t('emptyCatalogDescription')}
-            </div>
-          )}
-        </div>
-      </section>
+      <CategoryBento
+        parentItems={parentCategoryCards}
+        childItems={childCategoryCards}
+        locale={locale}
+        getLocalizedText={getLocalizedText}
+        dataUnavailable={dataUnavailable}
+      />
 
       {/* Main Catalog Products Preview Section */}
       <section className="mx-auto max-w-7xl px-4 py-8 md:py-12">

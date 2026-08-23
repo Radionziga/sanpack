@@ -19,7 +19,6 @@ import {
   X,
   ArrowRight,
 } from 'lucide-react';
-import Image from 'next/image';
 import {
   createContext,
   useCallback,
@@ -39,9 +38,10 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { CallbackModal } from '@/components/modals/CallbackModal';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { contactPhoneHref } from '@/lib/settings/contacts';
-import type { Product, Category } from '@/types';
+import type { Product } from '@/types';
 import { formatMoney, getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { ProductImage } from '@/components/catalog/ProductImage';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
 
 type MobilePanel = 'search' | 'more' | null;
 
@@ -85,7 +85,13 @@ export function useMobileStorefrontChrome() {
   return value;
 }
 
-export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
+export function MobileStorefrontChrome({
+  children,
+  initialProducts,
+}: {
+  children: ReactNode;
+  initialProducts: Product[];
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { language, t, getLocalizedText } = useLanguage();
@@ -93,8 +99,7 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
   const { contacts, modules } = useSiteSettings();
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [products] = useState<Product[]>([]);
-  const [categories] = useState<Category[]>([]);
+  const [products, setProducts] = useState(initialProducts);
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isTextEntryFocused, setIsTextEntryFocused] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -196,6 +201,19 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (initialProducts.length > 0) return;
+    let cancelled = false;
+    PublicRepository.getProducts()
+      .then((nextProducts) => {
+        if (!cancelled) setProducts(nextProducts);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [initialProducts.length]);
+
+  useEffect(() => {
     const handleFocusIn = (event: FocusEvent) => setIsTextEntryFocused(isTextEntryElement(event.target));
     const handleFocusOut = () => {
       window.requestAnimationFrame(() => setIsTextEntryFocused(isTextEntryElement(document.activeElement)));
@@ -254,10 +272,14 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     };
   }, [activePanel, closePanel]);
 
-  const contextValue = useMemo(
-    () => ({ openSearch: () => router.push('/search') }),
-    [router],
-  );
+  const openSearch = useCallback(() => {
+    panelTriggerRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    setActivePanel('search');
+  }, []);
+
+  const contextValue = useMemo(() => ({ openSearch }), [openSearch]);
 
   const navigationItems = [
     {
@@ -278,8 +300,8 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
     },
     {
       key: 'search',
-      href: '/search' as const,
-      panel: null,
+      href: null,
+      panel: 'search' as const,
       label: copy.search,
       icon: Search,
       active: activePanel === 'search' || normalizedPathname.startsWith('/search'),
@@ -319,8 +341,7 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
       searchInputRef.current?.focus();
       return;
     }
-    setActivePanel(null);
-    router.push({ pathname: '/search', query: { q: query } });
+    searchInputRef.current?.blur();
   }
 
   // Live filter matching
@@ -436,6 +457,22 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
             const className = `relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 font-compact text-[10px] font-medium transition-colors active:bg-[var(--sp-surface-inset)] ${
               item.active ? 'text-[var(--sp-brand)]' : 'text-[var(--sp-ink-tertiary)]'
             }`;
+            if (item.panel === 'search') {
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  aria-current={item.active ? 'page' : undefined}
+                  onClick={(event) => {
+                    panelTriggerRef.current = event.currentTarget;
+                    setActivePanel('search');
+                  }}
+                  className={className}
+                >
+                  {content}
+                </button>
+              );
+            }
             return (
               <Link key={item.key} href={item.href} aria-current={item.active ? 'page' : undefined} className={className}>
                 {content}
@@ -466,7 +503,9 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="absolute inset-x-0 bottom-0 flex max-h-[92dvh] flex-col rounded-t-[var(--sp-radius-card)] border-t border-[var(--sp-line)] bg-[var(--sp-surface)] pb-[env(safe-area-inset-bottom)] shadow-[0_-24px_70px_rgb(8_16_12/28%)]"
+              className={`absolute inset-x-0 bottom-0 flex flex-col rounded-t-[var(--sp-radius-card)] border-t border-[var(--sp-line)] bg-[var(--sp-surface)] pb-[env(safe-area-inset-bottom)] shadow-[0_-24px_70px_rgb(8_16_12/28%)] ${
+                activePanel === 'search' ? 'h-[70dvh] max-h-[48rem]' : 'max-h-[92dvh]'
+              }`}
             >
               {/* Drag Pill */}
               <div className="mx-auto mt-2.5 h-1.5 w-12 rounded-full bg-[var(--sp-line-strong)]" aria-hidden="true" />
@@ -619,7 +658,7 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
                         )}
                       </div>
                     ) : (
-                      /* Empty State: Popular Suggestions & Quick Categories */
+                      /* Empty State: focused search suggestions only. */
                       <div className="space-y-5">
                         <div>
                           <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--sp-ink-muted)] mb-2.5">
@@ -639,33 +678,6 @@ export function MobileStorefrontChrome({ children }: { children: ReactNode }) {
                             ))}
                           </div>
                         </div>
-
-                        {categories.length > 0 && (
-                          <div>
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--sp-ink-muted)] mb-2.5">
-                              {copy.popularCategories}
-                            </h3>
-                            <div className="grid grid-cols-2 gap-2">
-                              {categories
-                                .filter((c) => !c.parentId)
-                                .slice(0, 6)
-                                .map((cat) => {
-                                  const catTitle = getLocalizedText(cat.titleRu, cat.titleUz, cat.titleEn);
-                                  return (
-                                    <Link
-                                      key={cat.id}
-                                      href={`/catalog/${cat.slug}`}
-                                      onClick={closePanel}
-                                      className="flex items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-2.5 text-xs font-medium text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)] active:bg-[var(--sp-brand-soft)]"
-                                    >
-                                      <span className="truncate">{catTitle}</span>
-                                      <ChevronRight className="size-3.5 shrink-0 text-[var(--sp-ink-muted)]" />
-                                    </Link>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>

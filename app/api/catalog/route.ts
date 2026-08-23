@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     const data = await resources[resource as keyof typeof resources]();
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
       },
     });
   } catch (error) {

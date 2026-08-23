@@ -1,6 +1,6 @@
 'use client';
 
-import type { Language, SiteSettings } from '@/types';
+import type { Language, Product, SiteSettings } from '@/types';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { FavoritesProvider } from '@/context/FavoritesContext';
 import { RequestCartProvider } from '@/context/RequestCartContext';
@@ -12,10 +12,12 @@ export function PublicProviders({
   children,
   locale,
   settings,
+  initialProducts,
 }: {
   children: React.ReactNode;
   locale: Language;
   settings: SiteSettings;
+  initialProducts: Product[];
 }) {
   return (
     <SiteSettingsProvider settings={settings}>
@@ -23,7 +25,11 @@ export function PublicProviders({
         <FavoritesProvider>
           <RequestCartProvider>
             <ToastProvider>
-              <MobileStorefrontChrome>{children}</MobileStorefrontChrome>
+              <MobileStorefrontChrome
+                initialProducts={initialProducts}
+              >
+                {children}
+              </MobileStorefrontChrome>
             </ToastProvider>
           </RequestCartProvider>
         </FavoritesProvider>

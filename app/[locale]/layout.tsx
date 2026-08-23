@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PublicProviders } from '@/components/PublicProviders';
 import { routing } from '@/i18n/routing';
-import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
+import { getPublicProducts, getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
 import { StorefrontTheme } from '@/components/theme/StorefrontTheme';
 import Script from 'next/script';
 import { TelegramMiniAppBridge } from '@/components/telegram/TelegramMiniAppBridge';
@@ -49,6 +49,7 @@ export async function generateMetadata({
     }
     return { title: fallbackTitle, description: fallbackDescription };
   }
+
   const title = locale === 'uz'
     ? settings.seo?.defaultTitleUz || fallbackTitle
     : locale === 'en'
@@ -128,6 +129,13 @@ export default async function LocaleLayout({
     );
   }
 
+  const initialProducts = await getPublicProducts().catch((error) => {
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      console.error('Products could not be preloaded for mobile search.', error);
+    }
+    return [];
+  });
+
   return (
     <html lang={locale} className={storefrontFontVariables}>
       <body suppressHydrationWarning>
@@ -135,7 +143,13 @@ export default async function LocaleLayout({
           <StorefrontTheme design={settings.design}>
             <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
             <TelegramMiniAppBridge />
-            <PublicProviders locale={locale} settings={settings}>{children}</PublicProviders>
+            <PublicProviders
+              locale={locale}
+              settings={settings}
+              initialProducts={initialProducts}
+            >
+              {children}
+            </PublicProviders>
           </StorefrontTheme>
         </NextIntlClientProvider>
       </body>

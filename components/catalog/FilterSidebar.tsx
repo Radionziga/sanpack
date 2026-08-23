@@ -177,7 +177,7 @@ export function FilterSidebar({
 
           const currentVals = selectedFilters[attr.key] || [];
           const visibleOptions = combinedOptions.filter(
-            (opt) => opt.count > 0 || currentVals.includes(opt.value) || products.length === 0
+            (opt) => opt.count > 0 || currentVals.includes(opt.value)
           );
 
           if (visibleOptions.length === 0) return null;

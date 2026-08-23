@@ -74,6 +74,12 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
   const scrollFrameRef = useRef<number | null>(null);
   const rawIndexRef = useRef(0);
 
+  const getSlideOffset = useCallback((viewport: HTMLDivElement, index: number) => {
+    const slide = viewport.children.item(index) as HTMLElement | null;
+    if (!slide) return 0;
+    return slide.getBoundingClientRect().left - viewport.getBoundingClientRect().left + viewport.scrollLeft;
+  }, []);
+
   const renderedSlides = useMemo(() => {
     if (slides.length < 2) {
       return slides.map((banner, logicalIndex) => ({ banner, logicalIndex, clone: false, key: banner.id }));
@@ -88,18 +94,18 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
     const viewport = viewportRef.current;
     if (!viewport) return;
     rawIndexRef.current = rawIndex;
-    viewport.scrollTo({ left: rawIndex * viewport.clientWidth, behavior: 'auto' });
-  }, []);
+    viewport.scrollTo({ left: getSlideOffset(viewport, rawIndex), behavior: 'auto' });
+  }, [getSlideOffset]);
 
   const scrollToRawIndex = useCallback((rawIndex: number) => {
     const viewport = viewportRef.current;
     if (!viewport) return;
     rawIndexRef.current = rawIndex;
     viewport.scrollTo({
-      left: rawIndex * viewport.clientWidth,
+      left: getSlideOffset(viewport, rawIndex),
       behavior: reduceMotion ? 'auto' : 'smooth',
     });
-  }, [reduceMotion]);
+  }, [getSlideOffset, reduceMotion]);
 
   const move = useCallback((direction: -1 | 1) => {
     if (slides.length < 2) return;
@@ -155,7 +161,11 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
       scrollFrameRef.current = null;
       const viewport = viewportRef.current;
       if (!viewport || viewport.clientWidth === 0) return;
-      const rawIndex = Math.round(viewport.scrollLeft / viewport.clientWidth);
+      const rawIndex = Array.from(viewport.children).reduce((nearestIndex, _slide, index) => {
+        const distance = Math.abs(getSlideOffset(viewport, index) - viewport.scrollLeft);
+        const nearestDistance = Math.abs(getSlideOffset(viewport, nearestIndex) - viewport.scrollLeft);
+        return distance < nearestDistance ? index : nearestIndex;
+      }, 0);
       rawIndexRef.current = rawIndex;
       if (slides.length > 1) {
         const logicalIndex = rawIndex === slides.length
@@ -166,7 +176,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
       if (settleTimerRef.current !== null) window.clearTimeout(settleTimerRef.current);
       settleTimerRef.current = window.setTimeout(settleLoopPosition, 120);
     });
-  }, [settleLoopPosition, slides.length]);
+  }, [getSlideOffset, settleLoopPosition, slides.length]);
 
   if (slides.length === 0) return null;
 
@@ -189,7 +199,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
           onPointerDown={() => setIsInteracting(true)}
           onPointerUp={() => setIsInteracting(false)}
           onPointerCancel={() => setIsInteracting(false)}
-          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pr-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {renderedSlides.map(({ banner, logicalIndex, clone, key }) => {
             const title = localizedTitle(banner, locale);
@@ -221,7 +231,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
             );
 
             return (
-              <div key={key} aria-hidden={clone || !isActive} className="relative min-w-full snap-center px-px py-1">
+              <div key={key} aria-hidden={clone || !isActive} className="relative min-w-[calc(100%-0.75rem)] snap-start py-1 sm:min-w-full">
                 <div className="relative aspect-video overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] shadow-sm md:aspect-[24/7]">
                   {banner.link ? (
                     banner.link.startsWith('/') ? (
