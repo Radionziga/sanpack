@@ -149,6 +149,7 @@ export function FilterSidebar({
             labelRu: string;
             labelUz: string;
             labelEn?: string;
+            labelZh?: string;
             count: number;
           }[] = [];
 
@@ -159,6 +160,7 @@ export function FilterSidebar({
               labelRu: opt.labelRu,
               labelUz: opt.labelUz,
               labelEn: opt.labelEn,
+              labelZh: opt.labelZh,
               count,
             });
           });
@@ -170,6 +172,7 @@ export function FilterSidebar({
                 labelRu: valStr,
                 labelUz: localizeSeedAttributeValue(valStr, 'uz'),
                 labelEn: localizeSeedAttributeValue(valStr, 'en'),
+                labelZh: localizeSeedAttributeValue(valStr, 'zh'),
                 count: optionCounts[valStr],
               });
             }
@@ -198,8 +201,8 @@ export function FilterSidebar({
                 className="group flex min-h-11 w-full select-none items-center justify-between py-2 text-left text-xs font-semibold text-[var(--sp-ink)] transition-colors hover:text-[var(--sp-brand)]"
               >
                 <div className="flex items-center gap-2">
-                  <span className="uppercase tracking-wider">
-                    {getLocalizedText(attr.titleRu, attr.titleUz, attr.titleEn)}
+                  <span>
+                    {getLocalizedText(attr.titleRu, attr.titleUz, attr.titleEn, attr.titleZh)}
                   </span>
                   {attr.unit && (
                     <span className="text-[10px] font-normal lowercase text-[var(--sp-ink-muted)]">
@@ -224,7 +227,7 @@ export function FilterSidebar({
 
               {/* Collapsible Content */}
               {isExpanded && (
-                <div className="mt-2 space-y-1.5 transition-all">
+                <div className="mt-2 space-y-1.5">
                   {displayedOptions.map((opt) => {
                     const isSelected = currentVals.includes(opt.value);
                     return (
@@ -254,7 +257,7 @@ export function FilterSidebar({
                               isSelected ? 'font-semibold text-[var(--sp-brand)]' : 'text-[var(--sp-ink-secondary)]'
                             }`}
                           >
-                            {getLocalizedText(opt.labelRu, opt.labelUz, opt.labelEn)}
+                            {getLocalizedText(opt.labelRu, opt.labelUz, opt.labelEn, opt.labelZh)}
                           </span>
                         </div>
 

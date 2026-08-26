@@ -8,6 +8,7 @@ interface FavoritesContextType {
   isFavorite: (productId: string) => boolean;
   clearFavorites: () => void;
   count: number;
+  isHydrated: boolean;
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
@@ -15,21 +16,25 @@ const FavoritesContext = createContext<FavoritesContextType | undefined>(undefin
 const LOCAL_STORAGE_FAV_KEY = 'sanpack_favorites_v1';
 
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const data = localStorage.getItem(LOCAL_STORAGE_FAV_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_FAV_KEY, JSON.stringify(favoriteIds));
+    try {
+      const data = localStorage.getItem(LOCAL_STORAGE_FAV_KEY);
+      // Reading browser storage after mount keeps the server and first client render identical.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFavoriteIds(data ? JSON.parse(data) : []);
+    } catch {
+      setFavoriteIds([]);
     }
-  }, [favoriteIds]);
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    localStorage.setItem(LOCAL_STORAGE_FAV_KEY, JSON.stringify(favoriteIds));
+  }, [favoriteIds, isHydrated]);
 
   const toggleFavorite = (productId: string) => {
     setFavoriteIds((prev) =>
@@ -51,6 +56,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         isFavorite,
         clearFavorites,
         count: favoriteIds.length,
+        isHydrated,
       }}
     >
       {children}

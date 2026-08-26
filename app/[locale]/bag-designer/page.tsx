@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function BagDesignerPage({ params }: { params: Promise<{ locale: Language }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const settings = await getBagDesignerSettings();
+  const settings = await getBagDesignerSettings({ fallbackOnError: true });
   if (!settings.enabled) notFound();
   return <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]"><Header /><main className="flex-1"><BagDesigner settings={settings} /></main><Footer /></div>;
 }

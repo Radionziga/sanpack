@@ -55,14 +55,17 @@ export default function ContactSettingsPage() {
       addressRu: '',
       addressUz: '',
       addressEn: '',
+      addressZh: '',
       workingHoursRu: '',
       workingHoursUz: '',
       workingHoursEn: '',
+      workingHoursZh: '',
       telegram: '',
       whatsapp: '',
       cityRu: '',
       cityUz: '',
       cityEn: '',
+      cityZh: '',
       mapIframe: '',
     },
   });
@@ -74,7 +77,7 @@ export default function ContactSettingsPage() {
     language: TranslationLanguage,
     value: string,
   ) {
-    const suffix = language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En';
+    const suffix = language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'zh' ? 'Zh' : 'En';
     const field = `${base}${suffix}` as keyof ContactForm;
     setValue(field, value, { shouldDirty: true, shouldValidate: true });
   }
@@ -159,16 +162,19 @@ export default function ContactSettingsPage() {
                 <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Русский текст обязателен; остальные языки используются при включённой локализации.</p>
               </div>
             </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Field label="Город · RU" error={errors.cityRu?.message}><input {...register('cityRu')} className={inputClass} /></Field>
               <Field label="Город · UZ" error={errors.cityUz?.message}><input {...register('cityUz')} className={inputClass} /></Field>
               <Field label="Город · EN" error={errors.cityEn?.message}><input {...register('cityEn')} className={inputClass} /></Field>
+              <Field label="Город · ZH" error={errors.cityZh?.message}><input {...register('cityZh')} className={inputClass} /></Field>
               <Field label="Адрес · RU" error={errors.addressRu?.message}><input {...register('addressRu')} className={inputClass} /></Field>
               <Field label="Адрес · UZ" error={errors.addressUz?.message}><input {...register('addressUz')} className={inputClass} /></Field>
               <Field label="Адрес · EN" error={errors.addressEn?.message}><input {...register('addressEn')} className={inputClass} /></Field>
+              <Field label="Адрес · ZH" error={errors.addressZh?.message}><input {...register('addressZh')} className={inputClass} /></Field>
               <Field label="График · RU" error={errors.workingHoursRu?.message}><div className="relative"><Clock3 className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[var(--sp-ink-muted)]" aria-hidden="true" /><input {...register('workingHoursRu')} className={`${inputClass} pl-10`} /></div></Field>
               <Field label="График · UZ" error={errors.workingHoursUz?.message}><input {...register('workingHoursUz')} className={inputClass} /></Field>
               <Field label="График · EN" error={errors.workingHoursEn?.message}><input {...register('workingHoursEn')} className={inputClass} /></Field>
+              <Field label="График · ZH" error={errors.workingHoursZh?.message}><input {...register('workingHoursZh')} className={inputClass} /></Field>
             </div>
             <div className="mt-4">
               <AiTranslateButton fields={[
@@ -179,6 +185,7 @@ export default function ContactSettingsPage() {
                     ru: localizedContacts.cityRu || '',
                     uz: localizedContacts.cityUz || '',
                     en: localizedContacts.cityEn || '',
+                    zh: localizedContacts.cityZh || '',
                   },
                   onChange: (language, value) => setLocalizedContact('city', language, value),
                 },
@@ -189,6 +196,7 @@ export default function ContactSettingsPage() {
                     ru: localizedContacts.addressRu || '',
                     uz: localizedContacts.addressUz || '',
                     en: localizedContacts.addressEn || '',
+                    zh: localizedContacts.addressZh || '',
                   },
                   onChange: (language, value) => setLocalizedContact('address', language, value),
                 },
@@ -199,6 +207,7 @@ export default function ContactSettingsPage() {
                     ru: localizedContacts.workingHoursRu || '',
                     uz: localizedContacts.workingHoursUz || '',
                     en: localizedContacts.workingHoursEn || '',
+                    zh: localizedContacts.workingHoursZh || '',
                   },
                   onChange: (language, value) => setLocalizedContact('workingHours', language, value),
                 },

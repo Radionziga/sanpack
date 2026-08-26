@@ -49,6 +49,16 @@ const languages: Array<{ value: Language; label: string; flag: ReactNode }> = [
       </svg>
     ),
   },
+  {
+    value: 'zh',
+    label: '简体中文',
+    flag: (
+      <svg viewBox="0 0 24 16" aria-hidden="true" className="h-4 w-6 overflow-hidden rounded-[2px] shadow-[0_0_0_1px_rgb(21_27_24/12%)]">
+        <path fill="#DE2910" d="M0 0h24v16H0z" />
+        <path fill="#FFDE00" d="m4 2 .7 1.5 1.7.2-1.25 1.15.35 1.65L4 5.65 2.5 6.5l.35-1.65L1.6 3.7l1.7-.2L4 2Z" />
+      </svg>
+    ),
+  },
 ];
 
 export function LanguageSwitcher({ className = '' }: { className?: string }) {
@@ -56,6 +66,12 @@ export function LanguageSwitcher({ className = '' }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const active = languages.find((item) => item.value === language) ?? languages[0];
+  const copy = {
+    ru: { choose: 'Выбрать язык', site: 'Язык сайта', current: 'Сейчас' },
+    uz: { choose: 'Tilni tanlash', site: 'Sayt tili', current: 'Hozir' },
+    en: { choose: 'Choose language', site: 'Website language', current: 'Current' },
+    zh: { choose: '选择语言', site: '网站语言', current: '当前' },
+  }[language];
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +93,7 @@ export function LanguageSwitcher({ className = '' }: { className?: string }) {
     <div ref={rootRef} className={`relative ${className}`}>
       <button
         type="button"
-        aria-label={`Выбрать язык. Сейчас: ${active.label}`}
+        aria-label={`${copy.choose}。${copy.current}：${active.label}`}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
@@ -90,7 +106,7 @@ export function LanguageSwitcher({ className = '' }: { className?: string }) {
       {open ? (
         <div
           role="menu"
-          aria-label="Язык сайта"
+          aria-label={copy.site}
           className="absolute right-0 top-full z-50 mt-2 min-w-48 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] p-1.5 shadow-[var(--sp-shadow-raised)]"
         >
           {languages.map((item) => {

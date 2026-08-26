@@ -1,6 +1,6 @@
 import type { Language } from '@/types';
 
-export const pageCopy = {
+const basePageCopy = {
   ru: {
     about: {
       eyebrow: 'Производитель и импортёр в Узбекистане',
@@ -256,6 +256,96 @@ export const pageCopy = {
       sections: [
         ['1. Prices and discounts', 'Website prices are indicative. Final pricing and volume discounts are calculated by a manager when the invoice is prepared.'],
         ['2. Dispatch', 'Products are dispatched after payment terms and the delivery address have been agreed.'],
+      ],
+    },
+  },
+} as const;
+
+export const pageCopy = {
+  ...basePageCopy,
+  zh: {
+    about: {
+      eyebrow: '乌兹别克斯坦本地生产商与进口商',
+      intro: 'SANPACK 是值得信赖的 B2B 综合供应伙伴，为 HoReCa、零售和食品生产企业提供包装材料、一次性耗材、食品箔材及专业用品。',
+      metrics: ['长期 B2B 客户', '塔什干仓储面积', '接缝强度与材料密度保障', '快速发货与业务支持'],
+      missionTitle: 'SANPACK 的使命：保障您的业务持续运转',
+      mission: '垃圾袋、铝箔或食品手套供应中的一次小中断，也可能影响厨房或酒店服务。为此，SANPACK 在塔什干仓库长期保有安全库存。',
+      benefits: ['自主生产高强度聚乙烯制品', '环保、低废料的生产流程', '完整的文件与证书'],
+      imageAlt: 'SANPACK 生产基地',
+    },
+    branding: {
+      eyebrow: '包装定制与品牌标识印刷',
+      intro: '我们为您的品牌设计并生产定制包装，包括背心袋、牛皮纸袋、包装盒和餐饮印刷品。',
+      services: [
+        ['定制标识背心袋', '支持最多四色柔版印刷，厚度 15–45 微米，并提供多种尺寸。'],
+        ['扭绳手提牛皮纸袋', '适用于餐厅、汉堡店和精品店的环保丝网印刷包装。'],
+        ['标签与防拆封贴纸', '用于保护外送订单，防止配送过程中未经许可开启。'],
+      ],
+      ctaTitle: '需要设计稿和印量报价吗？',
+      ctaText: '提交需求后，SANPACK 设计师将免费制作您的标识在包装上的效果图。',
+      ctaButton: '申请品牌包装报价',
+    },
+    delivery: {
+      intro: '覆盖乌兹别克斯坦的清晰、高效配送方案',
+      cards: [
+        ['塔什干市内配送', '订单金额满 2,000,000 苏姆可免费配送。12:00 前提交的订单可安排当日发货。'],
+        ['乌兹别克斯坦各地区', '通过可靠的物流服务发往撒马尔罕、纳曼干、安集延、布哈拉、卡尔希和努库斯。'],
+        ['仓库自提', '地址：塔什干市谢尔盖利区扬吉谢尔盖利街 14A。仓库周一至周六 09:00–18:00 营业。'],
+      ],
+      paymentTitle: '企业客户付款方式',
+      payments: [
+        ['银行转账', '提供完整的电子会计文件，价格包含增值税。'],
+        ['Uzcard、Humo 与企业银行卡', '可在收货时付款，或通过开具的二维码账单支付。'],
+      ],
+    },
+    contacts: {
+      intro: 'SANPACK 销售办公室与成品仓库位于塔什干',
+      salesTitle: '销售部联系方式',
+      sales: 'B2B 销售部',
+      email: '电子邮箱',
+      addressLabel: '仓库与办公室地址',
+      address: '乌兹别克斯坦共和国塔什干市谢尔盖利区扬吉谢尔盖利街 14A',
+      hoursLabel: '营业时间',
+      hours: '周一至周六：09:00–18:00；周日休息。',
+      callback: '申请回电',
+      mapTitle: '前往 SANPACK 仓库的路线',
+      landmark: '附近地标：谢尔盖利汽车市场，扬吉谢尔盖利街。',
+    },
+    clients: {
+      intro: '乌兹别克斯坦领先的餐饮集团、酒店和生产企业信赖 SANPACK',
+      reviewsTitle: 'B2B 合作伙伴评价',
+      reviews: [
+        ['Caravan Group 餐饮集团', 'Alisher Karimov，采购总监', '我们与 SANPACK 合作已超过两年。产品质量稳定，塔什干市内配送始终准时。'],
+        ['Bon! 烘焙坊', 'Madina Saidova，生产负责人', '我们订购定制包装袋和烘焙纸。印刷清晰、色彩鲜明，生产速度也很快。'],
+        ['Lotte City Hotel', 'Farkhod Tursunov，HoReCa 经理', 'B2B 服务非常专业：可提供样品、文件办理迅速，客户经理也很细致。'],
+      ],
+    },
+    favorites: {
+      intro: '保存常用商品，便于快速加入询价单',
+      clear: '清空收藏',
+      emptyTitle: '收藏夹暂无商品',
+      emptyText: '点击目录商品上的心形图标，即可将商品保存到这里。',
+    },
+    search: {
+      title: '搜索结果',
+      emptyTitle: '未找到相关商品',
+      emptyText: '请检查商品编号或名称，也可以联系 SANPACK 经理协助选品。',
+      loading: '正在加载结果…',
+    },
+    privacy: {
+      title: 'SANPACK 隐私政策',
+      intro: '本政策适用于您使用本网站时 SANPACK 获取的信息。',
+      sections: [
+        ['1. 个人数据处理', '我们仅收集制作报价、开具文件和配送订单所必需的信息。'],
+        ['2. 信息安全', '除乌兹别克斯坦共和国法律规定的情形外，SANPACK 不会向第三方披露个人数据。'],
+      ],
+    },
+    terms: {
+      title: 'SANPACK 使用条款',
+      intro: '提交询价即表示用户同意 B2B 服务规则和商业供货条件。',
+      sections: [
+        ['1. 价格与折扣', '网站价格仅供参考。最终价格和批量折扣由经理在制作账单时确认。'],
+        ['2. 商品发货', '付款条件和配送地址确认后安排发货。'],
       ],
     },
   },

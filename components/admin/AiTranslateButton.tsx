@@ -5,7 +5,7 @@ import { Languages, Sparkles } from 'lucide-react';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
-export type TranslationLanguage = 'ru' | 'uz' | 'en';
+export type TranslationLanguage = 'ru' | 'uz' | 'en' | 'zh';
 
 export interface TranslatableField {
   key: string;
@@ -18,10 +18,11 @@ const languageLabels: Record<TranslationLanguage, string> = {
   ru: 'Русский',
   uz: 'Узбекский',
   en: 'Английский',
+  zh: 'Китайский',
 };
 
 interface TranslationResult {
-  translations: Array<{ key: string; ru: string; uz: string; en: string }>;
+  translations: Array<{ key: string; ru: string; uz: string; en: string; zh: string }>;
   model: string;
 }
 
@@ -36,6 +37,7 @@ export function AiTranslateButton({ fields, compact = false }: { fields: Transla
     ru: fields.reduce((sum, field) => sum + field.values.ru.trim().length, 0),
     uz: fields.reduce((sum, field) => sum + field.values.uz.trim().length, 0),
     en: fields.reduce((sum, field) => sum + field.values.en.trim().length, 0),
+    zh: fields.reduce((sum, field) => sum + field.values.zh.trim().length, 0),
   }), [fields]);
 
   function resolveSourceLanguage() {
@@ -68,7 +70,7 @@ export function AiTranslateButton({ fields, compact = false }: { fields: Transla
       for (const field of fields) {
         const translated = byKey.get(field.key);
         if (!translated) continue;
-        for (const language of ['ru', 'uz', 'en'] as const) {
+        for (const language of ['ru', 'uz', 'en', 'zh'] as const) {
           if (language === resolvedSource) continue;
           if (!overwrite && field.values[language].trim()) continue;
           field.onChange(language, translated[language]);

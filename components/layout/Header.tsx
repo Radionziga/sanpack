@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
-import NextLink from 'next/link';
 import { Link, useRouter } from '@/i18n/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -12,9 +10,7 @@ import {
   MagnifyingGlassIcon,
   ShoppingCartIcon,
   HeartIcon,
-  Bars3Icon,
   XMarkIcon,
-  ChevronDownIcon,
   PaperAirplaneIcon,
   ArrowRightIcon,
   UserCircleIcon,
@@ -23,7 +19,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { CallbackModal } from '@/components/modals/CallbackModal';
-import { MegaMenu } from '@/components/layout/MegaMenu';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { Category, Product } from '@/types';
 import { BrandLogo } from '@/components/ui/BrandLogo';
@@ -35,7 +30,6 @@ import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { ProductImage } from '@/components/catalog/ProductImage';
 
 export function Header({
-  initialCategories = [],
   initialProducts = [],
 }: {
   initialCategories?: Category[];
@@ -44,43 +38,44 @@ export function Header({
   const { language, t, getLocalizedText, fixText } = useLanguage();
   const siteSettings = useSiteSettings();
   const { contacts } = siteSettings;
-  const bagDesignerEnabled = siteSettings.modules?.bagDesigner?.enabled ?? true;
   const copy = {
     ru: {
       city: 'Ташкент',
       found: 'Найдено в каталоге',
       sku: 'Арт.',
-      admin: 'Вход в Admin',
       search: 'Поиск по каталогу…',
       catalog: 'Каталог товаров',
       address: 'Ташкент, Сергелийский район',
       adminPanel: 'Панель администратора',
       currency: 'сум',
-      bagDesigner: 'Конструктор пакета',
+      home: 'На главную', clearSearch: 'Очистить поиск', find: 'Найти', profile: 'Профиль',
     },
     uz: {
       city: 'Toshkent',
       found: 'Katalogda topildi',
       sku: 'Art.',
-      admin: 'Admin kirish',
       search: 'Katalog bo‘yicha qidirish…',
       catalog: 'Mahsulotlar katalogi',
       address: 'Toshkent, Sergeli tumani',
       adminPanel: 'Administrator paneli',
       currency: 'so‘m',
-      bagDesigner: 'Paket konstruktori',
+      home: 'Bosh sahifaga', clearSearch: 'Qidiruvni tozalash', find: 'Qidirish', profile: 'Profil',
     },
     en: {
       city: 'Tashkent',
       found: 'Found in catalog',
       sku: 'SKU',
-      admin: 'Admin sign in',
       search: 'Search the catalog…',
       catalog: 'Product catalog',
       address: 'Sergeli district, Tashkent',
       adminPanel: 'Administration panel',
       currency: 'UZS',
-      bagDesigner: 'Bag designer',
+      home: 'Home', clearSearch: 'Clear search', find: 'Search', profile: 'Profile',
+    },
+    zh: {
+      city: '塔什干', found: '目录搜索结果', sku: '货号', search: '搜索目录…',
+      catalog: '商品目录', address: '塔什干谢尔盖利区', adminPanel: '管理后台', currency: '苏姆',
+      home: '返回首页', clearSearch: '清除搜索', find: '搜索', profile: '个人资料',
     },
   }[language];
   const { itemCount } = useRequestCart();
@@ -92,30 +87,13 @@ export function Header({
   const phones = [contacts.phone1, contacts.phone2].filter(Boolean);
 
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
-  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
-  const [isSticky, setIsSticky] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>(initialProducts);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (initialCategories.length === 0) {
-      PublicRepository.getCategories().then(setCategories).catch(() => setCategories([]));
-    }
-  }, [initialCategories.length]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsSticky(window.scrollY > 120);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -135,13 +113,14 @@ export function Header({
               (p.titleRu || '').toLowerCase().includes(q) ||
               (p.titleUz || '').toLowerCase().includes(q) ||
               (p.titleEn || '').toLowerCase().includes(q) ||
+              (p.titleZh || '').toLowerCase().includes(q) ||
               (p.sku || '').toLowerCase().includes(q) ||
               (p.shortDescriptionRu || '').toLowerCase().includes(q) ||
               (p.categorySlug || '').toLowerCase().includes(q)
           )
           .sort((a, b) => {
-            const aTitle = ((language === 'uz' ? a.titleUz : language === 'en' ? a.titleEn : a.titleRu) || a.titleRu || '').toLowerCase();
-            const bTitle = ((language === 'uz' ? b.titleUz : language === 'en' ? b.titleEn : b.titleRu) || b.titleRu || '').toLowerCase();
+            const aTitle = ((language === 'uz' ? a.titleUz : language === 'en' ? a.titleEn : language === 'zh' ? a.titleZh : a.titleRu) || a.titleRu || '').toLowerCase();
+            const bTitle = ((language === 'uz' ? b.titleUz : language === 'en' ? b.titleEn : language === 'zh' ? b.titleZh : b.titleRu) || b.titleRu || '').toLowerCase();
             const aStarts = aTitle.startsWith(q) || aTitle.split(' ').some((w) => w.startsWith(q));
             const bStarts = bTitle.startsWith(q) || bTitle.split(' ').some((w) => w.startsWith(q));
             if (aStarts && !bStarts) return -1;
@@ -177,7 +156,6 @@ export function Header({
         inputRef.current?.focus();
       } else if (e.key === 'Escape') {
         setIsSearchOpen(false);
-        setIsMegaMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -205,10 +183,10 @@ export function Header({
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full bg-[var(--sp-surface)] font-sans text-[var(--sp-ink)] md:relative">
+      <header className="sticky top-0 z-30 w-full bg-[var(--sp-surface)] font-sans text-[var(--sp-ink)]">
         {/* Level 1: Top Utility Bar */}
-        <div className="hidden border-b border-[color-mix(in_srgb,var(--sp-on-primary-strong)_16%,transparent)] bg-[var(--sp-primary-strong)] py-2 text-xs text-[var(--sp-on-primary-strong)] md:block">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4">
+        <div className="hidden border-b border-[color-mix(in_srgb,var(--sp-on-primary-strong)_14%,transparent)] bg-[var(--sp-primary-strong)] py-1.5 text-[11px] text-[var(--sp-on-primary-strong)] md:block">
+          <div className="mx-auto flex max-w-[1536px] items-center justify-between gap-4 px-4">
             <div className="flex min-w-0 items-center gap-4">
               <span className="flex min-w-0 items-center gap-1.5 font-medium">
                 <MapPinIcon className="size-4 shrink-0 text-current" aria-hidden="true" />
@@ -220,23 +198,22 @@ export function Header({
               </span>
             </div>
 
-            <div className="ml-auto flex items-center gap-2 sm:gap-4">
+            <div className="ml-auto flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setIsCallbackOpen(true)}
-                className="inline-flex min-h-8 items-center rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-primary-strong)_24%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_9%,transparent)] px-2.5 font-medium text-current transition-colors hover:bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_15%,transparent)]"
+                className="inline-flex min-h-7 items-center rounded-[var(--sp-radius-control)] px-2 font-semibold text-current transition-colors hover:bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_12%,transparent)]"
               >
                 {t('callback')}
               </button>
-              <div className="hidden items-center gap-3 border-l border-[color-mix(in_srgb,var(--sp-on-primary-strong)_20%,transparent)] pl-4 md:flex">
-                {phones.map((phone, index) => (
+              <div className="hidden items-center gap-3 border-l border-[color-mix(in_srgb,var(--sp-on-primary-strong)_20%,transparent)] pl-3 md:flex">
+                {phones.slice(0, 1).map((phone) => (
                   <React.Fragment key={phone}>
-                    {index > 0 ? <span className="h-4 w-px bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_20%,transparent)]" aria-hidden="true" /> : null}
                     <a
                       href={contactPhoneHref(phone)}
                       className="flex items-center gap-1.5 font-medium transition-opacity hover:opacity-80"
                     >
-                      {index === 0 ? <PhoneIcon className="size-4 text-current" aria-hidden="true" /> : null}
+                      <PhoneIcon className="size-3.5 text-current" aria-hidden="true" />
                       <span>{phone}</span>
                     </a>
                   </React.Fragment>
@@ -247,7 +224,7 @@ export function Header({
                   href={contacts.telegram}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex size-9 items-center justify-center rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-primary-strong)_24%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_9%,transparent)] text-current transition-colors hover:bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_15%,transparent)]"
+                  className="flex size-7 items-center justify-center rounded-[var(--sp-radius-control)] text-current transition-colors hover:bg-[color-mix(in_srgb,var(--sp-on-primary-strong)_12%,transparent)]"
                   title="Telegram"
                   aria-label="Telegram"
                 >
@@ -260,38 +237,20 @@ export function Header({
 
         {/* Level 2: Main Header */}
         <div className="border-b border-[var(--sp-line)] py-2.5 md:py-3">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 md:gap-4">
+          <div className="mx-auto flex max-w-[1536px] items-center justify-between gap-2 px-4 md:gap-4">
             {/* Logo */}
-            <Link href="/" className="shrink-0 flex items-center py-0.5" aria-label={`${siteSettings.company.name} — на главную`}>
+            <Link href="/" className="shrink-0 flex items-center py-0.5" aria-label={`${siteSettings.company.name} — ${copy.home}`}>
               <BrandLogo
                 src={siteSettings.company?.logo}
                 srcDark={siteSettings.company?.logoDark}
                 label={siteSettings.company.name}
                 variant="green"
-                className="h-8 sm:h-8.5 md:h-8.5 lg:h-9"
+                className="h-8 sm:h-8.5 md:h-9"
               />
             </Link>
 
-            {/* Catalog Button & Global Search Bar */}
-            <div className="hidden md:flex items-center gap-3 flex-1 max-w-2xl mx-2">
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
-                className={`flex h-10 shrink-0 items-center gap-2 rounded-[var(--sp-radius-control)] px-4 text-xs font-semibold text-[var(--sp-on-brand)] transition-[background-color,opacity] ${
-                  isMegaMenuOpen
-                    ? 'bg-[var(--sp-brand-deep)]'
-                    : 'bg-[var(--sp-brand)] hover:opacity-90'
-                }`}
-              >
-                <Bars3Icon className="w-4 h-4" />
-                <span>{t('catalog')}</span>
-                <ChevronDownIcon
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    isMegaMenuOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </motion.button>
-
+            {/* The storefront opens directly with the catalogue; search is the primary desktop action. */}
+            <div className="mx-2 hidden min-w-0 max-w-2xl flex-1 items-center md:flex">
               <div ref={searchRef} className="relative flex-1">
                 <form onSubmit={handleSearchSubmit} className="relative w-full flex items-center">
                   <input
@@ -313,7 +272,7 @@ export function Header({
                           inputRef.current?.focus();
                         }}
                         className="rounded-[var(--sp-radius-control-inner)] p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
-                        aria-label="Очистить поиск"
+                        aria-label={copy.clearSearch}
                       >
                         <XMarkIcon className="w-3.5 h-3.5" />
                       </button>
@@ -321,7 +280,7 @@ export function Header({
                     <button
                       type="submit"
                       className="rounded-[var(--sp-radius-control-inner)] p-1 text-[var(--sp-ink-tertiary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
-                      aria-label="Найти"
+                      aria-label={copy.find}
                     >
                       <MagnifyingGlassIcon className="w-4 h-4" />
                     </button>
@@ -345,7 +304,7 @@ export function Header({
                             </div>
                             <ul className="max-h-[380px] divide-y divide-[var(--sp-line-soft)] overflow-y-auto">
                               {searchResults.map((product) => {
-                                const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
+                                const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn, product.titleZh);
                                 const priceText = getProductCatalogPriceText(product, language);
                                 return (
                                   <li key={product.id}>
@@ -482,8 +441,8 @@ export function Header({
               <Link
                 href="/profile"
                 className="hidden size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-brand)] transition-colors hover:border-[var(--sp-brand)] hover:bg-[var(--sp-surface-inset)] md:flex"
-                title={language === 'ru' ? 'Профиль' : language === 'uz' ? 'Profil' : 'Profile'}
-                aria-label={language === 'ru' ? 'Профиль' : language === 'uz' ? 'Profil' : 'Profile'}
+                title={copy.profile}
+                aria-label={copy.profile}
               >
                 <UserCircleIcon className="size-5" aria-hidden="true" />
               </Link>
@@ -501,58 +460,6 @@ export function Header({
             </div>
           </div>
         </div>
-
-        {/* Level 3: Navigation Bar */}
-        <div
-          className={`hidden md:block transition-all duration-300 ${
-            isSticky
-              ? 'fixed top-0 left-0 w-full bg-[var(--sp-surface)]/95 backdrop-blur-xl border-b border-[var(--sp-line)] z-40 py-2'
-              : 'border-b border-[var(--sp-line-soft)] py-2 bg-[var(--sp-surface)]'
-          }`}
-        >
-          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs font-semibold text-[var(--sp-ink)]">
-            <nav className="flex items-center gap-7">
-              <Link href="/" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
-                {t('home')}
-              </Link>
-              <Link href="/catalog" className="py-1 font-semibold text-[var(--sp-brand)] transition-colors hover:text-[var(--sp-brand-deep)]">
-                {t('catalog')}
-              </Link>
-              <Link href="/about" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
-                {t('about')}
-              </Link>
-              <Link href="/clients" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
-                {t('clients')}
-              </Link>
-              <Link href="/delivery" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
-                {t('delivery')}
-              </Link>
-              <Link href="/branding" className="py-1 font-semibold text-[var(--sp-brand)] transition-colors hover:text-[var(--sp-brand-deep)]">
-                {t('branding')}
-              </Link>
-              {bagDesignerEnabled ? <Link href="/bag-designer" className="py-1 font-semibold text-[var(--sp-brand)] transition-colors hover:text-[var(--sp-brand-deep)]">
-                {copy.bagDesigner}
-              </Link> : null}
-              <Link href="/contacts" className="py-1 transition-colors hover:text-[var(--sp-brand)]">
-                {t('contacts')}
-              </Link>
-            </nav>
-
-            <NextLink
-              href="/admin/login"
-              className="text-[11px] font-medium text-[var(--sp-ink-tertiary)] transition-colors hover:text-[var(--sp-ink)]"
-            >
-              {copy.admin}
-            </NextLink>
-          </div>
-        </div>
-
-        {/* Mega Menu Dropdown */}
-        <MegaMenu
-          isOpen={isMegaMenuOpen}
-          onClose={() => setIsMegaMenuOpen(false)}
-          categories={categories}
-        />
 
       </header>
 

@@ -17,6 +17,7 @@ function localizedPackageName(product: Product, language: Language) {
   if (!packaging) return '';
   if (language === 'uz') return packaging.nameUz || packaging.nameRu;
   if (language === 'en') return packaging.nameEn || packaging.nameRu;
+  if (language === 'zh') return packaging.nameZh || packaging.nameEn || packaging.nameRu;
   return packaging.nameRu;
 }
 
@@ -127,12 +128,14 @@ export function getOrderRuleSummary(
         ru: ` Максимум — ${formatProductQuantity(product, rule.maximumQuantity, language)}.`,
         uz: ` Maksimum — ${formatProductQuantity(product, rule.maximumQuantity, language)}.`,
         en: ` Maximum: ${formatProductQuantity(product, rule.maximumQuantity, language)}.`,
+        zh: ` 最大数量：${formatProductQuantity(product, rule.maximumQuantity, language)}。`,
       }[language];
   if (!rule.packageEnabled) {
     const copy = {
       ru: `Минимум ${minimumQuantity}; шаг — ${quantityStep}.${maximumSuffix}`,
       uz: `Minimum ${minimumQuantity}; qadam — ${quantityStep}.${maximumSuffix}`,
       en: `Minimum ${minimumQuantity}; step: ${quantityStep}.${maximumSuffix}`,
+      zh: `最低 ${minimumQuantity}；每次增加 ${quantityStep}。${maximumSuffix}`,
     };
     return copy[language];
   }
@@ -144,6 +147,7 @@ export function getOrderRuleSummary(
     ru: `Внешняя упаковка — ${onePackage}, в ней ${unitsPerPackage}. Минимум ${minimumPackages} (${minimumQuantity}).${maximumSuffix}`,
     uz: `Tashqi qadoq — ${onePackage}, unda ${unitsPerPackage}. Minimum ${minimumPackages} (${minimumQuantity}).${maximumSuffix}`,
     en: `Outer package: ${onePackage}, containing ${unitsPerPackage}. Minimum ${minimumPackages} (${minimumQuantity}).${maximumSuffix}`,
+    zh: `外包装：${onePackage}，每包 ${unitsPerPackage}。最低 ${minimumPackages}（${minimumQuantity}）。${maximumSuffix}`,
   };
   return copy[language];
 }
@@ -156,6 +160,7 @@ export function getMinimumOrderLabel(
   const rule = getProductOrderRule(product, language, variant);
   const minimumQuantity = formatProductQuantity(product, rule.minimumQuantity, language);
   if (!rule.packageEnabled) {
+    if (language === 'zh') return `最低 ${minimumQuantity}`;
     return {
       ru: `Мин. ${minimumQuantity}`,
       uz: `Min. ${minimumQuantity}`,
@@ -163,6 +168,7 @@ export function getMinimumOrderLabel(
     }[language];
   }
   const minimumPackages = formatQuantity(rule.minimumPackages, rule.packageName, language);
+  if (language === 'zh') return `最低 ${minimumPackages} · ${minimumQuantity}`;
   return {
     ru: `Мин. ${minimumPackages} · ${minimumQuantity}`,
     uz: `Min. ${minimumPackages} · ${minimumQuantity}`,

@@ -25,34 +25,39 @@ interface ProductCardProps {
   product: Product;
   viewMode?: 'grid' | 'list';
   eagerImage?: boolean;
+  appearance?: 'default' | 'market';
 }
 
-export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: ProductCardProps) {
+export function ProductCard({ product, viewMode = 'grid', eagerImage = false, appearance = 'default' }: ProductCardProps) {
   const { t, getLocalizedText, language } = useLanguage();
   const copy = {
     ru: ['Товар добавлен в заявку', 'Удалено из избранного', 'Добавлено в избранное'],
     uz: ['Mahsulot arizaga qo‘shildi', 'Tanlanganlardan olib tashlandi', 'Tanlanganlarga qo‘shildi'],
     en: ['Product added to quote', 'Removed from favorites', 'Added to favorites'],
+    zh: ['商品已加入购物车', '已取消收藏', '已加入收藏'],
   }[language];
   const favoriteCopy = {
     ru: ['Добавить в избранное', 'Убрать из избранного'],
     uz: ['Tanlanganlarga qo‘shish', 'Tanlanganlardan olib tashlash'],
     en: ['Add to favorites', 'Remove from favorites'],
+    zh: ['加入收藏', '取消收藏'],
   }[language];
   const compactActionCopy = {
     ru: { choose: 'Выбрать' },
     uz: { choose: 'Tanlash' },
     en: { choose: 'Choose' },
+    zh: { choose: '选择' },
   }[language];
   const chooseVariantCopy = {
     ru: 'Выбрать вариант',
     uz: 'Variantni tanlash',
     en: 'Choose variant',
+    zh: '选择规格',
   }[language];
   const { isFavorite, toggleFavorite } = useFavorites();
   const { showToast } = useToast();
 
-  const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
+  const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn, product.titleZh);
   const supportingText = getProductSupportingText(product, language);
   const favorited = isFavorite(product.id);
   const hasVariants = Boolean(product.variants?.length);
@@ -68,6 +73,56 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
   };
 
   const favoriteLabel = favorited ? favoriteCopy[1] : favoriteCopy[0];
+
+  if (appearance === 'market' && viewMode === 'grid') {
+    return (
+      <article className="group min-w-0">
+        <div className="relative aspect-square overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)]">
+          <Link href={`/product/${product.slug}`} className="absolute inset-0 overflow-hidden rounded-[inherit]">
+            <ProductImage
+              source={product.mainImage}
+              alt={title}
+              sizes="(max-width: 767px) calc(50vw - 22px), (max-width: 1279px) 33vw, 220px"
+              loading={eagerImage ? 'eager' : 'lazy'}
+              fetchPriority={eagerImage ? 'high' : undefined}
+              imageClassName="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.035] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            />
+          </Link>
+          <button
+            type="button"
+            onClick={handleToggleFavorite}
+            aria-label={favoriteLabel}
+            title={favoriteLabel}
+            className="absolute right-2 top-2 grid size-11 place-items-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface)]/94 text-[var(--sp-brand)] shadow-[0_5px_18px_rgb(21_27_24/16%)] ring-1 ring-inset ring-[var(--sp-line)] backdrop-blur-sm transition-[background-color,transform] hover:bg-[var(--sp-brand-soft)] active:scale-[0.96] motion-reduce:active:scale-100"
+          >
+            {favorited ? <HeartSolidIcon className="size-5" /> : <HeartIcon className="size-5" />}
+          </button>
+          <div className="absolute bottom-2 right-2 z-10">
+            {hasVariants || !orderable ? (
+              <Link
+                href={`/product/${product.slug}`}
+                aria-label={hasVariants ? chooseVariantCopy : t('details')}
+                title={hasVariants ? chooseVariantCopy : t('details')}
+                className="grid size-11 place-items-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface)] text-[var(--sp-brand)] shadow-[0_5px_18px_rgb(21_27_24/16%)] ring-1 ring-inset ring-[var(--sp-line)] transition-[background-color,transform] hover:bg-[var(--sp-brand-soft)] active:scale-[0.96] motion-reduce:active:scale-100"
+              >
+                <AdjustmentsHorizontalIcon className="size-5" aria-hidden="true" />
+              </Link>
+            ) : <ProductCartControl product={product} size="market" />}
+          </div>
+        </div>
+
+        <div className="px-0.5 pb-1 pt-2.5">
+          <p className="text-base font-extrabold leading-none tracking-[-0.025em] text-[var(--sp-ink)]">{price}</p>
+          <Link href={`/product/${product.slug}`}>
+            <h3 className="mt-1.5 line-clamp-2 min-h-[2.4rem] text-sm font-semibold leading-[1.25] tracking-[-0.015em] text-[var(--sp-ink)] transition-colors group-hover:text-[var(--sp-brand)]">
+              {title}
+            </h3>
+          </Link>
+          <p className="mt-1 line-clamp-1 text-[11px] leading-4 text-[var(--sp-ink-muted)]">{minimumOrderLabel}</p>
+        </div>
+      </article>
+    );
+  }
 
   if (viewMode === 'list') {
     return (
@@ -110,9 +165,15 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false }: 
             </p>
           ) : null}
 
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-medium text-[var(--sp-ink-muted)]">
+            {product.brandName ? <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-2.5 py-1">{product.brandName}</span> : null}
+            {product.sku ? <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-2.5 py-1 tabular-nums">{product.sku}</span> : null}
+            <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] px-2.5 py-1 text-[var(--sp-brand-deep)]">{minimumOrderLabel}</span>
+          </div>
+
         </div>
 
-        <div className="flex min-w-[188px] flex-col justify-end gap-4 border-t border-[var(--sp-line-soft)] pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+        <div className="flex min-w-[188px] flex-col justify-between gap-4 border-t border-[var(--sp-line-soft)] pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
           <div>
             <span className="block text-base font-semibold tracking-tight text-[var(--sp-brand)]">{price}</span>
             <span className="mt-0.5 block text-xs text-[var(--sp-ink-muted)]">{minimumOrderLabel}</span>

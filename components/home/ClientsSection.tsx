@@ -28,6 +28,10 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
       categories: ['All clients', 'Restaurants and cafés', 'Hotels', 'Bakeries', 'Production'],
       subtitle: `Restaurants, hotels, bakeries and multi-site businesses across Uzbekistan choose ${company.name}`,
     },
+    zh: {
+      categories: ['全部客户', '餐厅与咖啡馆', '酒店', '烘焙店', '生产企业'],
+      subtitle: `乌兹别克斯坦的餐厅、酒店、烘焙店和连锁企业选择 ${company.name}`,
+    },
   }[language];
   const categories = [
     { id: 'all', label: copy.categories[0] },
@@ -91,7 +95,7 @@ export function ClientsSection({ clients }: ClientsSectionProps) {
               </span>
               {client.descriptionRu && (
                 <span className="text-[10px] text-[var(--sp-ink-tertiary)] line-clamp-1">
-                  {getLocalizedText(client.descriptionRu, client.descriptionUz, client.descriptionEn)}
+                  {getLocalizedText(client.descriptionRu, client.descriptionUz, client.descriptionEn, client.descriptionZh)}
                 </span>
               )}
             </div>

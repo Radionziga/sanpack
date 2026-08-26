@@ -27,7 +27,7 @@ export function BrandLogo({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={activeSrc}
-          alt={`${label} — логотип`}
+          alt={`${label} logo`}
           className={`${className} w-auto max-w-full object-contain`}
         />
       </span>
@@ -47,7 +47,7 @@ export function BrandLogo({
   return (
     <span
       role="img"
-      aria-label={`${label} — логотип`}
+      aria-label={`${label} logo`}
       className={`${className} inline-flex max-w-full shrink-0 select-none items-center font-brand-heading text-lg font-bold uppercase leading-none tracking-wide ${tone}`}
     >
       {label}

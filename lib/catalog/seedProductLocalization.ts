@@ -5,6 +5,160 @@ interface SeedProductTranslation {
   en: string;
 }
 
+const chineseTitleReplacements: Array<[RegExp, string]> = [
+  [/Extra-strong perforated bags/gi, '超强点断式连卷袋'],
+  [/Extra-strong T-shirt bags/gi, '超强背心袋'],
+  [/Refuse bags|Refuse sacks/gi, '垃圾袋'],
+  [/Universal pizza bags/gi, '通用披萨袋'],
+  [/Vacuum bags/gi, '真空袋'],
+  [/Large stretch film/gi, '大卷保鲜膜'],
+  [/Small stretch film/gi, '小卷保鲜膜'],
+  [/Large aluminium foil/gi, '大卷铝箔'],
+  [/Baking paper/gi, '烘焙纸'],
+  [/Universal polyethylene gloves/gi, '通用聚乙烯手套'],
+  [/yellow heavy-duty washing-up gloves/gi, '黄色加厚洗碗手套'],
+  [/yellow rubber gloves/gi, '黄色橡胶手套'],
+  [/black rubber gloves/gi, '黑色橡胶手套'],
+  [/cleaning cloth/gi, '清洁布'],
+  [/Dishwashing sponges/gi, '洗碗海绵'],
+  [/Coloured table cloths/gi, '彩色桌面清洁布'],
+  [/Korean cleaning sponge/gi, '韩式清洁海绵'],
+  [/Microfibre floor cloth/gi, '超细纤维地布'],
+  [/Two-ply roll towels/gi, '双层卷纸'],
+  [/V-fold napkins/gi, 'V 折餐巾纸'],
+  [/Z-fold napkins/gi, 'Z 折餐巾纸'],
+  [/Square napkins/gi, '方形餐巾纸'],
+  [/napkins/gi, '餐巾纸'],
+  [/Two-ply toilet paper/gi, '双层卫生纸'],
+  [/Wet wipes/gi, '湿巾'],
+  [/Beef tenderloin/gi, '牛里脊'],
+  [/Untrimmed beef tenderloin/gi, '未修整牛里脊'],
+  [/Beef striploin/gi, '牛外脊'],
+  [/Beef eye of round/gi, '牛后腿肉'],
+  [/Beef outside round/gi, '牛后腿外侧肉'],
+  [/Beef neck/gi, '牛颈肉'],
+  [/Beef knuckle/gi, '牛腿芯肉'],
+  [/Beef fat/gi, '牛脂'],
+  [/Beef flank/gi, '牛腹肉'],
+  [/Beef plate/gi, '牛胸腹肉'],
+  [/Beef ribs/gi, '牛肋排'],
+  [/Beef stew meat/gi, '炖煮牛肉'],
+  [/Trimmed chicken breast/gi, '修整鸡胸肉'],
+  [/Chicken breast/gi, '鸡胸肉'],
+  [/Boneless skinless chicken thigh/gi, '去骨去皮鸡腿肉'],
+  [/Boneless chicken thigh/gi, '去骨鸡腿肉'],
+  [/Chicken thigh/gi, '鸡腿肉'],
+  [/Chicken drumstick/gi, '鸡小腿'],
+  [/Chicken leg quarter/gi, '鸡全腿'],
+  [/Chicken wings/gi, '鸡翅'],
+  [/Whole chicken/gi, '整鸡'],
+  [/Chicken egg/gi, '鸡蛋'],
+  [/premium flour/gi, '特级面粉'],
+  [/first-grade flour/gi, '一级面粉'],
+  [/Russian sugar/gi, '俄罗斯白糖'],
+  [/ rice\b/gi, ' 大米'],
+  [/Buckwheat/gi, '荞麦'],
+  [/Lentils/gi, '扁豆'],
+  [/American chickpeas/gi, '美国鹰嘴豆'],
+  [/Iranian chickpeas/gi, '伊朗鹰嘴豆'],
+  [/sunflower oil/gi, '葵花籽油'],
+  [/Large Egyptian orange/gi, '埃及大橙'],
+  [/Small Egyptian orange/gi, '埃及小橙'],
+  [/Argentinian lemon/gi, '阿根廷柠檬'],
+  [/Chilean kiwi/gi, '智利猕猴桃'],
+  [/African grapefruit/gi, '非洲西柚'],
+  [/Ecuadorian banana/gi, '厄瓜多尔香蕉'],
+  [/Smooth-skinned avocado/gi, '光皮牛油果'],
+  [/Hass avocado/gi, '哈斯牛油果'],
+  [/Pineapple \(China\)/gi, '中国菠萝'],
+  [/Lemon \(China\)/gi, '中国柠檬'],
+  [/Local lemon/gi, '本地柠檬'],
+  [/Lime/gi, '青柠'],
+  [/Kiwi \(China\)/gi, '中国猕猴桃'],
+  [/Passion fruit \(China\)/gi, '中国百香果'],
+  [/Passion fruit \(Thailand\)/gi, '泰国百香果'],
+  [/Yellow mini mango/gi, '黄小芒果'],
+  [/Mango \(Peru\)/gi, '秘鲁芒果'],
+  [/White peach/gi, '白桃'],
+  [/Granny Smith apple/gi, '青苹果'],
+  [/Saltanat apple/gi, 'Saltanat 苹果'],
+  [/Shine Muscat grapes/gi, '阳光玫瑰葡萄'],
+  [/Rizamat grapes/gi, 'Rizamat 葡萄'],
+  [/Blueberries/gi, '蓝莓'],
+  [/Blackberries/gi, '黑莓'],
+  [/Blackcurrants/gi, '黑加仑'],
+  [/Physalis/gi, '灯笼果'],
+  [/Raspberries/gi, '树莓'],
+  [/Strawberries/gi, '草莓'],
+  [/Chinese cabbage/gi, '大白菜'],
+  [/Carrots/gi, '胡萝卜'],
+  [/Onions/gi, '洋葱'],
+  [/Potatoes/gi, '土豆'],
+  [/Pink Paradise tomato/gi, 'Pink Paradise 番茄'],
+  [/Red tomato/gi, '红番茄'],
+  [/Rava cucumbers/gi, 'Rava 黄瓜'],
+  [/Orzu cucumbers/gi, 'Orzu 黄瓜'],
+  [/Ginger/gi, '生姜'],
+  [/Traffic Light sweet peppers/gi, '彩椒'],
+  [/Peeled garlic/gi, '去皮大蒜'],
+  [/Button mushrooms/gi, '双孢蘑菇'],
+  [/Asparagus/gi, '芦笋'],
+  [/iceberg lettuce/gi, '冰山生菜'],
+  [/romaine lettuce/gi, '罗马生菜'],
+  [/lettuce/gi, '生菜'],
+  [/rocket/gi, '芝麻菜'],
+  [/spinach/gi, '菠菜'],
+  [/kale/gi, '羽衣甘蓝'],
+  [/chard/gi, '瑞士甜菜'],
+  [/celery stalk/gi, '西芹杆'],
+  [/rosemary/gi, '迷迭香'],
+  [/mint/gi, '薄荷'],
+  [/coriander/gi, '香菜'],
+  [/dill/gi, '莳萝'],
+  [/Dutch parsley/gi, '荷兰欧芹'],
+  [/parsley/gi, '欧芹'],
+  [/spring onions/gi, '小葱'],
+  [/radishes/gi, '小萝卜'],
+  [/celery/gi, '芹菜'],
+  [/shredded/gi, '切丝'],
+  [/microgreens/gi, '微型蔬菜'],
+  [/amaranth/gi, '苋菜'],
+  [/broccoli/gi, '西兰花'],
+  [/pea shoots/gi, '豌豆苗'],
+  [/mustard/gi, '芥菜'],
+  [/daikon/gi, '白萝卜'],
+  [/red radish/gi, '红萝卜'],
+  [/cress/gi, '水田芥'],
+  [/sorrel/gi, '酸模'],
+  [/edible flowers/gi, '食用花'],
+  [/butter/gi, '黄油'],
+  [/cream cheese/gi, '奶油奶酪'],
+  [/Cheese Burger cheese/gi, '汉堡芝士片'],
+  [/Creamy cheese/gi, '奶油芝士片'],
+  [/cheese/gi, '奶酪'],
+  [/frying oil/gi, '炸油'],
+];
+
+function translateSeedTitleToChinese(value: string) {
+  const translated = chineseTitleReplacements.reduce(
+    (result, [pattern, replacement]) => result.replace(pattern, replacement),
+    value,
+  );
+  return translated
+    .replace(/(\d(?:[\d.,–/-]*\d)?)\s*cm\b/gi, '$1 厘米')
+    .replace(/(\d(?:[\d.,–/-]*\d)?)\s*kg\b/gi, '$1 千克')
+    .replace(/(\d(?:[\d.,–/-]*\d)?)\s*g\b/gi, '$1 克')
+    .replace(/(\d(?:[\d.,–/-]*\d)?)\s*L\b/g, '$1 升')
+    .replace(/(\d+)\s*pcs?\b/gi, '$1 件')
+    .replace(/(\d+)\s*slices?\b/gi, '$1 片')
+    .replace(/(\d+)\s*rolls?\b/gi, '$1 卷')
+    .replace(/(\d(?:[\d.,–/-]*\d)?)\s*m\b/gi, '$1 米')
+    .replace(/block of\s*(\d+)/gi, '$1 件装')
+    .replace(/,\s*/g, '，')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const productTranslations: Record<string, SeedProductTranslation> = {
   'TB-001': { uz: 'Chiqindi paketlari 45×50 sm, 20 l, 40 dona', en: 'Refuse bags 45×50 cm, 20 L, 40 pcs' },
   'TB-002': { uz: 'Chiqindi paketlari 45×60 sm, 22 l, 30 dona', en: 'Refuse bags 45×60 cm, 22 L, 30 pcs' },
@@ -225,7 +379,7 @@ const attributeValueTranslations: Record<string, SeedProductTranslation> = {
   'Орзу': { uz: 'Orzu', en: 'Orzu' },
 };
 
-const salesUnitLabels: Record<QuantityUnit, Record<Language, string>> = {
+const salesUnitLabels: Record<QuantityUnit, Record<Exclude<Language, 'zh'>, string>> = {
   piece: { ru: 'штука', uz: 'dona', en: 'piece' },
   gram: { ru: 'грамм', uz: 'gramm', en: 'gram' },
   kilogram: { ru: 'килограмм', uz: 'kilogramm', en: 'kilogram' },
@@ -241,12 +395,32 @@ const salesUnitLabels: Record<QuantityUnit, Record<Language, string>> = {
   custom: { ru: 'единица', uz: 'birlik', en: 'unit' },
 };
 
+const chineseSalesUnitLabels: Record<QuantityUnit, string> = {
+  piece: '件', gram: '克', kilogram: '千克', milliliter: '毫升', liter: '升',
+  meter: '米', square_meter: '平方米', pack: '包', roll: '卷', box: '箱',
+  set: '套', service: '项服务', custom: '单位',
+};
+
+const chineseAttributeValues: Record<string, string> = {
+  Polyethylene: '聚乙烯', Rubber: '橡胶', 'Heavy-duty rubber': '加厚橡胶', '2 ply': '双层',
+  Beef: '牛肉', Chicken: '鸡肉', 'Premium grade': '特级', 'First grade': '一级',
+  Russia: '俄罗斯', 'United States': '美国', Iran: '伊朗', Rice: '大米', Egypt: '埃及',
+  Argentina: '阿根廷', Chile: '智利', Africa: '非洲', Ecuador: '厄瓜多尔', China: '中国',
+  Uzbekistan: '乌兹别克斯坦', Thailand: '泰国', Peru: '秘鲁', Large: '大号', Small: '小号',
+  'Smooth-skinned': '光皮', 'Yellow mini': '黄色迷你', White: '白色', Red: '红色',
+  'Assorted red, yellow and green': '红黄绿混色', Peeled: '去皮', Shredded: '切丝',
+  Butter: '黄油', 'Cheese slices': '芝士片', 'Cream cheese': '奶油奶酪', Cheese: '奶酪',
+  'Blue cheese': '蓝纹奶酪', 'Soft cheese': '软质奶酪', 'Frying oil': '炸油',
+};
+
 export function getSeedProductTranslation(code: string) {
-  return productTranslations[code];
+  const translation = productTranslations[code];
+  return translation ? { ...translation, zh: translateSeedTitleToChinese(translation.en) } : undefined;
 }
 
 export function getLocalizedSalesUnitLabel(unitCode: QuantityUnit | undefined, language: Language) {
-  return unitCode ? salesUnitLabels[unitCode]?.[language] : undefined;
+  if (!unitCode) return undefined;
+  return language === 'zh' ? chineseSalesUnitLabels[unitCode] : salesUnitLabels[unitCode]?.[language];
 }
 
 function localizeMeasurements(value: string, language: Exclude<Language, 'ru'>) {
@@ -257,7 +431,14 @@ function localizeMeasurements(value: string, language: Exclude<Language, 'ru'>) 
       [/(?<!\p{L})л(?!\p{L})/giu, 'l'], [/(?<!\p{L})г(?!\p{L})/giu, 'g'], [/(?<!\p{L})шт(?!\p{L})/giu, 'dona'],
       [/(?<!\p{L})м(?!\p{L})/giu, 'm'],
     ] as const
-    : [
+    : language === 'zh'
+      ? [
+        [/(?<!\p{L})шт\.(?!\p{L})/giu, '件'],
+        [/(?<!\p{L})см(?!\p{L})/giu, '厘米'], [/(?<!\p{L})кг(?!\p{L})/giu, '千克'], [/(?<!\p{L})мл(?!\p{L})/giu, '毫升'],
+        [/(?<!\p{L})л(?!\p{L})/giu, '升'], [/(?<!\p{L})г(?!\p{L})/giu, '克'], [/(?<!\p{L})шт(?!\p{L})/giu, '件'],
+        [/(?<!\p{L})м(?!\p{L})/giu, '米'],
+      ] as const
+      : [
       [/(?<!\p{L})шт\.(?!\p{L})/giu, 'pcs'],
       [/(?<!\p{L})см(?!\p{L})/giu, 'cm'], [/(?<!\p{L})кг(?!\p{L})/giu, 'kg'], [/(?<!\p{L})мл(?!\p{L})/giu, 'ml'],
       [/(?<!\p{L})л(?!\p{L})/giu, 'L'], [/(?<!\p{L})г(?!\p{L})/giu, 'g'], [/(?<!\p{L})шт(?!\p{L})/giu, 'pcs'],
@@ -270,7 +451,12 @@ function localizeMeasurements(value: string, language: Exclude<Language, 'ru'>) 
 export function localizeSeedAttributeValue(value: string, language: Language) {
   const trimmed = value.trim();
   if (language === 'ru' || !trimmed) return trimmed;
-  return attributeValueTranslations[trimmed]?.[language] || localizeMeasurements(trimmed, language);
+  if (language === 'zh') {
+    const english = attributeValueTranslations[trimmed]?.en;
+    return english ? chineseAttributeValues[english] || english : localizeMeasurements(trimmed, 'zh');
+  }
+  const contentLanguage = language;
+  return attributeValueTranslations[trimmed]?.[contentLanguage] || localizeMeasurements(trimmed, contentLanguage);
 }
 
 export function localizeSeedVariantLabel(value: string, language: Language) {

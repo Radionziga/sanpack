@@ -26,9 +26,11 @@ const bannerFormSchema = z.object({
   titleRu: z.string().trim().min(1, 'Укажите заголовок на русском.').max(180),
   titleUz: z.string().trim().min(1, 'Укажите заголовок на узбекском.').max(180),
   titleEn: z.string().trim().max(180),
+  titleZh: z.string().trim().max(180),
   subtitleRu: z.string().trim().max(300),
   subtitleUz: z.string().trim().max(300),
   subtitleEn: z.string().trim().max(300),
+  subtitleZh: z.string().trim().max(300),
   imageDesktop: assetUrlSchema,
   imageDesktopPath: z.string(),
   imageMobile: assetUrlSchema,
@@ -36,11 +38,12 @@ const bannerFormSchema = z.object({
   buttonTextRu: buttonTextSchema,
   buttonTextUz: buttonTextSchema,
   buttonTextEn: buttonTextSchema,
+  buttonTextZh: buttonTextSchema,
   link: z.union([httpUrlSchema, z.string().regex(/^\/(?!\/)/), z.literal('')]),
   sortOrder: z.number().int().min(0).max(100_000),
   active: z.boolean(),
 }).superRefine((values, context) => {
-  const hasButtonText = Boolean(values.buttonTextRu || values.buttonTextUz || values.buttonTextEn);
+  const hasButtonText = Boolean(values.buttonTextRu || values.buttonTextUz || values.buttonTextEn || values.buttonTextZh);
   if (hasButtonText && !values.link) {
     context.addIssue({
       code: 'custom',
@@ -56,9 +59,11 @@ const emptyBanner: BannerForm = {
   titleRu: '',
   titleUz: '',
   titleEn: '',
+  titleZh: '',
   subtitleRu: '',
   subtitleUz: '',
   subtitleEn: '',
+  subtitleZh: '',
   imageDesktop: '',
   imageDesktopPath: '',
   imageMobile: '',
@@ -66,6 +71,7 @@ const emptyBanner: BannerForm = {
   buttonTextRu: 'Перейти в каталог',
   buttonTextUz: 'Katalogni ko‘rish',
   buttonTextEn: 'View catalog',
+  buttonTextZh: '查看目录',
   link: '/catalog',
   sortOrder: 1,
   active: true,
@@ -76,9 +82,11 @@ function toFormValues(banner: Banner): BannerForm {
     titleRu: banner.titleRu || '',
     titleUz: banner.titleUz || '',
     titleEn: banner.titleEn || '',
+    titleZh: banner.titleZh || '',
     subtitleRu: banner.subtitleRu || '',
     subtitleUz: banner.subtitleUz || '',
     subtitleEn: banner.subtitleEn || '',
+    subtitleZh: banner.subtitleZh || '',
     imageDesktop: banner.imageDesktop || '',
     imageDesktopPath: banner.imageDesktopPath || '',
     imageMobile: banner.imageMobile || '',
@@ -86,6 +94,7 @@ function toFormValues(banner: Banner): BannerForm {
     buttonTextRu: banner.buttonTextRu || '',
     buttonTextUz: banner.buttonTextUz || '',
     buttonTextEn: banner.buttonTextEn || '',
+    buttonTextZh: banner.buttonTextZh || '',
     link: banner.link || '',
     sortOrder: banner.sortOrder ?? 1,
     active: banner.active ?? true,
@@ -122,12 +131,15 @@ export default function AdminPromotionsPage() {
   const titleRu = useWatch({ control, name: 'titleRu' });
   const titleUz = useWatch({ control, name: 'titleUz' });
   const titleEn = useWatch({ control, name: 'titleEn' });
+  const titleZh = useWatch({ control, name: 'titleZh' });
   const subtitleRu = useWatch({ control, name: 'subtitleRu' });
   const subtitleUz = useWatch({ control, name: 'subtitleUz' });
   const subtitleEn = useWatch({ control, name: 'subtitleEn' });
+  const subtitleZh = useWatch({ control, name: 'subtitleZh' });
   const buttonTextRu = useWatch({ control, name: 'buttonTextRu' });
   const buttonTextUz = useWatch({ control, name: 'buttonTextUz' });
   const buttonTextEn = useWatch({ control, name: 'buttonTextEn' });
+  const buttonTextZh = useWatch({ control, name: 'buttonTextZh' });
   const link = useWatch({ control, name: 'link' });
 
   const persistedBanner = selectedId ? banners.find((banner) => banner.id === selectedId) : undefined;
@@ -373,14 +385,14 @@ export default function AdminPromotionsPage() {
           {/* Title Inputs */}
           <div className="space-y-4">
             <h3 className="font-compact text-sm font-bold text-[var(--sp-ink)]">Заголовок баннера</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              {(['titleRu', 'titleUz', 'titleEn'] as const).map((name, index) => (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {(['titleRu', 'titleUz', 'titleEn', 'titleZh'] as const).map((name, index) => (
                 <label key={name} className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
-                  Заголовок {['RU *', 'UZ *', 'EN'][index]}
+                  Заголовок {['RU *', 'UZ *', 'EN', 'ZH'][index]}
                   <input
                     {...register(name)}
                     required={index < 2}
-                    placeholder={['Свежее мясо по лучшим ценам', 'Eng yaxshi narxlarda yangi go‘sht', 'Fresh meat at best prices'][index]}
+                    placeholder={['Свежее мясо по лучшим ценам', 'Eng yaxshi narxlarda yangi go‘sht', 'Fresh meat at best prices', '以优惠价格供应新鲜肉类'][index]}
                     aria-invalid={Boolean(errors[name])}
                     className="admin-control mt-1.5 text-sm font-normal"
                   />
@@ -393,14 +405,14 @@ export default function AdminPromotionsPage() {
           {/* Subtitle Inputs */}
           <div className="space-y-4">
             <h3 className="font-compact text-sm font-bold text-[var(--sp-ink)]">Подзаголовок / Описание</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              {(['subtitleRu', 'subtitleUz', 'subtitleEn'] as const).map((name, index) => (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {(['subtitleRu', 'subtitleUz', 'subtitleEn', 'subtitleZh'] as const).map((name, index) => (
                 <label key={name} className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
-                  Подзаголовок {['RU', 'UZ', 'EN'][index]}
+                  Подзаголовок {['RU', 'UZ', 'EN', 'ZH'][index]}
                   <textarea
                     {...register(name)}
                     rows={2}
-                    placeholder={['Прямые оптовые поставки для ресторанов', 'Restoranlar uchun ulgurji yetkazib berish', 'Direct wholesale supply for restaurants'][index]}
+                    placeholder={['Прямые оптовые поставки для ресторанов', 'Restoranlar uchun ulgurji yetkazib berish', 'Direct wholesale supply for restaurants', '为餐厅提供批量直供'][index]}
                     aria-invalid={Boolean(errors[name])}
                     className="admin-control mt-1.5 text-sm font-normal resize-none"
                   />
@@ -413,16 +425,16 @@ export default function AdminPromotionsPage() {
           {/* AI Translator */}
           <AiTranslateButton fields={[
             {
-              key: 'title', label: 'Заголовок баннера', values: { ru: titleRu, uz: titleUz, en: titleEn },
-              onChange: (language, value) => setValue(`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`, value, { shouldDirty: true, shouldValidate: true }),
+              key: 'title', label: 'Заголовок баннера', values: { ru: titleRu, uz: titleUz, en: titleEn, zh: titleZh },
+              onChange: (language, value) => setValue(`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`, value, { shouldDirty: true, shouldValidate: true }),
             },
             {
-              key: 'subtitle', label: 'Подзаголовок баннера', values: { ru: subtitleRu, uz: subtitleUz, en: subtitleEn },
-              onChange: (language, value) => setValue(`subtitle${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`, value, { shouldDirty: true, shouldValidate: true }),
+              key: 'subtitle', label: 'Подзаголовок баннера', values: { ru: subtitleRu, uz: subtitleUz, en: subtitleEn, zh: subtitleZh },
+              onChange: (language, value) => setValue(`subtitle${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`, value, { shouldDirty: true, shouldValidate: true }),
             },
             {
-              key: 'buttonText', label: 'Текст кнопки', values: { ru: buttonTextRu, uz: buttonTextUz, en: buttonTextEn },
-              onChange: (language, value) => setValue(`buttonText${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`, value, { shouldDirty: true, shouldValidate: true }),
+              key: 'buttonText', label: 'Текст кнопки', values: { ru: buttonTextRu, uz: buttonTextUz, en: buttonTextEn, zh: buttonTextZh },
+              onChange: (language, value) => setValue(`buttonText${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`, value, { shouldDirty: true, shouldValidate: true }),
             },
           ]} compact />
 
@@ -460,14 +472,14 @@ export default function AdminPromotionsPage() {
             <p className="text-xs leading-5 text-[var(--sp-ink-tertiary)]">
               Если текст кнопки указан, поверх баннера отобразится фирменная кнопка действия. Если текст кнопки пустой, но указана ссылка — весь баннер будет кликабелен без кнопки.
             </p>
-            <div className="grid gap-4 md:grid-cols-3">
-              {(['buttonTextRu', 'buttonTextUz', 'buttonTextEn'] as const).map((name, index) => (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {(['buttonTextRu', 'buttonTextUz', 'buttonTextEn', 'buttonTextZh'] as const).map((name, index) => (
                 <label key={name} className="space-y-1.5 text-xs font-bold text-[var(--sp-ink)]">
-                  Текст кнопки {['RU', 'UZ', 'EN'][index]}
+                  Текст кнопки {['RU', 'UZ', 'EN', 'ZH'][index]}
                   <input
                     {...register(name)}
                     maxLength={80}
-                    placeholder={['Смотреть продукцию', 'Mahsulotlarni ko‘rish', 'View products'][index]}
+                    placeholder={['Смотреть продукцию', 'Mahsulotlarni ko‘rish', 'View products', '查看商品'][index]}
                     aria-invalid={Boolean(errors[name])}
                     className="admin-control mt-1.5 text-sm font-normal"
                   />

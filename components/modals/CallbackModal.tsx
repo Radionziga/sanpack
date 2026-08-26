@@ -54,6 +54,12 @@ export function CallbackModal({ isOpen, onClose }: CallbackModalProps) {
       submit: 'Send request',
       sending: 'Sending…',
     },
+    zh: {
+      nameError: '请输入您的姓名', phoneError: '请输入有效的电话号码', serverError: '请求未保存，请重试。',
+      success: '请求已收到！', successText: '商店经理将尽快致电您。', team: '销售团队',
+      hours: '工作日 09:00–18:00 致电', name: '您的姓名', namePlaceholder: '姓名或公司名称',
+      phone: '电话号码', submit: '提交请求', sending: '正在提交…',
+    },
   }[language];
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+998 ');

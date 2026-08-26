@@ -38,6 +38,7 @@
     "fullCatalog": "Open full catalog",
     "allProducts": "All products",
     "itemsCount": "{count, plural, one {# item} other {# items}}",
+    "categoryItemsCount": "{count, plural, one {# product} other {# products}}",
     "assortment": "SANPACK assortment",
     "shownCount": "Showing: {count}",
     "sortLabel": "Sort",
@@ -90,7 +91,9 @@
       "presentationTitle": "Presentation catalog",
       "packageQuantity": "{count} per pack",
       "supplyFooter": "HoReCa supplies",
-      "photoComingSoon": "Photo coming soon"
+      "photoComingSoon": "Photo coming soon",
+      "validOn": "Prices valid on {date}",
+      "priceDisclaimer": "Prices may change. Please confirm the current price with a manager before submitting a request."
     }
   },
   "productGallery": {

@@ -55,6 +55,19 @@ export function BusinessSegments() {
       ],
       badges: ['HoReCa', 'Hotels', 'Bakeries', 'Delivery', 'Production', 'Cleaning'],
     },
+    zh: {
+      subtitle: '根据您的业务特点准备的一站式商品组合',
+      action: '查看商品',
+      descriptions: [
+        '包装袋、铝箔、薄膜、手套、杂货、大米和新鲜蔬菜。',
+        '垃圾袋、耗材和卫生包装。',
+        '烘焙纸、食品铝箔和连卷袋。',
+        '品牌包装袋、餐盒、贴纸和标签。',
+        '大号垃圾袋、丁腈手套和真空膜。',
+        '耐用垃圾袋、橡皮筋、湿巾和家用手套。',
+      ],
+      badges: ['HoReCa', '酒店', '烘焙店', '配送', '生产', '保洁'],
+    },
   }[language];
 
   const segments = [

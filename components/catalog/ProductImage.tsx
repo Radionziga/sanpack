@@ -40,7 +40,7 @@ export function ProductImage({
         loading={loading}
         fetchPriority={fetchPriority}
         onError={() => setFailedSource(source)}
-        className={imageClassName}
+        className={`rounded-[inherit] ${imageClassName ?? ''}`}
       />
     );
   }
@@ -51,7 +51,7 @@ export function ProductImage({
     <div
       role="img"
       aria-label={label}
-      className="absolute inset-0 isolate flex items-center justify-center overflow-hidden bg-[linear-gradient(145deg,var(--sp-brand-soft),var(--sp-surface-inset)_58%,var(--sp-surface))] p-3 text-center"
+      className="absolute inset-0 isolate flex items-center justify-center overflow-hidden rounded-[inherit] bg-[linear-gradient(145deg,var(--sp-brand-soft),var(--sp-surface-inset)_58%,var(--sp-surface))] p-3 text-center"
     >
       <div className="absolute -right-8 -top-8 size-28 rounded-full border border-[color-mix(in_srgb,var(--sp-brand)_16%,transparent)]" aria-hidden="true" />
       <div className="absolute -bottom-12 -left-10 size-36 rounded-full border border-[color-mix(in_srgb,var(--sp-brand)_12%,transparent)]" aria-hidden="true" />

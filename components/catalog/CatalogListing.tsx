@@ -27,6 +27,11 @@ import { FilterSidebar } from '@/components/catalog/FilterSidebar';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { filterProductsBySearch } from '@/lib/catalog/productSearch';
+import {
+  StorefrontCartSidebar,
+  StorefrontCategorySidebar,
+  StorefrontMobileCategoryRail,
+} from '@/components/storefront/StorefrontPanels';
 
 interface CatalogListingProps {
   activeCategorySlug?: string;
@@ -52,100 +57,6 @@ function CatalogSkeleton() {
           <div className="mt-5 h-10 animate-pulse rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)]" />
         </div>
       ))}
-    </div>
-  );
-}
-
-function CategoryRail({
-  categories,
-  activeCategory,
-}: {
-  categories: Category[];
-  activeCategory: Category | null;
-}) {
-  const { getLocalizedText } = useLanguage();
-  const t = useTranslations('catalogListing');
-  const parents = useMemo(
-    () => categories.filter((category) => !category.parentId && category.status === 'active'),
-    [categories],
-  );
-  const leaves = useMemo(
-    () => categories
-      .filter((category) => category.parentId && category.status === 'active')
-      .sort((left, right) => (left.sortOrder ?? 99) - (right.sortOrder ?? 99)),
-    [categories],
-  );
-  const activeParent = activeCategory?.parentId
-    ? categories.find((category) => category.id === activeCategory.parentId) ?? null
-    : activeCategory;
-  const children = activeParent
-    ? categories.filter((category) => category.parentId === activeParent.id && category.status === 'active')
-    : leaves;
-
-  const railClassName =
-    '-mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden';
-  const itemClassName =
-    'flex min-h-11 shrink-0 snap-start items-center rounded-[var(--sp-radius-control)] border px-3.5 text-sm font-medium transition-colors';
-
-  return (
-    <div className="space-y-2">
-      <nav className={railClassName} aria-label={t('catalog')}>
-        <Link
-          href="/catalog"
-          aria-current={!activeCategory ? 'page' : undefined}
-          className={`${itemClassName} ${
-            !activeCategory
-              ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'
-              : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)]'
-          }`}
-        >
-          {t('allProducts')}
-        </Link>
-        {activeCategory && parents.map((category) => {
-          const isActive = activeParent?.id === category.id;
-          return (
-            <Link
-              key={category.id}
-              href={`/catalog/${category.slug}`}
-              aria-current={isActive ? 'page' : undefined}
-              className={`${itemClassName} ${
-                isActive
-                    ? 'border-[var(--sp-line-strong)] bg-[var(--sp-surface-inset)] text-[var(--sp-ink)]'
-                  : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)]'
-              }`}
-            >
-              {getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {children.length > 0 ? (
-        <nav
-          className={railClassName}
-          aria-label={activeParent
-            ? getLocalizedText(activeParent.titleRu, activeParent.titleUz, activeParent.titleEn)
-            : t('allProducts')}
-        >
-          {children.map((category) => {
-            const isActive = activeCategory?.id === category.id;
-            return (
-              <Link
-                key={category.id}
-                href={`/catalog/${category.slug}`}
-                aria-current={isActive ? 'page' : undefined}
-                className={`${itemClassName} min-h-10 px-3 text-xs ${
-                  isActive
-                    ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'
-                    : 'border-[var(--sp-line)] bg-[var(--sp-surface-inset)] text-[var(--sp-ink-secondary)]'
-                }`}
-              >
-                {getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
-              </Link>
-            );
-          })}
-        </nav>
-      ) : null}
     </div>
   );
 }
@@ -228,7 +139,7 @@ export function CatalogListing({
   );
 
   const parentTitle = parentCategory
-    ? getLocalizedText(parentCategory.titleRu, parentCategory.titleUz, parentCategory.titleEn)
+    ? getLocalizedText(parentCategory.titleRu, parentCategory.titleUz, parentCategory.titleEn, parentCategory.titleZh)
     : t('catalog');
 
   const scopedProducts = useMemo(() => {
@@ -245,12 +156,38 @@ export function CatalogListing({
       : filterProductsBySearch(nextProducts, searchQuery);
   }, [categories, currentCategory, products, searchQuery]);
 
+  const filterAttributes = useMemo(() => {
+    if (!currentCategory) return [];
+    const childIds = categories
+      .filter((category) => category.parentId === currentCategory.id)
+      .map((category) => category.id);
+    const categoryIds = new Set([currentCategory.id, ...childIds]);
+
+    return attributes.filter((attribute) => {
+      if (!attribute.filterable) return false;
+      if (attribute.categoryIds?.length && !attribute.categoryIds.some((id) => categoryIds.has(id))) {
+        return false;
+      }
+      return scopedProducts.some((product) => {
+        const value = product.attributes[attribute.key];
+        return value !== undefined && value !== null && String(value).trim() !== '';
+      });
+    });
+  }, [attributes, categories, currentCategory, scopedProducts]);
+
+  const applicableSelectedFilters = useMemo(() => {
+    const allowedKeys = new Set(filterAttributes.map((attribute) => attribute.key));
+    return Object.fromEntries(
+      Object.entries(selectedFilters).filter(([key]) => allowedKeys.has(key)),
+    );
+  }, [filterAttributes, selectedFilters]);
+
   const filteredProducts = useMemo(() => {
     return scopedProducts
       .filter((product) => {
         if (inStockOnly && product.stockStatus !== 'in_stock') return false;
         if (ownProductionOnly && !product.ownProduction) return false;
-        return Object.entries(selectedFilters).every(([key, values]) => {
+        return Object.entries(applicableSelectedFilters).every(([key, values]) => {
           if (values.length === 0) return true;
           const attributeValue = product.attributes[key];
           if (attributeValue === undefined || attributeValue === null) return false;
@@ -263,30 +200,30 @@ export function CatalogListing({
       .sort((left, right) => {
         if (sortBy === 'newest') return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
         if (sortBy === 'name') {
-          const leftTitle = getLocalizedText(left.titleRu, left.titleUz, left.titleEn);
-          const rightTitle = getLocalizedText(right.titleRu, right.titleUz, right.titleEn);
+          const leftTitle = getLocalizedText(left.titleRu, left.titleUz, left.titleEn, left.titleZh);
+          const rightTitle = getLocalizedText(right.titleRu, right.titleUz, right.titleEn, right.titleZh);
           return leftTitle.localeCompare(rightTitle, language);
         }
         if (sortBy === 'price_asc') return (left.price ?? Number.POSITIVE_INFINITY) - (right.price ?? Number.POSITIVE_INFINITY);
         if (sortBy === 'price_desc') return (right.price ?? 0) - (left.price ?? 0);
         return right.sortOrder - left.sortOrder;
       });
-  }, [getLocalizedText, inStockOnly, language, ownProductionOnly, scopedProducts, selectedFilters, sortBy]);
+  }, [applicableSelectedFilters, getLocalizedText, inStockOnly, language, ownProductionOnly, scopedProducts, sortBy]);
 
   const activeFilterCount =
     Number(inStockOnly) +
     Number(ownProductionOnly) +
-    Object.values(selectedFilters).reduce((total, values) => total + values.length, 0);
+    Object.values(applicableSelectedFilters).reduce((total, values) => total + values.length, 0);
   const normalizedSearchQuery = searchQuery?.trim() || '';
   const categoryTitle = searchQuery !== undefined
     ? normalizedSearchQuery
       ? t('searchTitle', { query: normalizedSearchQuery })
       : t('searchWithoutQuery')
     : currentCategory
-      ? getLocalizedText(currentCategory.titleRu, currentCategory.titleUz, currentCategory.titleEn)
+      ? getLocalizedText(currentCategory.titleRu, currentCategory.titleUz, currentCategory.titleEn, currentCategory.titleZh)
       : t('catalog');
   const categoryDescription = currentCategory
-    ? getLocalizedText(currentCategory.descriptionRu, currentCategory.descriptionUz, currentCategory.descriptionEn)
+    ? getLocalizedText(currentCategory.descriptionRu, currentCategory.descriptionUz, currentCategory.descriptionEn, currentCategory.descriptionZh)
     : '';
 
   const resetFilters = () => {
@@ -316,7 +253,12 @@ export function CatalogListing({
 
   return (
     <main className="flex-1 pb-8 pt-4 md:py-8">
-      <div className="mx-auto w-full max-w-7xl px-4">
+      <div className="mx-auto grid w-full max-w-[1536px] gap-5 px-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_300px] xl:gap-6">
+        <div className="hidden lg:block">
+          <StorefrontCategorySidebar categories={categories} activeCategorySlug={activeCategorySlug} />
+        </div>
+
+        <div className="min-w-0">
         {/* Desktop Breadcrumb */}
         <nav className="mb-6 hidden items-center gap-2 text-xs font-medium text-[var(--sp-ink-tertiary)] md:flex" aria-label="Breadcrumb">
           <Link href="/" className="transition-colors hover:text-[var(--sp-brand)]">{t('home')}</Link>
@@ -338,12 +280,13 @@ export function CatalogListing({
           ) : null}
         </nav>
 
-        <div className="mb-4 md:mb-8">
+        <div className="md:flex md:items-end md:justify-between md:gap-5">
+        <div className="mb-4 min-w-0 md:mb-0 md:flex-1">
           <div className="flex items-center gap-2.5 sm:gap-3">
             {currentCategory ? (
               <Link
                 href={parentCategory ? `/catalog/${parentCategory.slug}` : '/catalog'}
-                className="flex size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] shadow-xs transition-all hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-95 md:hidden"
+                className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] shadow-xs transition-[border-color,color,transform] hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-[0.96] md:hidden"
                 aria-label={t('back')}
                 title={t('back')}
               >
@@ -366,16 +309,14 @@ export function CatalogListing({
           </p>
         </div>
 
-        <CategoryRail categories={categories} activeCategory={currentCategory} />
-
-        <div className="sticky top-[56px] z-20 -mx-4 mt-3 border-y border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-canvas)_96%,transparent)] px-4 py-2.5 backdrop-blur-xl md:static md:mx-0 md:mt-6 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
+        <div className="sticky top-[56px] z-20 -mx-4 mt-3 shrink-0 border-y border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-canvas)_96%,transparent)] px-4 py-2.5 backdrop-blur-xl md:static md:mx-0 md:mt-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
           <div className="flex items-center gap-2 md:justify-end">
             <button
               ref={filterTriggerRef}
               type="button"
               onClick={() => setIsMobileFilterOpen(true)}
               aria-haspopup="dialog"
-              className="relative flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-sm font-semibold text-[var(--sp-ink)] shadow-[var(--sp-shadow-soft)] lg:hidden"
+              className="relative flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 text-sm font-semibold text-[var(--sp-ink)] shadow-[var(--sp-shadow-soft)] md:flex-none md:px-4"
             >
               <Filter className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
               <span>{t('filters')}</span>
@@ -409,25 +350,14 @@ export function CatalogListing({
             </div>
           </div>
         </div>
+        </div>
 
-        <div className="mt-5 grid gap-8 lg:grid-cols-12">
-          <aside className="hidden lg:col-span-3 lg:block">
-            <div className="sticky top-24">
-            <FilterSidebar
-              attributes={attributes}
-              products={scopedProducts}
-              selectedFilters={selectedFilters}
-              onFilterChange={(key, values) => setSelectedFilters((current) => ({ ...current, [key]: values }))}
-              inStockOnly={inStockOnly}
-              onInStockChange={setInStockOnly}
-              ownProductionOnly={ownProductionOnly}
-              onOwnProductionChange={setOwnProductionOnly}
-              onReset={resetFilters}
-            />
-            </div>
-          </aside>
+        <div className="mt-5 lg:hidden">
+          <StorefrontMobileCategoryRail categories={categories} activeCategorySlug={activeCategorySlug} />
+        </div>
 
-          <div className="min-w-0 lg:col-span-9">
+        <div className="mt-5">
+          <div className="min-w-0">
             {activeFilterCount > 0 ? (
               <div className="mb-4 flex items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 py-2.5">
                 <span className="min-w-0 flex-1 text-xs font-medium text-[var(--sp-ink-secondary)]">{t('selected')}: {activeFilterCount}</span>
@@ -458,23 +388,29 @@ export function CatalogListing({
             ) : null}
 
             {loadState === 'ready' && filteredProducts.length > 0 ? (
-              <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3' : 'space-y-4'}>
-                {filteredProducts.map((product, index) => <ProductCard key={product.id} product={product} viewMode={viewMode} eagerImage={index < 2} />)}
+              <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4' : 'space-y-4'}>
+                {filteredProducts.map((product, index) => <ProductCard key={product.id} product={product} viewMode={viewMode} appearance={viewMode === 'grid' ? 'market' : 'default'} eagerImage={index < 3} />)}
               </div>
             ) : null}
           </div>
         </div>
+
+        </div>
+
+        <div className="hidden h-full xl:block">
+          <StorefrontCartSidebar />
+        </div>
       </div>
 
       {isMobileFilterOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50">
           <button type="button" aria-label={t('closeFilters')} onClick={() => setIsMobileFilterOpen(false)} className="absolute inset-0 cursor-pointer bg-black/45" />
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-filter-title"
             onKeyDown={handleSheetKeyDown}
-            className="absolute inset-x-0 bottom-0 flex max-h-[min(84dvh,760px)] flex-col rounded-t-[var(--sp-radius-card)] bg-[var(--sp-surface)] shadow-[0_-18px_48px_rgb(0_0_0/18%)]"
+            className="absolute inset-x-0 bottom-0 flex max-h-[min(84dvh,760px)] flex-col rounded-t-[var(--sp-radius-card)] bg-[var(--sp-surface)] shadow-[0_-18px_48px_rgb(0_0_0/18%)] md:inset-auto md:left-1/2 md:top-1/2 md:w-[min(34rem,calc(100vw-2rem))] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[var(--sp-radius-card)] md:shadow-[var(--sp-shadow-raised)]"
           >
             <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--sp-line)] px-4 py-3">
               <div>
@@ -487,9 +423,9 @@ export function CatalogListing({
               <FilterSidebar
                 embedded
                 hideHeader
-                attributes={attributes}
+                attributes={filterAttributes}
                 products={scopedProducts}
-                selectedFilters={selectedFilters}
+                selectedFilters={applicableSelectedFilters}
                 onFilterChange={(key, values) => setSelectedFilters((current) => ({ ...current, [key]: values }))}
                 inStockOnly={inStockOnly}
                 onInStockChange={setInStockOnly}

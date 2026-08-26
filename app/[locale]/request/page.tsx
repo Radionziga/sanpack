@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Image from 'next/image';
 import {
   ArrowLeft,
-  CalendarDays,
   CheckCircle2,
   Clock3,
   LoaderCircle,
@@ -25,10 +24,11 @@ import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
-import { formatMoney, formatProductQuantity } from '@/lib/catalog/productPresentation';
+import { formatMoney } from '@/lib/catalog/productPresentation';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Language } from '@/types';
 import { readCustomerProfileDraft } from '@/lib/customer/profileDraft';
+import { DeliveryDatePicker } from '@/components/checkout/DeliveryDatePicker';
 
 interface CustomerStatus {
   authenticated: boolean;
@@ -214,6 +214,62 @@ const checkoutCopy = {
     decrease: 'Decrease quantity',
     increase: 'Increase quantity',
     remove: 'Remove product',
+  },
+  zh: {
+    back: '继续选购',
+    title: '提交采购申请',
+    subtitle: '请留下姓名和电话，无需注册即可提交。',
+    loading: '正在加载购物车…',
+    emptyTitle: '购物车为空',
+    emptyText: '请从目录中添加商品，然后向经理提交申请。',
+    openCatalog: '打开商品目录',
+    items: '商品',
+    clear: '清空',
+    clearQuestion: '确定要删除购物车中的全部商品吗？',
+    cancel: '取消',
+    confirmClear: '全部删除',
+    contactTitle: '联系信息',
+    contactHint: '经理将致电确认价格、数量和配送信息。',
+    signedIn: '当前登录账号',
+    miniAppTitle: '商店已在 Telegram 中打开',
+    miniAppHint: '无需再次登录，提交申请时将自动验证账号。',
+    telegramTitle: '要将此申请保存到 Telegram 吗？',
+    telegramHint: '登录并非必需。购物车和已填写的信息都会保留。',
+    telegramLogin: '使用 Telegram 登录',
+    telegramError: 'Telegram 登录未完成。您可以直接提交申请，也可以重试。',
+    name: '姓名',
+    namePlaceholder: '我们该如何称呼您？',
+    phone: '电话',
+    phonePlaceholder: '+998 90 123 45 67',
+    nameError: '请输入至少两个字符的姓名。',
+    phoneError: '请输入格式为 +998 XX XXX XX XX 的乌兹别克斯坦号码。',
+    deliveryTitle: '配送',
+    deliveryHint: '请选择方便的日期和时间段。经理收到申请后会确认可配送时间。',
+    address: '配送地址',
+    addressPlaceholder: '城市、街道、门牌号或地标',
+    addressError: '请输入至少五个字符的配送地址。',
+    date: '配送日期',
+    dateError: '请选择配送日期。',
+    time: '配送时间',
+    timeError: '请选择配送时间段。',
+    comment: '给配送员或经理的备注',
+    commentOptional: '选填',
+    commentPlaceholder: '例如：到达前 30 分钟请来电',
+    estimated: '预估金额',
+    priceOnRequest: '价格面议',
+    estimateHint: '经理收到申请后将确认最终价格和条件。',
+    submit: '提交申请',
+    submitting: '正在提交申请…',
+    genericError: '申请提交失败，请检查网络连接后重试。',
+    rateError: '尝试次数过多，请等待几分钟后重试。',
+    successTitle: '申请已收到',
+    successText: '经理将通过您提供的电话号码与您联系。',
+    requestNumber: '申请编号',
+    myRequests: '我的申请',
+    returnCatalog: '返回商品目录',
+    decrease: '减少数量',
+    increase: '增加数量',
+    remove: '删除商品',
   },
 } satisfies Record<Language, Record<string, string>>;
 
@@ -426,10 +482,30 @@ export default function RequestPage() {
               <ArrowLeft className="size-4" aria-hidden="true" />
               {copy.back}
             </Link>
-            <div className="mt-2">
-              <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] sm:text-3xl">{copy.title}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sp-ink-secondary)]">{copy.subtitle}</p>
-            </div>
+            {isHydrated && items.length > 0 ? (
+              <section className="relative mt-2 overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-primary-strong)] px-5 py-6 text-[var(--sp-on-primary-strong)] shadow-[var(--sp-shadow-soft)] sm:px-7 sm:py-7">
+                <div className="absolute inset-y-0 right-0 w-2/3 bg-[radial-gradient(circle_at_78%_42%,color-mix(in_srgb,var(--sp-brand-accent)_42%,transparent),transparent_56%)]" aria-hidden="true" />
+                <div className="relative z-10 grid items-center gap-5 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--sp-on-primary-strong)_72%,transparent)]">{copy.items}: {items.length}</p>
+                    <h1 className="mt-2 font-extended text-2xl font-bold tracking-[-0.03em] sm:text-3xl">{copy.title}</h1>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-[color-mix(in_srgb,var(--sp-on-primary-strong)_78%,transparent)]">{copy.subtitle}</p>
+                  </div>
+                  <div className="hidden items-center pr-2 sm:flex" aria-hidden="true">
+                    {items.slice(0, 3).map((item, index) => (
+                      <span key={`${item.productId}-${item.variantId || 'base'}`} className={`relative size-20 overflow-hidden rounded-[var(--sp-radius-control)] border-4 border-[var(--sp-primary-strong)] bg-white shadow-[0_12px_28px_rgb(0_0_0/22%)] ${index > 0 ? '-ml-5' : ''}`} style={{ zIndex: 3 - index }}>
+                        <Image src={item.image || '/favicon.png'} alt="" fill sizes="80px" className="object-contain p-1.5" />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            ) : (
+              <div className="mt-2">
+                <h1 className="font-extended text-2xl font-bold tracking-[-0.025em] sm:text-3xl">{copy.title}</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sp-ink-secondary)]">{copy.subtitle}</p>
+              </div>
+            )}
 
             {!isHydrated ? (
               <CheckoutSkeleton label={copy.loading} />
@@ -441,8 +517,8 @@ export default function RequestPage() {
                 <Link href="/catalog" className="mt-5 inline-flex min-h-11 items-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-semibold text-[var(--sp-on-brand)]">{copy.openCatalog}</Link>
               </section>
             ) : (
-              <form id="request-checkout-form" onSubmit={submit} noValidate className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6">
-                <aside className="order-1 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-raised)] sm:p-5 lg:order-2 lg:sticky lg:top-6">
+              <form id="request-checkout-form" onSubmit={submit} noValidate className="mt-7 grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6">
+                <aside className="order-1 min-w-0 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-raised)] sm:p-5 lg:order-2 lg:sticky lg:top-6">
                   <h2 className="font-extended text-lg font-bold">{copy.contactTitle}</h2>
                   <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">{copy.contactHint}</p>
 
@@ -549,7 +625,7 @@ export default function RequestPage() {
                   </button>
                 </aside>
 
-                <section className="order-2 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 sm:p-6 lg:order-1">
+                <section className="order-2 min-w-0 overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-soft)] sm:p-6 lg:order-1">
                   <div className="border-b border-[var(--sp-line-soft)] pb-6">
                     <div className="flex items-start gap-3">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] text-[var(--sp-brand)]">
@@ -589,28 +665,18 @@ export default function RequestPage() {
                       {fieldErrors.address ? <p id="checkout-address-error" className="mt-1.5 text-xs leading-5 text-[var(--sp-danger)]">{fieldErrors.address}</p> : null}
                     </div>
 
-                    <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(190px,0.75fr)_minmax(0,1.25fr)]">
-                      <div>
-                        <label htmlFor="checkout-date" className="flex items-center gap-2 text-xs font-medium"><CalendarDays className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />{copy.date}</label>
-                        <input
-                          id="checkout-date"
-                          name="deliveryDate"
-                          required
-                          type="date"
-                          min={new Date().toISOString().slice(0, 10)}
-                          value={deliveryDate}
-                          onFocus={() => setIsTextEntryFocused(true)}
-                          onBlur={() => setIsTextEntryFocused(false)}
-                          onChange={(event) => {
-                            setDeliveryDate(event.target.value);
-                            if (fieldErrors.date) setFieldErrors((current) => ({ ...current, date: undefined }));
-                          }}
-                          aria-invalid={fieldErrors.date ? true : undefined}
-                          className={`admin-control mt-2 min-h-12 bg-[var(--sp-control)] px-3 text-base ${fieldErrors.date ? 'border-[var(--sp-danger)]' : ''}`}
-                        />
-                        {fieldErrors.date ? <p className="mt-1.5 text-xs leading-5 text-[var(--sp-danger)]">{fieldErrors.date}</p> : null}
-                      </div>
-                      <fieldset>
+                    <div className="mt-4 grid min-w-0 gap-4">
+                      <DeliveryDatePicker
+                        value={deliveryDate}
+                        language={language}
+                        label={copy.date}
+                        error={fieldErrors.date}
+                        onChange={(nextDate) => {
+                          setDeliveryDate(nextDate);
+                          if (fieldErrors.date) setFieldErrors((current) => ({ ...current, date: undefined }));
+                        }}
+                      />
+                      <fieldset className="min-w-0">
                         <legend className="flex items-center gap-2 text-xs font-medium"><Clock3 className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />{copy.time}</legend>
                         <div className="mt-2 grid grid-cols-3 gap-2">
                           {DELIVERY_WINDOWS.map((window) => (
@@ -670,14 +736,16 @@ export default function RequestPage() {
 
                   <div className="divide-y divide-[var(--sp-line-soft)]">
                     {items.map((item) => {
-                      const title = getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn);
-                      const variantTitle = getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn);
+                      const title = getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn, item.productTitleZh);
+                      const variantTitle = getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn, item.variantTitleZh);
                       const orderRule = item.product ? getProductOrderRule(item.product, language, item.variant) : null;
                       const quantityStep = orderRule?.quantityStep || 1;
+                      const minimumQuantity = orderRule?.minimumQuantity || quantityStep;
                       const orderSummary = item.product ? getOrderRuleSummary(item.product, language, item.variant) : '';
-                      const quantityText = item.product
-                        ? formatProductQuantity(item.product, item.quantity, language)
-                        : `${item.quantity} ${item.unit}`;
+                      const quantityText = new Intl.NumberFormat(
+                        language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-US' : 'ru-RU',
+                        { maximumFractionDigits: 3 },
+                      ).format(item.quantity);
 
                       return (
                         <article key={`${item.productId}-${item.variantId || 'base'}`} className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-3 gap-y-3 py-4 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center">
@@ -690,7 +758,10 @@ export default function RequestPage() {
                           </div>
                           <div className="col-start-2 flex min-w-0 items-center justify-between gap-2 sm:col-start-auto">
                             <div className="flex min-h-11 min-w-0 items-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-control)]">
-                              <button type="button" onClick={() => updateQuantity(item.productId, item.quantity - quantityStep, item.variantId)} className="flex size-11 shrink-0 cursor-pointer items-center justify-center" aria-label={copy.decrease}><Minus className="size-3.5" aria-hidden="true" /></button>
+                              <button type="button" onClick={() => {
+                                if (item.quantity <= minimumQuantity) removeItem(item.productId, item.variantId);
+                                else updateQuantity(item.productId, item.quantity - quantityStep, item.variantId);
+                              }} className="flex size-11 shrink-0 cursor-pointer items-center justify-center" aria-label={copy.decrease}><Minus className="size-3.5" aria-hidden="true" /></button>
                               <span className="min-w-0 flex-1 px-1 text-center text-xs font-semibold tabular-nums">{quantityText}</span>
                               <button type="button" onClick={() => updateQuantity(item.productId, item.quantity + quantityStep, item.variantId)} className="flex size-11 shrink-0 cursor-pointer items-center justify-center" aria-label={copy.increase}><Plus className="size-3.5" aria-hidden="true" /></button>
                             </div>

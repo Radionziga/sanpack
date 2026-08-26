@@ -29,8 +29,16 @@ function normalizeEnglish(value) {
     .trim();
 }
 
+function normalizeChinese(value) {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
 function normalizeTitle(value, language) {
-  const normalized = language === 'uz' ? normalizeUzbek(value) : normalizeEnglish(value);
+  const normalized = language === 'uz'
+    ? normalizeUzbek(value)
+    : language === 'zh'
+      ? normalizeChinese(value)
+      : normalizeEnglish(value);
   return normalized.replace(/[.]$/u, '');
 }
 
@@ -114,8 +122,9 @@ async function translateBatch({ apiKey, model, fields }) {
             ru: { type: 'string' },
             uz: { type: 'string' },
             en: { type: 'string' },
+            zh: { type: 'string' },
           },
-          required: ['key', 'ru', 'uz', 'en'],
+          required: ['key', 'ru', 'uz', 'en', 'zh'],
         },
       },
     },
@@ -123,9 +132,9 @@ async function translateBatch({ apiKey, model, fields }) {
   };
   const prompt = [
     'You translate product catalogue content for a professional B2B ecommerce store in Uzbekistan.',
-    'The source language is Russian. Translate every field into Uzbek in Latin script and natural English.',
+    'The source language is Russian. Translate every field into Uzbek in Latin script, natural English, and natural Simplified Chinese.',
     'Use sentence case: the first word of every product title must start with a capital letter.',
-    'Transliterate Cyrillic brand and variety names into Latin script in Uzbek and English while preserving their identity.',
+    'Transliterate Cyrillic brand and variety names into Latin script in Uzbek and English while preserving their identity. Use the established Latin brand name in Chinese text.',
     'Translate Russian units: см→sm/cm, кг→kg, г→g, л→l/L, шт.→dona/pcs.',
     'Preserve product codes, Latin-script brand names, model names, numbers, punctuation and factual meaning.',
     'Do not invent specifications, benefits, prices or details absent from the source.',
@@ -155,7 +164,7 @@ async function translateBatch({ apiKey, model, fields }) {
   return fields.map((field) => {
     const translation = byKey.get(field.key);
     if (translation.ru !== field.value) throw new Error(`Gemini rewrote Russian source field ${field.key}.`);
-    for (const language of ['uz', 'en']) {
+    for (const language of ['uz', 'en', 'zh']) {
       if (!String(translation[language] || '').trim()) throw new Error(`Gemini left ${field.key}.${language} empty.`);
       if (CYRILLIC.test(translation[language])) throw new Error(`Gemini left Cyrillic in ${field.key}.${language}.`);
     }
@@ -196,14 +205,22 @@ function assembleTranslations(products, translatedFields) {
       sourceTitleRu: String(product.titleRu || '').trim(),
       titleUz: normalizeTitle(title.uz, 'uz'),
       titleEn: normalizeTitle(title.en, 'en'),
+      titleZh: normalizeTitle(title.zh, 'zh'),
       shortDescriptionUz: normalizeUzbek(shortDescription.uz),
       shortDescriptionEn: normalizeEnglish(shortDescription.en),
+      shortDescriptionZh: normalizeChinese(shortDescription.zh),
       descriptionUz: normalizeUzbek(description.uz),
       descriptionEn: normalizeEnglish(description.en),
+      descriptionZh: normalizeChinese(description.zh),
       variants: (product.variants || []).map((variant, variantIndex) => {
         const translated = byKey.get(`${prefix}-variant-${variantIndex}`);
         return translated
-          ? { ...variant, titleUz: normalizeTitle(translated.uz, 'uz'), titleEn: normalizeTitle(translated.en, 'en') }
+          ? {
+              ...variant,
+              titleUz: normalizeTitle(translated.uz, 'uz'),
+              titleEn: normalizeTitle(translated.en, 'en'),
+              titleZh: normalizeTitle(translated.zh, 'zh'),
+            }
           : variant;
       }),
     };
@@ -269,17 +286,22 @@ async function applyTranslations({ db, input }) {
     batch.update(snapshot.ref, {
       titleUz: product.titleUz,
       titleEn: product.titleEn,
+      titleZh: product.titleZh,
       shortDescriptionUz: product.shortDescriptionUz,
       shortDescriptionEn: product.shortDescriptionEn,
+      shortDescriptionZh: product.shortDescriptionZh,
       descriptionUz: product.descriptionUz,
       descriptionEn: product.descriptionEn,
+      descriptionZh: product.descriptionZh,
       variants: product.variants,
       seo: {
         ...(current.seo || {}),
         titleUz: `${product.titleUz} — SANPACK`,
         titleEn: `${product.titleEn} — SANPACK`,
+        titleZh: `${product.titleZh} — SANPACK`,
         descriptionUz: product.shortDescriptionUz,
         descriptionEn: product.shortDescriptionEn,
+        descriptionZh: product.shortDescriptionZh,
       },
       updatedAt,
       updatedBy: 'codex-firestore-localization',

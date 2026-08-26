@@ -8,6 +8,7 @@ import {
   getProductUnitPrice,
   isProductOrderable,
 } from '@/lib/commerce/productOffer';
+import { getSeedProductTranslation } from '@/lib/catalog/seedProductLocalization';
 
 interface RequestCartContextType {
   items: RequestItem[];
@@ -32,7 +33,18 @@ function readStoredItems(): RequestItem[] {
     if (!data) return [];
 
     const parsed: unknown = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed as RequestItem[] : [];
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as RequestItem[]).map((item) => {
+      if (item.productTitleZh?.trim()) return item;
+      const seedCode = item.product?.sku?.replace(/^SP-/i, '');
+      const translation = seedCode ? getSeedProductTranslation(seedCode) : undefined;
+      if (!translation?.zh) return item;
+      return {
+        ...item,
+        productTitleZh: translation.zh,
+        product: item.product ? { ...item.product, titleZh: translation.zh } : item.product,
+      };
+    });
   } catch {
     return [];
   }
@@ -84,11 +96,13 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         productTitleRu: product.titleRu,
         productTitleUz: product.titleUz,
         productTitleEn: product.titleEn,
+        productTitleZh: product.titleZh,
         productSlug: product.slug,
         variantId: variant?.id,
         variantTitleRu: variant?.titleRu,
         variantTitleUz: variant?.titleUz,
         variantTitleEn: variant?.titleEn,
+        variantTitleZh: variant?.titleZh,
         sku: variant?.sku || product.sku,
         quantity: normalizeOrderQuantity(product, quantity, variant),
         unit: product.salesUnit || 'шт',

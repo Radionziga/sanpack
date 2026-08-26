@@ -29,6 +29,11 @@ export function Advantages() {
       quality: ['Quality control', 'Technical checks of thickness and seam strength for every roll'],
       manager: ['Dedicated manager', 'B2B order support from quotation through warehouse delivery'],
     },
+    zh: {
+      subtitle: '与生产商直接合作，可确保更有竞争力的价格和稳定供应',
+      quality: ['质量控制', '对每卷产品的厚度和接缝强度进行技术检查'],
+      manager: ['专属经理', '从报价到仓库交付，全程跟进 B2B 订单'],
+    },
   }[language];
 
   const advs = [

@@ -12,6 +12,7 @@ export default function PdfCatalogAdminPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [clients, setClients] = useState<ClientPartner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatedAt] = useState(() => new Date().toISOString());
 
   useEffect(() => {
     async function loadData() {
@@ -68,6 +69,7 @@ export default function PdfCatalogAdminPage() {
             initialCategories={categories}
             settings={settings}
             clients={clients}
+            generatedAt={generatedAt}
             initialOptions={{
               withPrices: true,
               language: 'ru',

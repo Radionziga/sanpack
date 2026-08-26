@@ -11,18 +11,19 @@ const labels = {
   ru: { region: 'Промо-предложения', previous: 'Предыдущий баннер', next: 'Следующий баннер', slide: 'Показать баннер' },
   uz: { region: 'Promo takliflar', previous: 'Oldingi banner', next: 'Keyingi banner', slide: 'Bannerni ko‘rsatish' },
   en: { region: 'Promotions', previous: 'Previous banner', next: 'Next banner', slide: 'Show banner' },
+  zh: { region: '促销活动', previous: '上一个横幅', next: '下一个横幅', slide: '显示横幅' },
 } satisfies Record<Language, Record<string, string>>;
 
 function localizedTitle(banner: Banner, locale: Language) {
-  return resolveLocalizedText(locale, { ru: banner.titleRu, uz: banner.titleUz, en: banner.titleEn }).text;
+  return resolveLocalizedText(locale, { ru: banner.titleRu, uz: banner.titleUz, en: banner.titleEn, zh: banner.titleZh }).text;
 }
 
 function localizedSubtitle(banner: Banner, locale: Language) {
-  return resolveLocalizedText(locale, { ru: banner.subtitleRu, uz: banner.subtitleUz, en: banner.subtitleEn }).text;
+  return resolveLocalizedText(locale, { ru: banner.subtitleRu, uz: banner.subtitleUz, en: banner.subtitleEn, zh: banner.subtitleZh }).text;
 }
 
 function localizedButtonText(banner: Banner, locale: Language) {
-  return resolveLocalizedText(locale, { ru: banner.buttonTextRu, uz: banner.buttonTextUz, en: banner.buttonTextEn }).text;
+  return resolveLocalizedText(locale, { ru: banner.buttonTextRu, uz: banner.buttonTextUz, en: banner.buttonTextEn, zh: banner.buttonTextZh }).text;
 }
 
 function BannerImage({ banner, alt, eager }: { banner: Banner; alt: string; eager: boolean }) {
@@ -213,10 +214,10 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
               <div className="relative h-full w-full">
                 <BannerImage banner={banner} alt={title || copy.region} eager={logicalIndex === 0 && !clone} />
                 {(hasText || hasButton) ? (
-                  <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-center px-5 py-4 sm:px-8 sm:py-6 md:px-12 md:py-8 lg:px-16">
-                    <div className="max-w-[62%] space-y-1.5 sm:max-w-[55%] sm:space-y-2 md:max-w-[50%] md:space-y-3 lg:max-w-[46%]">
-                      {title ? <h2 className="font-extended text-sm font-extrabold leading-tight tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] sm:text-lg md:text-2xl lg:text-3xl">{title}</h2> : null}
-                      {subtitle ? <p className="line-clamp-2 text-[11px] font-medium leading-relaxed text-white/95 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)] sm:line-clamp-3 sm:text-xs md:text-sm lg:text-base">{subtitle}</p> : null}
+                  <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-end bg-[linear-gradient(0deg,rgb(0_0_0/68%)_0%,rgb(0_0_0/18%)_58%,transparent_78%)] px-5 pb-9 pt-5 sm:justify-center sm:bg-none sm:px-8 sm:py-7 md:px-16 md:py-8">
+                    <div className="max-w-full space-y-2 sm:max-w-[68%] sm:space-y-3 md:max-w-[62%]">
+                      {title ? <h2 className="max-w-[22ch] text-balance text-[clamp(1.12rem,5.3vw,1.55rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] sm:line-clamp-2 sm:text-[clamp(1.1rem,2.15vw,2.35rem)]">{title}</h2> : null}
+                      {subtitle ? <p className="line-clamp-3 max-w-[31ch] text-xs font-medium leading-[1.45] text-white/95 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)] sm:text-sm md:text-[15px]">{subtitle}</p> : null}
                       {hasButton ? (
                         <div className="pt-1 sm:pt-2">
                           <span aria-hidden="true" className="inline-flex items-center gap-1.5 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-3 py-1.5 font-compact text-[11px] font-semibold text-[var(--sp-on-brand)] shadow-[0_8px_20px_rgba(0,0,0,0.3)] transition-[background-color,box-shadow] duration-200 group-hover:bg-[var(--sp-brand-deep)] group-hover:shadow-[0_12px_24px_rgba(0,0,0,0.4)] sm:gap-2 sm:px-4 sm:py-2 sm:text-xs md:px-5 md:py-2.5 md:text-sm">
@@ -232,7 +233,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
 
             return (
               <div key={key} aria-hidden={clone || !isActive} className="relative min-w-[calc(100%-0.75rem)] snap-start py-1 sm:min-w-full">
-                <div className="relative aspect-video overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] shadow-sm md:aspect-[24/7]">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] shadow-sm sm:aspect-video md:aspect-[24/7]">
                   {banner.link ? (
                     banner.link.startsWith('/') ? (
                       <Link href={banner.link} tabIndex={isActive ? 0 : -1} aria-label={buttonText ? `${buttonText}: ${title || copy.region}` : title || copy.region} className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]">{content}</Link>
@@ -266,8 +267,8 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
 
       {slides.length > 1 ? (
         <>
-          <button type="button" onClick={() => move(-1)} aria-label={copy.previous} className="absolute -left-7 top-1/2 z-10 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full text-[var(--sp-ink-muted)] transition-[color,background-color] hover:bg-[var(--sp-surface)] hover:text-[var(--sp-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] md:flex lg:-left-11"><ChevronLeft className="size-6" strokeWidth={2.2} aria-hidden="true" /></button>
-          <button type="button" onClick={() => move(1)} aria-label={copy.next} className="absolute -right-7 top-1/2 z-10 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full text-[var(--sp-ink-muted)] transition-[color,background-color] hover:bg-[var(--sp-surface)] hover:text-[var(--sp-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] md:flex lg:-right-11"><ChevronRight className="size-6" strokeWidth={2.2} aria-hidden="true" /></button>
+          <button type="button" onClick={() => move(-1)} aria-label={copy.previous} className="absolute left-3 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center text-white drop-shadow-[0_2px_8px_rgb(0_0_0/80%)] transition-[opacity,transform] hover:opacity-72 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex"><ChevronLeft className="size-8" strokeWidth={2.1} aria-hidden="true" /></button>
+          <button type="button" onClick={() => move(1)} aria-label={copy.next} className="absolute right-6 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center text-white drop-shadow-[0_2px_8px_rgb(0_0_0/80%)] transition-[opacity,transform] hover:opacity-72 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex"><ChevronRight className="size-8" strokeWidth={2.1} aria-hidden="true" /></button>
         </>
       ) : null}
     </div>

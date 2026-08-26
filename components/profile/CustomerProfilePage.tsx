@@ -65,6 +65,15 @@ const copyByLanguage = {
     save: 'Save details', saving: 'Saving…', saved: 'Profile details saved', error: 'Could not save your details. Please try again.', validation: 'Enter your name and a valid phone number.',
     sections: 'Profile sections', orders: 'My requests', favorites: 'Favorites', language: 'Interface language',
   },
+  zh: {
+    back: '返回', title: '个人资料与设置', intro: '集中管理联系信息、申请记录和商店设置。',
+    guest: '访客资料', signedIn: 'Telegram 资料', guestHint: '信息仅保存在此设备上。', signedHint: '信息将与您的 Telegram 账号同步。',
+    login: '使用 Telegram 登录', logout: '退出登录', contactTitle: '联系信息', contactHint: '提交申请时将自动填写姓名和电话。',
+    name: '联系人', phone: '电话', company: '公司', address: '配送地址', inn: '税号', optional: '选填',
+    namePlaceholder: '我们该如何称呼您？', companyPlaceholder: '公司名称', addressPlaceholder: '城市、街道、门牌号', innPlaceholder: '公司税号',
+    save: '保存信息', saving: '正在保存…', saved: '个人资料已保存', error: '保存失败，请重试。', validation: '请输入姓名和有效的电话号码。',
+    sections: '个人中心', orders: '我的申请', favorites: '收藏夹', language: '界面语言',
+  },
 } as const;
 
 export function CustomerProfilePage() {

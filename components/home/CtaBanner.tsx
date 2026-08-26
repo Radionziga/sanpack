@@ -13,6 +13,7 @@ export function CtaBanner() {
     ru: [`B2B-консультация ${company.name}`, 'Написать в Telegram'],
     uz: [`${company.name} B2B maslahati`, 'Telegram orqali yozish'],
     en: [`${company.name} B2B consultation`, 'Message us on Telegram'],
+    zh: [`${company.name} B2B 咨询`, '通过 Telegram 联系'],
   }[language];
 
   return (

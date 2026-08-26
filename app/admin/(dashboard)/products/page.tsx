@@ -152,15 +152,18 @@ export default function AdminProductsPage() {
       titleRu: '',
       titleUz: '',
       titleEn: '',
+      titleZh: '',
       slug: '',
       sku: 'SP-' + Math.floor(1000 + Math.random() * 9000),
       categoryId: categories[0]?.id || '',
       shortDescriptionRu: '',
       shortDescriptionUz: '',
       shortDescriptionEn: '',
+      shortDescriptionZh: '',
       descriptionRu: '',
       descriptionUz: '',
       descriptionEn: '',
+      descriptionZh: '',
       mainImage: '',
       images: [],
       imagePaths: [],
@@ -172,6 +175,7 @@ export default function AdminProductsPage() {
         nameRu: 'мешок',
         nameUz: 'qop',
         nameEn: 'bag',
+        nameZh: '袋',
         unitsPerPackage: 20,
         minimumPackages: 1,
         packageStep: 1,
@@ -488,7 +492,7 @@ export default function AdminProductsPage() {
             <section className="admin-panel p-5 md:p-6">
               <h4 className="admin-section-heading">Основная информация</h4>
               <p className="admin-section-description">Название, артикул, категория, цена и изображение, которые определяют товар в каталоге.</p>
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div>
                 <label className="font-bold block mb-1">Название (RU) *</label>
                 <input
@@ -517,6 +521,16 @@ export default function AdminProductsPage() {
                   type="text"
                   value={editingProduct.titleEn || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleEn: e.target.value })}
+                  className="admin-control text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold block mb-1">Название (ZH)</label>
+                <input
+                  type="text"
+                  value={editingProduct.titleZh || ''}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, titleZh: e.target.value })}
                   className="admin-control text-sm"
                 />
               </div>
@@ -718,6 +732,7 @@ export default function AdminProductsPage() {
                       nameRu: editingProduct.orderPackaging?.nameRu || 'мешок',
                       nameUz: editingProduct.orderPackaging?.nameUz || 'qop',
                       nameEn: editingProduct.orderPackaging?.nameEn || 'bag',
+                      nameZh: editingProduct.orderPackaging?.nameZh || '袋',
                       unitsPerPackage: editingProduct.orderPackaging?.unitsPerPackage || 20,
                       minimumPackages: editingProduct.orderPackaging?.minimumPackages || 1,
                       packageStep: editingProduct.orderPackaging?.packageStep || 1,
@@ -735,8 +750,8 @@ export default function AdminProductsPage() {
 
               {editingProduct.orderPackaging?.enabled ? (
                 <div className="space-y-4 border-l-2 border-[var(--sp-brand)] pl-4">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    {(['Ru', 'Uz', 'En'] as const).map((suffix) => {
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => {
                       const field = `name${suffix}` as const;
                       return (
                         <label key={field} className="font-bold text-[var(--sp-ink)]">
@@ -848,8 +863,8 @@ export default function AdminProductsPage() {
               </label>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {(['Ru', 'Uz', 'En'] as const).map((suffix) => {
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => {
                 const field = `shortDescription${suffix}` as const;
                 return (
                   <label key={field} className="font-bold">
@@ -860,8 +875,8 @@ export default function AdminProductsPage() {
               })}
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {(['Ru', 'Uz', 'En'] as const).map((suffix) => {
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => {
                 const field = `description${suffix}` as const;
                 return (
                   <label key={field} className="font-bold">
@@ -875,18 +890,18 @@ export default function AdminProductsPage() {
             <AiTranslateButton fields={[
               {
                 key: 'title', label: 'Название товара',
-                values: { ru: editingProduct.titleRu || '', uz: editingProduct.titleUz || '', en: editingProduct.titleEn || '' },
-                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value } : current),
+                values: { ru: editingProduct.titleRu || '', uz: editingProduct.titleUz || '', en: editingProduct.titleEn || '', zh: editingProduct.titleZh || '' },
+                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`]: value } : current),
               },
               {
                 key: 'shortDescription', label: 'Краткое описание',
-                values: { ru: editingProduct.shortDescriptionRu || '', uz: editingProduct.shortDescriptionUz || '', en: editingProduct.shortDescriptionEn || '' },
-                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`shortDescription${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value } : current),
+                values: { ru: editingProduct.shortDescriptionRu || '', uz: editingProduct.shortDescriptionUz || '', en: editingProduct.shortDescriptionEn || '', zh: editingProduct.shortDescriptionZh || '' },
+                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`shortDescription${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`]: value } : current),
               },
               {
                 key: 'description', label: 'Полное описание',
-                values: { ru: editingProduct.descriptionRu || '', uz: editingProduct.descriptionUz || '', en: editingProduct.descriptionEn || '' },
-                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value } : current),
+                values: { ru: editingProduct.descriptionRu || '', uz: editingProduct.descriptionUz || '', en: editingProduct.descriptionEn || '', zh: editingProduct.descriptionZh || '' },
+                onChange: (language, value) => setEditingProduct((current) => current ? { ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`]: value } : current),
               },
             ]} />
             </section>

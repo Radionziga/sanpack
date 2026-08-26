@@ -38,6 +38,13 @@ export function HeroBanner() {
       quality: 'Certified quality',
       standard: 'Compliant with HoReCa standards',
     },
+    zh: {
+      eyebrow: '乌兹别克斯坦本地生产与直接供应',
+      bullets: ['工厂批发价', '塔什干市内配送', '一站式品牌定制'],
+      catalogCaption: '包装、手套、薄膜和食品',
+      quality: '认证品质',
+      standard: '符合 HoReCa 标准',
+    },
   }[language];
 
   return (

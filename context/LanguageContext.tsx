@@ -12,7 +12,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: TranslationKeys) => string;
-  getLocalizedText: (ru?: string, uz?: string, en?: string) => string;
+  getLocalizedText: (ru?: string, uz?: string, en?: string, zh?: string) => string;
   fixText: (text: string) => string;
 }
 
@@ -43,8 +43,8 @@ export function LanguageProvider({
     return fixPrepositions(raw);
   };
 
-  const getLocalizedText = (ru?: string, uz?: string, en?: string): string => {
-    return fixPrepositions(resolveLocalizedText(language, { ru, uz, en }).text);
+  const getLocalizedText = (ru?: string, uz?: string, en?: string, zh?: string): string => {
+    return fixPrepositions(resolveLocalizedText(language, { ru, uz, en, zh }).text);
   };
 
   const fixText = (text: string): string => {

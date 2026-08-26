@@ -51,7 +51,7 @@ interface MobileStorefrontChromeContextValue {
 
 const MobileStorefrontChromeContext = createContext<MobileStorefrontChromeContextValue | null>(null);
 
-const localePrefix = /^\/(ru|uz|en)(?=\/|$)/;
+const localePrefix = /^\/(ru|uz|en|zh)(?=\/|$)/;
 
 function normalizePathname(pathname: string) {
   return pathname.replace(localePrefix, '') || '/';
@@ -75,6 +75,7 @@ const popularSuggestions = {
   ru: ['Мешки для мусора', 'Салфетки', 'Контейнеры', 'Перчатки', 'Зелень', 'Пакеты Майка', 'Фольга', 'Стаканы'],
   uz: ['Chiqindi qoplari', 'Salfetkalar', 'Konteynerlar', 'Qo‘lqoplar', 'Ko‘katlar', 'Mayka paketlar', 'Folga', 'Stakanlar'],
   en: ['Trash bags', 'Napkins', 'Containers', 'Gloves', 'Greens', 'T-shirt bags', 'Foil', 'Cups'],
+  zh: ['垃圾袋', '餐巾纸', '容器', '手套', '蔬菜', '背心袋', '铝箔', '杯子'],
 };
 
 export function useMobileStorefrontChrome() {
@@ -192,6 +193,15 @@ export function MobileStorefrontChrome({
       priceOnRequest: 'Price on request',
       requestPrices: 'includes request-only prices',
       openCart: 'Open cart',
+    },
+    zh: {
+      profile: '个人中心', profileTitle: '个人资料与设置', search: '搜索', searchTitle: '搜索目录',
+      searchPlaceholder: '商品名称、分类或货号…', close: '关闭', menuTitle: '商店菜单', orders: '我的申请',
+      bagDesigner: '包装袋设计器', callback: '请求回电', phone: '致电我们', telegram: '通过 Telegram 联系',
+      navigation: '主导航', language: '语言', foundProducts: '找到商品', popularQueries: '热门搜索',
+      popularCategories: '商品分类', nothingFound: '没有符合搜索条件的商品',
+      tryAnother: '请更换关键词或选择以下热门选项：', viewAllResults: '查看目录中的全部结果', sku: '货号',
+      cart: '购物车', preliminary: '预估', priceOnRequest: '价格面议', requestPrices: '包含面议商品', openCart: '打开购物车',
     },
   }[language];
 
@@ -578,7 +588,7 @@ export function MobileStorefrontChrome({
 
                             <ul className="divide-y divide-[var(--sp-line-soft)] rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] overflow-hidden">
                               {matchingProducts.slice(0, 10).map((product) => {
-                                const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
+                                const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn, product.titleZh);
                                 const priceText = getProductCatalogPriceText(product, language);
                                 return (
                                   <li key={product.id}>

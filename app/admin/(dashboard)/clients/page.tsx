@@ -50,6 +50,8 @@ export default function AdminClientsPage() {
       category: 'restaurant',
       descriptionRu: 'Партнёр магазина',
       descriptionUz: 'Do‘kon hamkori',
+      descriptionEn: 'Store partner',
+      descriptionZh: '商店合作伙伴',
       sortOrder: 1,
     });
     setIsModalOpen(true);
@@ -217,7 +219,7 @@ export default function AdminClientsPage() {
             </div>
 
             <div className="grid gap-3">
-              {([['descriptionRu', 'Описание RU'], ['descriptionUz', 'Описание UZ'], ['descriptionEn', 'Описание EN']] as const).map(([field, label]) => (
+              {([['descriptionRu', 'Описание RU'], ['descriptionUz', 'Описание UZ'], ['descriptionEn', 'Описание EN'], ['descriptionZh', 'Описание ZH']] as const).map(([field, label]) => (
                 <label key={field} className="font-bold">
                   {label}
                   <textarea rows={2} value={editingClient[field] || ''} onChange={(event) => setEditingClient({ ...editingClient, [field]: event.target.value })} className="admin-control mt-1.5 p-3 text-sm font-normal" />
@@ -227,8 +229,8 @@ export default function AdminClientsPage() {
 
             <AiTranslateButton fields={[{
               key: 'description', label: 'Описание партнёра',
-              values: { ru: editingClient.descriptionRu || '', uz: editingClient.descriptionUz || '', en: editingClient.descriptionEn || '' },
-              onChange: (language, value) => setEditingClient((current) => current ? { ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value } : current),
+              values: { ru: editingClient.descriptionRu || '', uz: editingClient.descriptionUz || '', en: editingClient.descriptionEn || '', zh: editingClient.descriptionZh || '' },
+              onChange: (language, value) => setEditingClient((current) => current ? { ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`]: value } : current),
             }]} compact />
 
             <div className="flex justify-end gap-2 border-t border-[var(--sp-line)] pt-4">

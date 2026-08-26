@@ -2,11 +2,13 @@
 
 import { useId, useMemo, useRef, type PointerEvent, type RefObject } from 'react';
 import type { BagDesignSpec } from '@/lib/bag-designer/types';
+import type { Language } from '@/types';
 
 type Props = {
   spec: BagDesignSpec;
   logoDataUrl: string;
   svgRef: RefObject<SVGSVGElement | null>;
+  language: Language;
   onLogoPositionChange: (x: number, y: number) => void;
 };
 
@@ -16,9 +18,18 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, onLogoPositionChange }: Props) {
+export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, language, onLogoPositionChange }: Props) {
   const id = useId().replaceAll(':', '');
   const dragging = useRef(false);
+  const labels = language === 'zh'
+    ? {
+        aria: `宽 ${spec.width} 厘米、高 ${spec.height} 厘米的包装袋示意图`,
+        title: '技术示意图', scale: '比例仅供参考', safeZone: '安全印刷区域', logo: '品牌标识位置', unit: '厘米', gusset: '侧褶',
+      }
+    : {
+        aria: `Эскиз ${spec.width} на ${spec.height} сантиметров`,
+        title: 'ТЕХНИЧЕСКИЙ ЭСКИЗ', scale: 'масштаб условный', safeZone: 'БЕЗОПАСНАЯ ЗОНА ПЕЧАТИ', logo: 'МЕСТО ДЛЯ ЛОГОТИПА', unit: 'см', gusset: 'складка',
+      };
 
   const geometry = useMemo(() => {
     const maxWidth = 390;
@@ -105,7 +116,7 @@ export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, onLogoPositionC
       ref={svgRef}
       viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
       role="img"
-      aria-label={`Эскиз ${spec.width} на ${spec.height} сантиметров`}
+      aria-label={labels.aria}
       className="mx-auto block h-auto max-h-[610px] w-full touch-none select-none"
       onPointerDown={startDragging}
       onPointerMove={updateLogoPosition}
@@ -119,8 +130,8 @@ export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, onLogoPositionC
 
       <g data-helper aria-hidden="true">
         <path d="M 62 64 H 658" stroke="#D6DAD7" strokeWidth="1" />
-        <text x="62" y="48" fill="#66716C" fontSize="14" fontFamily="Arial, sans-serif">ТЕХНИЧЕСКИЙ ЭСКИЗ</text>
-        <text x="658" y="48" textAnchor="end" fill="#929A96" fontSize="13" fontFamily="Arial, sans-serif">масштаб условный</text>
+        <text x="62" y="48" fill="#66716C" fontSize="14" fontFamily="Arial, sans-serif">{labels.title}</text>
+        <text x="658" y="48" textAnchor="end" fill="#929A96" fontSize="13" fontFamily="Arial, sans-serif">{labels.scale}</text>
       </g>
 
       <ellipse cx="360" cy={geometry.bottom + 18} rx={geometry.width * 0.42} ry="10" fill="#1F2924" opacity="0.055" />
@@ -154,7 +165,7 @@ export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, onLogoPositionC
 
       <g data-helper aria-hidden="true">
         <rect x={geometry.safeZone.x} y={geometry.safeZone.y} width={geometry.safeZone.width} height={geometry.safeZone.height} rx="4" fill="none" stroke={printColor} strokeWidth="1.5" strokeDasharray="8 7" />
-        <text x={geometry.safeZone.x + 8} y={geometry.safeZone.y - 9} fill={printColor} fontSize="12" fontFamily="Arial, sans-serif">БЕЗОПАСНАЯ ЗОНА ПЕЧАТИ</text>
+        <text x={geometry.safeZone.x + 8} y={geometry.safeZone.y - 9} fill={printColor} fontSize="12" fontFamily="Arial, sans-serif">{labels.safeZone}</text>
       </g>
 
       {logoDataUrl ? (
@@ -172,7 +183,7 @@ export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, onLogoPositionC
       ) : (
         <g data-helper aria-hidden="true">
           <rect x={geometry.safeZone.x + 16} y={geometry.safeZone.y + geometry.safeZone.height / 2 - 36} width={geometry.safeZone.width - 32} height="72" rx="4" fill="#FFFFFF" fillOpacity="0.36" stroke="#8D9691" strokeWidth="1.2" strokeDasharray="6 6" />
-          <text x="360" y={geometry.safeZone.y + geometry.safeZone.height / 2 + 5} textAnchor="middle" fill="#6D7772" fontSize="14" fontFamily="Arial, sans-serif">МЕСТО ДЛЯ ЛОГОТИПА</text>
+          <text x="360" y={geometry.safeZone.y + geometry.safeZone.height / 2 + 5} textAnchor="middle" fill="#6D7772" fontSize="14" fontFamily="Arial, sans-serif">{labels.logo}</text>
         </g>
       )}
 
@@ -183,9 +194,9 @@ export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, onLogoPositionC
         <path d={`M ${geometry.right + 38} ${geometry.top} H ${geometry.right + 54} M ${geometry.right + 38} ${geometry.bottom} H ${geometry.right + 54}`} />
       </g>
       <g data-helper fill={measurementColor} fontFamily="Arial, sans-serif" fontSize="14" fontWeight="700" aria-hidden="true">
-        <text x="360" y={geometry.bottom + 64} textAnchor="middle">{spec.width} см</text>
-        <text x={geometry.right + 67} y={(geometry.top + geometry.bottom) / 2} transform={`rotate(90 ${geometry.right + 67} ${(geometry.top + geometry.bottom) / 2})`} textAnchor="middle">{spec.height} см</text>
-        {spec.gusset > 0 ? <text x={geometry.left} y={geometry.top - 18}>складка {spec.gusset} см</text> : null}
+        <text x="360" y={geometry.bottom + 64} textAnchor="middle">{spec.width} {labels.unit}</text>
+        <text x={geometry.right + 67} y={(geometry.top + geometry.bottom) / 2} transform={`rotate(90 ${geometry.right + 67} ${(geometry.top + geometry.bottom) / 2})`} textAnchor="middle">{spec.height} {labels.unit}</text>
+        {spec.gusset > 0 ? <text x={geometry.left} y={geometry.top - 18}>{labels.gusset} {spec.gusset} {labels.unit}</text> : null}
       </g>
     </svg>
   );

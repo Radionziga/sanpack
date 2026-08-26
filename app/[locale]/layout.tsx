@@ -34,12 +34,16 @@ export async function generateMetadata({
     ? 'Onlayn katalog'
     : locale === 'en'
       ? 'Online catalog'
-      : 'Интернет-магазин';
+      : locale === 'zh'
+        ? '在线商品目录'
+        : 'Интернет-магазин';
   const fallbackDescription = locale === 'uz'
     ? 'Mahsulotlar va xizmatlar onlayn katalogi.'
     : locale === 'en'
       ? 'Online catalog of products and services.'
-      : 'Онлайн-каталог товаров и услуг.';
+      : locale === 'zh'
+        ? '商品与服务在线目录。'
+        : 'Онлайн-каталог товаров и услуг.';
   let settings;
   try {
     settings = await getPublicSettings();
@@ -54,12 +58,16 @@ export async function generateMetadata({
     ? settings.seo?.defaultTitleUz || fallbackTitle
     : locale === 'en'
       ? settings.seo?.defaultTitleEn || settings.seo?.defaultTitleRu || fallbackTitle
-      : settings.seo?.defaultTitleRu || fallbackTitle;
+      : locale === 'zh'
+        ? settings.seo?.defaultTitleZh || settings.seo?.defaultTitleEn || settings.seo?.defaultTitleRu || fallbackTitle
+        : settings.seo?.defaultTitleRu || fallbackTitle;
   const description = locale === 'uz'
     ? settings.seo?.defaultDescriptionUz || fallbackDescription
     : locale === 'en'
       ? settings.seo?.defaultDescriptionEn || settings.seo?.defaultDescriptionRu || fallbackDescription
-      : settings.seo?.defaultDescriptionRu || fallbackDescription;
+      : locale === 'zh'
+        ? settings.seo?.defaultDescriptionZh || settings.seo?.defaultDescriptionEn || settings.seo?.defaultDescriptionRu || fallbackDescription
+        : settings.seo?.defaultDescriptionRu || fallbackDescription;
   return {
     title,
     description,
@@ -69,6 +77,7 @@ export async function generateMetadata({
         ru: '/ru',
         uz: '/uz',
         en: '/en',
+        zh: '/zh',
         'x-default': '/ru',
       },
     },
@@ -110,6 +119,11 @@ export default async function LocaleLayout({
             title: 'Catalog temporarily unavailable',
             description: 'Current data could not be loaded. Please refresh the page a little later.',
           }
+        : locale === 'zh'
+          ? {
+              title: '目录暂时不可用',
+              description: '无法加载最新数据，请稍后刷新页面。',
+            }
         : {
             title: 'Каталог временно недоступен',
             description: 'Не удалось загрузить актуальные данные. Обновите страницу немного позже.',

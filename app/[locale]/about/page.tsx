@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -8,11 +8,20 @@ import { useLanguage } from '@/context/LanguageContext';
 import { pageCopy } from '@/lib/i18n/pageCopy';
 import { Factory, Check } from 'lucide-react';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { ClientsSection } from '@/components/home/ClientsSection';
+import { PublicRepository } from '@/lib/repositories/publicRepository';
+import type { ClientPartner } from '@/types';
 
 export default function AboutPage() {
   const { t, language } = useLanguage();
   const { company } = useSiteSettings();
   const copy = pageCopy[language].about;
+  const clientsCopy = pageCopy[language].clients;
+  const [clients, setClients] = useState<ClientPartner[]>([]);
+
+  useEffect(() => {
+    PublicRepository.getClients().then(setClients).catch(() => setClients([]));
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--sp-surface-inset)]">
@@ -84,6 +93,18 @@ export default function AboutPage() {
               />
             </div>
           </div>
+
+          {clients.length > 0 ? (
+            <section aria-labelledby="about-clients-heading" className="space-y-6">
+              <div className="max-w-2xl">
+                <h2 id="about-clients-heading" className="text-2xl font-extrabold tracking-[-0.03em] text-[var(--sp-ink)]">
+                  {t('clients')}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--sp-ink-secondary)]">{clientsCopy.intro}</p>
+              </div>
+              <ClientsSection clients={clients} />
+            </section>
+          ) : null}
         </div>
       </main>
 

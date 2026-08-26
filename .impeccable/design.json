@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-23T20:45:00+05:00",
+  "title": "Design System: SANPACK Storefront",
+  "extensions": {
+    "colorMeta": {
+      "sanpack-green": { "role": "primary", "displayName": "SANPACK Green", "canonical": "#0F6E43", "tonalRamp": ["#E7F2EC", "#0F6E43", "#0A4B2E"] },
+      "canvas": { "role": "neutral", "displayName": "Quiet Canvas", "canonical": "#F6F7F6", "tonalRamp": ["#FFFFFF", "#F6F7F6", "#EFF2F0"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Marketplace Display", "purpose": "Large page and product titles." },
+      "body": { "displayName": "Interface Body", "purpose": "All readable customer-facing interface text." }
+    },
+    "shadows": [
+      { "name": "soft-control", "value": "0 4px 14px rgb(21 27 24 / 6%)", "purpose": "Floating compact controls." },
+      { "name": "raised-surface", "value": "0 12px 32px rgb(21 27 24 / 7%)", "purpose": "Sticky and modal surfaces only." }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "150-300ms", "purpose": "Exact-property hover, focus, and selection transitions with reduced-motion support." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [],
+  "narrative": {
+    "northStar": "The Calm Wholesale Counter",
+    "overview": "A clean, product-led B2B marketplace that combines familiar commerce behavior with SANPACK's green identity and request-ordering model.",
+    "keyCharacteristics": ["Product-first", "Flat by default", "Touch-comfortable", "One responsive visual language"],
+    "rules": [
+      { "name": "One Green", "body": "Green communicates action or state rather than decorative coverage.", "section": "colors" },
+      { "name": "Earned Elevation", "body": "Shadows are reserved for floating, sticky, or modal layers.", "section": "elevation" }
+    ],
+    "dos": ["Use semantic tokens", "Keep targets at least 44px", "Localize RU, UZ, and EN"],
+    "donts": ["Do not mix category-specific filters", "Do not use raw browser date controls", "Do not expose sharp image corners"]
+  }
+}

@@ -20,7 +20,7 @@ export default async function CatalogPrintPage({ params, searchParams }: PagePro
   const withPrices = resolvedSearchParams.prices !== '0';
   const selectedCategory = typeof resolvedSearchParams.category === 'string' ? resolvedSearchParams.category : '';
   const langParam = (
-    typeof resolvedSearchParams.lang === 'string' && ['ru', 'uz', 'en'].includes(resolvedSearchParams.lang)
+    typeof resolvedSearchParams.lang === 'string' && ['ru', 'uz', 'en', 'zh'].includes(resolvedSearchParams.lang)
       ? resolvedSearchParams.lang
       : locale
   ) as Language;
@@ -38,6 +38,7 @@ export default async function CatalogPrintPage({ params, searchParams }: PagePro
       initialCategories={categories}
       settings={settings}
       clients={clients}
+      generatedAt={new Date().toISOString()}
       initialOptions={{
         withPrices,
         language: langParam,

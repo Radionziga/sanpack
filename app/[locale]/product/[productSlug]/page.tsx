@@ -22,8 +22,6 @@ import {
   Check,
   Download,
   Phone,
-  Send,
-  MessageCircle,
   Truck,
   FileText,
   Calculator,
@@ -34,7 +32,6 @@ import {
   Plus,
   ChevronDown,
 } from 'lucide-react';
-import { useSiteSettings } from '@/context/SiteSettingsContext';
 import {
   getOrderRuleSummary,
   getProductOrderRule,
@@ -104,7 +101,6 @@ export default function ProductDetailPage({
 }) {
   const { productSlug } = use(params);
   const { t, getLocalizedText, language } = useLanguage();
-  const { contacts } = useSiteSettings();
   const copy = {
     ru: {
       notFound: 'Товар не найден',
@@ -202,6 +198,38 @@ export default function ProductDetailPage({
       showLess: 'Hide description',
       additionalInfo: 'Additional information',
     },
+    zh: {
+      notFound: '未找到该商品',
+      back: '返回商品目录',
+      stock: '塔什干仓库有货',
+      order: '可预订',
+      tiers: '批量采购优惠',
+      from: '起',
+      properties: '主要参数',
+      total: '合计',
+      added: '已加入申请',
+      inRequest: '已在购物车中',
+      openCart: '打开购物车',
+      favorite: '已收藏',
+      manager: '快速联系经理',
+      message: '您好！我对这件商品感兴趣',
+      cityDelivery: '塔什干市内配送',
+      cityDeliveryText: 'B2B 申请金额满 2,000,000 苏姆可免费配送，其他订单可安排快速配送。',
+      regions: '乌兹别克斯坦各地区',
+      regionsText: '通过合作物流服务配送至乌兹别克斯坦各地区。',
+      docs: '签订合同时，经理可提供证书和卫生文件。',
+      loadError: '商品加载失败',
+      loadErrorHint: '请检查网络连接后重试。',
+      retry: '重试',
+      noDescription: '暂未添加商品说明，请向经理咨询详情。',
+      decrease: '减少数量',
+      increase: '增加数量',
+      selectVariant: '请先选择规格',
+      informational: '仅供参考',
+      showMore: '展开说明',
+      showLess: '收起说明',
+      additionalInfo: '更多信息',
+    },
   }[language];
   const { items } = useRequestCart();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -211,7 +239,6 @@ export default function ProductDetailPage({
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'delivery' | 'docs'>('desc');
   const [isQuantityEditing, setIsQuantityEditing] = useState(false);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'not-found' | 'error'>('loading');
   const [loadVersion, setLoadVersion] = useState(0);
@@ -302,12 +329,13 @@ export default function ProductDetailPage({
     );
   }
 
-  const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn);
+  const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn, product.titleZh);
   const description = getProductDescriptionText(product, language);
   const shortDescription = getLocalizedText(
     product.shortDescriptionRu,
     product.shortDescriptionUz,
     product.shortDescriptionEn,
+    product.shortDescriptionZh,
   );
   const favorited = isFavorite(product.id);
   const variantRequired = Boolean(product.variants?.length && !selectedVariant);
@@ -368,8 +396,8 @@ export default function ProductDetailPage({
 
       <main className="flex-1 pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+5.5rem)] md:py-8">
         <div className="mx-auto max-w-7xl md:px-4">
-          {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="mb-6 hidden flex-wrap items-center gap-2 text-xs font-medium text-[var(--sp-ink-tertiary)] md:flex">
+          {/* Kept for document structure and assistive navigation without adding visual chrome. */}
+          <nav aria-label="Breadcrumb" className="sr-only">
             <Link href="/" className="transition-colors hover:text-[var(--sp-brand)]">
               {t('home')}
             </Link>
@@ -381,14 +409,14 @@ export default function ProductDetailPage({
             <span className="max-w-xs truncate font-semibold text-[var(--sp-ink)]" aria-current="page">{title}</span>
           </nav>
 
-          <h1 className="mb-4 hidden break-words text-xl font-bold leading-snug tracking-tight text-[var(--sp-ink)] md:block lg:hidden">
+          <h1 className="mb-7 hidden max-w-5xl break-words text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[var(--sp-ink)] md:block xl:text-5xl">
             {title}
           </h1>
 
           {/* Product Hero Top Grid */}
-          <div className="mb-8 grid grid-cols-1 gap-0 md:gap-5 lg:mb-12 lg:grid-cols-12 lg:gap-8">
+          <div className="mb-8 grid grid-cols-1 gap-0 md:gap-7 lg:mb-12 lg:grid-cols-12 lg:gap-x-12 lg:gap-y-8">
             {/* Col 1: Gallery */}
-            <div className="relative order-1 lg:order-none lg:col-span-5">
+            <div className="relative order-1 lg:col-span-7 lg:row-span-2">
               <ProductGallery images={galleryImages} title={title} mobileEdgeToEdge />
               <Link
                 href="/catalog"
@@ -429,7 +457,7 @@ export default function ProductDetailPage({
                               : 'border-[var(--sp-line)] text-[var(--sp-ink-secondary)]'
                           }`}
                         >
-                          <span>{getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn)}</span>
+                          <span>{getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn, variant.titleZh)}</span>
                           <span className="shrink-0 tabular-nums">
                             {product.showPrice && variant.price
                               ? formatMoney(variant.price, language, product.currency)
@@ -457,8 +485,8 @@ export default function ProductDetailPage({
             </div>
 
             {/* Col 3: Sticky Commercial Action Box */}
-            <div className="order-3 hidden md:block lg:order-3 lg:col-span-3">
-              <div className="space-y-5 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-raised)] sm:p-6 lg:sticky lg:top-24">
+            <div className="order-3 hidden md:block lg:order-2 lg:col-span-5">
+              <div className="space-y-5 border-t border-[var(--sp-line)] bg-transparent py-5 lg:sticky lg:top-24">
                 <div>
                   <span className="mb-1 block text-xs font-medium text-[var(--sp-ink-tertiary)]">
                     {priceLabel}
@@ -495,7 +523,7 @@ export default function ProductDetailPage({
                             }`}
                           >
                             <span className="min-w-0">
-                              <span className="block">{getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn)}</span>
+                              <span className="block">{getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn, variant.titleZh)}</span>
                               {product.showPrice && variant.price ? (
                                 <span className="mt-0.5 block text-[10px] font-medium tabular-nums text-[var(--sp-ink-tertiary)]">
                                   {formatMoney(variant.price, language, product.currency)}
@@ -580,7 +608,7 @@ export default function ProductDetailPage({
 
                 {/* Action Buttons */}
                 <div className="space-y-2 pt-1">
-                  {variantRequired || !orderable ? (
+                  {!inCart && (variantRequired || !orderable) ? (
                     <button
                       type="button"
                       disabled
@@ -590,14 +618,14 @@ export default function ProductDetailPage({
                       {orderable ? <ShoppingCart className="size-4" aria-hidden="true" /> : <AlertCircle className="size-4" aria-hidden="true" />}
                       <span>{variantRequired ? copy.selectVariant : copy.informational}</span>
                     </button>
-                  ) : (
+                  ) : !inCart ? (
                     <ProductCartControl
                       product={product}
                       variant={selectedVariant || undefined}
                       initialQuantity={quantity}
                       size="detail"
                     />
-                  )}
+                  ) : null}
 
                   <button
                     type="button"
@@ -613,40 +641,22 @@ export default function ProductDetailPage({
                   </button>
                 </div>
 
-                {/* Fast Messenger Triggers */}
-                {(contacts.telegram || contacts.whatsapp) ? <div className="space-y-2 border-t border-[var(--sp-line)] pt-4">
-                  <p className="text-[11px] font-medium text-[var(--sp-ink-secondary)]">{copy.manager}:</p>
-                  <div className={`grid gap-2 ${contacts.telegram && contacts.whatsapp ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {contacts.telegram ? <a
-                      href={`${contacts.telegram}${contacts.telegram.includes('?') ? '&' : '?'}text=${encodeURIComponent(`${copy.message}: ${title} (SKU: ${managerSku})`)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex min-h-10 items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2 text-[11px] font-semibold text-[var(--sp-ink-secondary)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)]"
-                    >
-                      <Send className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Telegram</span>
-                    </a> : null}
-                    {contacts.whatsapp ? <a
-                      href={`${contacts.whatsapp}${contacts.whatsapp.includes('?') ? '&' : '?'}text=${encodeURIComponent(`${copy.message}: ${title} (SKU: ${managerSku})`)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex min-h-10 items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2 text-[11px] font-semibold text-[var(--sp-ink-secondary)] transition-colors hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)]"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>WhatsApp</span>
-                    </a> : null}
-                  </div>
-                </div> : null}
               </div>
             </div>
 
             {/* Col 2: Info & Specs */}
-            <div className="order-4 hidden space-y-5 md:block lg:order-2 lg:col-span-4">
-              <div className="hidden lg:block">
-                <h1 className="break-words text-xl font-bold leading-snug tracking-tight text-[var(--sp-ink)] sm:text-2xl">
-                  {title}
-                </h1>
+            <div className="order-4 hidden space-y-5 border-t border-[var(--sp-line)] pt-6 md:block lg:order-3 lg:col-span-5">
+              <div>
+                <p className="mt-1.5 text-xs font-medium text-[var(--sp-ink-tertiary)]">
+                  {salesUnitLabel} · {t('sku')} {managerSku}
+                </p>
               </div>
+
+              {(shortDescription || description) ? (
+                <p className="line-clamp-4 text-sm leading-6 text-[var(--sp-ink-secondary)]">
+                  {shortDescription || description}
+                </p>
+              ) : null}
 
               {/* Stock Status Badge */}
               <div className="flex items-center gap-2 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-brand)_22%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-brand)_9%,var(--sp-surface))] p-3 text-xs font-semibold text-[var(--sp-brand)]">
@@ -754,7 +764,7 @@ export default function ProductDetailPage({
                   <div className="space-y-2">
                     {product.documents.map((doc) => (
                       <a key={doc.id} href={doc.url} className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3 font-semibold text-[var(--sp-ink)]">
-                        <span className="flex min-w-0 items-center gap-3"><FileText className="size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" /><span>{getLocalizedText(doc.titleRu, doc.titleUz, doc.titleEn)}</span></span>
+                        <span className="flex min-w-0 items-center gap-3"><FileText className="size-5 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" /><span>{getLocalizedText(doc.titleRu, doc.titleUz, doc.titleEn, doc.titleZh)}</span></span>
                         <Download className="size-4 shrink-0 text-[var(--sp-ink-tertiary)]" aria-hidden="true" />
                       </a>
                     ))}
@@ -764,132 +774,13 @@ export default function ProductDetailPage({
             </div>
           </details>
 
-          {/* Details Tabs Section */}
-          <div className="mb-12 hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 shadow-[var(--sp-shadow-raised)] sm:p-6 md:block md:p-8">
-            <div className="no-scrollbar mb-6 flex items-center gap-4 overflow-x-auto border-b border-[var(--sp-line)] pb-4">
-              <button
-                type="button"
-                aria-pressed={activeTab === 'desc'}
-                onClick={() => setActiveTab('desc')}
-                className={`whitespace-nowrap border-b-2 pb-2 text-sm font-semibold transition-colors ${
-                  activeTab === 'desc'
-                    ? 'border-[var(--sp-brand)] text-[var(--sp-brand)]'
-                    : 'border-transparent text-[var(--sp-ink-tertiary)] hover:text-[var(--sp-ink)]'
-                }`}
-              >
-                {t('tabDescription')}
-              </button>
-              {visibleAttributes.length > 0 ? (
-                <button
-                  type="button"
-                  aria-pressed={activeTab === 'specs'}
-                  onClick={() => setActiveTab('specs')}
-                  className={`whitespace-nowrap border-b-2 pb-2 text-sm font-semibold transition-colors ${
-                    activeTab === 'specs'
-                      ? 'border-[var(--sp-brand)] text-[var(--sp-brand)]'
-                      : 'border-transparent text-[var(--sp-ink-tertiary)] hover:text-[var(--sp-ink)]'
-                  }`}
-                >
-                  {t('tabSpecs')}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                aria-pressed={activeTab === 'delivery'}
-                onClick={() => setActiveTab('delivery')}
-                className={`whitespace-nowrap border-b-2 pb-2 text-sm font-semibold transition-colors ${
-                  activeTab === 'delivery'
-                    ? 'border-[var(--sp-brand)] text-[var(--sp-brand)]'
-                    : 'border-transparent text-[var(--sp-ink-tertiary)] hover:text-[var(--sp-ink)]'
-                }`}
-              >
-                {t('tabDelivery')}
-              </button>
-              <button
-                type="button"
-                aria-pressed={activeTab === 'docs'}
-                onClick={() => setActiveTab('docs')}
-                className={`whitespace-nowrap border-b-2 pb-2 text-sm font-semibold transition-colors ${
-                  activeTab === 'docs'
-                    ? 'border-[var(--sp-brand)] text-[var(--sp-brand)]'
-                    : 'border-transparent text-[var(--sp-ink-tertiary)] hover:text-[var(--sp-ink)]'
-                }`}
-              >
-                {t('tabDocs')}
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            {activeTab === 'desc' && (
-              <div className="max-w-3xl text-sm leading-7 text-[var(--sp-ink-secondary)]">
-                <p>{description || copy.noDescription}</p>
-              </div>
-            )}
-
-            {activeTab === 'specs' && visibleAttributes.length > 0 && (
-              <div className="space-y-3">
-                <dl className="grid grid-cols-1 gap-3 text-xs md:grid-cols-2">
-                  {visibleAttributes.map((attribute) => (
-                    <div key={attribute.key} className="flex justify-between gap-4 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3">
-                      <dt className="text-[var(--sp-ink-secondary)]">{attribute.label}</dt>
-                      <dd className="break-words text-right font-semibold text-[var(--sp-ink)]">{attribute.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            )}
-
-            {activeTab === 'delivery' && (
-              <div className="space-y-4 text-xs leading-relaxed text-[var(--sp-ink-secondary)]">
-                <div className="flex items-start gap-3">
-                  <Truck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sp-brand)]" />
-                  <div>
-                    <h4 className="text-sm font-semibold text-[var(--sp-ink)]">{copy.cityDelivery}</h4>
-                    <p>{copy.cityDeliveryText}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Phone className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sp-brand)]" />
-                  <div>
-                    <h4 className="text-sm font-semibold text-[var(--sp-ink)]">{copy.regions}</h4>
-                    <p>{copy.regionsText}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'docs' && (
-              <div className="space-y-3">
-                {product.documents && product.documents.length > 0 ? (
-                  product.documents.map((doc) => (
-                    <a
-                      key={doc.id}
-                      href={doc.url}
-                      className="flex items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 text-xs font-semibold text-[var(--sp-ink)] transition-colors hover:border-[var(--sp-brand)]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-[var(--sp-brand)]" />
-                        <span>{getLocalizedText(doc.titleRu, doc.titleUz, doc.titleEn)}</span>
-                      </div>
-                      <Download className="w-4 h-4 text-[var(--sp-ink-tertiary)]" />
-                    </a>
-                  ))
-                ) : (
-                  <p className="text-xs leading-5 text-[var(--sp-ink-secondary)]">
-                    {copy.docs}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* Related Products */}
           {relatedProducts.length > 0 && (
             <section className="mx-4 space-y-6 md:mx-0">
               <h2 className="text-xl font-bold tracking-tight text-[var(--sp-ink)]">{t('relatedProducts')}</h2>
               <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4 lg:gap-6">
                 {relatedProducts.map((p) => (
-                  <ProductCard key={p.id} product={p} />
+                  <ProductCard key={p.id} product={p} appearance="market" />
                 ))}
               </div>
             </section>

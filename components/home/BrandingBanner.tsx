@@ -26,6 +26,11 @@ export function BrandingBanner() {
       items: ['Bags with a full-color logo', 'Kraft bags and food packaging', 'Restaurant labels, stickers and menus', 'Vehicle and exterior branding'],
       action: 'Learn more about branding',
     },
+    zh: {
+      eyebrow: `${company.name} 品牌印刷与包装`,
+      items: ['彩色标志包装袋', '牛皮纸袋与食品包装', '餐厅标签、贴纸和菜单', '车辆与户外品牌设计'],
+      action: '了解品牌定制服务',
+    },
   }[language];
 
   return (

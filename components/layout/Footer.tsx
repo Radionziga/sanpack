@@ -3,10 +3,11 @@
 import React from 'react';
 import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
-import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Send, Download } from 'lucide-react';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref, localizedContact } from '@/lib/settings/contacts';
+import { getCatalogPrintPath } from '@/lib/documents/catalogIdentity';
 
 export function Footer() {
   const { t, language } = useLanguage();
@@ -14,12 +15,23 @@ export function Footer() {
   const copy = {
     ru: {
       categories: ['Мешки для мусора', 'Пакеты «Майка»', 'Одноразовые перчатки', 'Фольга и стрейч-плёнка', 'Бакалея и рис', 'Полиграфия и брендирование'],
+      pdf: 'Скачать каталог PDF',
+      home: 'На главную',
     },
     uz: {
       categories: ['Chiqindi paketlari', '“Mayka” paketlar', 'Bir martalik qo‘lqoplar', 'Folga va streych plyonka', 'Oziq-ovqat va guruch', 'Poligrafiya va brendlash'],
+      pdf: 'PDF-katalogni yuklab olish',
+      home: 'Bosh sahifaga',
     },
     en: {
       categories: ['Waste bags', 'Carrier bags', 'Disposable gloves', 'Foil and stretch film', 'Groceries and rice', 'Printing and branding'],
+      pdf: 'Download PDF catalog',
+      home: 'Home',
+    },
+    zh: {
+      categories: ['垃圾袋', '背心袋', '一次性手套', '铝箔与保鲜膜', '杂货与大米', '印刷与品牌定制'],
+      pdf: '下载 PDF 目录',
+      home: '返回首页',
     },
   }[language];
   const currentYear = new Date().getFullYear();
@@ -33,7 +45,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Company information */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block max-w-full" aria-label={`${company.name} — на главную`}>
+            <Link href="/" className="inline-block max-w-full" aria-label={`${company.name} — ${copy.home}`}>
               <BrandLogo
                 src={company?.logo}
                 srcDark={company?.logoDark || '/logo-white.svg'}
@@ -45,6 +57,10 @@ export function Footer() {
             <p className="max-w-sm text-xs leading-relaxed text-[color-mix(in_srgb,var(--sp-on-brand)_78%,transparent)]">
               {t('footerDesc')}
             </p>
+            <a href={getCatalogPrintPath(true, language)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-on-brand)_28%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-brand)_10%,transparent)] px-4 text-xs font-semibold text-[var(--sp-on-brand)] transition-colors hover:bg-[var(--sp-on-brand)] hover:text-[var(--sp-brand-deep)]">
+              <Download className="size-4" aria-hidden="true" />
+              {copy.pdf}
+            </a>
             {contacts.telegram ? <div className="flex items-center gap-3 pt-2">
               <a
                 href={contacts.telegram}

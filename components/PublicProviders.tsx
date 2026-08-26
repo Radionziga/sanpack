@@ -7,6 +7,7 @@ import { RequestCartProvider } from '@/context/RequestCartContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { SiteSettingsProvider } from '@/context/SiteSettingsContext';
 import { MobileStorefrontChrome } from '@/components/layout/MobileStorefrontChrome';
+import { FloatingContactMenu } from '@/components/layout/FloatingContactMenu';
 
 export function PublicProviders({
   children,
@@ -30,6 +31,7 @@ export function PublicProviders({
               >
                 {children}
               </MobileStorefrontChrome>
+              <FloatingContactMenu />
             </ToastProvider>
           </RequestCartProvider>
         </FavoritesProvider>

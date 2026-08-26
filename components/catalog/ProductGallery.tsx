@@ -59,7 +59,7 @@ export function ProductGallery({ images, title, mobileEdgeToEdge = false }: Prod
       {/* Main Image Stage */}
       <div className={`group relative aspect-square overflow-hidden bg-[var(--sp-surface)] ${
         mobileEdgeToEdge
-          ? 'border-b border-[var(--sp-line)] md:rounded-[var(--sp-radius-card)] md:border'
+          ? 'border-b border-[var(--sp-line)] md:rounded-[var(--sp-radius-card)] md:border-0'
           : 'rounded-[var(--sp-radius-card)] sm:border sm:border-[var(--sp-line)]'
       }`}>
         <ProductImage

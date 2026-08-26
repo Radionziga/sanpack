@@ -11,7 +11,7 @@ import { formatMoney } from '@/lib/catalog/productPresentation';
 import { ensureTelegramMiniAppSession } from '@/lib/telegram/miniAppSession';
 import type { Language, RequestOrder } from '@/types';
 
-const localeCodes: Record<Language, string> = { ru: 'ru-RU', uz: 'uz-UZ', en: 'en-US' };
+const localeCodes: Record<Language, string> = { ru: 'ru-RU', uz: 'uz-UZ', en: 'en-US', zh: 'zh-CN' };
 
 function formatDate(value: string, language: Language) {
   return new Intl.DateTimeFormat(localeCodes[language], { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
@@ -20,13 +20,13 @@ function formatDate(value: string, language: Language) {
 function localizeUnit(unit: string, language: Language) {
   const normalized = unit.toLowerCase().replace(/[.\s]/g, '');
   const labels: Record<string, Record<Language, string>> = {
-    'шт': { ru: 'шт.', uz: 'dona', en: 'pcs' },
-    'штука': { ru: 'шт.', uz: 'dona', en: 'pcs' },
-    'уп': { ru: 'уп.', uz: 'qadoq', en: 'packs' },
-    'упаковка': { ru: 'уп.', uz: 'qadoq', en: 'packs' },
-    'кг': { ru: 'кг', uz: 'kg', en: 'kg' },
-    'короб': { ru: 'кор.', uz: 'quti', en: 'boxes' },
-    'рулон': { ru: 'рул.', uz: 'rulon', en: 'rolls' },
+    'шт': { ru: 'шт.', uz: 'dona', en: 'pcs', zh: '件' },
+    'штука': { ru: 'шт.', uz: 'dona', en: 'pcs', zh: '件' },
+    'уп': { ru: 'уп.', uz: 'qadoq', en: 'packs', zh: '包' },
+    'упаковка': { ru: 'уп.', uz: 'qadoq', en: 'packs', zh: '包' },
+    'кг': { ru: 'кг', uz: 'kg', en: 'kg', zh: '公斤' },
+    'короб': { ru: 'кор.', uz: 'quti', en: 'boxes', zh: '箱' },
+    'рулон': { ru: 'рул.', uz: 'rulon', en: 'rolls', zh: '卷' },
   };
   return labels[normalized]?.[language] || unit;
 }
@@ -54,6 +54,13 @@ export default function OrdersPage() {
       loadError: 'We could not load your requests.', loginTitle: 'Sign in with Telegram', loginText: 'After signing in, you will see requests linked to this Telegram account.',
       login: 'Sign in with Telegram', empty: 'No requests yet', openCatalog: 'Open catalog', request: 'Request', accepted: 'Your request has been received. A manager will contact you.', total: 'Preliminary total',
       delivery: 'Delivery', address: 'Address',
+    },
+    zh: {
+      catalog: '商品目录', title: '我的申请', intro: '通过您的 Telegram 账号提交的申请会保存在这里。',
+      logout: '退出登录', loading: '正在加载记录…', loginError: 'Telegram 登录失败，请重试。',
+      loadError: '申请记录加载失败。', loginTitle: '使用 Telegram 登录', loginText: '登录后即可查看与此 Telegram 账号关联的申请。',
+      login: '使用 Telegram 登录', empty: '暂无申请', openCatalog: '打开商品目录', request: '申请', accepted: '申请已收到，经理将与您联系。', total: '预估金额',
+      delivery: '配送', address: '地址',
     },
   }[language];
   const [orders, setOrders] = useState<RequestOrder[]>([]);
@@ -114,7 +121,7 @@ export default function OrdersPage() {
           {orders.map((order) => (
             <article key={order.id} className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--sp-line)] pb-4"><div><span className="text-[10px] uppercase tracking-[0.08em] text-[var(--sp-ink-tertiary)]">{copy.request}</span><h2 className="mt-1 font-mono text-base font-bold text-[var(--sp-brand)]">{order.requestNumber}</h2></div><time className="text-xs text-[var(--sp-ink-tertiary)]">{formatDate(order.createdAt, language)}</time></div>
-              <div className="mt-4 space-y-3">{(order.originalItems ?? order.items).map((item) => <div key={item.lineId || `${item.productId}-${item.variantId || 'base'}`} className="flex items-start justify-between gap-4 text-sm"><div className="min-w-0"><p className="font-semibold">{getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn)}</p>{item.variantTitleRu ? <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">{getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn)}</p> : null}</div><span className="shrink-0 text-xs font-semibold">{item.quantity} {localizeUnit(item.unit, language)}</span></div>)}</div>
+              <div className="mt-4 space-y-3">{(order.originalItems ?? order.items).map((item) => <div key={item.lineId || `${item.productId}-${item.variantId || 'base'}`} className="flex items-start justify-between gap-4 text-sm"><div className="min-w-0"><p className="font-semibold">{getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn, item.productTitleZh)}</p>{item.variantTitleRu ? <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">{getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn, item.variantTitleZh)}</p> : null}</div><span className="shrink-0 text-xs font-semibold">{item.quantity} {localizeUnit(item.unit, language)}</span></div>)}</div>
               {order.deliveryAddress || order.deliveryDate || order.deliveryWindow ? <div className="mt-5 grid gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3 text-xs text-[var(--sp-ink-secondary)] sm:grid-cols-2"><p className="flex items-start gap-2"><MapPin className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.address}</strong>{order.deliveryAddress || '—'}</span></p><p className="flex items-start gap-2"><CalendarDays className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.delivery}</strong>{order.deliveryDate ? new Intl.DateTimeFormat(localeCodes[language], { dateStyle: 'medium' }).format(new Date(`${order.deliveryDate}T12:00:00`)) : '—'}{order.deliveryWindow ? ` · ${order.deliveryWindow.replace('-', '–')}` : ''}</span></p></div> : null}
               {typeof order.total === 'number' && order.total > 0 ? <div className="mt-5 flex items-center justify-between border-t border-[var(--sp-line)] pt-4 text-sm"><span className="text-[var(--sp-ink-secondary)]">{copy.total}</span><strong className="text-base tabular-nums text-[var(--sp-brand)]">{formatMoney(order.total, language, order.currency || 'UZS')}</strong></div> : null}
               <p className="mt-4 flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 py-2.5 text-xs text-[var(--sp-ink-secondary)]"><PackageCheck className="size-4 text-[var(--sp-brand)]" />{copy.accepted}</p>

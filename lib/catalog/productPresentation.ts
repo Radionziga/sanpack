@@ -3,13 +3,19 @@ import { fixPrepositions } from '@/lib/utils/formatText';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
 
-const localeByLanguage: Record<Language, string> = {
+type ContentLanguage = Exclude<Language, 'zh'>;
+
+function getContentLanguage(language: Language): ContentLanguage {
+  return language === 'zh' ? 'en' : language;
+}
+
+const localeByLanguage: Record<ContentLanguage, string> = {
   ru: 'ru-RU',
   uz: 'uz-UZ',
   en: 'en-US',
 };
 
-const currencyLabelByLanguage: Record<Language, string> = {
+const currencyLabelByLanguage: Record<ContentLanguage, string> = {
   ru: 'сум',
   uz: 'so‘m',
   en: 'UZS',
@@ -30,10 +36,22 @@ const hiddenAttributeKeys = new Set([
   'mainimage',
 ]);
 
+const chineseAttributeLabels: Record<string, string> = {
+  brand: '品牌', product_type: '商品类型', size: '尺寸', weight: '重量', volume: '容量',
+  units_per_pack: '每包数量', package_quantity: '包装数量', packs_per_sack: '每袋或每箱包数',
+  load: '承重', load_capacity: '承重', grade: '等级', origin: '产地', material: '材质',
+  thickness: '厚度', density: '密度', fat: '脂肪含量', packaging_type: '包装类型',
+  horeca_category: '分类', price_per_kg: '每千克价格', color: '颜色',
+};
+
+const chineseAttributeUnits: Record<string, string> = {
+  units_per_pack: '件', packs_per_sack: '包', load_capacity: '千克', price_per_kg: '千克',
+};
+
 interface AttributePresentationFallback {
-  labels: Record<Language, string>;
-  units?: Partial<Record<Language, string>>;
-  moneyUnit?: Partial<Record<Language, string>>;
+  labels: Record<ContentLanguage, string>;
+  units?: Partial<Record<ContentLanguage, string>>;
+  moneyUnit?: Partial<Record<ContentLanguage, string>>;
   sortOrder: number;
 }
 
@@ -128,7 +146,7 @@ const fallbackAttributePresentation: Record<string, AttributePresentationFallbac
   },
 };
 
-const localizedUnits: Record<string, Record<Language, string>> = {
+const localizedUnits: Record<string, Record<ContentLanguage, string>> = {
   'шт': { ru: 'шт.', uz: 'dona', en: 'pcs' },
   'шт.': { ru: 'шт.', uz: 'dona', en: 'pcs' },
   'уп': { ru: 'уп.', uz: 'qadoq', en: 'packs' },
@@ -270,8 +288,9 @@ function getLocalizedValue(
   ru: string,
   uz?: string,
   en?: string,
+  zh?: string,
 ) {
-  return resolveLocalizedText(language, { ru, uz, en }).text;
+  return resolveLocalizedText(language, { ru, uz, en, zh }).text;
 }
 
 function normalizeKey(key: string) {
@@ -281,7 +300,7 @@ function normalizeKey(key: string) {
 function capitalize(value: string, language: Language) {
   const trimmed = value.trim();
   if (!trimmed) return trimmed;
-  return `${trimmed.charAt(0).toLocaleUpperCase(localeByLanguage[language])}${trimmed.slice(1)}`;
+  return `${trimmed.charAt(0).toLocaleUpperCase(localeByLanguage[getContentLanguage(language)])}${trimmed.slice(1)}`;
 }
 
 function formatDeterministicNumber(
@@ -289,8 +308,8 @@ function formatDeterministicNumber(
   language: Language,
   maximumFractionDigits: number,
 ) {
-  const group = language === 'en' ? ',' : '\u00a0';
-  const decimal = language === 'en' ? '.' : ',';
+  const group = language === 'en' || language === 'zh' ? ',' : '\u00a0';
+  const decimal = language === 'en' || language === 'zh' ? '.' : ',';
 
   // Node and Chromium currently ship different grouping data for uz-UZ.
   // Start from the stable en-US parts and localize separators ourselves so
@@ -325,7 +344,7 @@ export function formatMoney(
     || normalizedCurrency === 'сум'
     || /^so['‘’ʻ]?m$/i.test(normalizedCurrency);
   const currencyLabel = isUzbekSom
-    ? currencyLabelByLanguage[language]
+    ? language === 'zh' ? '苏姆' : currencyLabelByLanguage[getContentLanguage(language)]
     : currency;
   return `${formatted}\u00a0${currencyLabel}`;
 }
@@ -340,6 +359,13 @@ function getUnitForm(value: number, unit: string, language: Language, unitCode?:
   const canonical = canonicalUnit(unit, unitCode);
   const forms = unitForms[canonical];
   if (!forms) return unit.trim();
+  if (language === 'zh') {
+    return {
+      piece: '件', pack: '包', roll: '卷', box: '箱', sack: '袋', tray: '托盘',
+      canister: '桶', bottle: '瓶', set: '套', kilogram: '千克', gram: '克',
+      liter: '升', milliliter: '毫升',
+    }[canonical] || forms.en.other;
+  }
   if (language === 'uz') return forms.uz.other;
   if (language === 'en') return Math.abs(value) === 1 ? forms.en.one : forms.en.other;
 
@@ -375,23 +401,26 @@ function formatAttributeValue(
     (candidate) => candidate.value === String(rawValue),
   );
   const localizedOption = option
-    ? getLocalizedValue(language, option.labelRu, option.labelUz, option.labelEn)
+    ? getLocalizedValue(language, option.labelRu, option.labelUz, option.labelEn, option.labelZh)
     : undefined;
 
   if (typeof rawValue === 'boolean') {
     if (language === 'uz') return rawValue ? 'Ha' : 'Yo‘q';
     if (language === 'en') return rawValue ? 'Yes' : 'No';
+    if (language === 'zh') return rawValue ? '是' : '否';
     return rawValue ? 'Да' : 'Нет';
   }
 
   const fallback = fallbackAttributePresentation[key];
   const definitionUnit = definition?.unit?.trim() || '';
   const localizedDefinitionUnit = localizedUnits[definitionUnit.toLocaleLowerCase('ru-RU')]
-    ?.[language];
-  const unit = localizedDefinitionUnit
-    || fallback?.units?.[language]
-    || definitionUnit;
-  const moneyUnit = fallback?.moneyUnit?.[language];
+    ?.[getContentLanguage(language)];
+  const unit = language === 'zh'
+    ? (definitionUnit ? localizeSeedAttributeValue(definitionUnit, 'zh') : chineseAttributeUnits[key] || '')
+    : localizedDefinitionUnit || fallback?.units?.[getContentLanguage(language)] || definitionUnit;
+  const moneyUnit = language === 'zh'
+    ? (key === 'price_per_kg' ? '千克' : undefined)
+    : fallback?.moneyUnit?.[getContentLanguage(language)];
   const isMoney = Boolean(moneyUnit)
     || definition?.key.startsWith('price_')
     || key.startsWith('price_')
@@ -417,8 +446,8 @@ function formatAttributeValue(
     }
   }
 
-  const withUnit = unit && !value.toLocaleLowerCase(localeByLanguage[language])
-    .includes(unit.toLocaleLowerCase(localeByLanguage[language]))
+  const withUnit = unit && !value.toLocaleLowerCase(localeByLanguage[getContentLanguage(language)])
+    .includes(unit.toLocaleLowerCase(localeByLanguage[getContentLanguage(language)]))
     ? `${value}\u00a0${unit}`
     : value;
 
@@ -470,9 +499,10 @@ export function getPresentedProductAttributes(
       }
 
       const fallback = fallbackAttributePresentation[key];
-      const label = fallback?.labels[language]
+      const label = (language === 'zh' ? chineseAttributeLabels[key] : undefined)
+        || fallback?.labels[getContentLanguage(language)]
         || (definition
-          ? getLocalizedValue(language, definition.titleRu, definition.titleUz, definition.titleEn)
+          ? getLocalizedValue(language, definition.titleRu, definition.titleUz, definition.titleEn, definition.titleZh)
           : capitalize(key.replace(/_/g, ' '), language));
       const values = Array.isArray(rawValue) ? rawValue : [rawValue];
       const value = values
@@ -489,7 +519,7 @@ export function getPresentedProductAttributes(
       };
     })
     .filter((attribute): attribute is PresentedProductAttribute => attribute !== null)
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, localeByLanguage[language]));
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, localeByLanguage[getContentLanguage(language)]));
 }
 
 function escapeRegExp(value: string) {
@@ -508,7 +538,7 @@ function cleanDescription(description: string, title: string, language: Language
     );
   }
 
-  const boilerplatePatterns: Record<Language, RegExp[]> = {
+  const boilerplatePatterns: Record<ContentLanguage, RegExp[]> = {
     ru: [
       /(?:Позиция|Товар)\s+из\s+(?:актуального\s+)?(?:прайс[- ]листа|каталога)(?:\s+SANPACK)?(?:\s+v?1\.4)?[.!?]?/giu,
       /Цена\s+(?:указана|приведена)\s+за\s+[^.!?]+[.!?]?/giu,
@@ -524,7 +554,7 @@ function cleanDescription(description: string, title: string, language: Language
   };
 
   result = result.replace(/SANPACK\s+v?1\.4/giu, '');
-  for (const pattern of boilerplatePatterns[language]) result = result.replace(pattern, '');
+  for (const pattern of boilerplatePatterns[getContentLanguage(language)]) result = result.replace(pattern, '');
   result = result
     .replace(/\s+([,.;:!?])/g, '$1')
     .replace(/([,.;:!?])\1+/g, '$1')
@@ -532,30 +562,32 @@ function cleanDescription(description: string, title: string, language: Language
     .replace(/\s+/g, ' ')
     .trim();
 
-  if (result.toLocaleLowerCase(localeByLanguage[language]) === normalizedTitle.toLocaleLowerCase(localeByLanguage[language])) {
+  if (result.toLocaleLowerCase(localeByLanguage[getContentLanguage(language)]) === normalizedTitle.toLocaleLowerCase(localeByLanguage[getContentLanguage(language)])) {
     return '';
   }
   return fixPrepositions(result);
 }
 
 export function getProductSupportingText(product: Product, language: Language) {
-  const title = getLocalizedValue(language, product.titleRu, product.titleUz, product.titleEn);
+  const title = getLocalizedValue(language, product.titleRu, product.titleUz, product.titleEn, product.titleZh);
   const description = getLocalizedValue(
     language,
     product.shortDescriptionRu,
     product.shortDescriptionUz,
     product.shortDescriptionEn,
+    product.shortDescriptionZh,
   );
   return cleanDescription(description, title, language);
 }
 
 export function getProductDescriptionText(product: Product, language: Language) {
-  const title = getLocalizedValue(language, product.titleRu, product.titleUz, product.titleEn);
+  const title = getLocalizedValue(language, product.titleRu, product.titleUz, product.titleEn, product.titleZh);
   const description = getLocalizedValue(
     language,
     product.descriptionRu,
     product.descriptionUz,
     product.descriptionEn,
+    product.descriptionZh,
   );
   return cleanDescription(description, title, language);
 }
@@ -564,6 +596,13 @@ function getLocalizedSalesUnit(product: Product, language: Language, accusative 
   const canonical = canonicalUnit(product.salesUnit || '', product.unitCode);
   const forms = unitForms[canonical];
   if (!forms) return product.salesUnit?.trim();
+  if (language === 'zh') {
+    return {
+      piece: '件', pack: '包', roll: '卷', box: '箱', sack: '袋', tray: '托盘',
+      canister: '桶', bottle: '瓶', set: '套', kilogram: '千克', gram: '克',
+      liter: '升', milliliter: '毫升',
+    }[canonical] || forms.en.one;
+  }
   if (language === 'uz') return forms.uz.one;
   if (language === 'en') return forms.en.one;
   return accusative ? forms.ru.accusative : forms.ru.one;
@@ -575,17 +614,31 @@ export function getProductSalesUnitLabel(product: Product, language: Language) {
 
 export function getProductPriceLabel(product: Product, language: Language) {
   const unit = getLocalizedSalesUnit(product, language, language === 'ru');
+  if (language === 'zh') return unit ? `每${unit}价格` : '价格';
   if (language === 'en') return unit ? `Price per ${unit}` : 'Price';
   if (language === 'uz') return unit ? capitalize(`${unit} uchun narx`, language) : 'Narx';
   return unit ? `Цена за ${unit}` : 'Цена';
 }
 
 export function getProductCatalogPriceText(product: Product, language: Language) {
+  if (language === 'zh') {
+    if (!product.showPrice) return '价格面议';
+    const variantPrices = (product.variants || [])
+      .map((variant) => variant.price)
+      .filter((price): price is number => typeof price === 'number' && price > 0);
+    if (product.variants?.length) {
+      if (!variantPrices.length) return '价格面议';
+      return `起价 ${formatMoney(Math.min(...variantPrices), language, product.currency)}`;
+    }
+    return product.price && product.price > 0
+      ? formatMoney(product.price, language, product.currency)
+      : '价格面议';
+  }
   const priceOnRequest = {
     ru: 'Цена по запросу',
     uz: 'Narx so‘rov bo‘yicha',
     en: 'Price on request',
-  }[language];
+  }[getContentLanguage(language)];
   if (!product.showPrice) return priceOnRequest;
 
   const variantPrices = (product.variants || [])
@@ -593,7 +646,7 @@ export function getProductCatalogPriceText(product: Product, language: Language)
     .filter((price): price is number => typeof price === 'number' && price > 0);
   if (product.variants?.length) {
     if (!variantPrices.length) return priceOnRequest;
-    const from = { ru: 'от', uz: 'dan', en: 'from' }[language];
+    const from = { ru: 'от', uz: 'dan', en: 'from' }[getContentLanguage(language)];
     return `${from} ${formatMoney(Math.min(...variantPrices), language, product.currency)}`;
   }
 

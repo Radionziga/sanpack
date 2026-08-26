@@ -17,9 +17,9 @@ import {
   initialProducts,
   initialSiteSettings,
 } from '@/lib/seedData';
-import { getAdminDb } from '@/lib/firebase/admin';
 import { filterPublicProducts } from '@/lib/catalog/publicProducts';
 import { withGeneratedProductImage } from '@/lib/catalog/productImages';
+import { getSeedProductTranslation, localizeSeedVariantLabel } from '@/lib/catalog/seedProductLocalization';
 import {
   assertPublicDataReadAllowed,
   loadPublicData,
@@ -30,10 +30,6 @@ function isSeedFallbackEnabled() {
   return process.env.SANPACK_USE_SEED_DATA === 'true';
 }
 
-function getPublicAdminDb() {
-  return getAdminDb();
-}
-
 function assertPublicReadAllowed(resource: string) {
   assertPublicDataReadAllowed({
     resource,
@@ -41,6 +37,135 @@ function assertPublicReadAllowed(resource: string) {
     phase: process.env.NEXT_PHASE,
     serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
   });
+}
+
+function withSeedChineseLocalization(product: Product): Product {
+  if (product.titleZh?.trim()) return product;
+  const code = product.sku?.replace(/^SP-/i, '');
+  const translation = code ? getSeedProductTranslation(code) : undefined;
+  if (!translation?.zh) return product;
+  return {
+    ...product,
+    titleZh: translation.zh,
+    shortDescriptionZh: product.shortDescriptionZh || `${translation.zh}。价格按所示销售单位计算。`,
+    descriptionZh: product.descriptionZh || '此商品来自 SANPACK 当前价格目录。库存和配送条件请向经理确认。',
+    variants: product.variants?.map((variant) => ({
+      ...variant,
+      titleZh: variant.titleZh || localizeSeedVariantLabel(variant.titleEn || variant.titleRu, 'zh'),
+    })),
+  };
+}
+
+function withSeedBannerChineseLocalization(banner: Banner): Banner {
+  const seed = initialBanners.find((candidate) => candidate.id === banner.id);
+  if (!seed) return banner;
+  return {
+    ...banner,
+    titleZh: banner.titleZh?.trim() || seed.titleZh,
+    subtitleZh: banner.subtitleZh?.trim() || seed.subtitleZh,
+    buttonTextZh: banner.buttonTextZh?.trim() || seed.buttonTextZh,
+  };
+}
+
+type FirestoreRestValue = {
+  nullValue?: null;
+  booleanValue?: boolean;
+  integerValue?: string;
+  doubleValue?: number;
+  timestampValue?: string;
+  stringValue?: string;
+  bytesValue?: string;
+  referenceValue?: string;
+  geoPointValue?: { latitude: number; longitude: number };
+  arrayValue?: { values?: FirestoreRestValue[] };
+  mapValue?: { fields?: Record<string, FirestoreRestValue> };
+};
+
+type FirestoreRestDocument = {
+  name: string;
+  fields?: Record<string, FirestoreRestValue>;
+};
+
+function decodeFirestoreRestValue(value: FirestoreRestValue): unknown {
+  if ('nullValue' in value) return null;
+  if ('booleanValue' in value) return value.booleanValue;
+  if ('integerValue' in value) return Number(value.integerValue);
+  if ('doubleValue' in value) return value.doubleValue;
+  if ('timestampValue' in value) return value.timestampValue;
+  if ('stringValue' in value) return value.stringValue;
+  if ('bytesValue' in value) return value.bytesValue;
+  if ('referenceValue' in value) return value.referenceValue;
+  if ('geoPointValue' in value) return value.geoPointValue;
+  if ('arrayValue' in value) {
+    return (value.arrayValue?.values || []).map(decodeFirestoreRestValue);
+  }
+  if ('mapValue' in value) {
+    return decodeFirestoreRestFields(value.mapValue?.fields || {});
+  }
+  return undefined;
+}
+
+function decodeFirestoreRestFields(fields: Record<string, FirestoreRestValue>) {
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, value]) => [key, decodeFirestoreRestValue(value)])
+  );
+}
+
+function getPublicFirestoreRestUrl(pathname: string) {
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!projectId || !apiKey) {
+    throw new Error('Firebase public project configuration is incomplete.');
+  }
+
+  const root = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents`;
+  return `${root}/${pathname}${pathname.includes('?') ? '&' : '?'}key=${encodeURIComponent(apiKey)}`;
+}
+
+async function fetchPublicFirestoreJson<T>(pathname: string): Promise<T> {
+  const response = await fetch(getPublicFirestoreRestUrl(pathname), {
+    next: { revalidate: 300 },
+  });
+  if (!response.ok) {
+    throw new Error(`Firestore public read failed with status ${response.status}.`);
+  }
+  return response.json() as Promise<T>;
+}
+
+async function readPublicCollection<T>(name: string): Promise<T[]> {
+  const result: T[] = [];
+  let pageToken = '';
+
+  do {
+    const params = new URLSearchParams({ pageSize: '300' });
+    if (pageToken) params.set('pageToken', pageToken);
+    const payload = await fetchPublicFirestoreJson<{
+      documents?: FirestoreRestDocument[];
+      nextPageToken?: string;
+    }>(`${encodeURIComponent(name)}?${params.toString()}`);
+
+    for (const document of payload.documents || []) {
+      result.push({
+        id: document.name.split('/').at(-1) || '',
+        ...decodeFirestoreRestFields(document.fields || {}),
+      } as T);
+    }
+    pageToken = payload.nextPageToken || '';
+  } while (pageToken);
+
+  return result;
+}
+
+async function readPublicDocument<T>(path: string): Promise<T | null> {
+  const response = await fetch(getPublicFirestoreRestUrl(path), {
+    next: { revalidate: 300 },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Firestore public read failed with status ${response.status}.`);
+  }
+  const document = await response.json() as FirestoreRestDocument;
+  return decodeFirestoreRestFields(document.fields || {}) as T;
 }
 
 function serializeFirestoreData<T>(value: unknown): T {
@@ -85,23 +210,15 @@ async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
     resource: name,
     seedEnabled: isSeedFallbackEnabled(),
     seed: fallback,
-    load: async () => {
-      const snapshot = await getPublicAdminDb().collection(name).get();
-      return snapshot.docs.map((document) =>
-        serializeFirestoreData<T>({
-          id: document.id,
-          ...document.data(),
-        })
-      );
-    },
+    load: () => readPublicCollection<T>(name),
   });
 }
 
 const getCachedPublicProducts = unstable_cache(
   async () => filterPublicProducts(
     await readCollection<Product>('products', initialProducts)
-  ).map(withGeneratedProductImage),
-  ['public-products-v10-generated-fallbacks-2026-08-23'],
+  ).map(withSeedChineseLocalization).map(withGeneratedProductImage),
+  ['public-products-v11-zh-localization-2026-08-25'],
   { revalidate: 300, tags: ['products'] }
 );
 
@@ -144,8 +261,9 @@ export async function getPublicClients() {
 }
 
 const getCachedPublicBanners = unstable_cache(
-  () => readCollection<Banner>('banners', initialBanners),
-  ['public-banners-v6-fail-honest-2026-08-22'],
+  async () => (await readCollection<Banner>('banners', initialBanners))
+    .map(withSeedBannerChineseLocalization),
+  ['public-banners-v7-zh-localization-2026-08-26'],
   { revalidate: 900, tags: ['banners'] }
 );
 
@@ -160,11 +278,11 @@ const getCachedPublicSettings = unstable_cache(
     seedEnabled: isSeedFallbackEnabled(),
     seed: initialSiteSettings,
     load: async () => {
-      const snapshot = await getPublicAdminDb().collection('settings').doc('global').get();
-      if (snapshot.exists) {
+      const settings = await readPublicDocument<Partial<SiteSettings>>('settings/global');
+      if (settings) {
         return mergeSiteSettings(
           initialSiteSettings,
-          serializeFirestoreData<Partial<SiteSettings>>(snapshot.data() as Partial<SiteSettings>)
+          serializeFirestoreData<Partial<SiteSettings>>(settings)
         );
       }
       throw new Error('The global settings document does not exist.');

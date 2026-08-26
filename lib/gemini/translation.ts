@@ -3,7 +3,7 @@ import 'server-only';
 import { z } from 'zod';
 import { generateGeminiJson } from '@/lib/gemini/api';
 
-export const languageSchema = z.enum(['ru', 'uz', 'en']);
+export const languageSchema = z.enum(['ru', 'uz', 'en', 'zh']);
 
 export const translationRequestSchema = z.object({
   sourceLanguage: languageSchema,
@@ -28,6 +28,7 @@ const translatedFieldSchema = z.object({
   ru: z.string(),
   uz: z.string(),
   en: z.string(),
+  zh: z.string(),
 }).strict();
 
 const translationOutputSchema = z.object({
@@ -48,8 +49,9 @@ const translationJsonSchema = {
           ru: { type: 'string' },
           uz: { type: 'string' },
           en: { type: 'string' },
+          zh: { type: 'string' },
         },
-        required: ['key', 'ru', 'uz', 'en'],
+        required: ['key', 'ru', 'uz', 'en', 'zh'],
       },
     },
   },
@@ -67,11 +69,11 @@ export async function translateCommerceFields({
   sourceLanguage: z.infer<typeof languageSchema>;
   fields: z.infer<typeof translationRequestSchema>['fields'];
 }) {
-  const languageName = { ru: 'Russian', uz: 'Uzbek (Latin script)', en: 'English' }[sourceLanguage];
+  const languageName = { ru: 'Russian', uz: 'Uzbek (Latin script)', en: 'English', zh: 'Simplified Chinese' }[sourceLanguage];
   const payload = JSON.stringify(fields.map(({ key, label, value }) => ({ key, label, value })));
   const prompt = [
     'You translate user-facing ecommerce content for a professional online store.',
-    `The source language is ${languageName}. Translate every field into Russian, Uzbek in Latin script, and English.`,
+    `The source language is ${languageName}. Translate every field into Russian, Uzbek in Latin script, English, and natural Simplified Chinese.`,
     'Preserve brand names, product codes, model names, numbers, units, punctuation, URLs and factual meaning.',
     'Do not invent specifications, benefits, claims, prices or details absent from the source.',
     'Keep concise UI labels concise. Keep each output in the same plain-text format as the input.',

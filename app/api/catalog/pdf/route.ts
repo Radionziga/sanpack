@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const pricesParam = url.searchParams.get('prices') ?? url.searchParams.get('withPrices');
   const withPrices = pricesParam === null || pricesParam === '1' || pricesParam === 'true';
   const langParam = url.searchParams.get('lang') || 'ru';
-  const language: Language = ['ru', 'uz', 'en'].includes(langParam)
+  const language: Language = ['ru', 'uz', 'en', 'zh'].includes(langParam)
     ? (langParam as Language)
     : 'ru';
   const category = url.searchParams.get('category') || url.searchParams.get('categoryId') || undefined;

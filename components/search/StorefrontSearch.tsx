@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, Search, X } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
+import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { CatalogListing } from '@/components/catalog/CatalogListing';
@@ -43,12 +44,24 @@ const copyByLanguage = {
     recommended: 'A good place to start',
     allCatalog: 'Full catalog',
   },
+  zh: {
+    back: '返回',
+    title: '搜索商品目录',
+    placeholder: '商品名称、分类或货号',
+    submit: '搜索',
+    clear: '清除搜索',
+    popular: '热门搜索',
+    categories: '商品分类',
+    recommended: '为您推荐',
+    allCatalog: '全部商品',
+  },
 } as const;
 
 const popularByLanguage = {
   ru: ['Мешки для мусора', 'Контейнеры', 'Салфетки', 'Перчатки', 'Сыры', 'Зелень'],
   uz: ['Chiqindi qoplari', 'Konteynerlar', 'Salfetkalar', 'Qo‘lqoplar', 'Pishloqlar', 'Ko‘katlar'],
   en: ['Trash bags', 'Containers', 'Napkins', 'Gloves', 'Cheese', 'Greens'],
+  zh: ['垃圾袋', '餐盒', '餐巾纸', '手套', '奶酪', '新鲜蔬菜'],
 } as const;
 
 export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
@@ -154,7 +167,7 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
               <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-8">
                 {featuredCategories.map((category) => (
                   <Link key={category.id} href={`/catalog/${category.slug}`} className="flex min-h-20 items-end rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] p-3 text-sm font-semibold leading-snug text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-brand-soft)]">
-                    {getLocalizedText(category.titleRu, category.titleUz, category.titleEn)}
+                    {getCategoryTitle(category, language, getLocalizedText(category.titleRu, category.titleUz, category.titleEn, category.titleZh))}
                   </Link>
                 ))}
               </div>

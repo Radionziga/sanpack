@@ -19,7 +19,9 @@ import Link from 'next/link';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
 import { formatMoney } from '@/lib/catalog/productPresentation';
+import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
+import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import {
   getCatalogCompanyName,
   getCatalogDocumentTheme,
@@ -43,6 +45,7 @@ interface CatalogPrintDocumentProps {
     categoryId?: string;
   };
   embeddedInAdmin?: boolean;
+  generatedAt: string;
 }
 
 interface CategoryPageChunk {
@@ -60,15 +63,18 @@ function getLocalizedProductTitle(product: Product, language: Language): string 
     ru: product.titleRu,
     uz: product.titleUz,
     en: product.titleEn,
+    zh: product.titleZh,
   }).text;
 }
 
 function getLocalizedCategoryTitle(category: Category, language: Language): string {
-  return resolveLocalizedText(language, {
+  const localized = resolveLocalizedText(language, {
     ru: category.titleRu,
     uz: category.titleUz,
     en: category.titleEn,
+    zh: category.titleZh,
   }).text;
+  return getCategoryTitle(category, language, localized);
 }
 
 function getLocalizedSalesUnitLabel(unit: string | undefined, language: Language): string {
@@ -90,6 +96,15 @@ function getLocalizedSalesUnitLabel(unit: string | undefined, language: Language
     if (clean.includes('кг')) return 'kg';
     return 'pcs';
   }
+  if (language === 'zh') {
+    if (clean.includes('рулон') || clean === 'rulon') return '卷';
+    if (clean.includes('упаковк') || clean === 'qadoq') return '包';
+    if (clean.includes('блок')) return '组';
+    if (clean.includes('коробк') || clean === 'quti') return '箱';
+    if (clean.includes('мешок') || clean === 'qop') return '袋';
+    if (clean.includes('кг') || clean === 'kg') return '公斤';
+    return '件';
+  }
   return clean;
 }
 
@@ -100,6 +115,7 @@ export function CatalogPrintDocument({
   clients = [],
   initialOptions = {},
   embeddedInAdmin = false,
+  generatedAt,
 }: CatalogPrintDocumentProps) {
   // State
   const [withPrices, setWithPrices] = useState<boolean>(initialOptions.withPrices !== false);
@@ -107,6 +123,14 @@ export function CatalogPrintDocument({
   const [selectedCategory, setSelectedCategory] = useState<string>(initialOptions.categoryId || '');
   const [scale, setScale] = useState<number>(embeddedInAdmin ? 0.78 : 0.85);
   const [copied, setCopied] = useState<boolean>(false);
+  const documentDate = useMemo(() => {
+    const locale = language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-GB' : language === 'zh' ? 'zh-CN' : 'ru-RU';
+    return new Intl.DateTimeFormat(locale, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(generatedAt));
+  }, [generatedAt, language]);
   const copy = getCatalogPdfMessages(language).studio;
   const companyName = settings ? getCatalogCompanyName(settings) : 'Storefront';
   const website = getCatalogSiteLabel(process.env.NEXT_PUBLIC_SITE_URL);
@@ -277,6 +301,8 @@ export function CatalogPrintDocument({
       ? settings?.contacts?.addressUz
       : language === 'en'
         ? settings?.contacts?.addressEn
+        : language === 'zh'
+          ? settings?.contacts?.addressZh || settings?.contacts?.addressEn
         : settings?.contacts?.addressRu
     )?.trim() || '';
   const workingHours =
@@ -284,6 +310,8 @@ export function CatalogPrintDocument({
       ? settings?.contacts?.workingHoursUz
       : language === 'en'
         ? settings?.contacts?.workingHoursEn
+        : language === 'zh'
+          ? settings?.contacts?.workingHoursZh || settings?.contacts?.workingHoursEn
         : settings?.contacts?.workingHoursRu
     )?.trim() || '';
 
@@ -306,7 +334,7 @@ export function CatalogPrintDocument({
           INTEGRATED CONTROL TOOLBAR
           ========================================================================= */}
       <aside aria-label={copy.controlPanel} className="no-print sticky top-2 z-40 mb-4 w-full max-w-6xl px-2 sm:px-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sp-radius)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 shadow-sm sm:p-4">
+        <div className="grid grid-cols-1 items-center gap-3 rounded-[var(--sp-radius)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 shadow-sm sm:p-4">
           {/* Left Group: Status / Filter info */}
           <div className="flex items-center gap-3">
             {!embeddedInAdmin && (
@@ -319,19 +347,28 @@ export function CatalogPrintDocument({
                 <ArrowLeft className="size-4" />
               </Link>
             )}
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--sp-brand)]">
-                <FileText className="size-4 text-[var(--sp-brand)]" />
-                <span>{companyName} — {copy.a4Catalog}</span>
-              </div>
-              <div className="text-[11px] font-medium text-[var(--sp-ink-secondary)]">
-                {totalDocumentPages} {copy.pages} • {filteredProducts.length} {copy.products}
+            <div className="flex min-w-0 items-center gap-3">
+              <BrandLogo
+                src={settings?.company.logo}
+                srcDark={settings?.company.logoDark || '/logo-white.svg'}
+                label={companyName}
+                className="h-8 max-w-32"
+              />
+              <div className="min-w-0 border-l border-[var(--sp-line)] pl-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--sp-brand)]">
+                  <FileText className="size-4 shrink-0" />
+                  <span className="truncate">{copy.a4Catalog}</span>
+                </div>
+                <div className="text-[11px] font-medium text-[var(--sp-ink-secondary)]">
+                  {totalDocumentPages} {copy.pages} • {filteredProducts.length} {copy.products}
+                </div>
+                {documentDate ? <div className="text-[10px] text-[var(--sp-ink-muted)]">{formatCatalogPdfMessage(copy.validOn, { date: documentDate })}</div> : null}
               </div>
             </div>
           </div>
 
           {/* Center Controls: Prices, Language, Category in Brand Theme */}
-          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          <div className="flex min-w-0 flex-wrap items-center justify-start gap-2.5 border-t border-[var(--sp-line-soft)] pt-3 text-xs">
             {/* Price Segmented Toggle */}
             <div className="flex rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-1">
               <button
@@ -360,7 +397,7 @@ export function CatalogPrintDocument({
 
             {/* Language Segmented Toggle */}
             <div className="flex rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-1">
-              {(['ru', 'uz', 'en'] as const).map((l) => (
+              {(['ru', 'uz', 'en', 'zh'] as const).map((l) => (
                 <button
                   type="button"
                   key={l}
@@ -380,7 +417,7 @@ export function CatalogPrintDocument({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="max-w-[260px] cursor-pointer truncate rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-1.5 text-xs font-medium text-[var(--sp-ink)] shadow-sm outline-none focus:border-[var(--sp-brand)]"
+              className="w-56 max-w-full cursor-pointer truncate rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-1.5 text-xs font-medium text-[var(--sp-ink)] shadow-sm outline-none focus:border-[var(--sp-brand)]"
             >
               <option value="">{copy.allSections} ({initialProducts.length} {copy.productsShort})</option>
               {parentCategories.map((parent) => {
@@ -415,7 +452,7 @@ export function CatalogPrintDocument({
           </div>
 
           {/* Right Actions: Zoom, Copy Link, Fullscreen, Print */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--sp-line-soft)] pt-3">
             {/* Zoom Controls */}
             <div className="hidden items-center gap-1 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2 py-1 text-xs text-[var(--sp-ink-secondary)] sm:flex">
               <button
@@ -589,13 +626,13 @@ export function CatalogPrintDocument({
           {/* Center Main Cover Content */}
           <div className="my-auto text-center flex flex-col items-center py-8">
             {/* Logo */}
-            <div className="mb-10">
+            <div className="mb-10 flex min-h-24 items-center justify-center px-5 py-3">
               <BrandLogo
                 src={settings?.company.logo}
-                srcDark={settings?.company.logoDark}
+                srcDark={settings?.company.logoDark || '/logo-white.svg'}
                 label={companyName}
                 variant="white"
-                className="h-20 sm:h-24"
+                className="h-16 sm:h-20"
               />
             </div>
 
@@ -615,13 +652,14 @@ export function CatalogPrintDocument({
             </h2>
 
             {/* Clean Date / Year */}
-            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--catalog-on-brand-deep)] opacity-70">
-              {new Intl.DateTimeFormat(
-                language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-US' : 'ru-RU', {
-                month: 'long',
-                year: 'numeric',
-              }).format(new Date())}
-            </div>
+            {documentDate ? (
+              <div className="space-y-2 text-center">
+                <div className="text-xs font-semibold uppercase tracking-widest text-[var(--catalog-on-brand-deep)] opacity-80">
+                  {formatCatalogPdfMessage(copy.validOn, { date: documentDate })}
+                </div>
+                {withPrices ? <p className="max-w-md text-[10px] leading-relaxed text-[var(--catalog-on-brand-deep)] opacity-65">{copy.priceDisclaimer}</p> : null}
+              </div>
+            ) : null}
           </div>
 
           {/* Cover Footer (Clean White / Brand Lime Contacts) */}
@@ -629,7 +667,7 @@ export function CatalogPrintDocument({
             {/* Phones */}
             <div className="flex items-start gap-2.5">
               <Phone className="mt-0.5 size-4 shrink-0 text-[var(--catalog-accent)]" />
-              <div className="font-mono text-[11px] font-semibold leading-relaxed whitespace-nowrap">
+              <div className="text-[11px] font-semibold leading-relaxed whitespace-nowrap">
                 <div className="whitespace-nowrap">{phone1}</div>
                 <div className="whitespace-nowrap">{phone2}</div>
               </div>
@@ -639,7 +677,7 @@ export function CatalogPrintDocument({
             <div className="flex items-start gap-2.5 justify-center">
               <Mail className="mt-0.5 size-4 shrink-0 text-[var(--catalog-accent)]" />
               <div className="text-[11px] leading-relaxed">
-                <div className="font-mono font-semibold text-[var(--catalog-on-brand-deep)]">{website}</div>
+                <div className="font-semibold text-[var(--catalog-on-brand-deep)]">{website}</div>
                 <div className="text-[var(--catalog-on-brand-deep)] opacity-80">{email}</div>
               </div>
             </div>
@@ -701,7 +739,7 @@ export function CatalogPrintDocument({
                 <div className="flex items-center gap-3.5 shrink-0">
                   <BrandLogo
                     src={settings?.company.logo}
-                    srcDark={settings?.company.logoDark}
+                    srcDark={settings?.company.logoDark || '/logo-white.svg'}
                     label={companyName}
                     variant="white"
                     className="h-7 sm:h-8"
@@ -711,7 +749,7 @@ export function CatalogPrintDocument({
                     {copy.catalogTitle}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-right font-mono text-[11px] text-[var(--catalog-on-brand)]">
+                <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-right text-[11px] text-[var(--catalog-on-brand)]">
                   <span className="font-semibold uppercase tracking-wider text-[var(--catalog-accent)]">{website}</span>
                 </div>
               </header>
@@ -738,16 +776,13 @@ export function CatalogPrintDocument({
                     // Specs list with localized terms (clean physical specs only, no redundant sales unit)
                     const specs: string[] = [];
                     if (product.attributes?.size) {
-                      const sizeVal = String(product.attributes.size).replace(/см/gi, 'sm');
-                      specs.push(sizeVal);
+                      specs.push(localizeSeedAttributeValue(String(product.attributes.size), language));
                     }
                     if (product.attributes?.volume) {
-                      const volVal = String(product.attributes.volume).replace(/л\b/gi, 'l');
-                      specs.push(volVal);
+                      specs.push(localizeSeedAttributeValue(String(product.attributes.volume), language));
                     }
                     if (product.attributes?.weight) {
-                      const weightVal = String(product.attributes.weight).replace(/кг/gi, 'kg');
-                      specs.push(weightVal);
+                      specs.push(localizeSeedAttributeValue(String(product.attributes.weight), language));
                     }
                     if (product.attributes?.package_quantity) {
                       specs.push(
@@ -757,7 +792,7 @@ export function CatalogPrintDocument({
                       );
                     }
                     if (product.attributes?.material) {
-                      specs.push(String(product.attributes.material));
+                      specs.push(localizeSeedAttributeValue(String(product.attributes.material), language));
                     }
 
                     // Pricing
@@ -842,22 +877,17 @@ export function CatalogPrintDocument({
               </main>
 
               {/* PAGE FOOTER (НИЖНИЙ КОЛОНТИТУЛ С НОМЕРАМИ ТЕЛЕФОНОВ) */}
-              <footer className="mt-auto pt-3 border-t border-[#DCE2DE] flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold text-[#929C96] uppercase tracking-wider">
-                    {companyName} • {copy.supplyFooter}
-                  </span>
-                </div>
-
-                {/* Center Phone Numbers */}
-                <div className="flex items-center gap-2 font-mono text-[11px] text-[#151B18] font-medium whitespace-nowrap">
+              <footer className="mt-auto grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 border-t border-[#DCE2DE] pt-3">
+                <div className="flex items-center gap-2 whitespace-nowrap text-[11px] font-medium text-[#151B18]">
                   <Phone className="size-3.5 shrink-0 text-[var(--catalog-brand)]" />
                   <span className="font-semibold">{phone1}</span>
                   <span className="text-[#AEB9B2]">|</span>
                   <span className="font-semibold">{phone2}</span>
                 </div>
 
-                <div className="text-xs font-bold text-[#929C96] font-mono">
+                {withPrices ? <p className="min-w-0 text-center text-[8px] leading-tight text-[#929C96]">{copy.priceDisclaimer}</p> : <span />}
+
+                <div className="text-xs font-bold text-[#929C96]">
                   {String(currentDocPageNumber).padStart(2, '0')} / {String(totalDocumentPages).padStart(2, '0')}
                 </div>
               </footer>

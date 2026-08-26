@@ -38,6 +38,7 @@
     "fullCatalog": "Открыть полный каталог",
     "allProducts": "Все товары",
     "itemsCount": "{count, plural, one {# позиция} few {# позиции} many {# позиций} other {# позиции}}",
+    "categoryItemsCount": "{count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}}",
     "assortment": "Ассортимент SANPACK",
     "shownCount": "Показано: {count}",
     "sortLabel": "Сортировка",
@@ -90,7 +91,9 @@
       "presentationTitle": "Презентационный каталог",
       "packageQuantity": "{count} шт. в упаковке",
       "supplyFooter": "Поставки HoReCa",
-      "photoComingSoon": "Фото скоро появится"
+      "photoComingSoon": "Фото скоро появится",
+      "validOn": "Цены актуальны на {date}",
+      "priceDisclaimer": "Цены могут изменяться. Уточняйте актуальную стоимость у менеджера перед оформлением заявки."
     }
   },
   "productGallery": {

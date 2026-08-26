@@ -17,6 +17,7 @@ interface VariantFormRow {
   titleRu: string;
   titleUz: string;
   titleEn: string;
+  titleZh: string;
   price?: number;
   stockStatus: StockStatus;
   minQuantity?: number;
@@ -56,6 +57,7 @@ function toFormVariant(variant: ProductVariant): VariantFormRow {
     titleRu: variant.titleRu,
     titleUz: variant.titleUz,
     titleEn: variant.titleEn || '',
+    titleZh: variant.titleZh || '',
     price: variant.price,
     stockStatus: variant.stockStatus,
     minQuantity: variant.minQuantity ?? variant.minOrder,
@@ -78,6 +80,7 @@ function toProductVariant(variant: VariantFormRow, original?: ProductVariant): P
     titleRu: variant.titleRu.trim(),
     titleUz: variant.titleUz.trim() || variant.titleRu.trim(),
     titleEn: variant.titleEn.trim() || undefined,
+    titleZh: variant.titleZh.trim() || undefined,
     price: Number.isFinite(variant.price) ? variant.price : undefined,
     stockStatus: variant.stockStatus,
     attributes,
@@ -203,6 +206,7 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
             titleRu: '',
             titleUz: '',
             titleEn: '',
+            titleZh: '',
             price: undefined,
             stockStatus: 'in_stock',
             minQuantity: 1,
@@ -234,7 +238,7 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
               </div>
 
               <input type="hidden" {...register(`variants.${index}.id`)} />
-              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <label className="font-bold text-[var(--sp-ink)]">
                   Название варианта (RU) *
                   <input
@@ -263,6 +267,15 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
                     maxLength={160}
                     className="admin-control mt-1.5 font-normal"
                     {...register(`variants.${index}.titleEn`)}
+                  />
+                </label>
+                <label className="font-bold text-[var(--sp-ink)]">
+                  Название варианта (ZH)
+                  <input
+                    type="text"
+                    maxLength={160}
+                    className="admin-control mt-1.5 font-normal"
+                    {...register(`variants.${index}.titleZh`)}
                   />
                 </label>
                 <label className="font-bold text-[var(--sp-ink)]">

@@ -38,6 +38,7 @@
     "fullCatalog": "To‘liq katalogni ochish",
     "allProducts": "Barcha mahsulotlar",
     "itemsCount": "{count} ta mahsulot",
+    "categoryItemsCount": "{count} ta mahsulot",
     "assortment": "SANPACK assortimenti",
     "shownCount": "Ko‘rsatildi: {count}",
     "sortLabel": "Saralash",
@@ -90,7 +91,9 @@
       "presentationTitle": "Taqdimot katalogi",
       "packageQuantity": "Qadoqda {count} dona",
       "supplyFooter": "HoReCa ta’minoti",
-      "photoComingSoon": "Rasm tez orada joylanadi"
+      "photoComingSoon": "Rasm tez orada joylanadi",
+      "validOn": "Narxlar {date} holatiga amal qiladi",
+      "priceDisclaimer": "Narxlar o‘zgarishi mumkin. Ariza yuborishdan oldin amaldagi narxni menejerdan aniqlang."
     }
   },
   "productGallery": {

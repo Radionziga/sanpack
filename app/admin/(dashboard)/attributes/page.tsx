@@ -52,6 +52,7 @@ export default function AdminAttributesPage() {
   const [titleRu, setTitleRu] = useState('');
   const [titleUz, setTitleUz] = useState('');
   const [titleEn, setTitleEn] = useState('');
+  const [titleZh, setTitleZh] = useState('');
   const [type, setType] = useState<AttributeType>('select');
   const [unit, setUnit] = useState('');
   const [required, setRequired] = useState(false);
@@ -66,6 +67,7 @@ export default function AdminAttributesPage() {
   const [newOptRu, setNewOptRu] = useState('');
   const [newOptUz, setNewOptUz] = useState('');
   const [newOptEn, setNewOptEn] = useState('');
+  const [newOptZh, setNewOptZh] = useState('');
 
   const [notification, setNotification] = useState<string | null>(null);
   const [saveError, setSaveError] = useState('');
@@ -117,6 +119,7 @@ export default function AdminAttributesPage() {
     setTitleRu('');
     setTitleUz('');
     setTitleEn('');
+    setTitleZh('');
     setType('select');
     setUnit('');
     setRequired(false);
@@ -135,6 +138,7 @@ export default function AdminAttributesPage() {
     setTitleRu(attr.titleRu);
     setTitleUz(attr.titleUz);
     setTitleEn(attr.titleEn || '');
+    setTitleZh(attr.titleZh || '');
     setType(attr.type);
     setUnit(attr.unit || '');
     setRequired(attr.required ?? false);
@@ -153,12 +157,14 @@ export default function AdminAttributesPage() {
       labelRu: newOptRu.trim(),
       labelUz: newOptUz.trim() || newOptRu.trim(),
       labelEn: newOptEn.trim() || undefined,
+      labelZh: newOptZh.trim() || undefined,
     };
     setOptions([...options, newOpt]);
     setNewOptValue('');
     setNewOptRu('');
     setNewOptUz('');
     setNewOptEn('');
+    setNewOptZh('');
   };
 
   const handleRemoveOption = (index: number) => {
@@ -190,6 +196,7 @@ export default function AdminAttributesPage() {
       titleRu: titleRu.trim(),
       titleUz: titleUz.trim() || titleRu.trim(),
       titleEn: titleEn.trim() || undefined,
+      titleZh: titleZh.trim() || undefined,
       type,
       unit: unit.trim() || undefined,
       required,
@@ -406,7 +413,7 @@ export default function AdminAttributesPage() {
               {saveError ? (
                 <p role="alert" className="sp-alert sp-alert-danger text-sm">{saveError}</p>
               ) : null}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <CustomInput
                   label="Название RU"
                   value={titleRu}
@@ -426,12 +433,18 @@ export default function AdminAttributesPage() {
                   onChange={(e) => setTitleEn(e.target.value)}
                   placeholder="for example: Thickness"
                 />
+                <CustomInput
+                  label="Название ZH"
+                  value={titleZh}
+                  onChange={(e) => setTitleZh(e.target.value)}
+                  placeholder="例如：厚度"
+                />
               </div>
 
               <AiTranslateButton fields={[{
                 key: 'title', label: 'Название характеристики',
-                values: { ru: titleRu, uz: titleUz, en: titleEn },
-                onChange: (language, value) => language === 'ru' ? setTitleRu(value) : language === 'uz' ? setTitleUz(value) : setTitleEn(value),
+                values: { ru: titleRu, uz: titleUz, en: titleEn, zh: titleZh },
+                onChange: (language, value) => language === 'ru' ? setTitleRu(value) : language === 'uz' ? setTitleUz(value) : language === 'en' ? setTitleEn(value) : setTitleZh(value),
               }]} compact />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -472,7 +485,7 @@ export default function AdminAttributesPage() {
                     <span>Предопределённые варианты для фильтра</span>
                   </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2">
                     <input
                       type="text"
                       placeholder="Значение (250 гр)"
@@ -501,12 +514,19 @@ export default function AdminAttributesPage() {
                       onChange={(e) => setNewOptEn(e.target.value)}
                       className="admin-control text-xs"
                     />
+                    <input
+                      type="text"
+                      placeholder="Подпись ZH（250克）"
+                      value={newOptZh}
+                      onChange={(e) => setNewOptZh(e.target.value)}
+                      className="admin-control text-xs"
+                    />
                   </div>
 
                   <AiTranslateButton fields={[{
                     key: 'option', label: 'Подпись варианта',
-                    values: { ru: newOptRu, uz: newOptUz, en: newOptEn },
-                    onChange: (language, value) => language === 'ru' ? setNewOptRu(value) : language === 'uz' ? setNewOptUz(value) : setNewOptEn(value),
+                    values: { ru: newOptRu, uz: newOptUz, en: newOptEn, zh: newOptZh },
+                    onChange: (language, value) => language === 'ru' ? setNewOptRu(value) : language === 'uz' ? setNewOptUz(value) : language === 'en' ? setNewOptEn(value) : setNewOptZh(value),
                   }]} compact />
 
                   <Button

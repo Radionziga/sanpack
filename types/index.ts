@@ -1,4 +1,4 @@
-export type Language = 'ru' | 'uz' | 'en';
+export type Language = 'ru' | 'uz' | 'en' | 'zh';
 
 export type SalesMode = 'request_only' | 'ecommerce';
 
@@ -48,6 +48,7 @@ export interface WholesaleTier {
   nameRu?: string;
   nameUz?: string;
   nameEn?: string;
+  nameZh?: string;
 }
 
 export interface ProductVariant {
@@ -56,6 +57,7 @@ export interface ProductVariant {
   titleRu: string;
   titleUz: string;
   titleEn?: string;
+  titleZh?: string;
   price?: number;
   oldPrice?: number;
   wholesaleTiers?: WholesaleTier[];
@@ -76,6 +78,7 @@ export interface ProductDocument {
   titleRu: string;
   titleUz: string;
   titleEn?: string;
+  titleZh?: string;
   url: string;
   type: string; // e.g. 'pdf', 'cert', 'spec'
   size?: string;
@@ -86,6 +89,7 @@ export interface ProductOrderPackaging {
   nameRu: string;
   nameUz?: string;
   nameEn?: string;
+  nameZh?: string;
   unitsPerPackage: number;
   minimumPackages: number;
   packageStep: number;
@@ -103,12 +107,15 @@ export interface Product {
   titleRu: string;
   titleUz: string;
   titleEn?: string;
+  titleZh?: string;
   shortDescriptionRu: string;
   shortDescriptionUz: string;
   shortDescriptionEn?: string;
+  shortDescriptionZh?: string;
   descriptionRu: string;
   descriptionUz: string;
   descriptionEn?: string;
+  descriptionZh?: string;
   images: string[];
   /** Firebase Storage paths aligned with managed product images when available. */
   imagePaths?: string[];
@@ -142,9 +149,11 @@ export interface Product {
     titleRu?: string;
     titleUz?: string;
     titleEn?: string;
+    titleZh?: string;
     descriptionRu?: string;
     descriptionUz?: string;
     descriptionEn?: string;
+    descriptionZh?: string;
   };
   sortOrder: number;
   createdAt: string;
@@ -160,9 +169,11 @@ export interface Category {
   titleRu: string;
   titleUz: string;
   titleEn?: string;
+  titleZh?: string;
   descriptionRu?: string;
   descriptionUz?: string;
   descriptionEn?: string;
+  descriptionZh?: string;
   image?: string;
   imagePath?: string;
   icon?: string;
@@ -174,9 +185,11 @@ export interface Category {
     titleRu?: string;
     titleUz?: string;
     titleEn?: string;
+    titleZh?: string;
     descriptionRu?: string;
     descriptionUz?: string;
     descriptionEn?: string;
+    descriptionZh?: string;
   };
 }
 
@@ -187,6 +200,7 @@ export interface AttributeOption {
   labelRu: string;
   labelUz: string;
   labelEn?: string;
+  labelZh?: string;
 }
 
 export interface Attribute {
@@ -195,6 +209,7 @@ export interface Attribute {
   titleRu: string;
   titleUz: string;
   titleEn?: string;
+  titleZh?: string;
   type: AttributeType;
   unit?: string;
   options?: AttributeOption[];
@@ -212,11 +227,13 @@ export interface RequestItem {
   productTitleRu: string;
   productTitleUz?: string;
   productTitleEn?: string;
+  productTitleZh?: string;
   productSlug: string;
   variantId?: string;
   variantTitleRu?: string;
   variantTitleUz?: string;
   variantTitleEn?: string;
+  variantTitleZh?: string;
   sku: string;
   quantity: number;
   unit: string;
@@ -305,6 +322,7 @@ export interface ClientPartner {
   descriptionRu?: string;
   descriptionUz?: string;
   descriptionEn?: string;
+  descriptionZh?: string;
   website?: string;
   caseStudy?: string;
   sortOrder: number;
@@ -315,9 +333,11 @@ export interface Banner {
   titleRu: string;
   titleUz: string;
   titleEn?: string;
+  titleZh?: string;
   subtitleRu?: string;
   subtitleUz?: string;
   subtitleEn?: string;
+  subtitleZh?: string;
   imageDesktop: string;
   imageDesktopPath?: string;
   imageMobile?: string;
@@ -325,6 +345,7 @@ export interface Banner {
   buttonTextRu?: string;
   buttonTextUz?: string;
   buttonTextEn?: string;
+  buttonTextZh?: string;
   link: string;
   sortOrder: number;
   active: boolean;
@@ -339,6 +360,7 @@ export interface SiteSettings {
     descriptionRu: string;
     descriptionUz: string;
     descriptionEn?: string;
+    descriptionZh?: string;
   };
   contacts: {
     phone1: string;
@@ -347,14 +369,17 @@ export interface SiteSettings {
     addressRu: string;
     addressUz: string;
     addressEn?: string;
+    addressZh?: string;
     workingHoursRu: string;
     workingHoursUz: string;
     workingHoursEn?: string;
+    workingHoursZh?: string;
     telegram: string;
     whatsapp: string;
     cityRu: string;
     cityUz: string;
     cityEn?: string;
+    cityZh?: string;
     mapIframe?: string;
   };
   salesMode: SalesMode;
@@ -381,9 +406,11 @@ export interface SiteSettings {
     defaultTitleRu: string;
     defaultTitleUz: string;
     defaultTitleEn?: string;
+    defaultTitleZh?: string;
     defaultDescriptionRu: string;
     defaultDescriptionUz: string;
     defaultDescriptionEn?: string;
+    defaultDescriptionZh?: string;
   };
   modules?: {
     bagDesigner?: {

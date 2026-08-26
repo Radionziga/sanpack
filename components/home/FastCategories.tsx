@@ -29,6 +29,7 @@ export function FastCategories({ categories }: FastCategoriesProps) {
     ru: `Основные направления поставки продукции ${company.name}`,
     uz: `${company.name} mahsulotlarini yetkazib berishning asosiy yo‘nalishlari`,
     en: `${company.name}’s core supply categories`,
+    zh: `${company.name} 的主要供应分类`,
   }[language];
 
   return (
@@ -56,7 +57,7 @@ export function FastCategories({ categories }: FastCategoriesProps) {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 font-wide">
           {categories.map((cat) => {
             const Icon = iconMap[cat.icon || 'Package'] || Package;
-            const title = getLocalizedText(cat.titleRu, cat.titleUz, cat.titleEn);
+            const title = getLocalizedText(cat.titleRu, cat.titleUz, cat.titleEn, cat.titleZh);
 
             return (
               <Link
@@ -76,7 +77,7 @@ export function FastCategories({ categories }: FastCategoriesProps) {
                     {title}
                   </h3>
                   <p className="text-[11px] text-[var(--sp-ink-secondary)] line-clamp-2">
-                    {getLocalizedText(cat.descriptionRu, cat.descriptionUz, cat.descriptionEn)}
+                    {getLocalizedText(cat.descriptionRu, cat.descriptionUz, cat.descriptionEn, cat.descriptionZh)}
                   </p>
                 </div>
               </Link>

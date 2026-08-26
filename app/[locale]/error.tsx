@@ -18,11 +18,18 @@ const copy = {
     description: 'Current data could not be loaded. Please try again a little later.',
     retry: 'Try again',
   },
+  zh: {
+    title: '目录暂时不可用',
+    description: '无法加载最新数据，请稍后再试。',
+    retry: '重试',
+  },
 } as const;
 
 export default function StorefrontError({ reset }: { reset: () => void }) {
   const params = useParams<{ locale?: string }>();
-  const locale = params.locale === 'uz' || params.locale === 'en' ? params.locale : 'ru';
+  const locale = params.locale === 'uz' || params.locale === 'en' || params.locale === 'zh'
+    ? params.locale
+    : 'ru';
   const labels = copy[locale];
 
   return (

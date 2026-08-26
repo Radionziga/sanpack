@@ -1,6 +1,6 @@
 import type { Language } from '@/types';
 
-const supportedLanguages: ReadonlySet<Language> = new Set(['ru', 'uz', 'en']);
+const supportedLanguages: ReadonlySet<Language> = new Set(['ru', 'uz', 'en', 'zh']);
 
 export function getPathLanguage(pathname: string, fallback: Language): Language {
   const candidate = pathname.split('/')[1];

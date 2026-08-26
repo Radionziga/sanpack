@@ -14,10 +14,12 @@ const newCategory: Partial<Category> = {
   titleRu: '',
   titleUz: '',
   titleEn: '',
+  titleZh: '',
   slug: '',
   descriptionRu: '',
   descriptionUz: '',
   descriptionEn: '',
+  descriptionZh: '',
   status: 'active',
   sortOrder: 1,
 };
@@ -215,23 +217,24 @@ export default function AdminCategoriesPage() {
           <section className="admin-section">
             <div>
               <h3 className="admin-section-heading">Название и описание</h3>
-              <p className="admin-section-description">Русская версия — основная. Узбекскую и английскую можно заполнить автоматически и затем отредактировать.</p>
+              <p className="admin-section-description">Русская версия — основная. Узбекскую, английскую и китайскую можно заполнить автоматически и затем отредактировать.</p>
             </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {([
               ['titleRu', 'Название RU *'],
               ['titleUz', 'Название UZ *'],
               ['titleEn', 'Название EN'],
+              ['titleZh', 'Название ZH'],
             ] as const).map(([field, label]) => (
               <label key={field} className="admin-field-label">
                 {label}
-                <input value={editingCategory[field] || ''} required={field !== 'titleEn'} onChange={(event) => setEditingCategory((current) => ({ ...current, [field]: event.target.value }))} className="admin-control mt-1.5 text-sm font-normal" />
+                <input value={editingCategory[field] || ''} required={field === 'titleRu' || field === 'titleUz'} onChange={(event) => setEditingCategory((current) => ({ ...current, [field]: event.target.value }))} className="admin-control mt-1.5 text-sm font-normal" />
               </label>
             ))}
           </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {([['descriptionRu', 'Описание RU'], ['descriptionUz', 'Описание UZ'], ['descriptionEn', 'Описание EN']] as const).map(([field, label]) => (
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {([['descriptionRu', 'Описание RU'], ['descriptionUz', 'Описание UZ'], ['descriptionEn', 'Описание EN'], ['descriptionZh', 'Описание ZH']] as const).map(([field, label]) => (
               <label key={field} className="admin-field-label">
                 {label}
                 <textarea rows={3} value={editingCategory[field] || ''} onChange={(event) => setEditingCategory((current) => ({ ...current, [field]: event.target.value }))} className="admin-control mt-1.5 text-sm font-normal" />
@@ -242,13 +245,13 @@ export default function AdminCategoriesPage() {
           <div className="mt-4"><AiTranslateButton compact fields={[
             {
               key: 'title', label: 'Название категории',
-              values: { ru: editingCategory.titleRu || '', uz: editingCategory.titleUz || '', en: editingCategory.titleEn || '' },
-              onChange: (language, value) => setEditingCategory((current) => ({ ...current, [`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value })),
+              values: { ru: editingCategory.titleRu || '', uz: editingCategory.titleUz || '', en: editingCategory.titleEn || '', zh: editingCategory.titleZh || '' },
+              onChange: (language, value) => setEditingCategory((current) => ({ ...current, [`title${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`]: value })),
             },
             {
               key: 'description', label: 'Описание категории',
-              values: { ru: editingCategory.descriptionRu || '', uz: editingCategory.descriptionUz || '', en: editingCategory.descriptionEn || '' },
-              onChange: (language, value) => setEditingCategory((current) => ({ ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : 'En'}`]: value })),
+              values: { ru: editingCategory.descriptionRu || '', uz: editingCategory.descriptionUz || '', en: editingCategory.descriptionEn || '', zh: editingCategory.descriptionZh || '' },
+              onChange: (language, value) => setEditingCategory((current) => ({ ...current, [`description${language === 'ru' ? 'Ru' : language === 'uz' ? 'Uz' : language === 'en' ? 'En' : 'Zh'}`]: value })),
             },
           ]} /></div>
           </section>
