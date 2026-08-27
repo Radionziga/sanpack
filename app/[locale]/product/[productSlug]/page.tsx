@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import {
   getProductOrderRule,
+  getOrderRuleSummary,
   normalizeOrderQuantity,
 } from '@/lib/commerce/orderQuantities';
 import {
@@ -347,11 +348,7 @@ export default function ProductDetailPage({
   );
   const inCart = Boolean(cartItem);
   const orderRule = getProductOrderRule(product, language, selectedVariant || undefined);
-  const compactQuantityFormatter = new Intl.NumberFormat(
-    language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-US' : language === 'zh' ? 'zh-CN' : 'ru-RU',
-    { maximumFractionDigits: 3 },
-  );
-  const compactOrderRule = `${compactQuantityFormatter.format(orderRule.minimumQuantity)} / ${compactQuantityFormatter.format(orderRule.quantityStep)}`;
+  const orderRuleSummary = getOrderRuleSummary(product, language, selectedVariant || undefined);
   const orderable = isProductOrderable(product, selectedVariant || undefined);
   const effectiveQuantity = cartItem?.quantity ?? quantity;
 
@@ -423,7 +420,7 @@ export default function ProductDetailPage({
           {/* Product Hero Top Grid */}
           <div className="mb-8 grid grid-cols-1 gap-0 md:gap-7 lg:mb-12 lg:grid-cols-12 lg:gap-x-12 lg:gap-y-8">
             {/* Col 1: Gallery */}
-            <div className="relative order-1 lg:col-span-7 lg:row-span-2">
+            <div className="relative order-1 lg:col-span-7">
               <ProductGallery images={galleryImages} title={title} mobileEdgeToEdge />
               <Link
                 href="/catalog"
@@ -493,7 +490,7 @@ export default function ProductDetailPage({
 
             {/* Col 3: Sticky Commercial Action Box */}
             <div className="order-3 hidden md:block lg:order-2 lg:col-span-5">
-              <div className="space-y-4 border-t border-[var(--sp-line)] bg-transparent py-5 lg:sticky lg:top-24">
+              <div className="space-y-3 border-t border-[var(--sp-line)] bg-transparent py-5">
 
                 {/* Variants belong to the purchase flow. */}
                 {product.variants && product.variants.length > 0 && (
@@ -537,29 +534,20 @@ export default function ProductDetailPage({
                   </div>
                 )}
 
-                {/* Compact desktop commercial summary. */}
-                <div className="grid gap-3 rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] p-3 sm:grid-cols-2 xl:grid-cols-[1.15fr_1fr_1.35fr_1.15fr] xl:items-end">
-                  <div className="min-w-0">
-                    <span className="mb-1 block text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
-                      {priceLabel}
-                    </span>
-                    <span className="block whitespace-nowrap text-base font-bold tracking-tight text-[var(--sp-brand)]">
+                {/* Price first, then quantity and calculated total on their own row. */}
+                <div className="rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] p-4 sm:p-5">
+                  <div>
+                    <span className="block text-xs font-medium text-[var(--sp-ink-tertiary)]">{priceLabel}</span>
+                    <span className="mt-1 block whitespace-nowrap text-2xl font-extrabold tracking-[-0.025em] text-[var(--sp-brand)]">
                       {product.showPrice && unitPrice > 0
                         ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(unitPrice, language, product.currency)}`
                         : t('priceOnRequest')}
                     </span>
+                    <p className="mt-1.5 text-xs leading-5 text-[var(--sp-ink-secondary)]">{orderRuleSummary}</p>
                   </div>
 
-                  <div className="min-w-0">
-                    <span className="mb-1 block text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
-                      {copy.orderRule}
-                    </span>
-                    <span className="block whitespace-nowrap text-xs font-semibold leading-5 text-[var(--sp-ink-secondary)]">
-                      {compactOrderRule}
-                    </span>
-                  </div>
-
-                  <div className="min-w-0">
+                  <div className="mt-4 grid grid-cols-[minmax(180px,0.85fr)_minmax(0,1.15fr)] items-end gap-5 border-t border-[var(--sp-line-soft)] pt-4">
+                    <div className="min-w-0">
                     <label htmlFor="product-quantity" className="mb-1 block text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
                       {quantityLabel}
                     </label>
@@ -609,23 +597,24 @@ export default function ProductDetailPage({
                         </button>
                       </div>
                     )}
-                  </div>
+                    </div>
 
-                  <div className="min-w-0">
-                    <span className="mb-1 flex items-center gap-1 text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
+                    <div className="min-w-0 text-right">
+                    <span className="mb-1 flex items-center justify-end gap-1 text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
                       <Calculator className="size-3.5 text-[var(--sp-brand)]" aria-hidden="true" />
                       {copy.total}
                     </span>
-                    <span className="block whitespace-nowrap text-base font-bold tabular-nums text-[var(--sp-brand)]">
+                    <span className="block whitespace-nowrap text-2xl font-extrabold tracking-[-0.025em] tabular-nums text-[var(--sp-brand)]">
                       {product.showPrice && unitPrice > 0 && !variantRequired
                         ? formatMoney(totalPrice, language, product.currency)
                         : t('priceOnRequest')}
                     </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-stretch gap-2 pt-1">
+                <div className="flex items-stretch gap-2">
                   {!inCart && (variantRequired || !orderable) ? (
                     <button
                       type="button"
@@ -661,10 +650,9 @@ export default function ProductDetailPage({
                 </div>
 
               </div>
-            </div>
 
-            {/* Col 2: Info & Specs */}
-            <div className="order-4 hidden space-y-5 border-t border-[var(--sp-line)] pt-6 md:block lg:order-3 lg:col-span-5">
+              {/* Product information follows the purchase controls without a grid-created void. */}
+              <div className="mt-5 hidden space-y-5 border-t border-[var(--sp-line)] pt-5 md:block">
               <div>
                 <p className="mt-1.5 text-xs font-medium text-[var(--sp-ink-tertiary)]">
                   {salesUnitLabel} · {t('sku')} {managerSku}
@@ -722,6 +710,7 @@ export default function ProductDetailPage({
                   ))}
                 </section>
               ) : null}
+            </div>
             </div>
           </div>
 

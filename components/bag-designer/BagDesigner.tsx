@@ -147,28 +147,11 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function BagTypeIllustration({ type, color }: { type: BagType; color: string }) {
-  const stroke = color.toLowerCase() === '#161a18' ? '#FFFFFF' : '#174D35';
-  const common = { fill: color, stroke, strokeWidth: 2.5, strokeLinejoin: 'round' as const };
-
-  return (
-    <svg viewBox="0 0 150 120" className="h-full w-full" aria-hidden="true">
-      <ellipse cx="82" cy="106" rx="43" ry="7" fill="#0B3322" opacity="0.1" />
-      {type === 'tshirt' ? (
-        <path d="M34 102V20h23v24c0 10 8 18 18 18s18-8 18-18V20h23v82z" {...common} />
-      ) : (
-        <path d="M35 102V24c0-5 4-9 9-9h64c5 0 9 4 9 9v78z" {...common} />
-      )}
-      {type === 'die-cut' ? (
-        <rect x="61" y="28" width="30" height="12" rx="6" fill="var(--sp-brand-soft)" stroke={stroke} strokeWidth="2" />
-      ) : null}
-      {type === 'flat' ? (
-        <path d="M43 29h66" stroke={stroke} strokeWidth="2" strokeDasharray="5 5" opacity="0.65" />
-      ) : null}
-      <path d="M48 87h56" stroke={stroke} strokeWidth="2" strokeDasharray="5 5" opacity="0.45" />
-    </svg>
-  );
-}
+const bagTypeImages: Record<BagType, string> = {
+  tshirt: '/bag-designer/tshirt-bag.webp',
+  'die-cut': '/bag-designer/die-cut-bag.webp',
+  flat: '/bag-designer/flat-bag.webp',
+};
 
 function dataUrlToImage(dataUrl: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -442,13 +425,22 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
 
                 <fieldset className="mt-5">
                   <legend className="text-xs font-bold">{copy.bagShape}</legend>
-                  <div className="mt-2 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                  <div className="mt-3 grid gap-3">
                     {(Object.keys(BAG_TYPE_LABELS) as BagType[]).map((type) => (
-                      <button key={type} type="button" onClick={() => selectBagType(type)} aria-pressed={bagType === type} className={`relative min-h-32 overflow-hidden rounded-[var(--sp-radius-card)] border p-3 pr-[42%] text-left transition-[border-color,background-color,transform] active:scale-[0.99] ${bagType === type ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface-inset)] hover:border-[var(--sp-brand)]'}`}>
-                        <span className="relative z-10 flex items-start justify-between gap-2 text-xs font-bold">{copy.typeLabels[type]}{bagType === type ? <Check className="size-4 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" /> : null}</span>
-                        <span className="relative z-10 mt-2 block text-[11px] leading-4 text-[var(--sp-ink-tertiary)]">{copy.typeNotes[type]}</span>
-                        <span className="absolute inset-y-2 right-1 w-[44%]" aria-hidden="true">
-                          <BagTypeIllustration type={type} color={bagType === type ? color.value : '#E3ECE7'} />
+                      <button key={type} type="button" onClick={() => selectBagType(type)} aria-pressed={bagType === type} className={`group relative min-h-36 overflow-hidden rounded-[var(--sp-radius-card)] border bg-[#fafaf7] text-left transition-[border-color,box-shadow,transform] active:scale-[0.995] sm:min-h-40 ${bagType === type ? 'border-[var(--sp-brand)] shadow-[0_0_0_1px_var(--sp-brand)]' : 'border-[var(--sp-line)] hover:border-[var(--sp-line-strong)] hover:shadow-[var(--sp-shadow-raised)]'}`}>
+                        <NextImage
+                          src={bagTypeImages[type]}
+                          alt=""
+                          fill
+                          sizes="(min-width: 1280px) 560px, (min-width: 1024px) 44vw, 100vw"
+                          className="object-cover transition-transform duration-300 group-hover:scale-[1.015]"
+                        />
+                        <span className="absolute inset-y-0 left-0 z-10 flex w-[58%] flex-col justify-center px-4 py-5 sm:px-5">
+                          <span className="flex items-start gap-2 text-sm font-bold leading-5 text-[var(--sp-ink)]">
+                            <span>{copy.typeLabels[type]}</span>
+                            {bagType === type ? <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)]"><Check className="size-3.5" aria-hidden="true" /></span> : null}
+                          </span>
+                          <span className="mt-2 block text-xs leading-5 text-[var(--sp-ink-secondary)]">{copy.typeNotes[type]}</span>
                         </span>
                       </button>
                     ))}
