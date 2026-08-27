@@ -147,7 +147,7 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
   );
 
   return (
-    <aside aria-label={copy.categories} className="min-w-0">
+    <aside aria-label={copy.categories} className="h-full min-w-0">
       <div className="sticky top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
         <h2 className="mb-3 px-2 text-xl font-extrabold tracking-[-0.035em] text-[var(--sp-ink)]">
           {copy.catalog}
