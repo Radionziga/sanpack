@@ -22,7 +22,11 @@ import { ProductImage } from '@/components/catalog/ProductImage';
 import { formatMoney } from '@/lib/catalog/productPresentation';
 import { getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { getCategoryArtwork } from '@/lib/catalog/categoryArtwork';
-import { getPopularCategoryArtwork } from '@/lib/catalog/popularCategoryArtwork';
+import {
+  getFeaturedCategoryIds,
+  getPopularCategoryArtwork,
+  storefrontCategoryGroupIds,
+} from '@/lib/catalog/popularCategoryArtwork';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import type { Category } from '@/types';
 
@@ -30,6 +34,7 @@ const panelCopy = {
   ru: {
     catalog: 'Каталог',
     allProducts: 'Все товары',
+    viewAll: 'Смотреть все',
     cart: 'Корзина',
     empty: 'В корзине пока ничего нет',
     emptyHint: 'Добавьте товары из каталога — они появятся здесь.',
@@ -51,6 +56,7 @@ const panelCopy = {
   uz: {
     catalog: 'Katalog',
     allProducts: 'Barcha mahsulotlar',
+    viewAll: 'Barchasini ko‘rish',
     cart: 'Savat',
     empty: 'Savat hozircha bo‘sh',
     emptyHint: 'Katalogdan mahsulot qo‘shing — ular shu yerda ko‘rinadi.',
@@ -72,6 +78,7 @@ const panelCopy = {
   en: {
     catalog: 'Catalogue',
     allProducts: 'All products',
+    viewAll: 'View all',
     cart: 'Cart',
     empty: 'Your cart is empty',
     emptyHint: 'Add products from the catalogue and they will appear here.',
@@ -91,7 +98,7 @@ const panelCopy = {
     hideCategory: 'Hide section',
   },
   zh: {
-    catalog: '目录', allProducts: '全部商品', cart: '购物车', empty: '购物车为空',
+    catalog: '目录', allProducts: '全部商品', viewAll: '查看全部', cart: '购物车', empty: '购物车为空',
     emptyHint: '从目录中添加商品，它们会显示在这里。', items: '件商品', preliminary: '预估总计',
     priceOnRequest: '价格面议', checkout: '打开购物车', delivery: '塔什干配送',
     deliveryHint: '经理将确认时间和费用', categories: '商品分类', services: 'SANPACK 服务',
@@ -103,6 +110,7 @@ const panelCopy = {
 interface CategoryNavigationProps {
   categories: Category[];
   activeCategorySlug?: string;
+  showFeaturedGroups?: boolean;
 }
 
 function CategoryArtwork({ category, size = 40 }: { category: Category; size?: number }) {
@@ -270,7 +278,7 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
   );
 }
 
-export function StorefrontMobileCategoryRail({ categories, activeCategorySlug }: CategoryNavigationProps) {
+export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, showFeaturedGroups = false }: CategoryNavigationProps) {
   const { language, getLocalizedText } = useLanguage();
   const siteSettings = useSiteSettings();
   const copy = panelCopy[language];
@@ -294,6 +302,43 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug }:
     category,
     language,
     getLocalizedText(category.titleRu, category.titleUz, category.titleEn, category.titleZh),
+  );
+  const featuredGroups = storefrontCategoryGroupIds
+    .map((groupId) => {
+      const group = parents.find((category) => category.id === groupId);
+      const categoriesById = new Map(leaves.map((category) => [category.id, category]));
+      const groupCategories = getFeaturedCategoryIds(groupId)
+        .map((categoryId) => categoriesById.get(categoryId))
+        .filter((category): category is Category => Boolean(category));
+      return group && groupCategories.length > 0 ? { group, categories: groupCategories } : null;
+    })
+    .filter((section): section is NonNullable<typeof section> => Boolean(section));
+
+  const renderCategoryGrid = (gridCategories: Category[], label: string) => (
+    <nav className="grid grid-cols-2 gap-2.5" aria-label={label}>
+      {gridCategories.map((category, index) => {
+        const active = category.slug === activeCategorySlug;
+        const artwork = getPopularCategoryArtwork(category) || getCategoryArtwork(category);
+        const wide = index === 0 || index === 5;
+        return (
+          <Link
+            key={category.id}
+            href={`/catalog/${category.slug}`}
+            aria-current={active ? 'page' : undefined}
+            className={`group relative isolate min-h-32 overflow-hidden rounded-[var(--sp-radius-card)] ring-1 ring-inset transition-[box-shadow,transform] active:scale-[0.985] motion-reduce:active:scale-100 ${wide ? 'col-span-2 min-h-40' : ''} ${active ? 'ring-[var(--sp-brand)]' : 'ring-[var(--sp-line)]'}`}
+          >
+            {artwork ? (
+              <Image src={artwork} alt="" fill sizes={wide ? 'calc(100vw - 2rem)' : 'calc(50vw - 1.5rem)'} className="object-cover transition-transform duration-300 group-active:scale-[1.02] motion-reduce:transition-none" />
+            ) : (
+              <span className="absolute inset-0 bg-[var(--sp-brand-soft)]"><CategoryArtwork category={category} size={160} /></span>
+            )}
+            <span className="absolute left-3 top-3 z-10 max-w-[58%] text-left text-sm font-extrabold leading-[1.16] text-white">
+              <span className="line-clamp-2">{categoryTitle(category)}</span>
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 
   return (
@@ -340,36 +385,31 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug }:
         ) : null}
       </nav>
 
-      <div className="mb-3 flex items-center justify-between gap-4">
-        <h2 id="mobile-category-rail-title" className="text-xl font-extrabold tracking-[-0.03em] text-[var(--sp-ink)]">
-          {copy.catalog}
-        </h2>
-        <Link href="/catalog" className="text-xs font-bold text-[var(--sp-brand)]">{copy.allProducts}</Link>
-      </div>
-      <nav className="grid grid-cols-2 gap-2.5" aria-label={copy.categories}>
-        {visibleLeaves.map((category, index) => {
-          const active = category.slug === activeCategorySlug;
-          const artwork = getPopularCategoryArtwork(category) || getCategoryArtwork(category);
-          const wide = index === 0 || index === 5;
-          return (
-            <Link
-              key={category.id}
-              href={`/catalog/${category.slug}`}
-              aria-current={active ? 'page' : undefined}
-              className={`group relative isolate min-h-32 overflow-hidden rounded-[var(--sp-radius-card)] ring-1 ring-inset transition-[box-shadow,transform] active:scale-[0.985] motion-reduce:active:scale-100 ${wide ? 'col-span-2 min-h-40' : ''} ${active ? 'ring-[var(--sp-brand)]' : 'ring-[var(--sp-line)]'}`}
-            >
-              {artwork ? (
-                <Image src={artwork} alt="" fill sizes={wide ? 'calc(100vw - 2rem)' : 'calc(50vw - 1.5rem)'} className="object-cover transition-transform duration-300 group-active:scale-[1.02] motion-reduce:transition-none" />
-              ) : (
-                <span className="absolute inset-0 bg-[var(--sp-brand-soft)]"><CategoryArtwork category={category} size={160} /></span>
-              )}
-              <span className="absolute left-3 top-3 z-10 max-w-[58%] text-left text-sm font-extrabold leading-[1.16] text-white">
-                <span className="line-clamp-2">{categoryTitle(category)}</span>
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
+      {showFeaturedGroups ? (
+        <div className="space-y-8">
+          {featuredGroups.map(({ group, categories: groupCategories }, index) => (
+            <section key={group.id} aria-labelledby={index === 0 ? 'mobile-category-rail-title' : `mobile-category-group-${group.id}`}>
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <h2 id={index === 0 ? 'mobile-category-rail-title' : `mobile-category-group-${group.id}`} className="text-xl font-extrabold tracking-[-0.03em] text-[var(--sp-ink)]">
+                  {categoryTitle(group)}
+                </h2>
+                <Link href={`/catalog/${group.slug}`} className="text-xs font-bold text-[var(--sp-brand)]">{copy.viewAll}</Link>
+              </div>
+              {renderCategoryGrid(groupCategories, categoryTitle(group))}
+            </section>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <h2 id="mobile-category-rail-title" className="text-xl font-extrabold tracking-[-0.03em] text-[var(--sp-ink)]">
+              {copy.catalog}
+            </h2>
+            <Link href="/catalog" className="text-xs font-bold text-[var(--sp-brand)]">{copy.allProducts}</Link>
+          </div>
+          {renderCategoryGrid(visibleLeaves, copy.categories)}
+        </>
+      )}
     </section>
   );
 }

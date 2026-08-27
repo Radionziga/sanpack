@@ -19,7 +19,11 @@ import { PromoCarousel } from '@/components/home/PromoCarousel';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref } from '@/lib/settings/contacts';
 import { getCatalogPrintPath } from '@/lib/documents/catalogIdentity';
-import { getPopularCategoryArtwork } from '@/lib/catalog/popularCategoryArtwork';
+import {
+  getFeaturedCategoryIds,
+  getPopularCategoryArtwork,
+  storefrontCategoryGroupIds,
+} from '@/lib/catalog/popularCategoryArtwork';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import {
   StorefrontCartSidebar,
@@ -129,6 +133,18 @@ export function CatalogHome({
     [categoryCards],
   );
 
+  const featuredCategoryGroups = useMemo(() => storefrontCategoryGroupIds
+    .map((groupId) => {
+      const group = categories.find((category) => category.id === groupId);
+      const cardsById = new Map(childCategoryCards.map((card) => [card.category.id, card]));
+      const cards = getFeaturedCategoryIds(groupId)
+        .map((categoryId) => cardsById.get(categoryId))
+        .filter((card): card is (typeof childCategoryCards)[number] => Boolean(card));
+
+      return group && cards.length > 0 ? { group, cards } : null;
+    })
+    .filter((section): section is NonNullable<typeof section> => Boolean(section)), [categories, childCategoryCards]);
+
   // Real product groups are more useful here than the two broad parent sections.
   const mainCategories = useMemo(() => {
     const categoriesWithProducts = categories.filter((category) => (
@@ -152,10 +168,10 @@ export function CatalogHome({
     .filter((section) => section.products.length > 0), [mainCategories, products]);
 
   const storefrontCopy = {
-    ru: { categories: 'Популярные категории', all: 'Смотреть все', empty: 'Каталог временно недоступен' },
-    uz: { categories: 'Ommabop toifalar', all: 'Barchasini ko‘rish', empty: 'Katalog vaqtincha ishlamayapti' },
-    en: { categories: 'Popular categories', all: 'View all', empty: 'The catalogue is temporarily unavailable' },
-    zh: { categories: '热门分类', all: '查看全部', empty: '目录暂时不可用' },
+    ru: { all: 'Смотреть все', empty: 'Каталог временно недоступен' },
+    uz: { all: 'Barchasini ko‘rish', empty: 'Katalog vaqtincha ishlamayapti' },
+    en: { all: 'View all', empty: 'The catalogue is temporarily unavailable' },
+    zh: { all: '查看全部', empty: '目录暂时不可用' },
   }[locale];
 
   return (
@@ -169,35 +185,41 @@ export function CatalogHome({
           <PromoCarousel banners={banners} locale={locale} />
 
           <div className="mt-7">
-            <StorefrontMobileCategoryRail categories={categories} />
+            <StorefrontMobileCategoryRail categories={categories} showFeaturedGroups />
           </div>
 
-          {childCategoryCards.length > 0 ? (
-            <section aria-labelledby="popular-category-heading" className="mt-8 hidden lg:block">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 id="popular-category-heading" className="text-2xl font-extrabold tracking-[-0.035em] text-[var(--sp-ink)]">{storefrontCopy.categories}</h2>
-                <Link href="/catalog" className="flex min-h-11 items-center gap-1.5 rounded-[var(--sp-radius-control)] px-3 text-xs font-bold text-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)]">
-                  {storefrontCopy.all}<ArrowRight className="size-4" aria-hidden="true" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {childCategoryCards.slice(0, 6).map(({ category, count }) => (
-                  <Link
-                    key={category.id}
-                    href={`/catalog/${category.slug}`}
-                    className="group relative isolate min-h-40 overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-brand-soft)] p-4 ring-1 ring-inset ring-[var(--sp-line)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0"
-                  >
-                    {getPopularCategoryArtwork(category) ? (
-                      <Image src={getPopularCategoryArtwork(category)!} alt="" fill sizes="(min-width: 1024px) 26vw, 320px" className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
-                    ) : null}
-                    <div className="relative z-10 max-w-[52%] pt-0.5 text-white">
-                      <h3 className="line-clamp-3 text-sm font-extrabold leading-[1.18]">{categoryTitle(category)}</h3>
-                      <p className="mt-1.5 text-[11px] font-semibold text-white/85">{t('categoryItemsCount', { count })}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
+          {featuredCategoryGroups.length > 0 ? (
+            <div className="mt-8 hidden space-y-10 lg:block">
+              {featuredCategoryGroups.map(({ group, cards }) => (
+                <section key={group.id} aria-labelledby={`featured-category-group-${group.id}`}>
+                  <div className="mb-4 flex items-center justify-between gap-4">
+                    <h2 id={`featured-category-group-${group.id}`} className="text-2xl font-extrabold tracking-[-0.035em] text-[var(--sp-ink)]">
+                      {categoryTitle(group)}
+                    </h2>
+                    <Link href={`/catalog/${group.slug}`} className="flex min-h-11 items-center gap-1.5 rounded-[var(--sp-radius-control)] px-3 text-xs font-bold text-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)]">
+                      {storefrontCopy.all}<ArrowRight className="size-4" aria-hidden="true" />
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {cards.map(({ category, count }) => (
+                      <Link
+                        key={category.id}
+                        href={`/catalog/${category.slug}`}
+                        className="group relative isolate min-h-40 overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-brand-soft)] p-4 ring-1 ring-inset ring-[var(--sp-line)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0"
+                      >
+                        {getPopularCategoryArtwork(category) ? (
+                          <Image src={getPopularCategoryArtwork(category)!} alt="" fill sizes="(min-width: 1024px) 26vw, 320px" className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
+                        ) : null}
+                        <div className="relative z-10 max-w-[52%] pt-0.5 text-white">
+                          <h3 className="line-clamp-3 text-sm font-extrabold leading-[1.18]">{categoryTitle(category)}</h3>
+                          <p className="mt-1.5 text-[11px] font-semibold text-white/85">{t('categoryItemsCount', { count })}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           ) : dataUnavailable ? (
             <p className="mt-8 rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] p-6 text-center text-sm text-[var(--sp-ink-secondary)]">{storefrontCopy.empty}</p>
           ) : null}
