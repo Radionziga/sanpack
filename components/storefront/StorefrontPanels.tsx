@@ -148,11 +148,12 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
 
   return (
     <aside aria-label={copy.categories} className="h-full min-w-0">
-      <div className="sticky top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
-        <h2 className="mb-3 px-2 text-xl font-extrabold tracking-[-0.035em] text-[var(--sp-ink)]">
-          {copy.catalog}
-        </h2>
-        <nav className="space-y-4">
+      <div className="storefront-sidebar-scroll sticky top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain">
+        <div className="pl-2 [direction:ltr]">
+          <h2 className="mb-3 px-2 text-xl font-extrabold tracking-[-0.035em] text-[var(--sp-ink)]">
+            {copy.catalog}
+          </h2>
+          <nav className="space-y-4">
           <Link
             href="/catalog"
             aria-current={!activeCategorySlug ? 'page' : undefined}
@@ -262,7 +263,8 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
               ) : null}
             </div>
           </section>
-        </nav>
+          </nav>
+        </div>
       </div>
     </aside>
   );
@@ -270,10 +272,22 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
 
 export function StorefrontMobileCategoryRail({ categories, activeCategorySlug }: CategoryNavigationProps) {
   const { language, getLocalizedText } = useLanguage();
+  const siteSettings = useSiteSettings();
   const copy = panelCopy[language];
+  const parents = categories
+    .filter((category) => !category.parentId && category.status === 'active')
+    .sort((left, right) => left.sortOrder - right.sortOrder);
   const leaves = categories
     .filter((category) => category.parentId && category.status === 'active')
     .sort((left, right) => left.sortOrder - right.sortOrder);
+  const groupedLeaves = parents.flatMap((parent) => leaves
+    .filter((category) => category.parentId === parent.id)
+    .sort((left, right) => left.sortOrder - right.sortOrder));
+  const groupedLeafIds = new Set(groupedLeaves.map((category) => category.id));
+  const railCategories = [
+    ...groupedLeaves,
+    ...leaves.filter((category) => !groupedLeafIds.has(category.id)),
+  ];
   const featuredLeaves = leaves.filter((category) => getPopularCategoryArtwork(category)).slice(0, 6);
   const visibleLeaves = featuredLeaves.length >= 4 ? featuredLeaves : leaves.slice(0, 6);
   const categoryTitle = (category: Category) => getCategoryTitle(
@@ -284,6 +298,48 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug }:
 
   return (
     <section aria-labelledby="mobile-category-rail-title" className="lg:hidden">
+      <nav
+        className="no-scrollbar -mx-4 mb-7 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1"
+        aria-label={copy.categories}
+      >
+        <Link
+          href="/catalog"
+          aria-current={!activeCategorySlug ? 'page' : undefined}
+          className={`flex min-h-24 w-32 shrink-0 snap-start flex-col justify-between rounded-[var(--sp-radius-card)] border p-3 transition-[border-color,background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 ${!activeCategorySlug ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface)]'}`}
+        >
+          <span className="grid size-10 place-items-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] text-[var(--sp-brand)]">
+            <LayoutGrid className="size-5" aria-hidden="true" />
+          </span>
+          <span className="text-xs font-bold leading-[1.2] text-[var(--sp-ink)]">{copy.allProducts}</span>
+        </Link>
+        {railCategories.map((category) => {
+          const active = category.slug === activeCategorySlug;
+          return (
+            <Link
+              key={category.id}
+              href={`/catalog/${category.slug}`}
+              aria-current={active ? 'page' : undefined}
+              className={`flex min-h-24 w-32 shrink-0 snap-start flex-col justify-between rounded-[var(--sp-radius-card)] border p-3 transition-[border-color,background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 ${active ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface)]'}`}
+            >
+              <span className="size-10 overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)]">
+                <CategoryArtwork category={category} />
+              </span>
+              <span className="line-clamp-2 text-xs font-bold leading-[1.2] text-[var(--sp-ink)]">{categoryTitle(category)}</span>
+            </Link>
+          );
+        })}
+        <Link href="/branding" className="flex min-h-24 w-32 shrink-0 snap-start flex-col justify-between rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 transition-transform active:scale-[0.96] motion-reduce:active:scale-100">
+          <span className="grid size-10 place-items-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]"><Printer className="size-5" aria-hidden="true" /></span>
+          <span className="line-clamp-2 text-xs font-bold leading-[1.2] text-[var(--sp-ink)]">{copy.branding}</span>
+        </Link>
+        {(siteSettings.modules?.bagDesigner?.enabled ?? true) ? (
+          <Link href="/bag-designer" className="flex min-h-24 w-32 shrink-0 snap-start flex-col justify-between rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 transition-transform active:scale-[0.96] motion-reduce:active:scale-100">
+            <span className="grid size-10 place-items-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]"><PackagePlus className="size-5" aria-hidden="true" /></span>
+            <span className="line-clamp-2 text-xs font-bold leading-[1.2] text-[var(--sp-ink)]">{copy.bagDesigner}</span>
+          </Link>
+        ) : null}
+      </nav>
+
       <div className="mb-3 flex items-center justify-between gap-4">
         <h2 id="mobile-category-rail-title" className="text-xl font-extrabold tracking-[-0.03em] text-[var(--sp-ink)]">
           {copy.catalog}
@@ -307,7 +363,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug }:
               ) : (
                 <span className="absolute inset-0 bg-[var(--sp-brand-soft)]"><CategoryArtwork category={category} size={160} /></span>
               )}
-              <span className="absolute inset-x-2.5 bottom-2.5 z-10 w-fit max-w-[calc(100%-1.25rem)] rounded-[var(--sp-radius-control-inner)] bg-white/88 px-2.5 py-2 text-left text-xs font-extrabold leading-[1.18] text-[var(--sp-ink)] shadow-[0_6px_20px_rgb(21_27_24/12%)] backdrop-blur-md">
+              <span className="absolute left-3 top-3 z-10 max-w-[58%] text-left text-sm font-extrabold leading-[1.16] text-white">
                 <span className="line-clamp-2">{categoryTitle(category)}</span>
               </span>
             </Link>

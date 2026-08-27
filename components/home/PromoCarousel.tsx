@@ -214,13 +214,13 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
               <div className="relative h-full w-full">
                 <BannerImage banner={banner} alt={title || copy.region} eager={logicalIndex === 0 && !clone} />
                 {(hasText || hasButton) ? (
-                  <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-end bg-[linear-gradient(0deg,rgb(0_0_0/68%)_0%,rgb(0_0_0/18%)_58%,transparent_78%)] px-5 pb-9 pt-5 sm:justify-center sm:bg-none sm:px-8 sm:py-7 md:px-16 md:py-8">
-                    <div className="max-w-full space-y-2 sm:max-w-[68%] sm:space-y-3 md:max-w-[62%]">
-                      {title ? <h2 className="max-w-[22ch] text-balance text-[clamp(1.12rem,5.3vw,1.55rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] sm:line-clamp-2 sm:text-[clamp(1.1rem,2.15vw,2.35rem)]">{title}</h2> : null}
-                      {subtitle ? <p className="line-clamp-3 max-w-[31ch] text-xs font-medium leading-[1.45] text-white/95 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)] sm:text-sm md:text-[15px]">{subtitle}</p> : null}
+                  <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-center bg-[linear-gradient(90deg,rgb(0_0_0/64%)_0%,rgb(0_0_0/34%)_48%,transparent_82%)] px-5 py-8 sm:bg-none sm:px-8 sm:py-7 md:px-16 md:py-8">
+                    <div className="max-w-[72%] space-y-2 sm:max-w-[68%] sm:space-y-3 md:max-w-[62%]">
+                      {title ? <h2 className="max-w-[22ch] text-balance text-[clamp(1.12rem,5.3vw,1.55rem)] font-extrabold leading-[1.08] tracking-[-0.035em] text-white sm:line-clamp-2 sm:text-[clamp(1.1rem,2.15vw,2.35rem)]">{title}</h2> : null}
+                      {subtitle ? <p className="line-clamp-3 max-w-[31ch] text-xs font-medium leading-[1.45] text-white/95 sm:text-sm md:text-[15px]">{subtitle}</p> : null}
                       {hasButton ? (
                         <div className="pt-1 sm:pt-2">
-                          <span aria-hidden="true" className="inline-flex items-center gap-1.5 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-3 py-1.5 font-compact text-[11px] font-semibold text-[var(--sp-on-brand)] shadow-[0_8px_20px_rgba(0,0,0,0.3)] transition-[background-color,box-shadow] duration-200 group-hover:bg-[var(--sp-brand-deep)] group-hover:shadow-[0_12px_24px_rgba(0,0,0,0.4)] sm:gap-2 sm:px-4 sm:py-2 sm:text-xs md:px-5 md:py-2.5 md:text-sm">
+                          <span aria-hidden="true" className="inline-flex items-center gap-1.5 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-3 py-2 font-compact text-[11px] font-semibold text-[var(--sp-on-brand)] transition-colors duration-200 group-hover:bg-[var(--sp-brand-deep)] sm:gap-2 sm:px-4 sm:text-xs md:px-5 md:py-2.5 md:text-sm">
                             <span className="truncate">{buttonText}</span><ArrowRight className="size-3.5 shrink-0 sm:size-4" />
                           </span>
                         </div>

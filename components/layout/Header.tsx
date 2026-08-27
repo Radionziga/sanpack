@@ -436,7 +436,7 @@ export function Header({
                 )}
               </Link>
 
-              <LanguageSwitcher className="hidden md:block" />
+              <LanguageSwitcher />
 
               <Link
                 href="/profile"

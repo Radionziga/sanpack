@@ -58,6 +58,8 @@ interface CategoryPageChunk {
   rowsCount: number;
 }
 
+const A4_WIDTH_PX = (210 / 25.4) * 96;
+const PREVIEW_INLINE_GUTTER_PX = 16;
 
 function getLocalizedProductTitle(product: Product, language: Language): string {
   return resolveLocalizedText(language, {
@@ -124,7 +126,11 @@ export function CatalogPrintDocument({
   const [language, setLanguage] = useState<Language>(initialOptions.language || 'ru');
   const [selectedCategory, setSelectedCategory] = useState<string>(initialOptions.categoryId || '');
   const [scale, setScale] = useState<number>(embeddedInAdmin ? 0.78 : 0.85);
+  const [previewWidth, setPreviewWidth] = useState<number | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+  const previewScale = previewWidth === null
+    ? scale
+    : Math.min(scale, Math.max(0.25, (previewWidth - PREVIEW_INLINE_GUTTER_PX) / A4_WIDTH_PX));
   const documentDate = useMemo(() => {
     const locale = language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-GB' : language === 'zh' ? 'zh-CN' : 'ru-RU';
     return new Intl.DateTimeFormat(locale, {
@@ -149,6 +155,17 @@ export function CatalogPrintDocument({
   useEffect(() => {
     document.title = getCatalogFilename(withPrices, language).replace(/\.pdf$/i, '');
   }, [withPrices, language]);
+
+  useEffect(() => {
+    const updatePreviewWidth = () => setPreviewWidth(window.visualViewport?.width ?? window.innerWidth);
+    updatePreviewWidth();
+    window.addEventListener('resize', updatePreviewWidth);
+    window.visualViewport?.addEventListener('resize', updatePreviewWidth);
+    return () => {
+      window.removeEventListener('resize', updatePreviewWidth);
+      window.visualViewport?.removeEventListener('resize', updatePreviewWidth);
+    };
+  }, []);
 
   const handleLanguageChange = (nextLanguage: Language) => {
     setLanguage(nextLanguage);
@@ -345,8 +362,8 @@ export function CatalogPrintDocument({
       {/* =========================================================================
           INTEGRATED CONTROL TOOLBAR
           ========================================================================= */}
-      <aside aria-label={copy.controlPanel} className="no-print sticky top-2 z-40 mb-4 w-full max-w-6xl px-2 sm:px-4">
-        <div className="grid grid-cols-1 items-center gap-3 rounded-[var(--sp-radius)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 shadow-sm sm:p-4">
+      <aside aria-label={copy.controlPanel} className="no-print static z-40 mb-3 w-full max-w-6xl px-2 sm:sticky sm:top-2 sm:mb-4 sm:px-4">
+        <div className="grid grid-cols-1 items-center gap-2 rounded-[var(--sp-radius)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-2 shadow-sm sm:gap-3 sm:p-4">
           {/* Left Group: Status / Filter info */}
           <div className="flex items-center gap-3">
             {!embeddedInAdmin && (
@@ -359,14 +376,14 @@ export function CatalogPrintDocument({
                 <ArrowLeft className="size-4" />
               </Link>
             )}
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
               <BrandLogo
                 src={settings?.company.logo}
                 srcDark={settings?.company.logoDark || '/logo-white.svg'}
                 label={companyName}
-                className="h-8 max-w-32"
+                className="hidden h-8 max-w-32 sm:block"
               />
-              <div className="min-w-0 border-l border-[var(--sp-line)] pl-3">
+              <div className="min-w-0 sm:border-l sm:border-[var(--sp-line)] sm:pl-3">
                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--sp-brand)]">
                   <FileText className="size-4 shrink-0" />
                   <span className="truncate">{copy.a4Catalog}</span>
@@ -380,9 +397,9 @@ export function CatalogPrintDocument({
           </div>
 
           {/* Center Controls: Prices, Language, Category in Brand Theme */}
-          <div className="flex min-w-0 flex-wrap items-center justify-start gap-2.5 border-t border-[var(--sp-line-soft)] pt-3 text-xs">
+          <div className="no-scrollbar flex min-w-0 flex-nowrap items-center justify-start gap-2 overflow-x-auto border-t border-[var(--sp-line-soft)] pt-2 text-xs sm:flex-wrap sm:gap-2.5 sm:pt-3">
             {/* Price Segmented Toggle */}
-            <div className="flex rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-1">
+            <div className="flex shrink-0 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-1">
               <button
                 type="button"
                 onClick={() => setWithPrices(true)}
@@ -408,7 +425,7 @@ export function CatalogPrintDocument({
             </div>
 
             {/* Language Segmented Toggle */}
-            <div className="flex rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-1">
+            <div className="flex shrink-0 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-1">
               {(['ru', 'uz', 'en', 'zh'] as const).map((l) => (
                 <button
                   type="button"
@@ -429,7 +446,7 @@ export function CatalogPrintDocument({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-56 max-w-full cursor-pointer truncate rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-1.5 text-xs font-medium text-[var(--sp-ink)] shadow-sm outline-none focus:border-[var(--sp-brand)]"
+              className="w-52 shrink-0 cursor-pointer truncate rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 py-1.5 text-xs font-medium text-[var(--sp-ink)] shadow-sm outline-none focus:border-[var(--sp-brand)] sm:w-56"
             >
               <option value="">{copy.allSections} ({initialProducts.length} {copy.productsShort})</option>
               {parentCategories.map((parent) => {
@@ -464,7 +481,7 @@ export function CatalogPrintDocument({
           </div>
 
           {/* Right Actions: Zoom, Copy Link, Fullscreen, Print */}
-          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--sp-line-soft)] pt-3">
+          <div className="no-scrollbar flex flex-nowrap items-center gap-2 overflow-x-auto border-t border-[var(--sp-line-soft)] pt-2 sm:flex-wrap sm:pt-3">
             {/* Zoom Controls */}
             <div className="hidden items-center gap-1 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-2 py-1 text-xs text-[var(--sp-ink-secondary)] sm:flex">
               <button
@@ -536,8 +553,8 @@ export function CatalogPrintDocument({
         }
 
         .a4-container {
-          transform-origin: top center;
-          transition: transform 0.2s ease;
+          width: var(--a4-width);
+          zoom: var(--catalog-preview-scale);
         }
 
         .a4-page {
@@ -559,20 +576,6 @@ export function CatalogPrintDocument({
           color: var(--catalog-on-brand-deep) !important;
         }
 
-        @media screen and (max-width: 230mm) {
-          .a4-container {
-            transform: none !important;
-          }
-          .a4-page {
-            width: 100vw;
-            height: auto;
-            min-height: 141.4vw;
-            box-shadow: none;
-            padding: 5vw;
-            margin-bottom: 12px;
-          }
-        }
-
         @media print {
           @page {
             size: A4 portrait;
@@ -589,7 +592,7 @@ export function CatalogPrintDocument({
             display: none !important;
           }
           .a4-container {
-            transform: none !important;
+            zoom: 1 !important;
           }
           .a4-page {
             box-shadow: none !important;
@@ -619,7 +622,7 @@ export function CatalogPrintDocument({
           ========================================================================= */}
       <div
         className="a4-container flex flex-col items-center pt-2 pb-16 print:pt-0 print:pb-0"
-        style={{ transform: `scale(${scale})` }}
+        style={{ '--catalog-preview-scale': previewScale } as CSSProperties}
       >
         {/* =======================================================================
             PAGE 1: COVER PAGE (ИЗУМРУДНЫЙ ТИТУЛЬНЫЙ ЛИСТ В ФИРМЕННЫХ ЦВЕТАХ)

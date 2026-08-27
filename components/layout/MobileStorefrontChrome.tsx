@@ -106,6 +106,7 @@ export function MobileStorefrontChrome({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelTriggerRef = useRef<HTMLElement | null>(null);
   const normalizedPathname = normalizePathname(pathname);
+  const isDocumentMode = normalizedPathname.startsWith('/catalog/print');
 
   const copy = {
     ru: {
@@ -397,6 +398,14 @@ export function MobileStorefrontChrome({
       ? [{ href: '/bag-designer' as const, label: copy.bagDesigner, icon: PackageSearch }]
       : []),
   ];
+
+  if (isDocumentMode) {
+    return (
+      <MobileStorefrontChromeContext.Provider value={contextValue}>
+        {children}
+      </MobileStorefrontChromeContext.Provider>
+    );
+  }
 
   return (
     <MobileStorefrontChromeContext.Provider value={contextValue}>
