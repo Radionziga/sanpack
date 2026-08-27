@@ -21,15 +21,24 @@ function clamp(value: number, min: number, max: number) {
 export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, language, onLogoPositionChange }: Props) {
   const id = useId().replaceAll(':', '');
   const dragging = useRef(false);
-  const labels = language === 'zh'
-    ? {
-        aria: `宽 ${spec.width} 厘米、高 ${spec.height} 厘米的包装袋示意图`,
-        title: '技术示意图', scale: '比例仅供参考', safeZone: '安全印刷区域', logo: '品牌标识位置', unit: '厘米', gusset: '侧褶',
-      }
-    : {
-        aria: `Эскиз ${spec.width} на ${spec.height} сантиметров`,
-        title: 'ТЕХНИЧЕСКИЙ ЭСКИЗ', scale: 'масштаб условный', safeZone: 'БЕЗОПАСНАЯ ЗОНА ПЕЧАТИ', logo: 'МЕСТО ДЛЯ ЛОГОТИПА', unit: 'см', gusset: 'складка',
-      };
+  const labels = {
+    ru: {
+      aria: `Эскиз ${spec.width} на ${spec.height} сантиметров`,
+      title: 'ТЕХНИЧЕСКИЙ ЭСКИЗ', scale: 'масштаб условный', safeZone: 'БЕЗОПАСНАЯ ЗОНА ПЕЧАТИ', logo: 'МЕСТО ДЛЯ ЛОГОТИПА', unit: 'см', gusset: 'складка',
+    },
+    uz: {
+      aria: `${spec.width} ga ${spec.height} santimetr paket eskizi`,
+      title: 'TEXNIK ESKIZ', scale: 'masshtab shartli', safeZone: 'XAVFSIZ BOSMA MAYDONI', logo: 'LOGOTIP JOYI', unit: 'sm', gusset: 'buklama',
+    },
+    en: {
+      aria: `Bag sketch ${spec.width} by ${spec.height} centimetres`,
+      title: 'TECHNICAL SKETCH', scale: 'illustrative scale', safeZone: 'SAFE PRINT AREA', logo: 'LOGO POSITION', unit: 'cm', gusset: 'gusset',
+    },
+    zh: {
+      aria: `宽 ${spec.width} 厘米、高 ${spec.height} 厘米的包装袋示意图`,
+      title: '技术示意图', scale: '比例仅供参考', safeZone: '安全印刷区域', logo: '品牌标识位置', unit: '厘米', gusset: '侧褶',
+    },
+  }[language];
 
   const geometry = useMemo(() => {
     const maxWidth = 390;
@@ -107,9 +116,12 @@ export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, language, onLog
   }
 
   const measurementColor = '#56615C';
-  const seamColor = '#68736E';
   const printColor = '#16829A';
-  const technicalFill = '#D5D8D6';
+  const rgb = spec.color.match(/[\da-f]{2}/gi)?.map((part) => Number.parseInt(part, 16)) || [220, 220, 220];
+  const isDark = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000 < 105;
+  const technicalFill = spec.color;
+  const bagStroke = isDark ? '#F2F5F3' : '#4B5550';
+  const seamColor = isDark ? '#DDE5E1' : '#68736E';
 
   return (
     <svg
@@ -135,10 +147,10 @@ export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, language, onLog
       </g>
 
       <ellipse cx="360" cy={geometry.bottom + 18} rx={geometry.width * 0.42} ry="10" fill="#1F2924" opacity="0.055" />
-      <path d={geometry.path} fill={technicalFill} stroke="#4B5550" strokeWidth="2.25" strokeLinejoin="round" />
+      <path d={geometry.path} fill={technicalFill} stroke={bagStroke} strokeWidth="2.25" strokeLinejoin="round" />
 
       <g clipPath={`url(#${clipId})`} aria-hidden="true">
-        <path d={`M ${geometry.left + 9} ${geometry.top + 6} V ${geometry.bottom - 8}`} stroke="#FFFFFF" strokeOpacity="0.32" strokeWidth="2" />
+        <path d={`M ${geometry.left + 9} ${geometry.top + 6} V ${geometry.bottom - 8}`} stroke="#FFFFFF" strokeOpacity={spec.finish === 'glossy' ? 0.65 : 0.32} strokeWidth={spec.finish === 'glossy' ? 4 : 2} />
         <path d={`M ${geometry.right - 10} ${geometry.top + 6} V ${geometry.bottom - 8}`} stroke="#303A35" strokeOpacity="0.12" strokeWidth="2" />
         <path d={`M ${geometry.left} ${geometry.bottom - 15} H ${geometry.right}`} stroke={seamColor} strokeOpacity="0.72" strokeWidth="1.5" strokeDasharray="6 6" />
         {spec.bagType === 'tshirt' && spec.gusset > 0 ? (
@@ -158,7 +170,7 @@ export function BagTechnicalPreview({ spec, logoDataUrl, svgRef, language, onLog
           height={clamp(geometry.height * 0.07, 22, 34)}
           rx="12"
           fill="#F4F5F3"
-          stroke="#4B5550"
+          stroke={bagStroke}
           strokeWidth="2"
         />
       ) : null}

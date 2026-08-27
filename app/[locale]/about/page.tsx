@@ -85,7 +85,7 @@ export default function AboutPage() {
 
             <div className="relative h-80 rounded-[var(--sp-radius)] overflow-hidden border border-[var(--sp-line)]">
               <Image
-                src="/catalog/page_1.png"
+                src="/catalog/page_1.webp"
                 alt={copy.imageAlt}
                 fill
                 sizes="(min-width: 1024px) 50vw, 90vw"

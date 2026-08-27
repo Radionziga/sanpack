@@ -6,7 +6,7 @@ import {
   SESSION_MAX_AGE_MS,
   verifyAdminToken,
 } from '@/lib/auth/server';
-import { checkRateLimit } from '@/lib/security/rateLimit';
+import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 
 export const runtime = 'nodejs';
 
@@ -15,7 +15,11 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const rateLimit = checkRateLimit(request, 'admin-session', 10, 5 * 60 * 1000);
+  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Некорректные данные для входа.' }, { status: 400 });
+  }
+  const rateLimit = await checkDistributedRateLimit(request, 'admin-session', 10, 5 * 60 * 1000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Слишком много попыток. Попробуйте позже.' },
@@ -27,10 +31,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    const parsed = requestSchema.safeParse(await request.json().catch(() => null));
-    if (!parsed.success) {
-      return NextResponse.json({ error: 'Некорректные данные для входа.' }, { status: 400 });
-    }
     const body = parsed.data;
     const isLocalSession = process.env.NODE_ENV !== 'production'
       && !process.env.FIREBASE_SERVICE_ACCOUNT_JSON;

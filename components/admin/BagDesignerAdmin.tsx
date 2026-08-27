@@ -52,6 +52,52 @@ export function BagDesignerAdmin() {
       <div className="mt-7"><div className="flex items-center justify-between"><h3 className="text-sm font-bold">Цвета материала</h3><button type="button" onClick={() => setSettings({ ...settings, colors: [...settings.colors, { id: `color-${Date.now()}`, label: 'Новый цвет', value: '#FFFFFF' }] })} className="inline-flex min-h-9 items-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] px-3 text-xs font-bold"><Plus className="size-4" /> Цвет</button></div><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{settings.colors.map((item) => <div key={item.id} className="grid grid-cols-[44px_1fr_40px] gap-2"><input aria-label={`Цвет ${item.label}`} type="color" value={item.value} onChange={(event) => setSettings({ ...settings, colors: settings.colors.map((color) => color.id === item.id ? { ...color, value: event.target.value.toUpperCase() } : color) })} className="admin-control p-1" /><input value={item.label} onChange={(event) => setSettings({ ...settings, colors: settings.colors.map((color) => color.id === item.id ? { ...color, label: event.target.value } : color) })} className="admin-control" /><button type="button" aria-label="Удалить цвет" onClick={() => setSettings({ ...settings, colors: settings.colors.filter((color) => color.id !== item.id) })} className="flex size-10 items-center justify-center rounded-[var(--sp-radius-control)] text-[var(--sp-danger)] hover:bg-red-50"><Trash2 className="size-4" /></button></div>)}</div></div>
       <div className="mt-6 flex justify-end border-t border-[var(--sp-line)] pt-5"><button type="button" disabled={busy} onClick={() => void save()} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-bold text-[var(--sp-on-brand)] disabled:opacity-50">{busy ? <LoaderCircle className="size-4 animate-spin" /> : <Save className="size-4" />} Сохранить настройки</button></div>
     </section>
-    <section className="admin-panel overflow-hidden"><div className="border-b border-[var(--sp-line)] p-5 md:p-6"><h2 className="font-extended text-xl font-bold">Заявки на макеты</h2><p className="mt-1 text-sm text-[var(--sp-ink-tertiary)]">Логотип, технический макет и AI-визуализация сохраняются вместе.</p></div>{requests.length ? <div className="divide-y divide-[var(--sp-line)]">{requests.map((request) => <article key={request.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center"><div><p className="text-xs text-[var(--sp-ink-muted)]">{request.number} · {new Date(request.createdAt).toLocaleString('ru-RU')}</p><h3 className="mt-1 text-sm font-bold">{request.contact.name} · {request.contact.phone}</h3><p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">{BAG_TYPE_LABELS[request.spec.bagType]} · {request.spec.width} × {request.spec.height} см · {request.spec.quantity.toLocaleString('ru-RU')} шт.</p><div className="mt-3 flex flex-wrap gap-3 text-xs font-bold text-[var(--sp-brand)]"><a href={request.logoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">Логотип <ExternalLink className="size-3" /></a><a href={request.technicalPreviewUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">Технический макет <ExternalLink className="size-3" /></a><a href={request.aiMockupUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">Визуализация <ExternalLink className="size-3" /></a></div></div><CustomSelect value={request.status} onChange={(value) => void setStatus(request.id, value as BagDesignRequestRecord['status'])} options={[{ value: 'new', label: 'Новая' }, { value: 'in_progress', label: 'В работе' }, { value: 'completed', label: 'Завершена' }, { value: 'cancelled', label: 'Отменена' }]} className="min-w-44" ariaLabel="Статус заявки" /></article>)}</div> : <p className="p-8 text-center text-sm text-[var(--sp-ink-tertiary)]">Заявок на макеты пока нет.</p>}</section>
+    <section className="admin-panel overflow-hidden">
+      <div className="border-b border-[var(--sp-line)] p-5 md:p-6">
+        <h2 className="font-extended text-xl font-bold">Заявки и лиды на макеты</h2>
+        <p className="mt-1 text-sm text-[var(--sp-ink-tertiary)]">
+          Контакт сохраняется при запуске визуализации. Черновики видны даже при ошибке AI-сервиса.
+        </p>
+      </div>
+      {requests.length ? (
+        <div className="divide-y divide-[var(--sp-line)]">
+          {requests.map((request) => (
+            <article key={request.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--sp-ink-muted)]">
+                  <span>{request.number} · {new Date(request.createdAt).toLocaleString('ru-RU')}</span>
+                  {request.status === 'draft' ? (
+                    <span className="rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] px-2 py-1 font-bold text-[var(--sp-brand)]">
+                      Лид · {request.generationState === 'failed' ? 'ошибка визуализации' : request.generationState === 'processing' ? 'генерация' : 'черновик'}
+                    </span>
+                  ) : null}
+                  {request.locale ? <span className="font-bold uppercase">{request.locale}</span> : null}
+                </div>
+                <h3 className="mt-1 text-sm font-bold">{request.contact.name} · {request.contact.phone}</h3>
+                <p className="mt-1 text-xs text-[var(--sp-ink-tertiary)]">
+                  {BAG_TYPE_LABELS[request.spec.bagType]} · {request.spec.width} × {request.spec.height} см · {request.spec.quantity.toLocaleString('ru-RU')} шт.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-3 text-xs font-bold text-[var(--sp-brand)]">
+                  {request.logoUrl ? <a href={request.logoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">Логотип <ExternalLink className="size-3" /></a> : null}
+                  {request.technicalPreviewUrl ? <a href={request.technicalPreviewUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">Технический макет <ExternalLink className="size-3" /></a> : null}
+                  {request.aiMockupUrl ? <a href={request.aiMockupUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">Визуализация <ExternalLink className="size-3" /></a> : null}
+                </div>
+              </div>
+              {request.status === 'draft' ? (
+                <span className="text-xs font-semibold text-[var(--sp-ink-tertiary)]">Ожидает готового макета</span>
+              ) : (
+                <CustomSelect
+                  value={request.status}
+                  onChange={(value) => void setStatus(request.id, value as BagDesignRequestRecord['status'])}
+                  options={[{ value: 'new', label: 'Новая' }, { value: 'in_progress', label: 'В работе' }, { value: 'completed', label: 'Завершена' }, { value: 'cancelled', label: 'Отменена' }]}
+                  className="min-w-44"
+                  ariaLabel="Статус заявки"
+                />
+              )}
+            </article>
+          ))}
+        </div>
+      ) : <p className="p-8 text-center text-sm text-[var(--sp-ink-tertiary)]">Заявок и лидов на макеты пока нет.</p>}
+    </section>
   </div>;
 }

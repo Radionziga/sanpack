@@ -33,7 +33,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import {
-  getOrderRuleSummary,
   getProductOrderRule,
   normalizeOrderQuantity,
 } from '@/lib/commerce/orderQuantities';
@@ -133,6 +132,7 @@ export default function ProductDetailPage({
       showMore: 'Развернуть описание',
       showLess: 'Свернуть описание',
       additionalInfo: 'Дополнительная информация',
+      orderRule: 'Минимум / шаг',
     },
     uz: {
       notFound: 'Mahsulot topilmadi',
@@ -165,6 +165,7 @@ export default function ProductDetailPage({
       showMore: 'Tavsifni ochish',
       showLess: 'Tavsifni yopish',
       additionalInfo: 'Qo‘shimcha ma’lumot',
+      orderRule: 'Minimum / qadam',
     },
     en: {
       notFound: 'Product not found',
@@ -197,6 +198,7 @@ export default function ProductDetailPage({
       showMore: 'Read description',
       showLess: 'Hide description',
       additionalInfo: 'Additional information',
+      orderRule: 'Minimum / step',
     },
     zh: {
       notFound: '未找到该商品',
@@ -229,6 +231,7 @@ export default function ProductDetailPage({
       showMore: '展开说明',
       showLess: '收起说明',
       additionalInfo: '更多信息',
+      orderRule: '最低数量 / 步进',
     },
   }[language];
   const { items } = useRequestCart();
@@ -344,7 +347,11 @@ export default function ProductDetailPage({
   );
   const inCart = Boolean(cartItem);
   const orderRule = getProductOrderRule(product, language, selectedVariant || undefined);
-  const orderSummary = getOrderRuleSummary(product, language, selectedVariant || undefined);
+  const compactQuantityFormatter = new Intl.NumberFormat(
+    language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-US' : language === 'zh' ? 'zh-CN' : 'ru-RU',
+    { maximumFractionDigits: 3 },
+  );
+  const compactOrderRule = `${compactQuantityFormatter.format(orderRule.minimumQuantity)} / ${compactQuantityFormatter.format(orderRule.quantityStep)}`;
   const orderable = isProductOrderable(product, selectedVariant || undefined);
   const effectiveQuantity = cartItem?.quantity ?? quantity;
 
@@ -486,20 +493,7 @@ export default function ProductDetailPage({
 
             {/* Col 3: Sticky Commercial Action Box */}
             <div className="order-3 hidden md:block lg:order-2 lg:col-span-5">
-              <div className="space-y-5 border-t border-[var(--sp-line)] bg-transparent py-5 lg:sticky lg:top-24">
-                <div>
-                  <span className="mb-1 block text-xs font-medium text-[var(--sp-ink-tertiary)]">
-                    {priceLabel}
-                  </span>
-                  <span className="block break-words text-2xl font-bold tracking-tight text-[var(--sp-brand)]">
-                    {product.showPrice && unitPrice > 0
-                      ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(unitPrice, language, product.currency)}`
-                      : t('priceOnRequest')}
-                  </span>
-                  <span className="mt-1 block text-[11px] leading-5 text-[var(--sp-ink-secondary)]">
-                    {orderSummary}
-                  </span>
-                </div>
+              <div className="space-y-4 border-t border-[var(--sp-line)] bg-transparent py-5 lg:sticky lg:top-24">
 
                 {/* Variants belong to the purchase flow. */}
                 {product.variants && product.variants.length > 0 && (
@@ -543,77 +537,101 @@ export default function ProductDetailPage({
                   </div>
                 )}
 
-                {/* Quantity Controls */}
-                <div className="space-y-2">
-                  <label htmlFor="product-quantity" className="block text-xs font-semibold text-[var(--sp-ink)]">
-                    {quantityLabel} ({salesUnitLabel})
-                  </label>
-                  {inCart && !variantRequired ? (
-                    <ProductCartControl
-                      product={product}
-                      variant={selectedVariant || undefined}
-                      size="detail"
-                    />
-                  ) : <div className="flex items-center overflow-hidden rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)]">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((q) => Math.max(orderRule.minimumQuantity, q - orderRule.quantityStep))}
-                      aria-label={copy.decrease}
-                      className="flex size-11 shrink-0 items-center justify-center text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
-                    >
-                      <Minus className="size-4" aria-hidden="true" />
-                    </button>
-                    <input
-                      id="product-quantity"
-                      type="number"
-                      min={orderRule.minimumQuantity}
-                      max={orderRule.maximumQuantity}
-                      step={orderRule.quantityStep}
-                      value={quantity}
-                      onChange={(e) => setQuantity(Number(e.target.value) || orderRule.minimumQuantity)}
-                      onFocus={() => setIsQuantityEditing(true)}
-                      onBlur={() => {
-                        setQuantity((current) => normalizeOrderQuantity(product, current, selectedVariant || undefined));
-                        setIsQuantityEditing(false);
-                      }}
-                      aria-label={quantityLabel}
-                      className="min-w-0 flex-1 bg-transparent px-1 text-center text-base font-semibold tabular-nums text-[var(--sp-ink)] outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((q) => normalizeOrderQuantity(
-                        product,
-                        q + orderRule.quantityStep,
-                        selectedVariant || undefined,
-                      ))}
-                      aria-label={copy.increase}
-                      className="flex size-11 shrink-0 items-center justify-center text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]"
-                    >
-                      <Plus className="size-4" aria-hidden="true" />
-                    </button>
-                  </div>}
-                </div>
-
-                {/* Price Total Calculation */}
-                {product.showPrice && unitPrice > 0 && !variantRequired && (
-                  <div className="flex items-center justify-between gap-3 rounded-[var(--sp-radius-control)] border border-[color-mix(in_srgb,var(--sp-brand)_22%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-brand)_8%,var(--sp-surface))] p-3 text-xs">
-                    <span className="flex items-center gap-1 font-medium text-[var(--sp-ink-secondary)]">
-                      <Calculator className="w-3.5 h-3.5 text-[var(--sp-brand)]" /> {copy.total}:
+                {/* Compact desktop commercial summary. */}
+                <div className="grid gap-3 rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] p-3 sm:grid-cols-2 xl:grid-cols-[1.15fr_1fr_1.35fr_1.15fr] xl:items-end">
+                  <div className="min-w-0">
+                    <span className="mb-1 block text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
+                      {priceLabel}
                     </span>
-                    <span className="break-words text-right text-base font-semibold tabular-nums text-[var(--sp-brand)]">
-                      {formatMoney(totalPrice, language, product.currency)}
+                    <span className="block whitespace-nowrap text-base font-bold tracking-tight text-[var(--sp-brand)]">
+                      {product.showPrice && unitPrice > 0
+                        ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(unitPrice, language, product.currency)}`
+                        : t('priceOnRequest')}
                     </span>
                   </div>
-                )}
+
+                  <div className="min-w-0">
+                    <span className="mb-1 block text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
+                      {copy.orderRule}
+                    </span>
+                    <span className="block whitespace-nowrap text-xs font-semibold leading-5 text-[var(--sp-ink-secondary)]">
+                      {compactOrderRule}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <label htmlFor="product-quantity" className="mb-1 block text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
+                      {quantityLabel}
+                    </label>
+                    {inCart && !variantRequired ? (
+                      <ProductCartControl
+                        product={product}
+                        variant={selectedVariant || undefined}
+                        size="card"
+                      />
+                    ) : (
+                      <div className="flex min-h-11 items-center overflow-hidden rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)]">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((q) => Math.max(orderRule.minimumQuantity, q - orderRule.quantityStep))}
+                          aria-label={copy.decrease}
+                          className="flex size-10 shrink-0 items-center justify-center text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface)] hover:text-[var(--sp-ink)]"
+                        >
+                          <Minus className="size-4" aria-hidden="true" />
+                        </button>
+                        <input
+                          id="product-quantity"
+                          type="number"
+                          min={orderRule.minimumQuantity}
+                          max={orderRule.maximumQuantity}
+                          step={orderRule.quantityStep}
+                          value={quantity}
+                          onChange={(e) => setQuantity(Number(e.target.value) || orderRule.minimumQuantity)}
+                          onFocus={() => setIsQuantityEditing(true)}
+                          onBlur={() => {
+                            setQuantity((current) => normalizeOrderQuantity(product, current, selectedVariant || undefined));
+                            setIsQuantityEditing(false);
+                          }}
+                          aria-label={quantityLabel}
+                          className="min-w-0 flex-1 bg-transparent px-1 text-center text-sm font-semibold tabular-nums text-[var(--sp-ink)] outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((q) => normalizeOrderQuantity(
+                            product,
+                            q + orderRule.quantityStep,
+                            selectedVariant || undefined,
+                          ))}
+                          aria-label={copy.increase}
+                          className="flex size-10 shrink-0 items-center justify-center text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface)] hover:text-[var(--sp-ink)]"
+                        >
+                          <Plus className="size-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <span className="mb-1 flex items-center gap-1 text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
+                      <Calculator className="size-3.5 text-[var(--sp-brand)]" aria-hidden="true" />
+                      {copy.total}
+                    </span>
+                    <span className="block whitespace-nowrap text-base font-bold tabular-nums text-[var(--sp-brand)]">
+                      {product.showPrice && unitPrice > 0 && !variantRequired
+                        ? formatMoney(totalPrice, language, product.currency)
+                        : t('priceOnRequest')}
+                    </span>
+                  </div>
+                </div>
 
                 {/* Action Buttons */}
-                <div className="space-y-2 pt-1">
+                <div className="flex items-stretch gap-2 pt-1">
                   {!inCart && (variantRequired || !orderable) ? (
                     <button
                       type="button"
                       disabled
                       aria-describedby={variantRequired ? 'variant-selection-hint' : undefined}
-                      className="flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-control)] px-4 text-sm font-semibold text-[var(--sp-ink-tertiary)]"
+                      className="flex min-h-11 min-w-0 flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-control)] px-4 text-sm font-semibold text-[var(--sp-ink-tertiary)]"
                     >
                       {orderable ? <ShoppingCart className="size-4" aria-hidden="true" /> : <AlertCircle className="size-4" aria-hidden="true" />}
                       <span>{variantRequired ? copy.selectVariant : copy.informational}</span>
@@ -623,14 +641,15 @@ export default function ProductDetailPage({
                       product={product}
                       variant={selectedVariant || undefined}
                       initialQuantity={quantity}
-                      size="detail"
+                      size="card"
+                      className="min-w-0 flex-1"
                     />
                   ) : null}
 
                   <button
                     type="button"
                     onClick={() => toggleFavorite(product.id)}
-                    className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border px-4 text-sm font-medium transition-colors ${
+                    className={`flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border px-3 text-sm font-medium transition-colors sm:px-4 ${
                       favorited
                         ? 'border-[color-mix(in_srgb,var(--sp-danger)_32%,var(--sp-line))] bg-[color-mix(in_srgb,var(--sp-danger)_8%,var(--sp-surface))] text-[var(--sp-danger)]'
                         : 'border-[var(--sp-line)] text-[var(--sp-ink-secondary)] hover:border-[var(--sp-line-strong)] hover:bg-[var(--sp-surface-inset)]'

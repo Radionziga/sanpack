@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Home, Search, ShoppingBag } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
@@ -52,17 +53,19 @@ function normalizeLocale(value: string | undefined): Language {
 
 export default function StorefrontNotFound() {
   const params = useParams<{ locale?: string }>();
-  const labels = copy[normalizeLocale(params.locale)];
+  const locale = normalizeLocale(params.locale);
+  const labels = copy[locale];
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header />
       <main className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-12 sm:py-20">
-        <section className="relative w-full overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
-          <div className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-[var(--sp-brand-soft)] opacity-80" aria-hidden="true" />
-          <div className="pointer-events-none absolute -bottom-24 right-24 size-48 rounded-full bg-[var(--sp-accent-soft)] opacity-70" aria-hidden="true" />
-
-          <div className="relative max-w-2xl">
+        <section className="w-full bg-[var(--sp-surface)] px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
             <div className="inline-flex min-h-9 items-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] px-3 font-compact text-xs font-bold uppercase tracking-[0.1em] text-[var(--sp-brand)]">
               {labels.eyebrow}
             </div>
@@ -73,7 +76,7 @@ export default function StorefrontNotFound() {
               {labels.description}
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-7 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
               <Link href="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-bold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90">
                 <Home className="size-4" aria-hidden="true" />
                 {labels.home}
@@ -84,7 +87,7 @@ export default function StorefrontNotFound() {
               </Link>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-2 border-t border-[var(--sp-line)] pt-5 text-sm text-[var(--sp-ink-secondary)]">
+            <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-2 border-t border-[var(--sp-line)] pt-5 text-sm text-[var(--sp-ink-secondary)]">
               <span>{labels.hint}</span>
               <Link href="/search" className="inline-flex items-center gap-1.5 font-bold text-[var(--sp-brand)] hover:underline">
                 <Search className="size-4" aria-hidden="true" />

@@ -88,10 +88,8 @@ export function useMobileStorefrontChrome() {
 
 export function MobileStorefrontChrome({
   children,
-  initialProducts,
 }: {
   children: ReactNode;
-  initialProducts: Product[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -100,7 +98,7 @@ export function MobileStorefrontChrome({
   const { contacts, modules } = useSiteSettings();
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isTextEntryFocused, setIsTextEntryFocused] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -211,7 +209,7 @@ export function MobileStorefrontChrome({
   }, []);
 
   useEffect(() => {
-    if (initialProducts.length > 0) return;
+    if (activePanel !== 'search' || products.length > 0) return;
     let cancelled = false;
     PublicRepository.getProducts()
       .then((nextProducts) => {
@@ -221,7 +219,7 @@ export function MobileStorefrontChrome({
     return () => {
       cancelled = true;
     };
-  }, [initialProducts.length]);
+  }, [activePanel, products.length]);
 
   useEffect(() => {
     const handleFocusIn = (event: FocusEvent) => setIsTextEntryFocused(isTextEntryElement(event.target));

@@ -6,6 +6,8 @@ coverage/
 *.tsbuildinfo
 .playwright-cli/
 output/playwright/
+test-results/
+playwright-report/
 
 # Local skill-manager integrations (canonical skills live in .agents/skills).
 .claude/
@@ -21,4 +23,3 @@ scratch/
 public/promo/raw/
 .codex-logs/
 .codex-runtime/
-

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
 import { getCustomerSession } from '@/lib/auth/customerSession';
-import { checkRateLimit } from '@/lib/security/rateLimit';
+import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 import { checkoutRequestSchema } from '@/lib/validation/order';
 import { calculateOrderTotals, createOrderSnapshots } from '@/lib/orders/orderService';
 import { getOrderInputErrorMessage } from '@/lib/orders/orderErrors';
@@ -14,6 +14,7 @@ import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
 import { decryptSecret } from '@/lib/telegram/secrets';
 import { verifyTelegramInitData } from '@/lib/telegram/miniApp';
 import { notifyAboutNewOrder } from '@/lib/telegram/notifications';
+import { logError } from '@/lib/observability/logger';
 
 export const runtime = 'nodejs';
 
@@ -34,13 +35,20 @@ export async function GET() {
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
     return NextResponse.json(orders);
   } catch (error) {
-    console.error('Customer order history failed.', error);
+    logError('order.history_failed', error);
     return NextResponse.json({ error: 'Не удалось загрузить историю заявок.' }, { status: 503 });
   }
 }
 
 export async function POST(request: Request) {
-  const rateLimit = checkRateLimit(request, 'order-request', 5, 10 * 60 * 1000);
+  const parsed = checkoutRequestSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Проверьте контактные данные, доставку и состав заявки.', fields: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    );
+  }
+  const rateLimit = await checkDistributedRateLimit(request, 'order-request', 5, 10 * 60 * 1000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Слишком много попыток. Попробуйте позже.' },
@@ -49,14 +57,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    const parsed = checkoutRequestSchema.safeParse(await request.json().catch(() => null));
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Проверьте контактные данные, доставку и состав заявки.', fields: parsed.error.flatten().fieldErrors },
-        { status: 400 }
-      );
-    }
-
     const customer = await getCustomerSession();
     let telegramUser: RequestOrder['telegramUser'] = customer ? omitUndefinedFields({
       id: customer.telegramId,
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
         notification: { ...notification, attemptedAt: new Date().toISOString() },
       });
     } catch (notificationError) {
-      console.error('Order saved, but Telegram notification failed.', notificationError);
+      logError('order.notification_failed', notificationError, { requestId: document.id });
       await document.update({
         notification: {
           delivered: false,
@@ -147,7 +147,7 @@ export async function POST(request: Request) {
     if (inputError) {
       return NextResponse.json({ error: inputError }, { status: 400 });
     }
-    console.error('Order creation failed.', error);
+    logError('order.creation_failed', error);
     return NextResponse.json(
       { error: 'Заявка не была сохранена. Повторите отправку позже.' },
       { status: 503 }

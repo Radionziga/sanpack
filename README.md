@@ -34,10 +34,11 @@ The repository targets one Firebase project: `stamply-4df8a`.
 - Guest checkout does not create an authenticated order-history identity. A
   phone number is contact data, not proof of identity. Buyer history requires
   the optional Telegram sign-in flow.
-- Administrator roles come from `admins/{uid}` documents. Keep
-  `SANPACK_ENFORCE_ADMIN_DOCUMENTS=false` only as a migration compatibility
-  mode; enable strict enforcement after every production administrator document
-  has been verified.
+- Firebase Authentication is reserved for administrators. Every Firebase user
+  created manually in Firebase Console receives the `super_admin` role; there
+  is no public administrator registration flow.
+- Customer identity is a separate Telegram-based flow and never grants access
+  to the Firebase administrator session.
 - Deploy Firestore rules with `npm exec firebase deploy -- --only firestore:rules`.
 
 For local server operations, Application Default Credentials or

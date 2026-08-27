@@ -38,7 +38,7 @@ export async function GET() {
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
     const [settings, requests] = await Promise.all([
       getBagDesignerSettings(),
-      getAdminDb().collection('bagDesignRequests').where('status', '!=', 'draft').limit(100).get(),
+      getAdminDb().collection('bagDesignRequests').orderBy('createdAt', 'desc').limit(100).get(),
     ]);
     const list = requests.docs.map((document) => ({ id: document.id, ...document.data(), requestTokenHash: undefined }) as unknown as BagDesignRequestRecord)
       .sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));

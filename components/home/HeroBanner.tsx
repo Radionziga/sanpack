@@ -109,7 +109,7 @@ export function HeroBanner() {
             <div className="relative space-y-3 overflow-hidden rounded-[var(--sp-radius)] border border-[color-mix(in_srgb,var(--sp-on-brand-deep)_15%,transparent)] bg-[color-mix(in_srgb,var(--sp-on-brand-deep)_5%,transparent)] p-5 shadow-xl backdrop-blur-md">
               <div className="group relative aspect-4/3 overflow-hidden rounded-[var(--sp-radius-control)] bg-[var(--sp-surface)] p-3 shadow-inner">
                 <Image
-                  src="/catalog/page_1.png"
+                  src="/catalog/page_1.webp"
                   alt={`${company.name} Packaging & HoReCa`}
                   fill
                   priority

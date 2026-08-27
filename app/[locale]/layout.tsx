@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PublicProviders } from '@/components/PublicProviders';
 import { routing } from '@/i18n/routing';
-import { getPublicProducts, getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
+import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
 import { StorefrontTheme } from '@/components/theme/StorefrontTheme';
 import Script from 'next/script';
 import { TelegramMiniAppBridge } from '@/components/telegram/TelegramMiniAppBridge';
@@ -69,6 +69,7 @@ export async function generateMetadata({
         ? settings.seo?.defaultDescriptionZh || settings.seo?.defaultDescriptionEn || settings.seo?.defaultDescriptionRu || fallbackDescription
         : settings.seo?.defaultDescriptionRu || fallbackDescription;
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
     title,
     description,
     alternates: {
@@ -143,13 +144,6 @@ export default async function LocaleLayout({
     );
   }
 
-  const initialProducts = await getPublicProducts().catch((error) => {
-    if (process.env.NEXT_PHASE !== 'phase-production-build') {
-      console.error('Products could not be preloaded for mobile search.', error);
-    }
-    return [];
-  });
-
   return (
     <html lang={locale} className={storefrontFontVariables}>
       <body suppressHydrationWarning>
@@ -160,7 +154,6 @@ export default async function LocaleLayout({
             <PublicProviders
               locale={locale}
               settings={settings}
-              initialProducts={initialProducts}
             >
               {children}
             </PublicProviders>

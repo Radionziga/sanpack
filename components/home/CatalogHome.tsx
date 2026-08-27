@@ -30,6 +30,7 @@ import {
 interface CatalogHomeProps {
   products: Product[];
   categories: Category[];
+  categoryProductCounts: Record<string, number>;
   banners: Banner[];
   locale: Language;
   catalogPdfUrl?: string;
@@ -39,6 +40,7 @@ interface CatalogHomeProps {
 export function CatalogHome({
   products,
   categories,
+  categoryProductCounts,
   banners,
   locale,
   catalogPdfUrl,
@@ -115,12 +117,12 @@ export function CatalogHome({
 
         return {
           category,
-          count: categoryProducts.length,
+          count: categoryProductCounts[category.id] ?? categoryProducts.length,
           image: category.image || categoryProducts[0]?.mainImage,
         };
       })
       .filter((item) => item.category.status === 'active' && item.count > 0)
-      .sort((a, b) => (a.category.sortOrder ?? 99) - (b.category.sortOrder ?? 99)), [categories, products]);
+      .sort((a, b) => (a.category.sortOrder ?? 99) - (b.category.sortOrder ?? 99)), [categories, categoryProductCounts, products]);
 
   const childCategoryCards = useMemo(
     () => categoryCards.filter((item) => Boolean(item.category.parentId)),
@@ -132,15 +134,13 @@ export function CatalogHome({
     const categoriesWithProducts = categories.filter((category) => (
       Boolean(category.parentId)
       && category.status === 'active'
-      && products.some((product) => (
-        product.categoryId === category.id || product.categorySlug === category.slug
-      ))
+      && (categoryProductCounts[category.id] ?? 0) > 0
     ));
 
     return categoriesWithProducts
       .sort((left, right) => (left.sortOrder ?? 99) - (right.sortOrder ?? 99))
       .slice(0, 10);
-  }, [categories, products]);
+  }, [categories, categoryProductCounts]);
 
   const categorySections = useMemo(() => mainCategories
     .map((category) => ({

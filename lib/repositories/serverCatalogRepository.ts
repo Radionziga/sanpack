@@ -30,6 +30,29 @@ function isSeedFallbackEnabled() {
   return process.env.SANPACK_USE_SEED_DATA === 'true';
 }
 
+function optimizedLocalAsset(value?: string) {
+  if (!value) return value;
+  return /^\/(?:catalog\/categories|promo)\/.+\.png$/i.test(value)
+    ? value.replace(/\.png$/i, '.webp')
+    : value;
+}
+
+function withOptimizedProductAssets(product: Product): Product {
+  return {
+    ...product,
+    mainImage: optimizedLocalAsset(product.mainImage) || product.mainImage,
+    images: product.images.map((image) => optimizedLocalAsset(image) || image),
+  };
+}
+
+function withOptimizedCategoryAssets(category: Category): Category {
+  return {
+    ...category,
+    image: optimizedLocalAsset(category.image),
+    banner: optimizedLocalAsset(category.banner),
+  };
+}
+
 function assertPublicReadAllowed(resource: string) {
   assertPublicDataReadAllowed({
     resource,
@@ -58,9 +81,14 @@ function withSeedChineseLocalization(product: Product): Product {
 
 function withSeedBannerChineseLocalization(banner: Banner): Banner {
   const seed = initialBanners.find((candidate) => candidate.id === banner.id);
-  if (!seed) return banner;
-  return {
+  const optimized = {
     ...banner,
+    imageDesktop: optimizedLocalAsset(banner.imageDesktop) || banner.imageDesktop,
+    imageMobile: optimizedLocalAsset(banner.imageMobile) || banner.imageMobile,
+  };
+  if (!seed) return optimized;
+  return {
+    ...optimized,
     titleZh: banner.titleZh?.trim() || seed.titleZh,
     subtitleZh: banner.subtitleZh?.trim() || seed.subtitleZh,
     buttonTextZh: banner.buttonTextZh?.trim() || seed.buttonTextZh,
@@ -217,8 +245,8 @@ async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
 const getCachedPublicProducts = unstable_cache(
   async () => filterPublicProducts(
     await readCollection<Product>('products', initialProducts)
-  ).map(withSeedChineseLocalization).map(withGeneratedProductImage),
-  ['public-products-v11-zh-localization-2026-08-25'],
+  ).map(withSeedChineseLocalization).map(withGeneratedProductImage).map(withOptimizedProductAssets),
+  ['public-products-v12-local-webp-2026-08-27'],
   { revalidate: 300, tags: ['products'] }
 );
 
@@ -228,8 +256,8 @@ export async function getPublicProducts() {
 }
 
 const getCachedPublicCategories = unstable_cache(
-  () => readCollection<Category>('categories', initialCategories),
-  ['public-categories-v6-fail-honest-2026-08-22'],
+  async () => (await readCollection<Category>('categories', initialCategories)).map(withOptimizedCategoryAssets),
+  ['public-categories-v7-local-webp-2026-08-27'],
   { revalidate: 1800, tags: ['categories'] }
 );
 
@@ -263,7 +291,7 @@ export async function getPublicClients() {
 const getCachedPublicBanners = unstable_cache(
   async () => (await readCollection<Banner>('banners', initialBanners))
     .map(withSeedBannerChineseLocalization),
-  ['public-banners-v7-zh-localization-2026-08-26'],
+  ['public-banners-v8-local-webp-2026-08-27'],
   { revalidate: 900, tags: ['banners'] }
 );
 

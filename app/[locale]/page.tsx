@@ -41,16 +41,36 @@ export default async function HomePage({
   const activeCategories = categories
     .filter((category) => category.status === 'active')
     .sort((a, b) => a.sortOrder - b.sortOrder);
+  const categoryProductCounts = Object.fromEntries(activeCategories.map((category) => {
+    const relatedCategories = [
+      category,
+      ...activeCategories.filter((candidate) => candidate.parentId === category.id),
+    ];
+    const childIds = new Set(relatedCategories.map((candidate) => candidate.id));
+    const childSlugs = new Set(relatedCategories.map((candidate) => candidate.slug));
+    return [category.id, publishedProducts.filter((product) => (
+      childIds.has(product.categoryId)
+      || childSlugs.has(product.categorySlug)
+    )).length];
+  }));
+  const shelfCategories = activeCategories
+    .filter((category) => category.parentId && categoryProductCounts[category.id] > 0)
+    .slice(0, 10);
+  const homeProductIds = new Set(shelfCategories.flatMap((category) => publishedProducts
+    .filter((product) => product.categoryId === category.id || product.categorySlug === category.slug)
+    .slice(0, 6)
+    .map((product) => product.id)));
+  const homeProducts = publishedProducts.filter((product) => homeProductIds.has(product.id));
   return (
     <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header
         initialCategories={activeCategories}
-        initialProducts={publishedProducts}
       />
       <main className="flex-1">
         <CatalogHome
-          products={publishedProducts}
+          products={homeProducts}
           categories={activeCategories}
+          categoryProductCounts={categoryProductCounts}
           banners={banners}
           locale={locale}
           catalogPdfUrl={process.env.NEXT_PUBLIC_CATALOG_PDF_URL}

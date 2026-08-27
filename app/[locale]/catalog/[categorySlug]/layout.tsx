@@ -22,11 +22,13 @@ export async function generateMetadata({
     ru: category.seo?.titleRu || category.titleRu,
     uz: category.seo?.titleUz || category.titleUz,
     en: category.seo?.titleEn || category.titleEn,
+    zh: category.seo?.titleZh || category.titleZh,
   }).text;
   const description = resolveLocalizedText(locale, {
     ru: category.seo?.descriptionRu || category.descriptionRu,
     uz: category.seo?.descriptionUz || category.descriptionUz,
     en: category.seo?.descriptionEn || category.descriptionEn,
+    zh: category.seo?.descriptionZh || category.descriptionZh,
   }).text;
   const path = `/catalog/${category.slug}`;
 
@@ -35,11 +37,10 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `/${locale}${path}`,
-      languages: {
-        ru: `/ru${path}`,
-        uz: `/uz${path}`,
-        en: `/en${path}`,
-      },
+      languages: Object.fromEntries([
+        ...routing.locales.map((language) => [language, `/${language}${path}`]),
+        ['x-default', `/ru${path}`],
+      ]),
     },
   };
 }

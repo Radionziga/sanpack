@@ -28,12 +28,13 @@ const designerCopy = {
     sizeTitle: 'Пакет и точный размер', sizeIntro: 'Начните с готового варианта или введите свои значения в сантиметрах.',
     bagShape: 'Форма пакета', presets: 'Готовые размеры', customSize: 'Свой размер', width: 'Ширина, см', height: 'Высота, см', gussetLabel: 'Складка, см',
     limitsWithGusset: 'Ширина 10–120 см · высота 15–150 см · складка 0–40 см', limitsWithoutGusset: 'Ширина 10–120 см · высота 15–150 см · для этой формы складка не используется',
-    bagColor: 'Цвет готового пакета', colorHint: 'Выбранный цвет используется в готовой визуализации. Технический эскиз слева всегда остаётся нейтральным.',
+    bagColor: 'Цвет готового пакета', colorHint: 'Выбранный цвет сразу отображается на пакете слева и будет использован в итоговой визуализации.',
     finish: 'Поверхность', matte: 'Матовая', glossy: 'Глянцевая', quantity: 'Тираж, шт.', minimum: 'Минимальный тираж', minimumSuffix: 'шт. Точную стоимость рассчитает менеджер.',
-    logoTitle: 'Добавьте логотип', logoIntro: 'Загрузите файл и перетащите логотип по серому эскизу слева. Голубая рамка показывает безопасную область печати.', chooseLogo: 'Выбрать логотип', fileHint: 'PNG, JPEG или WebP · до 8 МБ',
+    logoTitle: 'Добавьте логотип', logoIntro: 'Загрузите файл и перетащите логотип по пакету слева. Голубая рамка показывает безопасную область печати.', chooseLogo: 'Выбрать логотип', fileHint: 'PNG, JPEG или WebP · до 8 МБ',
     logoWidth: 'Ширина логотипа', printArea: 'области печати', rotation: 'Поворот', resetLogo: 'По центру и исходный размер',
     visualizationTitle: 'Получите визуализацию', visualizationIntro: 'Оставьте контакты перед первой генерацией. После просмотра можно отправить макет менеджеру и получить расчёт.',
     visualizationAlt: 'Визуализация пакета', layout: 'Макет', ready: 'Визуализация готова', name: 'Имя', namePlaceholder: 'Как к вам обращаться', phone: 'Телефон',
+    consent: 'Нажимая кнопку, вы разрешаете сохранить контактные данные для подготовки визуализации и связи по этому запросу.',
     creating: 'Создаём визуализацию…', create: 'Создать визуализацию', getEstimate: 'Получить расчёт', back: 'Назад', toLogo: 'Перейти к логотипу', toVisualization: 'Перейти к визуализации',
     disclaimer: 'Эскиз и визуализация показывают идею. Перед производством наш технолог проверит размеры, материал и зону нанесения.',
     errors: {
@@ -43,6 +44,70 @@ const designerCopy = {
       generate: 'Не удалось создать визуализацию.', noResult: 'Сервер не вернул результат визуализации.', submit: 'Заявку не удалось отправить.',
     },
     colorLabels: {} as Record<string, string>,
+  },
+  uz: {
+    steps: ['Paket va o‘lcham', 'Logotip', 'Vizualizatsiya'],
+    typeLabels: { tshirt: '“Mayka” paket', 'die-cut': 'O‘yma dastali paket', flat: 'To‘g‘ri paket' } as Record<BagType, string>,
+    typeNotes: {
+      tshirt: 'Xarid va yetkazib berish uchun. O‘lcham dastalarni ham o‘z ichiga oladi, buklama foydali hajmni belgilaydi.',
+      'die-cut': 'Do‘kon, ko‘rgazma va promo-to‘plamlar uchun o‘yma dastali yassi paket.',
+      flat: 'Poligrafiya, tekstil va yengil mahsulotlar uchun dastasiz sodda paket.',
+    },
+    eyebrow: 'Paket konstruktori', title: 'Brendingiz uchun paket yarating',
+    intro: 'Aniq o‘lchamni kiriting, material rangini tanlang va logotipni joylashtiring. So‘ng vizualizatsiya va tiraj hisobini tayyorlaymiz.',
+    stepsLabel: 'Konstruktor bosqichlari', proportional: 'Eskiz o‘lchamga mos ravishda nisbatini o‘zgartiradi', gusset: 'buklama', unitCm: 'sm',
+    previewHint: 'Eskiz paket nisbati va xavfsiz bosma maydonini ko‘rsatadi. Keyingi bosqichda logotipni paket ustida siljitish mumkin.',
+    sizeTitle: 'Paket va aniq o‘lcham', sizeIntro: 'Tayyor o‘lchamdan boshlang yoki santimetrda o‘z qiymatlaringizni kiriting.',
+    bagShape: 'Paket shakli', presets: 'Tayyor o‘lchamlar', customSize: 'Maxsus o‘lcham', width: 'Kenglik, sm', height: 'Balandlik, sm', gussetLabel: 'Buklama, sm',
+    limitsWithGusset: 'Kenglik 10–120 sm · balandlik 15–150 sm · buklama 0–40 sm', limitsWithoutGusset: 'Kenglik 10–120 sm · balandlik 15–150 sm · bu shaklda buklama ishlatilmaydi',
+    bagColor: 'Tayyor paket rangi', colorHint: 'Tanlangan rang chapdagi paketda darhol ko‘rinadi va yakuniy vizualizatsiyada ishlatiladi.',
+    finish: 'Yuza', matte: 'Mat', glossy: 'Yaltiroq', quantity: 'Tiraj, dona', minimum: 'Minimal tiraj', minimumSuffix: 'dona. Aniq narxni menejer hisoblaydi.',
+    logoTitle: 'Logotip qo‘shing', logoIntro: 'Faylni yuklang va logotipni chapdagi paket ustida siljiting. Moviy chiziq xavfsiz bosma maydonini ko‘rsatadi.', chooseLogo: 'Logotipni tanlash', fileHint: 'PNG, JPEG yoki WebP · 8 MB gacha',
+    logoWidth: 'Logotip kengligi', printArea: 'bosma maydoni', rotation: 'Burilish', resetLogo: 'Markazga va boshlang‘ich o‘lchamga',
+    visualizationTitle: 'Vizualizatsiyani oling', visualizationIntro: 'Birinchi generatsiyadan oldin kontaktlaringizni qoldiring. Natijani ko‘rgach, maketni menejerga yuborib hisob olishingiz mumkin.',
+    visualizationAlt: 'Paket vizualizatsiyasi', layout: 'Maket', ready: 'Vizualizatsiya tayyor', name: 'Ism', namePlaceholder: 'Sizga qanday murojaat qilaylik', phone: 'Telefon',
+    consent: 'Tugmani bosish orqali vizualizatsiya tayyorlash va ushbu so‘rov bo‘yicha bog‘lanish uchun kontaktlaringizni saqlashga rozilik bildirasiz.',
+    creating: 'Vizualizatsiya yaratilmoqda…', create: 'Vizualizatsiya yaratish', getEstimate: 'Hisobni olish', back: 'Orqaga', toLogo: 'Logotipga o‘tish', toVisualization: 'Vizualizatsiyaga o‘tish',
+    disclaimer: 'Eskiz va vizualizatsiya g‘oyani ko‘rsatadi. Ishlab chiqarishdan oldin texnolog o‘lcham, material va bosma maydonini tekshiradi.',
+    errors: {
+      file: '8 MB gacha PNG, JPEG yoki WebP fayl yuklang.', logoOpen: 'Logotip faylini ochib bo‘lmadi. Boshqa faylni tanlang.',
+      size: 'O‘lchamni tekshiring: kenglik 10–120 sm, balandlik 15–150 sm, buklama 0–40 sm.', addLogo: 'Vizualizatsiyaga o‘tish uchun logotip qo‘shing.',
+      uploadFirst: 'Avval logotipni yuklang.', contacts: 'Ism va telefon raqamini kiriting.', preview: 'Eskiz hali tayyor emas.',
+      generate: 'Vizualizatsiyani yaratib bo‘lmadi.', noResult: 'Server vizualizatsiya natijasini qaytarmadi.', submit: 'So‘rovni yuborib bo‘lmadi.',
+    },
+    colorLabels: { 'sanpack-green': 'SANPACK yashil', white: 'Oq', black: 'Qora', kraft: 'Kraft', transparent: 'Yarim shaffof' } as Record<string, string>,
+  },
+  en: {
+    steps: ['Bag and size', 'Logo', 'Visualization'],
+    typeLabels: { tshirt: 'T-shirt bag', 'die-cut': 'Die-cut handle bag', flat: 'Flat bag' } as Record<BagType, string>,
+    typeNotes: {
+      tshirt: 'For shopping and delivery. Dimensions include the handles; the gusset defines usable volume.',
+      'die-cut': 'A flat bag with a die-cut handle for stores, exhibitions and promotional kits.',
+      flat: 'A simple handle-free bag for printed materials, textiles and lightweight goods.',
+    },
+    eyebrow: 'Bag designer', title: 'Build a bag for your brand',
+    intro: 'Set the exact size, choose a material color and place your logo. We will then prepare a visualization and production estimate.',
+    stepsLabel: 'Designer steps', proportional: 'The sketch changes proportions with the selected size', gusset: 'gusset', unitCm: 'cm',
+    previewHint: 'The sketch shows the bag proportions and safe print area. On the next step you can drag the logo directly on the bag.',
+    sizeTitle: 'Bag and exact size', sizeIntro: 'Start with a standard size or enter your own values in centimetres.',
+    bagShape: 'Bag shape', presets: 'Standard sizes', customSize: 'Custom size', width: 'Width, cm', height: 'Height, cm', gussetLabel: 'Gusset, cm',
+    limitsWithGusset: 'Width 10–120 cm · height 15–150 cm · gusset 0–40 cm', limitsWithoutGusset: 'Width 10–120 cm · height 15–150 cm · this shape does not use a gusset',
+    bagColor: 'Finished bag color', colorHint: 'The selected color appears on the bag immediately and is used in the final visualization.',
+    finish: 'Finish', matte: 'Matte', glossy: 'Glossy', quantity: 'Quantity, pcs', minimum: 'Minimum quantity', minimumSuffix: 'pcs. A manager will calculate the final price.',
+    logoTitle: 'Add your logo', logoIntro: 'Upload a file and drag the logo on the bag at left. The blue outline marks the safe print area.', chooseLogo: 'Choose logo', fileHint: 'PNG, JPEG or WebP · up to 8 MB',
+    logoWidth: 'Logo width', printArea: 'of print area', rotation: 'Rotation', resetLogo: 'Center and reset size',
+    visualizationTitle: 'Get a visualization', visualizationIntro: 'Leave your contact details before the first generation. After reviewing it, send the layout to a manager for an estimate.',
+    visualizationAlt: 'Bag visualization', layout: 'Layout', ready: 'Visualization is ready', name: 'Name', namePlaceholder: 'How should we address you?', phone: 'Phone',
+    consent: 'By continuing, you allow us to save your contact details to prepare the visualization and contact you about this request.',
+    creating: 'Creating visualization…', create: 'Create visualization', getEstimate: 'Get an estimate', back: 'Back', toLogo: 'Continue to logo', toVisualization: 'Continue to visualization',
+    disclaimer: 'The sketch and visualization show the concept. Before production, our technologist will verify the dimensions, material and print area.',
+    errors: {
+      file: 'Upload a PNG, JPEG or WebP file up to 8 MB.', logoOpen: 'The logo could not be opened. Choose another file.',
+      size: 'Check the size: width 10–120 cm, height 15–150 cm, gusset 0–40 cm.', addLogo: 'Add a logo before continuing to visualization.',
+      uploadFirst: 'Upload a logo first.', contacts: 'Enter your name and phone number.', preview: 'The preview is not ready yet.',
+      generate: 'The visualization could not be created.', noResult: 'The server did not return a visualization.', submit: 'The request could not be sent.',
+    },
+    colorLabels: { 'sanpack-green': 'SANPACK green', white: 'White', black: 'Black', kraft: 'Kraft', transparent: 'Translucent' } as Record<string, string>,
   },
   zh: {
     steps: ['包装袋与尺寸', '品牌标识', '效果图'],
@@ -59,12 +124,13 @@ const designerCopy = {
     sizeTitle: '包装袋与准确尺寸', sizeIntro: '可选择常用尺寸，也可以输入自定义尺寸（厘米）。',
     bagShape: '包装袋类型', presets: '常用尺寸', customSize: '自定义尺寸', width: '宽度（厘米）', height: '高度（厘米）', gussetLabel: '侧褶（厘米）',
     limitsWithGusset: '宽度 10–120 厘米 · 高度 15–150 厘米 · 侧褶 0–40 厘米', limitsWithoutGusset: '宽度 10–120 厘米 · 高度 15–150 厘米 · 此袋型不使用侧褶',
-    bagColor: '成品包装袋颜色', colorHint: '所选颜色将用于最终效果图；左侧技术示意图始终保持中性色。',
+    bagColor: '成品包装袋颜色', colorHint: '所选颜色会立即显示在左侧包装袋上，并用于最终效果图。',
     finish: '表面效果', matte: '哑光', glossy: '亮光', quantity: '生产数量（件）', minimum: '最低生产数量', minimumSuffix: '件。准确价格由客户经理核算。',
-    logoTitle: '添加品牌标识', logoIntro: '上传文件并在左侧示意图上拖动标识。蓝色边框表示安全印刷区域。', chooseLogo: '选择品牌标识', fileHint: 'PNG、JPEG 或 WebP · 最大 8 MB',
+    logoTitle: '添加品牌标识', logoIntro: '上传文件并在左侧包装袋上拖动标识。蓝色边框表示安全印刷区域。', chooseLogo: '选择品牌标识', fileHint: 'PNG、JPEG 或 WebP · 最大 8 MB',
     logoWidth: '标识宽度', printArea: '印刷区域', rotation: '旋转角度', resetLogo: '恢复居中与默认大小',
     visualizationTitle: '生成效果图', visualizationIntro: '首次生成前请填写联系方式。查看效果后，可将设计发送给客户经理并获取报价。',
     visualizationAlt: '包装袋效果图', layout: '设计编号', ready: '效果图已生成', name: '姓名', namePlaceholder: '如何称呼您', phone: '电话',
+    consent: '点击按钮即表示您同意我们保存联系方式，用于生成效果图并就此申请与您联系。',
     creating: '正在生成效果图…', create: '生成效果图', getEstimate: '获取报价', back: '返回', toLogo: '下一步：添加标识', toVisualization: '下一步：生成效果图',
     disclaimer: '示意图和效果图仅用于展示设计概念。生产前，技术人员会核对尺寸、材料和印刷区域。',
     errors: {
@@ -73,12 +139,35 @@ const designerCopy = {
       uploadFirst: '请先上传品牌标识。', contacts: '请填写姓名和电话号码。', preview: '技术示意图尚未准备好。',
       generate: '无法生成效果图。', noResult: '服务器未返回效果图结果。', submit: '申请发送失败。',
     },
-    colorLabels: { 'sanpack-green': 'SANPACK 品牌绿', white: '白色', black: '黑色', kraft: '牛皮纸色', transparent: '半透明' },
+    colorLabels: { 'sanpack-green': 'SANPACK 品牌绿', white: '白色', black: '黑色', kraft: '牛皮纸色', transparent: '半透明' } as Record<string, string>,
   },
 } as const;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function BagTypeIllustration({ type, color }: { type: BagType; color: string }) {
+  const stroke = color.toLowerCase() === '#161a18' ? '#FFFFFF' : '#174D35';
+  const common = { fill: color, stroke, strokeWidth: 2.5, strokeLinejoin: 'round' as const };
+
+  return (
+    <svg viewBox="0 0 150 120" className="h-full w-full" aria-hidden="true">
+      <ellipse cx="82" cy="106" rx="43" ry="7" fill="#0B3322" opacity="0.1" />
+      {type === 'tshirt' ? (
+        <path d="M34 102V20h23v24c0 10 8 18 18 18s18-8 18-18V20h23v82z" {...common} />
+      ) : (
+        <path d="M35 102V24c0-5 4-9 9-9h64c5 0 9 4 9 9v78z" {...common} />
+      )}
+      {type === 'die-cut' ? (
+        <rect x="61" y="28" width="30" height="12" rx="6" fill="var(--sp-brand-soft)" stroke={stroke} strokeWidth="2" />
+      ) : null}
+      {type === 'flat' ? (
+        <path d="M43 29h66" stroke={stroke} strokeWidth="2" strokeDasharray="5 5" opacity="0.65" />
+      ) : null}
+      <path d="M48 87h56" stroke={stroke} strokeWidth="2" strokeDasharray="5 5" opacity="0.45" />
+    </svg>
+  );
 }
 
 function dataUrlToImage(dataUrl: string) {
@@ -111,7 +200,7 @@ async function svgToPng(svg: SVGSVGElement, errorMessage: string) {
 
 export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
   const { language } = useLanguage();
-  const copy = language === 'zh' ? designerCopy.zh : designerCopy.ru;
+  const copy = designerCopy[language];
   const colors = useMemo(() => {
     const productionColors = settings.colors.filter((item) => item.id !== 'neutral-gray');
     return productionColors.length ? productionColors : [fallbackColor];
@@ -261,6 +350,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           action: 'generate',
+          language,
           contact,
           spec,
           logoName,
@@ -286,7 +376,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
       const response = await fetch('/api/bag-designer', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'submit', requestId: result.requestId, requestToken: result.requestToken }),
+        body: JSON.stringify({ action: 'submit', language, requestId: result.requestId, requestToken: result.requestToken }),
       });
       const data = await parseJsonResponse<{ message: string }>(response, copy.errors.submit);
       setSubmitted(data.message);
@@ -320,8 +410,8 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
         ))}
       </nav>
 
-      <div className="grid overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,.92fr)]">
-        <div className="border-b border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 lg:border-b-0 lg:border-r lg:p-7">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,.92fr)] lg:items-start">
+        <div className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 lg:p-7">
           <div className="sticky top-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
               <div>
@@ -343,7 +433,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
           </div>
         </div>
 
-        <div className="flex min-h-[620px] flex-col p-5 md:p-7">
+        <div className="flex min-h-[620px] flex-col rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-7">
           <div className="flex-1">
             {step === 0 ? (
               <div>
@@ -352,11 +442,14 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
 
                 <fieldset className="mt-5">
                   <legend className="text-xs font-bold">{copy.bagShape}</legend>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                  <div className="mt-2 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                     {(Object.keys(BAG_TYPE_LABELS) as BagType[]).map((type) => (
-                      <button key={type} type="button" onClick={() => selectBagType(type)} className={`min-h-20 rounded-[var(--sp-radius-control)] border p-3 text-left transition-colors ${bagType === type ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)]' : 'border-[var(--sp-line)] hover:border-[var(--sp-brand)]'}`}>
-                        <span className="flex items-start justify-between gap-2 text-xs font-bold">{copy.typeLabels[type]}{bagType === type ? <Check className="size-4 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" /> : null}</span>
-                        <span className="mt-1.5 block text-[11px] leading-4 text-[var(--sp-ink-tertiary)]">{copy.typeNotes[type]}</span>
+                      <button key={type} type="button" onClick={() => selectBagType(type)} aria-pressed={bagType === type} className={`relative min-h-32 overflow-hidden rounded-[var(--sp-radius-card)] border p-3 pr-[42%] text-left transition-[border-color,background-color,transform] active:scale-[0.99] ${bagType === type ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface-inset)] hover:border-[var(--sp-brand)]'}`}>
+                        <span className="relative z-10 flex items-start justify-between gap-2 text-xs font-bold">{copy.typeLabels[type]}{bagType === type ? <Check className="size-4 shrink-0 text-[var(--sp-brand)]" aria-hidden="true" /> : null}</span>
+                        <span className="relative z-10 mt-2 block text-[11px] leading-4 text-[var(--sp-ink-tertiary)]">{copy.typeNotes[type]}</span>
+                        <span className="absolute inset-y-2 right-1 w-[44%]" aria-hidden="true">
+                          <BagTypeIllustration type={type} color={bagType === type ? color.value : '#E3ECE7'} />
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -367,7 +460,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
                   <div className="mt-2 flex flex-wrap gap-2">
                     {presets.map((preset) => (
                       <button key={preset.id} type="button" onClick={() => applyPreset(preset)} className={`min-h-10 rounded-[var(--sp-radius-control)] border px-3 text-xs font-bold ${activePresetId === preset.id ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface)] hover:border-[var(--sp-brand)]'}`}>
-                        {language === 'zh' ? preset.label.replace(/см/g, '厘米') : preset.label}{preset.gusset ? ` · ${preset.gusset} ${copy.unitCm}` : ''}
+                        {preset.label.replace(/см/g, copy.unitCm)}{preset.gusset ? ` · ${preset.gusset} ${copy.unitCm}` : ''}
                       </button>
                     ))}
                     {!activePresetId ? <span className="inline-flex min-h-10 items-center rounded-[var(--sp-radius-control)] border border-dashed border-[var(--sp-brand)] px-3 text-xs font-bold text-[var(--sp-brand)]">{copy.customSize}</span> : null}
@@ -456,6 +549,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
                     <label className="text-xs font-bold">{copy.phone}
                       <input value={contact.phone} onChange={(event) => setContact((current) => ({ ...current, phone: event.target.value }))} autoComplete="tel" inputMode="tel" className={fieldClass} placeholder="+998 90 000 00 00" />
                     </label>
+                    <p className="text-[11px] leading-5 text-[var(--sp-ink-muted)]">{copy.consent}</p>
                     <button type="button" disabled={busy} onClick={() => void generate()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-bold text-[var(--sp-on-brand)] disabled:opacity-50">{busy ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Sparkles className="size-4" aria-hidden="true" />}{busy ? copy.creating : copy.create}</button>
                   </div>
                 )}

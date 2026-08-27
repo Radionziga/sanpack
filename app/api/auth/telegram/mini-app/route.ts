@@ -6,7 +6,7 @@ import {
   CUSTOMER_SESSION_MAX_AGE_SECONDS,
 } from '@/lib/auth/customerSession';
 import { getAdminDb } from '@/lib/firebase/admin';
-import { checkRateLimit } from '@/lib/security/rateLimit';
+import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 import { verifyTelegramInitData } from '@/lib/telegram/miniApp';
 import { canDecryptSecret, decryptSecret } from '@/lib/telegram/secrets';
 import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
@@ -18,17 +18,16 @@ const miniAppSessionSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const rateLimit = checkRateLimit(request, 'telegram-mini-app-session', 20, 10 * 60 * 1000);
+  const parsed = miniAppSessionSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Некорректные данные Telegram.' }, { status: 400 });
+  }
+  const rateLimit = await checkDistributedRateLimit(request, 'telegram-mini-app-session', 20, 10 * 60 * 1000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Слишком много попыток. Попробуйте позже.' },
       { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
     );
-  }
-
-  const parsed = miniAppSessionSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Некорректные данные Telegram.' }, { status: 400 });
   }
 
   try {

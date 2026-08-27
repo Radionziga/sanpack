@@ -49,12 +49,14 @@ export interface BagDesignRequestRecord {
   number: string;
   status: 'draft' | 'new' | 'in_progress' | 'completed' | 'cancelled';
   contact: BagDesignContact;
+  locale?: 'ru' | 'uz' | 'en' | 'zh';
   spec: BagDesignSpec;
   logoName: string;
-  logoUrl: string;
-  technicalPreviewUrl: string;
-  aiMockupUrl: string;
+  logoUrl?: string;
+  technicalPreviewUrl?: string;
+  aiMockupUrl?: string;
   generationState?: 'processing' | 'ready' | 'failed';
+  generationFailureCode?: string;
   generationStartedAt?: string;
   assetPaths?: {
     logo: string;

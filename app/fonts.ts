@@ -6,6 +6,7 @@ export const inter = Inter({
   subsets: ['latin', 'cyrillic'],
   variable: '--font-inter',
   display: 'swap',
+  preload: false,
 });
 
 export const manrope = Manrope({
@@ -18,6 +19,7 @@ export const robotoSlab = Roboto_Slab({
   subsets: ['latin', 'cyrillic'],
   variable: '--font-roboto-slab',
   display: 'swap',
+  preload: false,
 });
 
 export const storefrontFontVariables = `${inter.variable} ${manrope.variable} ${robotoSlab.variable}`;

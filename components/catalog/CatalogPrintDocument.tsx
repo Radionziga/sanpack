@@ -16,6 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
 import { formatMoney } from '@/lib/catalog/productPresentation';
@@ -117,6 +118,7 @@ export function CatalogPrintDocument({
   embeddedInAdmin = false,
   generatedAt,
 }: CatalogPrintDocumentProps) {
+  const router = useRouter();
   // State
   const [withPrices, setWithPrices] = useState<boolean>(initialOptions.withPrices !== false);
   const [language, setLanguage] = useState<Language>(initialOptions.language || 'ru');
@@ -147,6 +149,16 @@ export function CatalogPrintDocument({
   useEffect(() => {
     document.title = getCatalogFilename(withPrices, language).replace(/\.pdf$/i, '');
   }, [withPrices, language]);
+
+  const handleLanguageChange = (nextLanguage: Language) => {
+    setLanguage(nextLanguage);
+    if (!embeddedInAdmin) {
+      router.replace(
+        getCatalogPrintPath(withPrices, nextLanguage, selectedCategory || undefined),
+        { scroll: false },
+      );
+    }
+  };
 
   // Sort categories
   const sortedCategories = useMemo(() => {
@@ -401,7 +413,7 @@ export function CatalogPrintDocument({
                 <button
                   type="button"
                   key={l}
-                  onClick={() => setLanguage(l)}
+                  onClick={() => handleLanguageChange(l)}
                   className={`px-2.5 py-1.5 rounded-lg font-bold uppercase transition ${
                     language === l
                       ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-sm'

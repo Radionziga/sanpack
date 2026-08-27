@@ -3,11 +3,8 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
-import {
-  authorizeAdminIdentity,
-  type StoredAdminAuthorization,
-} from '@/lib/auth/adminAuthorization';
+import { getAdminAuth } from '@/lib/firebase/admin';
+import { authorizeAdminIdentity } from '@/lib/auth/adminAuthorization';
 import type { UserRole } from '@/types';
 
 export const SESSION_COOKIE_NAME = '__session';
@@ -21,27 +18,10 @@ export interface AdminSession {
 }
 
 export async function verifyAdminToken(token: DecodedIdToken): Promise<AdminSession | null> {
-  const enforceAdminDocument = process.env.SANPACK_ENFORCE_ADMIN_DOCUMENTS === 'true';
-  let storedAdmin: StoredAdminAuthorization | null = null;
-
-  try {
-    const snapshot = await getAdminDb().collection('admins').doc(token.uid).get();
-    storedAdmin = snapshot.exists
-      ? snapshot.data() as StoredAdminAuthorization
-      : null;
-  } catch (error) {
-    if (enforceAdminDocument) throw error;
-    console.warn('Admin document could not be checked; using compatibility authorization.');
-  }
-
   return authorizeAdminIdentity({
-    identity: {
-      uid: token.uid,
-      email: token.email,
-      name: token.name,
-    },
-    storedAdmin,
-    enforceAdminDocument,
+    uid: token.uid,
+    email: token.email,
+    name: token.name,
   });
 }
 
