@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   getFeaturedCategoryIds,
@@ -19,9 +21,13 @@ describe('popular category artwork', () => {
     ]);
   });
 
-  it('provides dedicated artwork for every featured food category', () => {
-    for (const id of getFeaturedCategoryIds('cat-food')) {
-      expect(getPopularCategoryArtwork({ id })).toMatch(/^\/catalog\/popular-categories\/.+\.webp$/);
+  it('provides an existing artwork file for every featured category', () => {
+    for (const groupId of storefrontCategoryGroupIds) {
+      for (const id of getFeaturedCategoryIds(groupId)) {
+        const artwork = getPopularCategoryArtwork({ id });
+        expect(artwork).toMatch(/^\/catalog\/popular-categories\/.+\.webp$/);
+        expect(existsSync(join(process.cwd(), 'public', artwork!.slice(1)))).toBe(true);
+      }
     }
   });
 
