@@ -9,7 +9,7 @@ import { ProductCard } from '@/components/catalog/ProductCard';
 import { ProductCartControl } from '@/components/catalog/ProductCartControl';
 import { ProductDetailSkeleton } from '@/components/catalog/ProductDetailSkeleton';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
-import { Attribute, Product, ProductVariant } from '@/types';
+import { Attribute, Category, Product, ProductVariant } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
@@ -50,6 +50,7 @@ import {
   getProductSalesUnitLabel,
 } from '@/lib/catalog/productPresentation';
 import { getProductGalleryImages } from '@/lib/catalog/productGallery';
+import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
 
 function MobileProductDescription({
   text,
@@ -240,6 +241,7 @@ export default function ProductDetailPage({
 
   const [product, setProduct] = useState<Product | null>(null);
   const [attributeDefinitions, setAttributeDefinitions] = useState<Attribute[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -253,15 +255,17 @@ export default function ProductDetailPage({
     async function loadProduct() {
       setLoadState('loading');
       try {
-        const [all, definitions] = await Promise.all([
+        const [all, definitions, loadedCategories] = await Promise.all([
           PublicRepository.getProducts(),
           PublicRepository.getAttributes(),
+          PublicRepository.getCategories(),
         ]);
         if (cancelled) return;
 
         const loadedProduct = all.find((item) => item.slug === productSlug) || null;
         setProduct(loadedProduct);
         setAttributeDefinitions(definitions);
+        setCategories(loadedCategories);
         if (!loadedProduct) {
           setSelectedVariant(null);
           setRelatedProducts([]);
@@ -271,9 +275,15 @@ export default function ProductDetailPage({
 
         setSelectedVariant(null);
         setQuantity(getProductOrderRule(loadedProduct).minimumQuantity);
-        const related = all.filter(
-          (item) => item.categoryId === loadedProduct.categoryId && item.id !== loadedProduct.id,
-        );
+        const configuredRelatedIds = [...new Set([
+          ...(loadedProduct.relatedProductIds || []),
+          ...(loadedProduct.accessoryProductIds || []),
+        ])];
+        const related = configuredRelatedIds.length > 0
+          ? configuredRelatedIds
+              .map((id) => all.find((item) => item.id === id))
+              .filter((item): item is Product => Boolean(item))
+          : all.filter((item) => item.categoryId === loadedProduct.categoryId && item.id !== loadedProduct.id);
         setRelatedProducts(related.slice(0, 4));
         setLoadState('ready');
       } catch {
@@ -375,7 +385,7 @@ export default function ProductDetailPage({
 
   const visibleAttributes = getPresentedProductAttributes(
     product,
-    attributeDefinitions,
+    getApplicableAttributes(attributeDefinitions, product.categoryId, categories),
     language,
     selectedVariant?.attributes,
   );

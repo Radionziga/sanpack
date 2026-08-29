@@ -176,8 +176,17 @@ export interface Category {
   descriptionZh?: string;
   image?: string;
   imagePath?: string;
+  /** Compact artwork used in catalogue navigation and category rails. */
+  navigationImage?: string;
+  navigationImagePath?: string;
+  /** Large cover used by bento/showcase category cards. */
+  cardImage?: string;
+  cardImagePath?: string;
   icon?: string;
   banner?: string;
+  /** Explicitly include this category in its group's storefront showcase. */
+  featured?: boolean;
+  featuredSortOrder?: number;
   attributeIds?: string[];
   status: 'active' | 'hidden';
   sortOrder: number;

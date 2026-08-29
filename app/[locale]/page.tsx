@@ -6,8 +6,9 @@ import {
   getPublicCategories,
   getPublicProducts,
   getPublicBanners,
+  getPublicAttributes,
 } from '@/lib/repositories/serverCatalogRepository';
-import type { Banner, Category, Language, Product } from '@/types';
+import type { Attribute, Banner, Category, Language, Product } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,12 +24,14 @@ export default async function HomePage({
   let products: Product[] = [];
   let categories: Category[] = [];
   let banners: Banner[] = [];
+  let attributes: Attribute[] = [];
 
   try {
-    [products, categories, banners] = await Promise.all([
+    [products, categories, banners, attributes] = await Promise.all([
       getPublicProducts(),
       getPublicCategories(),
       getPublicBanners(),
+      getPublicAttributes(),
     ]);
   } catch (error) {
     dataUnavailable = true;
@@ -37,7 +40,7 @@ export default async function HomePage({
 
   const publishedProducts = products
     .filter((product) => product.status === 'published')
-    .sort((a, b) => b.sortOrder - a.sortOrder);
+    .sort((a, b) => Number(b.featured) - Number(a.featured) || b.sortOrder - a.sortOrder);
   const activeCategories = categories
     .filter((category) => category.status === 'active')
     .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -72,6 +75,7 @@ export default async function HomePage({
           categories={activeCategories}
           categoryProductCounts={categoryProductCounts}
           banners={banners}
+          attributes={attributes}
           locale={locale}
           catalogPdfUrl={process.env.NEXT_PUBLIC_CATALOG_PDF_URL}
           dataUnavailable={dataUnavailable}

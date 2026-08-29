@@ -49,6 +49,8 @@ function withOptimizedCategoryAssets(category: Category): Category {
   return {
     ...category,
     image: optimizedLocalAsset(category.image),
+    navigationImage: optimizedLocalAsset(category.navigationImage),
+    cardImage: optimizedLocalAsset(category.cardImage),
     banner: optimizedLocalAsset(category.banner),
   };
 }

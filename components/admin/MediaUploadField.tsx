@@ -95,6 +95,8 @@ export function MediaUploadField({
       ? 'aspect-square'
       : kind === 'product'
         ? 'aspect-square'
+        : kind === 'category-card'
+          ? 'aspect-[5/3]'
         : 'aspect-[4/3]';
 
   const upload = async (file: File) => {

@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useFieldArray, useForm, useWatch, type Control, type UseFormRegister } from 'react-hook-form';
 import { Plus, Trash2 } from 'lucide-react';
 
-import type { ProductVariant, StockStatus } from '@/types';
+import type { ProductAvailability, ProductPriceMode, ProductVariant, StockStatus } from '@/types';
 
 interface VariantAttributeRow {
   key: string;
@@ -19,9 +19,16 @@ interface VariantFormRow {
   titleEn: string;
   titleZh: string;
   price?: number;
+  oldPrice?: number;
+  stockQuantity?: number;
   stockStatus: StockStatus;
+  priceMode?: ProductPriceMode;
+  availability?: ProductAvailability;
   minQuantity?: number;
   quantityStep?: number;
+  maxQuantity?: number;
+  image?: string;
+  wholesaleTiers: Array<{ minQuantity?: number; price?: number }>;
   attributes: VariantAttributeRow[];
 }
 
@@ -59,9 +66,16 @@ function toFormVariant(variant: ProductVariant): VariantFormRow {
     titleEn: variant.titleEn || '',
     titleZh: variant.titleZh || '',
     price: variant.price,
+    oldPrice: variant.oldPrice,
+    stockQuantity: variant.stockQuantity,
     stockStatus: variant.stockStatus,
+    priceMode: variant.priceMode,
+    availability: variant.availability,
     minQuantity: variant.minQuantity ?? variant.minOrder,
     quantityStep: variant.quantityStep,
+    maxQuantity: variant.maxQuantity,
+    image: variant.image || '',
+    wholesaleTiers: (variant.wholesaleTiers || []).map((tier) => ({ minQuantity: tier.minQuantity, price: tier.price })),
     attributes: Object.entries(variant.attributes || {}).map(([key, value]) => ({ key, value })),
   };
 }
@@ -82,11 +96,43 @@ function toProductVariant(variant: VariantFormRow, original?: ProductVariant): P
     titleEn: variant.titleEn.trim() || undefined,
     titleZh: variant.titleZh.trim() || undefined,
     price: Number.isFinite(variant.price) ? variant.price : undefined,
+    oldPrice: Number.isFinite(variant.oldPrice) ? variant.oldPrice : undefined,
+    stockQuantity: Number.isFinite(variant.stockQuantity) ? variant.stockQuantity : undefined,
     stockStatus: variant.stockStatus,
+    priceMode: variant.priceMode,
+    availability: variant.availability,
     attributes,
     minQuantity: Number.isFinite(variant.minQuantity) ? variant.minQuantity : undefined,
     quantityStep: Number.isFinite(variant.quantityStep) ? variant.quantityStep : undefined,
+    maxQuantity: Number.isFinite(variant.maxQuantity) ? variant.maxQuantity : undefined,
+    image: variant.image?.trim() || undefined,
+    wholesaleTiers: (variant.wholesaleTiers || [])
+      .filter((tier) => Number.isFinite(tier.minQuantity) && Number.isFinite(tier.price))
+      .map((tier) => ({ minQuantity: tier.minQuantity!, price: tier.price! })),
   };
+}
+
+function VariantWholesaleTiersEditor({
+  variantIndex,
+  control,
+  register,
+}: {
+  variantIndex: number;
+  control: Control<VariantEditorForm>;
+  register: UseFormRegister<VariantEditorForm>;
+}) {
+  const { fields, append, remove } = useFieldArray({ control, name: `variants.${variantIndex}.wholesaleTiers` });
+  return <div className="space-y-3">
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-xs font-bold text-[var(--sp-ink)]">Оптовые уровни варианта</p>
+      <button type="button" onClick={() => append({ minQuantity: 1, price: 0 })} className="admin-button-secondary min-h-9 px-3 text-[11px]"><Plus className="size-3.5" />Добавить</button>
+    </div>
+    {fields.map((field, tierIndex) => <div key={field.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px] gap-2">
+      <input type="number" min="0.001" step="any" placeholder="От количества" className="admin-control font-normal" {...register(`variants.${variantIndex}.wholesaleTiers.${tierIndex}.minQuantity`, { setValueAs: optionalNumber })} />
+      <input type="number" min="0" placeholder="Цена" className="admin-control font-normal" {...register(`variants.${variantIndex}.wholesaleTiers.${tierIndex}.price`, { setValueAs: optionalNumber })} />
+      <button type="button" onClick={() => remove(tierIndex)} className="admin-icon-button text-[var(--sp-danger)]" aria-label={`Удалить оптовый уровень ${tierIndex + 1}`}><Trash2 className="size-4" /></button>
+    </div>)}
+  </div>;
 }
 
 function optionalNumber(value: unknown) {
@@ -208,9 +254,16 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
             titleEn: '',
             titleZh: '',
             price: undefined,
+            oldPrice: undefined,
+            stockQuantity: undefined,
             stockStatus: 'in_stock',
+            priceMode: 'fixed',
+            availability: 'in_stock',
             minQuantity: 1,
             quantityStep: 1,
+            maxQuantity: undefined,
+            image: '',
+            wholesaleTiers: [],
             attributes: [{ key: '', value: '' }],
           })}
           className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 py-2.5 text-xs font-semibold text-[var(--sp-on-brand)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sp-brand)] focus-visible:ring-offset-2"
@@ -299,12 +352,16 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
                     {...register(`variants.${index}.price`, { setValueAs: optionalNumber })}
                   />
                 </label>
+                <label className="font-bold text-[var(--sp-ink)]">Старая цена<input type="number" min="0" step="1" className="admin-control mt-1.5 font-normal" {...register(`variants.${index}.oldPrice`, { setValueAs: optionalNumber })} /></label>
+                <label className="font-bold text-[var(--sp-ink)]">Остаток<input type="number" min="0" step="any" className="admin-control mt-1.5 font-normal" {...register(`variants.${index}.stockQuantity`, { setValueAs: optionalNumber })} /></label>
                 <label className="font-bold text-[var(--sp-ink)]">
                   Доступность
                   <select className="admin-control mt-1.5 cursor-pointer font-normal" {...register(`variants.${index}.stockStatus`)}>
                     {stockOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </label>
+                <label className="font-bold text-[var(--sp-ink)]">Режим цены<select className="admin-control mt-1.5 cursor-pointer font-normal" {...register(`variants.${index}.priceMode`)}><option value="fixed">Фиксированная</option><option value="from">Цена от</option><option value="request">По запросу</option><option value="informational">Информационная</option></select></label>
+                <label className="font-bold text-[var(--sp-ink)]">Коммерческая доступность<select className="admin-control mt-1.5 cursor-pointer font-normal" {...register(`variants.${index}.availability`)}><option value="in_stock">В наличии</option><option value="on_order">Под заказ</option><option value="temporarily_unavailable">Временно недоступен</option><option value="discontinued">Снят</option><option value="unavailable">Недоступен</option><option value="informational">Информационный</option></select></label>
                 <label className="font-bold text-[var(--sp-ink)]">
                   Минимальное количество
                   <input
@@ -325,10 +382,13 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
                     {...register(`variants.${index}.quantityStep`, { setValueAs: optionalNumber })}
                   />
                 </label>
+                <label className="font-bold text-[var(--sp-ink)]">Максимальное количество<input type="number" min="0.001" step="any" className="admin-control mt-1.5 font-normal" {...register(`variants.${index}.maxQuantity`, { setValueAs: optionalNumber })} /></label>
+                <label className="font-bold text-[var(--sp-ink)] md:col-span-2">Изображение варианта (URL)<input type="text" placeholder="/media/products/...webp" className="admin-control mt-1.5 font-normal" {...register(`variants.${index}.image`)} /></label>
               </div>
 
-              <div className="mt-5 border-t border-[var(--sp-line)] pt-4">
+              <div className="mt-5 grid gap-5 border-t border-[var(--sp-line)] pt-4 xl:grid-cols-2">
                 <VariantAttributesEditor variantIndex={index} control={control} register={register} />
+                <VariantWholesaleTiersEditor variantIndex={index} control={control} register={register} />
               </div>
             </article>
           ))}

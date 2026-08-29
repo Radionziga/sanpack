@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link } from '@/i18n/navigation';
-import { Product } from '@/types';
+import { Attribute, Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import {
@@ -16,6 +16,7 @@ import { getMinimumOrderLabel } from '@/lib/commerce/orderQuantities';
 import {
   getProductCatalogPriceText,
   getProductSupportingText,
+  getPresentedProductAttributes,
 } from '@/lib/catalog/productPresentation';
 import { isProductOrderable } from '@/lib/commerce/productOffer';
 import { ProductImage } from '@/components/catalog/ProductImage';
@@ -26,9 +27,10 @@ interface ProductCardProps {
   viewMode?: 'grid' | 'list';
   eagerImage?: boolean;
   appearance?: 'default' | 'market';
+  attributeDefinitions?: Attribute[];
 }
 
-export function ProductCard({ product, viewMode = 'grid', eagerImage = false, appearance = 'default' }: ProductCardProps) {
+export function ProductCard({ product, viewMode = 'grid', eagerImage = false, appearance = 'default', attributeDefinitions = [] }: ProductCardProps) {
   const { t, getLocalizedText, language } = useLanguage();
   const copy = {
     ru: ['Товар добавлен в заявку', 'Удалено из избранного', 'Добавлено в избранное'],
@@ -64,6 +66,10 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
   const orderable = isProductOrderable(product);
   const minimumOrderLabel = getMinimumOrderLabel(product, language);
   const price = getProductCatalogPriceText(product, language);
+  const cardAttributes = getPresentedProductAttributes(product, attributeDefinitions, language)
+    .filter((presented) => attributeDefinitions.find((definition) => definition.key === presented.key)?.cardVisible)
+    .slice(0, 2);
+  const cardAttributeText = cardAttributes.map((attribute) => attribute.value).join(' · ');
 
   const handleToggleFavorite = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -119,6 +125,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
             </h3>
           </Link>
           <p className="mt-1 line-clamp-1 text-[11px] leading-4 text-[var(--sp-ink-muted)]">{minimumOrderLabel}</p>
+          {cardAttributeText ? <p className="mt-0.5 line-clamp-1 text-[10px] text-[var(--sp-ink-muted)]">{cardAttributeText}</p> : null}
         </div>
       </article>
     );
@@ -164,6 +171,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
               {supportingText}
             </p>
           ) : null}
+          {cardAttributeText ? <p className="mt-1 line-clamp-1 text-xs text-[var(--sp-ink-muted)]">{cardAttributeText}</p> : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-medium text-[var(--sp-ink-muted)]">
             {product.brandName ? <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-2.5 py-1">{product.brandName}</span> : null}
@@ -232,6 +240,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
             {supportingText}
           </p>
         ) : null}
+        {cardAttributeText ? <p className="mt-1 line-clamp-1 text-[11px] text-[var(--sp-ink-muted)]">{cardAttributeText}</p> : null}
 
 
         <div className="mt-auto flex flex-col gap-2.5 border-t border-[var(--sp-line-soft)] pt-3 sm:gap-3 sm:pt-4">

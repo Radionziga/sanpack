@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
-import { Edit3, FolderTree, ImagePlus, Plus, Save, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Edit3, FolderPlus, FolderTree, ImagePlus, Layers3, Plus, Save, Trash2 } from 'lucide-react';
 import { MediaUploadField, deleteUploadedMedia } from '@/components/admin/MediaUploadField';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -24,6 +24,14 @@ const newCategory: Partial<Category> = {
   sortOrder: 1,
 };
 
+function getCategoryMediaPaths(category?: Partial<Category>) {
+  return new Set([
+    category?.imagePath,
+    category?.navigationImagePath,
+    category?.cardImagePath,
+  ].filter((path): path is string => Boolean(path)));
+}
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Partial<Category>>({ ...newCategory });
@@ -36,8 +44,9 @@ export default function AdminCategoriesPage() {
     : undefined;
 
   const cleanupStagedImage = () => {
-    if (editingCategory.imagePath && editingCategory.imagePath !== persistedCategory?.imagePath) {
-      void deleteUploadedMedia(editingCategory.imagePath).catch(() => undefined);
+    const persistedPaths = getCategoryMediaPaths(persistedCategory);
+    for (const path of getCategoryMediaPaths(editingCategory)) {
+      if (!persistedPaths.has(path)) void deleteUploadedMedia(path).catch(() => undefined);
     }
   };
 
@@ -69,9 +78,18 @@ export default function AdminCategoriesPage() {
     return () => { active = false; };
   }, []);
 
-  const startCreate = () => {
+  const startCreate = (kind: 'group' | 'category' = 'category') => {
     cleanupStagedImage();
-    setEditingCategory({ ...newCategory, sortOrder: categories.length + 1 });
+    const firstGroup = categories.find((category) => !category.parentId);
+    if (kind === 'category' && !firstGroup) {
+      setPageError('Сначала создайте группу каталога, затем добавьте внутрь неё категорию.');
+      return;
+    }
+    setEditingCategory({
+      ...newCategory,
+      parentId: kind === 'group' ? null : firstGroup?.id || null,
+      sortOrder: categories.length + 1,
+    });
     setNotice('');
   };
 
@@ -107,9 +125,11 @@ export default function AdminCategoriesPage() {
       setEditingCategory(saved);
       await loadCategories();
       let cleanupFailed = false;
-      if (previous?.imagePath && previous.imagePath !== saved.imagePath) {
+      const savedPaths = getCategoryMediaPaths(saved);
+      for (const path of getCategoryMediaPaths(previous)) {
+        if (savedPaths.has(path)) continue;
         try {
-          await deleteUploadedMedia(previous.imagePath);
+          await deleteUploadedMedia(path);
         } catch {
           cleanupFailed = true;
         }
@@ -131,14 +151,14 @@ export default function AdminCategoriesPage() {
     try {
       await AdminRepository.deleteCategory(category.id);
       let cleanupFailed = false;
-      if (category.imagePath) {
+      for (const path of getCategoryMediaPaths(category)) {
         try {
-          await deleteUploadedMedia(category.imagePath);
+          await deleteUploadedMedia(path);
         } catch {
           cleanupFailed = true;
         }
       }
-      if (editingCategory.id === category.id) startCreate();
+      if (editingCategory.id === category.id) startCreate('category');
       await loadCategories();
       setNotice(cleanupFailed
         ? 'Категория удалена, но изображение не удалось очистить из Storage.'
@@ -149,17 +169,32 @@ export default function AdminCategoriesPage() {
   };
 
   const parentCategories = categories.filter((category) => !category.parentId && category.id !== editingCategory.id);
+  const orderedCategories = useMemo(() => {
+    const roots = categories.filter((category) => !category.parentId);
+    const nestedIds = new Set<string>();
+    const ordered = roots.flatMap((root) => {
+      nestedIds.add(root.id);
+      const children = categories.filter((category) => category.parentId === root.id);
+      children.forEach((category) => nestedIds.add(category.id));
+      return [root, ...children];
+    });
+    return [...ordered, ...categories.filter((category) => !nestedIds.has(category.id))];
+  }, [categories]);
+  const editingIsGroup = !editingCategory.parentId;
 
   return (
     <div className="admin-page space-y-6">
       <AdminPageHeader
         title="Категории каталога"
         description="Соберите понятное дерево каталога. Слева — структура, справа — содержимое выбранной категории."
-        action={(
-          <button type="button" onClick={startCreate} className="admin-button-primary">
+        action={<div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => startCreate('group')} className="admin-button-secondary">
+            <FolderPlus className="size-4" aria-hidden="true" /> Новая группа
+          </button>
+          <button type="button" onClick={() => startCreate('category')} className="admin-button-primary">
             <Plus className="size-4" aria-hidden="true" /> Новая категория
           </button>
-        )}
+        </div>}
       />
 
       {(pageError || notice) && (
@@ -184,15 +219,18 @@ export default function AdminCategoriesPage() {
             </div>
           ) : (
             <ul className="divide-y divide-[var(--sp-line-soft)]">
-              {categories.map((category) => (
+              {orderedCategories.map((category) => (
                 <li key={category.id} className={category.parentId ? 'pl-5' : ''}>
                   <div className={`flex items-center gap-3 px-3 py-3 ${editingCategory.id === category.id ? 'bg-[var(--sp-surface-inset)]' : ''}`}>
                     <div className="relative size-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)]">
-                      {category.image ? <Image src={category.image} alt="" fill sizes="48px" className="object-contain" /> : <ImagePlus className="absolute inset-0 m-auto size-4 text-[var(--sp-ink-muted)]" />}
+                      {category.navigationImage || category.image ? <Image src={category.navigationImage || category.image!} alt="" fill sizes="48px" className="object-contain" /> : <ImagePlus className="absolute inset-0 m-auto size-4 text-[var(--sp-ink-muted)]" />}
                     </div>
                     <button type="button" onClick={() => selectCategory(category)} className="min-w-0 flex-1 text-left">
                       <span className="line-clamp-1 text-xs font-bold text-[var(--sp-ink)]">{category.titleRu}</span>
-                      <span className="mt-1 block truncate font-mono text-[10px] text-[var(--sp-ink-tertiary)]">/{category.slug}</span>
+                      <span className="mt-1 flex items-center gap-1 truncate font-mono text-[10px] text-[var(--sp-ink-tertiary)]">
+                        {category.parentId ? <Layers3 className="size-3" aria-hidden="true" /> : <FolderTree className="size-3" aria-hidden="true" />}
+                        {category.parentId ? 'категория' : 'группа'} · /{category.slug}
+                      </span>
                     </button>
                     <button type="button" onClick={() => selectCategory(category)} aria-label={`Редактировать ${category.titleRu}`} className="admin-icon-button size-9">
                       <Edit3 className="size-4" aria-hidden="true" />
@@ -209,7 +247,9 @@ export default function AdminCategoriesPage() {
 
         <form onSubmit={saveCategory} className="admin-panel overflow-hidden">
           <div className="border-b border-[var(--sp-line)] px-5 py-5 md:px-6">
-            <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">{editingCategory.id ? 'Редактирование категории' : 'Новая категория'}</h2>
+            <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">
+              {editingCategory.id ? `Редактирование ${editingIsGroup ? 'группы' : 'категории'}` : `Новая ${editingIsGroup ? 'группа' : 'категория'}`}
+            </h2>
             <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Сначала заполните основную информацию, затем изображение и правила публикации.</p>
           </div>
 
@@ -258,7 +298,7 @@ export default function AdminCategoriesPage() {
 
           <section className="admin-section">
             <h3 className="admin-section-heading">Место в каталоге</h3>
-            <p className="admin-section-description">URL используется в адресе страницы, а родительская категория определяет вложенность.</p>
+            <p className="admin-section-description">Корневая запись — группа. Реальная товарная категория всегда находится внутри группы.</p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="admin-field-label">
               URL категории *
@@ -266,7 +306,7 @@ export default function AdminCategoriesPage() {
               <span className="mt-1 block font-normal text-[var(--sp-ink-tertiary)]">Только латиница, цифры и дефисы.</span>
             </label>
             <CustomSelect label="Родительская категория" value={editingCategory.parentId || ''} onChange={(value) => setEditingCategory((current) => ({ ...current, parentId: value || null }))} options={[
-              { value: '', label: '— Корневая категория —' },
+              { value: '', label: '— Это группа каталога —' },
               ...parentCategories.map((category) => ({ value: category.id, label: category.titleRu })),
             ]} />
           </div>
@@ -274,20 +314,31 @@ export default function AdminCategoriesPage() {
 
           <section className="admin-section">
           <div>
-            <h3 className="admin-section-heading">Изображение и публикация</h3>
-            <p className="admin-section-description">Картинка появится на главной витрине. Статус и порядок управляют показом категории.</p>
+            <h3 className="admin-section-heading">Изображения и публикация</h3>
+            <p className="admin-section-description">Навигационная иконка и большая bento-обложка управляются независимо. Старое поле image остаётся резервным для существующих документов.</p>
           </div>
-          <div className="mt-4">
-          <MediaUploadField kind="category" label="Изображение категории" recommendation="Рекомендуется 800×600 px · 4:3" value={editingCategory.image} optional onUploaded={(media) => {
-            if (editingCategory.imagePath && editingCategory.imagePath !== persistedCategory?.imagePath) {
-              void deleteUploadedMedia(editingCategory.imagePath).catch(() => undefined);
+          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+          <MediaUploadField kind="category" label="Иконка для навигации" recommendation="800×600 px · 4:3" value={editingCategory.navigationImage || editingCategory.image} optional onUploaded={(media) => {
+            if (editingCategory.navigationImagePath && editingCategory.navigationImagePath !== persistedCategory?.navigationImagePath) {
+              void deleteUploadedMedia(editingCategory.navigationImagePath).catch(() => undefined);
             }
-            setEditingCategory((current) => ({ ...current, image: media.url, imagePath: media.path }));
+            setEditingCategory((current) => ({ ...current, navigationImage: media.url, navigationImagePath: media.path }));
           }} onClear={() => {
-            if (editingCategory.imagePath && editingCategory.imagePath !== persistedCategory?.imagePath) {
-              void deleteUploadedMedia(editingCategory.imagePath).catch(() => undefined);
+            if (editingCategory.navigationImagePath && editingCategory.navigationImagePath !== persistedCategory?.navigationImagePath) {
+              void deleteUploadedMedia(editingCategory.navigationImagePath).catch(() => undefined);
             }
-            setEditingCategory((current) => ({ ...current, image: undefined, imagePath: undefined }));
+            setEditingCategory((current) => ({ ...current, navigationImage: undefined, navigationImagePath: undefined }));
+          }} />
+          <MediaUploadField kind="category-card" label="Обложка bento-карточки" recommendation="1200×720 px · 5:3" value={editingCategory.cardImage} optional onUploaded={(media) => {
+            if (editingCategory.cardImagePath && editingCategory.cardImagePath !== persistedCategory?.cardImagePath) {
+              void deleteUploadedMedia(editingCategory.cardImagePath).catch(() => undefined);
+            }
+            setEditingCategory((current) => ({ ...current, cardImage: media.url, cardImagePath: media.path }));
+          }} onClear={() => {
+            if (editingCategory.cardImagePath && editingCategory.cardImagePath !== persistedCategory?.cardImagePath) {
+              void deleteUploadedMedia(editingCategory.cardImagePath).catch(() => undefined);
+            }
+            setEditingCategory((current) => ({ ...current, cardImage: undefined, cardImagePath: undefined }));
           }} />
           </div>
 
@@ -303,6 +354,34 @@ export default function AdminCategoriesPage() {
               <input type="number" min="0" value={editingCategory.sortOrder ?? 0} onChange={(event) => setEditingCategory((current) => ({ ...current, sortOrder: Number(event.target.value) }))} className="admin-control mt-1.5 text-sm font-normal" />
             </label>
           </div>
+          {!editingIsGroup ? <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="admin-panel-muted flex cursor-pointer items-center justify-between gap-3 p-3">
+              <span><strong className="block text-xs text-[var(--sp-ink)]">Показывать в bento-блоке группы</strong><span className="mt-1 block text-[11px] text-[var(--sp-ink-tertiary)]">Если ни одна категория группы не отмечена, storefront использует первые шесть по порядку.</span></span>
+              <input type="checkbox" checked={editingCategory.featured ?? false} onChange={(event) => setEditingCategory((current) => ({ ...current, featured: event.target.checked }))} className="size-4 accent-[var(--sp-brand)]" />
+            </label>
+            <label className="admin-field-label">Порядок в bento-блоке
+              <input type="number" min="0" value={editingCategory.featuredSortOrder ?? editingCategory.sortOrder ?? 0} onChange={(event) => setEditingCategory((current) => ({ ...current, featuredSortOrder: Number(event.target.value) }))} className="admin-control mt-1.5 text-sm font-normal" />
+            </label>
+          </div> : null}
+          </section>
+
+          <section className="admin-section">
+            <h3 className="admin-section-heading">SEO категории</h3>
+            <p className="admin-section-description">Необязательные заголовки и описания для поисковых систем. Если оставить пустыми, используются обычные название и описание.</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => (
+                <label key={`seo-title-${suffix}`} className="admin-field-label">SEO title {suffix.toUpperCase()}
+                  <input value={editingCategory.seo?.[`title${suffix}`] || ''} onChange={(event) => setEditingCategory((current) => ({ ...current, seo: { ...current.seo, [`title${suffix}`]: event.target.value } }))} className="admin-control mt-1.5 text-sm font-normal" />
+                </label>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => (
+                <label key={`seo-description-${suffix}`} className="admin-field-label">SEO description {suffix.toUpperCase()}
+                  <textarea rows={3} value={editingCategory.seo?.[`description${suffix}`] || ''} onChange={(event) => setEditingCategory((current) => ({ ...current, seo: { ...current.seo, [`description${suffix}`]: event.target.value } }))} className="admin-control mt-1.5 text-sm font-normal" />
+                </label>
+              ))}
+            </div>
           </section>
           </div>
 

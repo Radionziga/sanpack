@@ -20,7 +20,14 @@ export const mediaPresets = {
     width: 800,
     height: 600,
     quality: 86,
-    label: 'Изображение категории',
+    label: 'Иконка категории',
+  },
+  'category-card': {
+    directory: 'media/categories',
+    width: 1200,
+    height: 720,
+    quality: 88,
+    label: 'Обложка категории',
   },
   product: {
     directory: 'media/products',

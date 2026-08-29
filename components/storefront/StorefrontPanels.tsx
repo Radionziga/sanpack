@@ -23,9 +23,8 @@ import { formatMoney } from '@/lib/catalog/productPresentation';
 import { getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { getCategoryArtwork } from '@/lib/catalog/categoryArtwork';
 import {
-  getFeaturedCategoryIds,
   getPopularCategoryArtwork,
-  storefrontCategoryGroupIds,
+  getStorefrontCategoryGroups,
 } from '@/lib/catalog/popularCategoryArtwork';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import type { Category } from '@/types';
@@ -303,16 +302,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
     language,
     getLocalizedText(category.titleRu, category.titleUz, category.titleEn, category.titleZh),
   );
-  const featuredGroups = storefrontCategoryGroupIds
-    .map((groupId) => {
-      const group = parents.find((category) => category.id === groupId);
-      const categoriesById = new Map(leaves.map((category) => [category.id, category]));
-      const groupCategories = getFeaturedCategoryIds(groupId)
-        .map((categoryId) => categoriesById.get(categoryId))
-        .filter((category): category is Category => Boolean(category));
-      return group && groupCategories.length > 0 ? { group, categories: groupCategories } : null;
-    })
-    .filter((section): section is NonNullable<typeof section> => Boolean(section));
+  const featuredGroups = getStorefrontCategoryGroups(categories);
 
   const renderCategoryGrid = (gridCategories: Category[], label: string) => (
     <nav className="grid grid-cols-2 gap-2.5" aria-label={label}>

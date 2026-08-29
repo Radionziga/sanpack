@@ -3,6 +3,7 @@ import {
   getPublicCategories,
   getPublicSettings,
   getPublicClients,
+  getPublicAttributes,
 } from '@/lib/repositories/serverCatalogRepository';
 import { CatalogPrintDocument } from '@/components/catalog/CatalogPrintDocument';
 import type { Language } from '@/types';
@@ -25,9 +26,10 @@ export default async function CatalogPrintPage({ params, searchParams }: PagePro
       : locale
   ) as Language;
 
-  const [products, categories, settings, clients] = await Promise.all([
+  const [products, categories, attributes, settings, clients] = await Promise.all([
     getPublicProducts(),
     getPublicCategories(),
+    getPublicAttributes(),
     getPublicSettings(),
     getPublicClients(),
   ]);
@@ -36,6 +38,7 @@ export default async function CatalogPrintPage({ params, searchParams }: PagePro
     <CatalogPrintDocument
       initialProducts={products}
       initialCategories={categories}
+      attributes={attributes}
       settings={settings}
       clients={clients}
       generatedAt={new Date().toISOString()}

@@ -1,6 +1,6 @@
 import type { Category } from '@/types';
 
-const popularCategoryArtworkById: Record<string, string> = {
+const legacyPopularCategoryArtworkById: Record<string, string> = {
   'cat-trash-bags': '/catalog/popular-categories/trash-bags-20260823.webp',
   'cat-tearoff-bags': '/catalog/popular-categories/tearoff-bags-20260828.webp',
   'cat-carrier-bags': '/catalog/popular-categories/carrier-bags-20260828.webp',
@@ -15,32 +15,49 @@ const popularCategoryArtworkById: Record<string, string> = {
   'cat-groats': '/catalog/popular-categories/groats-20260828.webp',
 };
 
-export const storefrontCategoryGroupIds = ['cat-packaging', 'cat-food'] as const;
-
-const featuredCategoryIdsByGroup: Record<(typeof storefrontCategoryGroupIds)[number], readonly string[]> = {
-  'cat-packaging': [
-    'cat-trash-bags',
-    'cat-tearoff-bags',
-    'cat-carrier-bags',
-    'cat-special-bags',
-    'cat-food-packaging',
-    'cat-gloves',
-  ],
-  'cat-food': [
-    'cat-beef',
-    'cat-chicken',
-    'cat-fruits',
-    'cat-vegetables',
-    'cat-greens',
-    'cat-groats',
-  ],
-};
-
-export function getPopularCategoryArtwork(category: Pick<Category, 'id'>) {
-  return popularCategoryArtworkById[category.id];
+export function getPopularCategoryArtwork(
+  category: Pick<Category, 'id' | 'cardImage' | 'banner' | 'image'>,
+) {
+  return category.cardImage
+    || category.banner
+    || legacyPopularCategoryArtworkById[category.id]
+    || category.image;
 }
 
-export function getFeaturedCategoryIds(groupId: string): readonly string[] {
-  if (groupId !== 'cat-packaging' && groupId !== 'cat-food') return [];
-  return featuredCategoryIdsByGroup[groupId];
+export interface StorefrontCategoryGroup {
+  group: Category;
+  categories: Category[];
+}
+
+/**
+ * Builds the storefront showcase entirely from the category tree. Explicitly
+ * featured children win; legacy documents fall back to ordered children so a
+ * new group never requires a frontend code change.
+ */
+export function getStorefrontCategoryGroups(
+  categories: Category[],
+  limitPerGroup = 6,
+): StorefrontCategoryGroup[] {
+  const active = categories.filter((category) => category.status === 'active');
+  const groups = active
+    .filter((category) => !category.parentId)
+    .sort((left, right) => left.sortOrder - right.sortOrder);
+
+  return groups.map((group) => {
+    const children = active
+      .filter((category) => category.parentId === group.id)
+      .sort((left, right) => {
+        const leftOrder = left.featuredSortOrder ?? left.sortOrder;
+        const rightOrder = right.featuredSortOrder ?? right.sortOrder;
+        return leftOrder - rightOrder;
+      });
+    const explicitlyFeatured = children.filter((category) => category.featured === true);
+    const showcaseCandidates = explicitlyFeatured.length > 0
+      ? explicitlyFeatured
+      : children;
+    return {
+      group,
+      categories: showcaseCandidates.slice(0, limitPerGroup),
+    };
+  }).filter((section) => section.categories.length > 0);
 }

@@ -136,8 +136,11 @@ export function FilterSidebar({
           products.forEach((p) => {
             const val = p.attributes?.[attr.key];
             if (val !== undefined && val !== null) {
-              const valStr = String(val);
-              optionCounts[valStr] = (optionCounts[valStr] || 0) + 1;
+              const values = Array.isArray(val) ? val : [val];
+              for (const item of values) {
+                const valStr = String(item);
+                optionCounts[valStr] = (optionCounts[valStr] || 0) + 1;
+              }
             }
           });
 

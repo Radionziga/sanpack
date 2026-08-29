@@ -14,15 +14,14 @@ import {
 import { Link } from '@/i18n/navigation';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { useLanguage } from '@/context/LanguageContext';
-import type { Banner, Category, Language, Product } from '@/types';
+import type { Attribute, Banner, Category, Language, Product } from '@/types';
 import { PromoCarousel } from '@/components/home/PromoCarousel';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref } from '@/lib/settings/contacts';
 import { getCatalogPrintPath } from '@/lib/documents/catalogIdentity';
 import {
-  getFeaturedCategoryIds,
   getPopularCategoryArtwork,
-  storefrontCategoryGroupIds,
+  getStorefrontCategoryGroups,
 } from '@/lib/catalog/popularCategoryArtwork';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import {
@@ -36,6 +35,7 @@ interface CatalogHomeProps {
   categories: Category[];
   categoryProductCounts: Record<string, number>;
   banners: Banner[];
+  attributes?: Attribute[];
   locale: Language;
   catalogPdfUrl?: string;
   dataUnavailable?: boolean;
@@ -46,6 +46,7 @@ export function CatalogHome({
   categories,
   categoryProductCounts,
   banners,
+  attributes = [],
   locale,
   catalogPdfUrl,
   dataUnavailable = false,
@@ -133,17 +134,17 @@ export function CatalogHome({
     [categoryCards],
   );
 
-  const featuredCategoryGroups = useMemo(() => storefrontCategoryGroupIds
-    .map((groupId) => {
-      const group = categories.find((category) => category.id === groupId);
-      const cardsById = new Map(childCategoryCards.map((card) => [card.category.id, card]));
-      const cards = getFeaturedCategoryIds(groupId)
-        .map((categoryId) => cardsById.get(categoryId))
-        .filter((card): card is (typeof childCategoryCards)[number] => Boolean(card));
-
-      return group && cards.length > 0 ? { group, cards } : null;
-    })
-    .filter((section): section is NonNullable<typeof section> => Boolean(section)), [categories, childCategoryCards]);
+  const featuredCategoryGroups = useMemo(() => {
+    const cardsById = new Map(childCategoryCards.map((card) => [card.category.id, card]));
+    return getStorefrontCategoryGroups(categories)
+      .map(({ group, categories: groupCategories }) => ({
+        group,
+        cards: groupCategories
+          .map((category) => cardsById.get(category.id))
+          .filter((card): card is (typeof childCategoryCards)[number] => Boolean(card)),
+      }))
+      .filter(({ cards }) => cards.length > 0);
+  }, [categories, childCategoryCards]);
 
   // Real product groups are more useful here than the two broad parent sections.
   const mainCategories = useMemo(() => {
@@ -242,7 +243,7 @@ export function CatalogHome({
                 </div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4">
                   {sectionProducts.map((product, productIndex) => (
-                    <ProductCard key={product.id} product={product} appearance="market" eagerImage={sectionIndex === 0 && productIndex < 3} />
+                    <ProductCard key={product.id} product={product} appearance="market" eagerImage={sectionIndex === 0 && productIndex < 3} attributeDefinitions={attributes} />
                   ))}
                 </div>
               </section>

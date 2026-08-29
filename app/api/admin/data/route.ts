@@ -11,10 +11,12 @@ import {
   initialProducts,
   initialSiteSettings,
 } from '@/lib/seedData';
-import type { UserRole } from '@/types';
+import type { Attribute, Category, Product, UserRole } from '@/types';
 import { validateAdminResourceData } from '@/lib/validation/adminContent';
 import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
 import { firebaseAdminUnavailableMessage } from '@/lib/firebase/adminErrors';
+import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
+import { createCatalogSlug } from '@/lib/catalog/catalogSlugs';
 
 export const runtime = 'nodejs';
 
@@ -36,14 +38,88 @@ const mutationSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional(),
 }).strict();
 
-function canMutate(role: UserRole, resource?: Resource, action?: string) {
+function canMutate(role: UserRole, resource?: Resource, _action?: string) {
   // Orders are append-only business records. All allowed changes go through the
   // dedicated order endpoint, which validates the payload and writes an audit trail.
   if (resource === 'requests') return false;
   if (role === 'super_admin') return true;
-  if (role === 'viewer' || action === 'seed') return false;
-  if (role === 'sales_manager') return false;
-  return true;
+  return false;
+}
+
+function hasAttributeValue(product: Partial<Product>, key: string) {
+  const value = product.attributes?.[key];
+  return value !== undefined && value !== null && value !== ''
+    && (!Array.isArray(value) || value.length > 0);
+}
+
+async function validateCategoryMutation(
+  database: ReturnType<typeof getAdminDb>,
+  id: string,
+  category: Partial<Category>,
+) {
+  if (category.parentId) {
+    if (category.parentId === id) return 'Категория не может быть родителем самой себя.';
+    const parent = await database.collection('categories').doc(category.parentId).get();
+    if (!parent.exists) return 'Выбранная группа не существует.';
+    if ((parent.data() as Partial<Category>).parentId) return 'Поддерживается только структура «группа → категория».';
+    const children = await database.collection('categories').where('parentId', '==', id).limit(1).get();
+    if (!children.empty) return 'Группу с дочерними категориями нельзя превратить в категорию.';
+  }
+  if (category.slug) {
+    const duplicate = await database.collection('categories').where('slug', '==', category.slug).limit(2).get();
+    if (duplicate.docs.some((document) => document.id !== id)) return 'Категория с таким URL уже существует.';
+  }
+  return null;
+}
+
+async function validateAttributeMutation(
+  database: ReturnType<typeof getAdminDb>,
+  id: string,
+  attribute: Partial<Attribute>,
+) {
+  if (attribute.key) {
+    const duplicate = await database.collection('attributes').where('key', '==', attribute.key).limit(2).get();
+    if (duplicate.docs.some((document) => document.id !== id)) return 'Характеристика с таким внутренним именем уже существует.';
+  }
+  if (attribute.categoryIds?.length) {
+    const categoryDocuments = await Promise.all(attribute.categoryIds.map((categoryId) => database.collection('categories').doc(categoryId).get()));
+    if (categoryDocuments.some((document) => !document.exists)) return 'Одна из выбранных категорий больше не существует.';
+  }
+  return null;
+}
+
+async function normalizeAndValidateProduct(
+  database: ReturnType<typeof getAdminDb>,
+  id: string,
+  product: Partial<Product>,
+) {
+  const categoryDocument = product.categoryId
+    ? await database.collection('categories').doc(product.categoryId).get()
+    : null;
+  if (!categoryDocument?.exists) return { error: 'Выбранная категория не существует.' } as const;
+  const category = { id: categoryDocument.id, ...categoryDocument.data() } as Category;
+  if (!category.parentId) return { error: 'Товар нельзя привязать напрямую к группе. Выберите категорию внутри группы.' } as const;
+
+  const slug = product.slug || createCatalogSlug(product.titleRu || '', product.sku || '');
+  const [duplicateSlug, duplicateSku, categorySnapshot, attributeSnapshot] = await Promise.all([
+    database.collection('products').where('slug', '==', slug).limit(2).get(),
+    product.sku ? database.collection('products').where('sku', '==', product.sku).limit(2).get() : null,
+    database.collection('categories').get(),
+    database.collection('attributes').get(),
+  ]);
+  if (duplicateSlug.docs.some((document) => document.id !== id)) return { error: 'Товар с таким URL уже существует.' } as const;
+  if (duplicateSku?.docs.some((document) => document.id !== id)) return { error: 'Товар с таким SKU уже существует.' } as const;
+
+  const categories = categorySnapshot.docs.map((document) => ({ id: document.id, ...document.data() } as Category));
+  const attributes = attributeSnapshot.docs.map((document) => ({ id: document.id, ...document.data() } as Attribute));
+  const missing = product.status === 'published'
+    ? getApplicableAttributes(attributes, category.id, categories)
+        .filter((attribute) => attribute.required && !hasAttributeValue(product, attribute.key))
+    : [];
+  if (missing.length > 0) {
+    return { error: `Заполните обязательные характеристики: ${missing.map((attribute) => attribute.titleRu).join(', ')}.` } as const;
+  }
+  return { data: { ...product, slug, categorySlug: category.slug } } as const;
 }
 
 async function denyUnlessAdmin() {
@@ -155,6 +231,34 @@ export async function POST(request: Request) {
 
     const document = database.collection(mutation.resource).doc(mutation.id);
     if (mutation.action === 'delete') {
+      if (mutation.resource === 'categories') {
+        const [children, products, attributes] = await Promise.all([
+          database.collection('categories').where('parentId', '==', mutation.id).limit(1).get(),
+          database.collection('products').where('categoryId', '==', mutation.id).limit(1).get(),
+          database.collection('attributes').where('categoryIds', 'array-contains', mutation.id).limit(1).get(),
+        ]);
+        if (!children.empty || !products.empty || !attributes.empty) {
+          return NextResponse.json({
+            error: 'Категория используется. Сначала перенесите дочерние категории, товары и характеристики либо скройте запись.',
+          }, { status: 409 });
+        }
+      }
+      if (mutation.resource === 'attributes') {
+        const attributeDocument = await document.get();
+        const key = (attributeDocument.data() as Partial<Attribute> | undefined)?.key;
+        if (key) {
+          const products = await database.collection('products').get();
+          const used = products.docs.some((productDocument) => {
+            const attributes = (productDocument.data() as Partial<Product>).attributes;
+            return attributes && Object.prototype.hasOwnProperty.call(attributes, key);
+          });
+          if (used) {
+            return NextResponse.json({
+              error: 'Характеристика используется товарами. Сначала удалите или перенесите значения у товаров.',
+            }, { status: 409 });
+          }
+        }
+      }
       await document.delete();
       revalidateTag(mutation.resource, { expire: 0 });
       return NextResponse.json({ success: true });
@@ -180,14 +284,30 @@ export async function POST(request: Request) {
       );
     }
 
+    let normalizedData = validatedData.data as Record<string, unknown>;
+    if (mutation.resource === 'categories') {
+      const categoryError = await validateCategoryMutation(database, mutation.id, normalizedData as Partial<Category>);
+      if (categoryError) return NextResponse.json({ error: categoryError }, { status: 409 });
+    }
+    if (mutation.resource === 'attributes') {
+      const attributeError = await validateAttributeMutation(database, mutation.id, normalizedData as Partial<Attribute>);
+      if (attributeError) return NextResponse.json({ error: attributeError }, { status: 409 });
+    }
+    if (mutation.resource === 'products') {
+      const normalized = await normalizeAndValidateProduct(database, mutation.id, normalizedData as Partial<Product>);
+      if ('error' in normalized) return NextResponse.json({ error: normalized.error }, { status: 409 });
+      normalizedData = normalized.data as Record<string, unknown>;
+    }
+
     const timestamp = new Date().toISOString();
     const data = {
-      ...(validatedData.data as Record<string, unknown>),
+      ...normalizedData,
       id: mutation.id,
       updatedAt: timestamp,
       updatedBy: authorization.admin.uid,
     };
-    await document.set(data, { merge: true });
+    if (mutation.resource === 'settings') await document.set(data, { merge: true });
+    else await document.set(data);
     revalidateTag(mutation.resource, { expire: 0 });
     const saved = await document.get();
     return NextResponse.json({ id: saved.id, ...saved.data() });

@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { CatalogPrintDocument } from '@/components/catalog/CatalogPrintDocument';
-import type { Category, ClientPartner, Product, SiteSettings } from '@/types';
+import type { Attribute, Category, ClientPartner, Product, SiteSettings } from '@/types';
 
 export default function PdfCatalogAdminPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [clients, setClients] = useState<ClientPartner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,9 +19,10 @@ export default function PdfCatalogAdminPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [catsRes, prodsRes, settingsRes, clientsRes] = await Promise.all([
+        const [catsRes, prodsRes, attrsRes, settingsRes, clientsRes] = await Promise.all([
           fetch('/api/catalog?resource=categories'),
           fetch('/api/catalog?resource=products'),
+          fetch('/api/catalog?resource=attributes'),
           fetch('/api/catalog?resource=settings'),
           fetch('/api/catalog?resource=clients'),
         ]);
@@ -32,6 +34,10 @@ export default function PdfCatalogAdminPage() {
         if (prodsRes.ok) {
           const prodsData = await prodsRes.json();
           if (Array.isArray(prodsData)) setProducts(prodsData);
+        }
+        if (attrsRes.ok) {
+          const attrsData = await attrsRes.json();
+          if (Array.isArray(attrsData)) setAttributes(attrsData);
         }
         if (settingsRes.ok) {
           const settingsData = await settingsRes.json();
@@ -67,6 +73,7 @@ export default function PdfCatalogAdminPage() {
           <CatalogPrintDocument
             initialProducts={products}
             initialCategories={categories}
+            attributes={attributes}
             settings={settings}
             clients={clients}
             generatedAt={generatedAt}

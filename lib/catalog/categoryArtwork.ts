@@ -27,5 +27,7 @@ const categoryArtworkById: Record<string, string> = {
 };
 
 export function getCategoryArtwork(category: Category) {
-  return categoryArtworkById[category.id] ?? category.image;
+  return category.navigationImage
+    || category.image
+    || categoryArtworkById[category.id];
 }

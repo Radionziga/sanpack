@@ -9,9 +9,12 @@ import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { ProductVariantsEditor } from '@/components/admin/ProductVariantsEditor';
 import { ProductAttributeField } from '@/components/admin/ProductAttributeField';
+import { ProductCmsFields } from '@/components/admin/ProductCmsFields';
 import { deleteUploadedMedia, MediaUploadField } from '@/components/admin/MediaUploadField';
 import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star, FileText, Download } from 'lucide-react';
 import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
+import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
+import { createCatalogSlug } from '@/lib/catalog/catalogSlugs';
 
 const attributeLabels: Record<string, string> = {
   material: 'Материал',
@@ -148,6 +151,7 @@ export default function AdminProductsPage() {
   }
 
   const handleOpenCreate = () => {
+    const firstLeaf = categories.find((category) => Boolean(category.parentId) && category.status === 'active');
     setEditingProduct({
       titleRu: '',
       titleUz: '',
@@ -155,7 +159,9 @@ export default function AdminProductsPage() {
       titleZh: '',
       slug: '',
       sku: 'SP-' + Math.floor(1000 + Math.random() * 9000),
-      categoryId: categories[0]?.id || '',
+      status: 'draft',
+      categoryId: firstLeaf?.id || '',
+      categorySlug: firstLeaf?.slug || '',
       shortDescriptionRu: '',
       shortDescriptionUz: '',
       shortDescriptionEn: '',
@@ -167,7 +173,8 @@ export default function AdminProductsPage() {
       mainImage: '',
       images: [],
       imagePaths: [],
-      salesUnit: 'рулон',
+      salesUnit: 'штука',
+      unitCode: 'piece',
       minimumOrder: 1,
       quantityStep: 1,
       orderPackaging: {
@@ -182,12 +189,15 @@ export default function AdminProductsPage() {
       },
       showPrice: true,
       price: 15000,
+      priceMode: 'fixed',
+      currency: 'UZS',
       stockStatus: 'in_stock',
-      attributes: { material: 'ПНД', size: 'стандарт' },
+      availability: 'in_stock',
+      attributes: {},
       variants: [],
       featured: false,
-      ownProduction: true,
-      newProduct: true,
+      ownProduction: false,
+      newProduct: false,
       sortOrder: 10,
     });
     setSaveError('');
@@ -258,12 +268,28 @@ export default function AdminProductsPage() {
     setSaveError('');
     setSaving(true);
 
+    const selectedCategory = categories.find((category) => category.id === editingProduct.categoryId);
+    if (!selectedCategory || !selectedCategory.parentId) {
+      setSaveError('Выберите товарную категорию внутри группы. Нельзя привязать товар напрямую к группе.');
+      setSaving(false);
+      return;
+    }
+    const requiredMissing = getApplicableAttributes(attributes, selectedCategory.id, categories)
+      .filter((attribute) => attribute.required)
+      .filter((attribute) => {
+        const value = editingProduct.attributes?.[attribute.key];
+        return value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+      });
+    if (editingProduct.status === 'published' && requiredMissing.length > 0) {
+      setSaveError(`Для публикации заполните обязательные характеристики: ${requiredMissing.map((attribute) => attribute.titleRu).join(', ')}.`);
+      setSaving(false);
+      return;
+    }
+
     let draft = {
       ...editingProduct,
-      slug: editingProduct.slug || (editingProduct.titleRu || 'product')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, ''),
+      slug: editingProduct.slug || createCatalogSlug(editingProduct.titleRu || '', editingProduct.sku || ''),
+      categorySlug: selectedCategory.slug,
     } as Partial<Product>;
     const orderRule = getProductOrderRule(draft as Product);
     draft.minimumOrder = orderRule.minimumQuantity;
@@ -310,6 +336,12 @@ export default function AdminProductsPage() {
     : '';
   const editingMediaAssets = getProductMedia(editingProduct || undefined);
   const editingCategory = categories.find((category) => category.id === editingProduct?.categoryId);
+  const leafCategories = categories.filter((category) => Boolean(category.parentId));
+  const applicableAttributes = getApplicableAttributes(attributes, editingProduct?.categoryId, categories);
+  const inactiveStoredAttributes = attributes.filter((attribute) => (
+    !applicableAttributes.some((candidate) => candidate.id === attribute.id)
+    && editingProduct?.attributes?.[attribute.key] !== undefined
+  ));
   const editingBrand = editingProduct?.brandName
     || (typeof editingProduct?.attributes?.brand === 'string' ? editingProduct.attributes.brand : '');
 
@@ -547,12 +579,46 @@ export default function AdminProductsPage() {
               </div>
 
               <div>
+                <label className="font-bold block mb-1">URL (slug)</label>
+                <input
+                  type="text"
+                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  value={editingProduct.slug || ''}
+                  onChange={(event) => setEditingProduct({ ...editingProduct, slug: event.target.value.toLowerCase() })}
+                  onBlur={() => {
+                    if (!editingProduct.slug) setEditingProduct({ ...editingProduct, slug: createCatalogSlug(editingProduct.titleRu || '', editingProduct.sku || '') });
+                  }}
+                  className="admin-control font-mono text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold block mb-1">Бренд</label>
+                <input type="text" value={editingProduct.brandName || ''} onChange={(event) => setEditingProduct({ ...editingProduct, brandName: event.target.value })} className="admin-control text-sm" />
+              </div>
+
+              <div>
                 <CustomSelect
                   label="Категория *"
                   value={editingProduct.categoryId || ''}
-                  onChange={(val) => setEditingProduct({ ...editingProduct, categoryId: val })}
-                  options={categories.map((c) => ({ value: c.id, label: c.titleRu }))}
+                  onChange={(val) => {
+                    const category = categories.find((candidate) => candidate.id === val);
+                    setEditingProduct({ ...editingProduct, categoryId: val, categorySlug: category?.slug || '' });
+                  }}
+                  options={leafCategories.map((category) => {
+                    const group = categories.find((candidate) => candidate.id === category.parentId);
+                    return { value: category.id, label: `${group?.titleRu || 'Без группы'} → ${category.titleRu}` };
+                  })}
                 />
+              </div>
+
+              <div>
+                <CustomSelect label="Публикация" value={editingProduct.status || 'draft'} onChange={(value) => setEditingProduct({ ...editingProduct, status: value as Product['status'] })} options={[
+                  { value: 'draft', label: 'Черновик' },
+                  { value: 'published', label: 'Опубликован' },
+                  { value: 'hidden', label: 'Скрыт' },
+                  { value: 'archived', label: 'В архиве' },
+                ]} />
               </div>
 
               <div>
@@ -579,9 +645,15 @@ export default function AdminProductsPage() {
                     { value: 'in_stock', label: 'В наличии' },
                     { value: 'out_of_stock', label: 'Нет в наличии' },
                     { value: 'on_order', label: 'Под заказ' },
+                    { value: 'temporarily_unavailable', label: 'Временно недоступен' },
+                    { value: 'discontinued', label: 'Снят с ассортимента' },
                   ]}
                 />
               </div>
+
+              <label className="font-bold text-[var(--sp-ink)]">Порядок товара
+                <input type="number" min="0" value={editingProduct.sortOrder ?? 0} onChange={(event) => setEditingProduct({ ...editingProduct, sortOrder: Number(event.target.value) || 0 })} className="admin-control mt-1.5 font-normal" />
+              </label>
             </div>
 
             <div className="mt-5 space-y-4 border-t border-[var(--sp-line)] pt-5">
@@ -678,7 +750,26 @@ export default function AdminProductsPage() {
                 </span>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div><CustomSelect label="Режим цены" value={editingProduct.priceMode || 'fixed'} onChange={(value) => setEditingProduct({ ...editingProduct, priceMode: value as Product['priceMode'] })} options={[
+                  { value: 'fixed', label: 'Фиксированная цена' },
+                  { value: 'from', label: 'Цена от' },
+                  { value: 'request', label: 'Цена по запросу' },
+                  { value: 'informational', label: 'Информационная позиция' },
+                ]} /></div>
+                <label className="font-bold text-[var(--sp-ink)]">Старая цена
+                  <input type="number" min="0" value={editingProduct.oldPrice ?? ''} onChange={(event) => setEditingProduct({ ...editingProduct, oldPrice: event.target.value ? Number(event.target.value) : undefined })} className="admin-control mt-1.5 font-normal" />
+                </label>
+                <label className="font-bold text-[var(--sp-ink)]">Валюта
+                  <input type="text" required value={editingProduct.currency || 'UZS'} onChange={(event) => setEditingProduct({ ...editingProduct, currency: event.target.value.toUpperCase() })} className="admin-control mt-1.5 font-normal" />
+                </label>
+                <label className="admin-panel-muted flex min-h-16 cursor-pointer items-center justify-between gap-3 p-3">
+                  <span className="font-bold text-[var(--sp-ink)]">Показывать цену</span>
+                  <input type="checkbox" checked={editingProduct.showPrice ?? true} onChange={(event) => setEditingProduct({ ...editingProduct, showPrice: event.target.checked })} className="size-4 accent-[var(--sp-brand)]" />
+                </label>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <label className="font-bold text-[var(--sp-ink)]">
                   Единица продажи
                   <input
@@ -693,6 +784,14 @@ export default function AdminProductsPage() {
                     Например, цена 20 000 сум за один рулон.
                   </span>
                 </label>
+
+                <div><CustomSelect label="Каноническая единица" value={editingProduct.unitCode || 'custom'} onChange={(value) => setEditingProduct({ ...editingProduct, unitCode: value as Product['unitCode'] })} options={[
+                  { value: 'piece', label: 'Штука' }, { value: 'pack', label: 'Упаковка' }, { value: 'roll', label: 'Рулон' },
+                  { value: 'box', label: 'Коробка / ящик' }, { value: 'set', label: 'Набор' }, { value: 'kilogram', label: 'Килограмм' },
+                  { value: 'gram', label: 'Грамм' }, { value: 'liter', label: 'Литр' }, { value: 'milliliter', label: 'Миллилитр' },
+                  { value: 'meter', label: 'Метр' }, { value: 'square_meter', label: 'Квадратный метр' }, { value: 'service', label: 'Услуга' },
+                  { value: 'custom', label: 'Другая' },
+                ]} /></div>
 
                 <label className="font-bold text-[var(--sp-ink)]">
                   Минимум, единиц
@@ -718,6 +817,19 @@ export default function AdminProductsPage() {
                     onChange={(event) => setEditingProduct({ ...editingProduct, quantityStep: Number(event.target.value) || 1 })}
                     className="admin-control mt-1.5 font-normal"
                   />
+                </label>
+
+                <label className="font-bold text-[var(--sp-ink)]">Максимум, единиц
+                  <input type="number" min="0.001" step="any" value={editingProduct.maximumOrder ?? ''} onChange={(event) => setEditingProduct({ ...editingProduct, maximumOrder: event.target.value ? Number(event.target.value) : undefined })} className="admin-control mt-1.5 font-normal" />
+                </label>
+
+                <label className="font-bold text-[var(--sp-ink)]">Остаток, единиц
+                  <input type="number" min="0" step="any" value={editingProduct.stockQuantity ?? ''} onChange={(event) => setEditingProduct({ ...editingProduct, stockQuantity: event.target.value ? Number(event.target.value) : undefined })} className="admin-control mt-1.5 font-normal" />
+                </label>
+
+                <label className="admin-panel-muted flex min-h-16 cursor-pointer items-center justify-between gap-3 p-3">
+                  <span><strong className="block text-xs text-[var(--sp-ink)]">Переменный вес</strong><span className="mt-1 block text-[10px] text-[var(--sp-ink-tertiary)]">Итог зависит от фактического веса.</span></span>
+                  <input type="checkbox" checked={editingProduct.catchWeight ?? false} onChange={(event) => setEditingProduct({ ...editingProduct, catchWeight: event.target.checked })} className="size-4 accent-[var(--sp-brand)]" />
                 </label>
               </div>
 
@@ -836,6 +948,12 @@ export default function AdminProductsPage() {
               onChange={(variants) => setEditingProduct((current) => current ? { ...current, variants } : current)}
             />
 
+            <ProductCmsFields
+              product={editingProduct}
+              products={products}
+              onChange={(patch) => setEditingProduct({ ...editingProduct, ...patch })}
+            />
+
             <section className="admin-panel space-y-5 p-5 md:p-6">
             <div>
               <h4 className="admin-section-heading">Описание и размещение</h4>
@@ -860,6 +978,10 @@ export default function AdminProductsPage() {
                   className="size-4 accent-[var(--sp-brand)]"
                 />
                 <span>Популярное на главной</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer font-bold">
+                <input type="checkbox" checked={editingProduct.newProduct || false} onChange={(event) => setEditingProduct({ ...editingProduct, newProduct: event.target.checked })} className="size-4 accent-[var(--sp-brand)]" />
+                <span>Новинка</span>
               </label>
             </div>
 
@@ -912,7 +1034,7 @@ export default function AdminProductsPage() {
                 <div>
                   <h4 className="admin-section-heading">Характеристики и фильтры</h4>
                   <span className="admin-section-description block">
-                    Выберите из созданных атрибутов или введите своё произвольное значение
+                    Поля автоматически определяются выбранной категорией. Атрибут группы наследуется её категориями.
                   </span>
                 </div>
                 <a
@@ -926,15 +1048,15 @@ export default function AdminProductsPage() {
 
               {/* Grid of System Attributes */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {attributes.map((attr) => {
+                {applicableAttributes.map((attr) => {
                   const rawVal = editingProduct.attributes?.[attr.key];
                   return (
                     <div key={attr.id} className="admin-panel-muted space-y-1.5 p-3">
                       <div className="flex items-center justify-between">
                         <label className="block text-[11px] font-bold text-[var(--sp-ink)]">
-                          {attr.titleRu} {attr.unit ? `(${attr.unit})` : ''}
+                          {attr.titleRu} {attr.unit ? `(${attr.unit})` : ''}{attr.required ? ' *' : ''}
                         </label>
-                        <span className="text-[9px] text-[var(--sp-ink-tertiary)]">Для фильтра каталога</span>
+                        <span className="text-[9px] text-[var(--sp-ink-tertiary)]">{attr.required ? 'Обязательно' : attr.filterable ? 'Для фильтра' : 'Необязательно'}</span>
                       </div>
 
                       <ProductAttributeField
@@ -951,6 +1073,13 @@ export default function AdminProductsPage() {
                   );
                 })}
               </div>
+
+              {inactiveStoredAttributes.length > 0 ? (
+                <div className="sp-alert sp-alert-warning text-xs">
+                  <strong>Сохранены значения от другой категории:</strong>{' '}
+                  {inactiveStoredAttributes.map((attribute) => attribute.titleRu).join(', ')}. Они не удаляются автоматически при переносе товара и не показываются покупателю в текущей категории.
+                </div>
+              ) : null}
 
               {/* Extra Custom Key-Value Attributes Adder */}
               <div className="space-y-2 border-t border-[var(--sp-line)] pt-4">

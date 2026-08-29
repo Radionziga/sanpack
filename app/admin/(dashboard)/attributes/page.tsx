@@ -60,6 +60,7 @@ export default function AdminAttributesPage() {
   const [cardVisible, setCardVisible] = useState(true);
   const [productVisible, setProductVisible] = useState(true);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [sortOrder, setSortOrder] = useState(1);
   const [options, setOptions] = useState<AttributeOption[]>([]);
 
   // Option input temp state
@@ -127,6 +128,7 @@ export default function AdminAttributesPage() {
     setCardVisible(true);
     setProductVisible(true);
     setSelectedCategoryIds([]);
+    setSortOrder(attributes.length + 1);
     setOptions([]);
     setIsModalOpen(true);
   };
@@ -146,6 +148,7 @@ export default function AdminAttributesPage() {
     setCardVisible(attr.cardVisible ?? true);
     setProductVisible(attr.productVisible ?? true);
     setSelectedCategoryIds(attr.categoryIds || []);
+    setSortOrder(attr.sortOrder || 0);
     setOptions(attr.options || []);
     setIsModalOpen(true);
   };
@@ -205,7 +208,7 @@ export default function AdminAttributesPage() {
       productVisible,
       categoryIds: selectedCategoryIds,
       options,
-      sortOrder: editingAttr ? editingAttr.sortOrder : attributes.length + 1,
+      sortOrder,
     };
 
     try {
@@ -464,6 +467,36 @@ export default function AdminAttributesPage() {
                 />
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                <div>
+                  <label className="admin-field-label block">Применение по категориям</label>
+                  <p className="mt-1 text-[11px] leading-4 text-[var(--sp-ink-tertiary)]">Пустой список означает универсальную характеристику. Выбор группы применяет её ко всем категориям внутри группы.</p>
+                </div>
+                <label className="admin-field-label">Порядок показа
+                  <input type="number" min="0" value={sortOrder} onChange={(event) => setSortOrder(Number(event.target.value) || 0)} className="admin-control mt-1.5 text-sm font-normal" />
+                </label>
+              </div>
+
+              <div className="admin-panel-muted max-h-72 space-y-4 overflow-y-auto p-4">
+                {categories.filter((category) => !category.parentId).sort((a, b) => a.sortOrder - b.sortOrder).map((group) => {
+                  const children = categories.filter((category) => category.parentId === group.id).sort((a, b) => a.sortOrder - b.sortOrder);
+                  const groupSelected = selectedCategoryIds.includes(group.id);
+                  return <fieldset key={group.id} className="space-y-2">
+                    <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control-inner)] px-2 font-bold text-[var(--sp-ink)] hover:bg-[var(--sp-surface)]">
+                      <input type="checkbox" checked={groupSelected} onChange={(event) => setSelectedCategoryIds((current) => event.target.checked ? [...new Set([...current, group.id])] : current.filter((id) => id !== group.id))} className="size-4 accent-[var(--sp-brand)]" />
+                      <Layers className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
+                      <span>{group.titleRu} <span className="font-normal text-[var(--sp-ink-tertiary)]">(вся группа)</span></span>
+                    </label>
+                    <div className="grid gap-1 pl-7 sm:grid-cols-2">
+                      {children.map((category) => <label key={category.id} className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control-inner)] px-2 text-xs ${groupSelected ? 'opacity-45' : 'hover:bg-[var(--sp-surface)]'}`}>
+                        <input type="checkbox" disabled={groupSelected} checked={groupSelected || selectedCategoryIds.includes(category.id)} onChange={(event) => setSelectedCategoryIds((current) => event.target.checked ? [...new Set([...current, category.id])] : current.filter((id) => id !== category.id))} className="size-4 accent-[var(--sp-brand)]" />
+                        <span>{category.titleRu}</span>
+                      </label>)}
+                    </div>
+                  </fieldset>;
+                })}
+              </div>
+
               <div className="space-y-2">
                 <label className="admin-field-label block">
                   Тип ввода информации
@@ -567,6 +600,13 @@ export default function AdminAttributesPage() {
 
               {/* Toggles */}
               <div className="space-y-3 pt-2">
+                <label className="admin-panel-muted flex cursor-pointer items-center justify-between p-3">
+                  <div>
+                    <span className="block text-xs font-bold text-[var(--sp-ink)]">Обязательная характеристика</span>
+                    <span className="text-[11px] text-[var(--sp-ink-tertiary)]">Опубликованный товар выбранных категорий нельзя сохранить без значения.</span>
+                  </div>
+                  <input type="checkbox" checked={required} onChange={(event) => setRequired(event.target.checked)} className="h-4 w-4 accent-[var(--sp-brand)]" />
+                </label>
                 <label className="admin-panel-muted flex cursor-pointer items-center justify-between p-3">
                   <div>
                     <span className="block text-xs font-bold text-[var(--sp-ink)]">

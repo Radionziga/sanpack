@@ -18,8 +18,8 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BrandLogo } from '@/components/ui/BrandLogo';
-import type { Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
-import { formatMoney } from '@/lib/catalog/productPresentation';
+import type { Attribute, Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
+import { formatMoney, getPresentedProductAttributes } from '@/lib/catalog/productPresentation';
 import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
@@ -38,6 +38,7 @@ import {
 interface CatalogPrintDocumentProps {
   initialProducts: Product[];
   initialCategories: Category[];
+  attributes?: Attribute[];
   settings?: SiteSettings | null;
   clients?: ClientPartner[];
   initialOptions?: {
@@ -114,6 +115,7 @@ function getLocalizedSalesUnitLabel(unit: string | undefined, language: Language
 export function CatalogPrintDocument({
   initialProducts = [],
   initialCategories = [],
+  attributes = [],
   settings,
   clients = [],
   initialOptions = {},
@@ -179,7 +181,9 @@ export function CatalogPrintDocument({
 
   // Sort categories
   const sortedCategories = useMemo(() => {
-    return [...initialCategories].sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
+    return initialCategories
+      .filter((category) => category.status === 'active')
+      .sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
   }, [initialCategories]);
 
   // Separate parent categories (parentId is empty/undefined) and child categories
@@ -789,26 +793,9 @@ export function CatalogPrintDocument({
                     const title = getLocalizedProductTitle(product, language);
 
                     // Specs list with localized terms (clean physical specs only, no redundant sales unit)
-                    const specs: string[] = [];
-                    if (product.attributes?.size) {
-                      specs.push(localizeSeedAttributeValue(String(product.attributes.size), language));
-                    }
-                    if (product.attributes?.volume) {
-                      specs.push(localizeSeedAttributeValue(String(product.attributes.volume), language));
-                    }
-                    if (product.attributes?.weight) {
-                      specs.push(localizeSeedAttributeValue(String(product.attributes.weight), language));
-                    }
-                    if (product.attributes?.package_quantity) {
-                      specs.push(
-                        formatCatalogPdfMessage(copy.packageQuantity, {
-                          count: String(product.attributes.package_quantity),
-                        }),
-                      );
-                    }
-                    if (product.attributes?.material) {
-                      specs.push(localizeSeedAttributeValue(String(product.attributes.material), language));
-                    }
+                    const specs = getPresentedProductAttributes(product, attributes, language)
+                      .slice(0, 5)
+                      .map((attribute) => `${attribute.label}: ${attribute.value}`);
 
                     // Pricing
                     let displayPrice = '';

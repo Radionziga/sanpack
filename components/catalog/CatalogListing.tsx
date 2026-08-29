@@ -23,6 +23,10 @@ import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Attribute, Category, Product } from '@/types';
+import {
+  getCategoryDescendantIds,
+  isAttributeApplicableToCategory,
+} from '@/lib/catalog/attributeApplicability';
 import { FilterSidebar } from '@/components/catalog/FilterSidebar';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -158,14 +162,11 @@ export function CatalogListing({
 
   const filterAttributes = useMemo(() => {
     if (!currentCategory) return [];
-    const childIds = categories
-      .filter((category) => category.parentId === currentCategory.id)
-      .map((category) => category.id);
-    const categoryIds = new Set([currentCategory.id, ...childIds]);
+    const categoryIds = getCategoryDescendantIds(currentCategory.id, categories);
 
     return attributes.filter((attribute) => {
       if (!attribute.filterable) return false;
-      if (attribute.categoryIds?.length && !attribute.categoryIds.some((id) => categoryIds.has(id))) {
+      if (![...categoryIds].some((id) => isAttributeApplicableToCategory(attribute, id, categories))) {
         return false;
       }
       return scopedProducts.some((product) => {
@@ -194,7 +195,7 @@ export function CatalogListing({
           const comparableValues = Array.isArray(attributeValue)
             ? attributeValue.map(String)
             : [String(attributeValue)];
-          return values.some((value) => comparableValues.some((candidate) => candidate.includes(value)));
+          return values.some((value) => comparableValues.some((candidate) => candidate === value));
         });
       })
       .sort((left, right) => {
@@ -389,7 +390,7 @@ export function CatalogListing({
 
             {loadState === 'ready' && filteredProducts.length > 0 ? (
               <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4' : 'space-y-4'}>
-                {filteredProducts.map((product, index) => <ProductCard key={product.id} product={product} viewMode={viewMode} appearance={viewMode === 'grid' ? 'market' : 'default'} eagerImage={index < 3} />)}
+                {filteredProducts.map((product, index) => <ProductCard key={product.id} product={product} viewMode={viewMode} appearance={viewMode === 'grid' ? 'market' : 'default'} eagerImage={index < 3} attributeDefinitions={attributes} />)}
               </div>
             ) : null}
           </div>
