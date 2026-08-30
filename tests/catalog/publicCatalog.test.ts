@@ -34,6 +34,17 @@ describe('public product contract', () => {
     expect(filterPublicProducts(products)).toEqual([published]);
   });
 
+  it('does not expose a structurally incomplete published Firestore document', () => {
+    const incomplete = {
+      id: 'incomplete',
+      slug: 'incomplete',
+      status: 'published',
+      titleRu: 'Повреждённая запись',
+    } as Product;
+
+    expect(filterPublicProducts([published, incomplete])).toEqual([published]);
+  });
+
   it('does not find a non-public product by slug', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json(products)));
 

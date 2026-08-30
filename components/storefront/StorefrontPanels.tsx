@@ -9,9 +9,7 @@ import {
   LayoutGrid,
   Minus,
   PackageOpen,
-  PackagePlus,
   Plus,
-  Printer,
   ShoppingBasket,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -106,6 +104,11 @@ const panelCopy = {
   },
 } as const;
 
+const defaultServiceArtwork = {
+  branding: '/catalog/category-icons-v3/branding-service-v2.webp',
+  bagDesigner: '/catalog/category-icons-v3/bag-designer-service-v2.webp',
+} as const;
+
 interface CategoryNavigationProps {
   categories: Category[];
   activeCategorySlug?: string;
@@ -124,6 +127,19 @@ function CategoryArtwork({ category, size = 40 }: { category: Category; size?: n
   return (
     <Image
       src={source}
+      alt=""
+      width={size}
+      height={size}
+      sizes={`${size}px`}
+      className="size-full object-contain"
+    />
+  );
+}
+
+function ServiceArtwork({ source, fallback, size = 40 }: { source?: string; fallback: string; size?: number }) {
+  return (
+    <Image
+      src={source || fallback}
       alt=""
       width={size}
       height={size}
@@ -252,17 +268,19 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
               {copy.services}
             </h3>
             <div className="space-y-1">
-              <Link href="/branding" className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] px-2.5 py-1.5 text-sm font-semibold text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-surface-inset)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)]">
-                <span className="grid size-9 shrink-0 place-items-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]">
-                  <Printer className="size-4.5" aria-hidden="true" />
-                </span>
-                <span className="min-w-0 flex-1 leading-tight">{copy.branding}</span>
-                <ChevronRight className="size-4 shrink-0 opacity-55" aria-hidden="true" />
-              </Link>
+              {(siteSettings.modules?.branding?.enabled ?? true) ? (
+                <Link href="/branding" className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] px-2.5 py-1.5 text-sm font-semibold text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-surface-inset)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)]">
+                  <span className="size-9 shrink-0 overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface)] shadow-[0_1px_4px_rgb(21_27_24/7%)]">
+                    <ServiceArtwork source={siteSettings.modules?.branding?.navigationImage} fallback={defaultServiceArtwork.branding} />
+                  </span>
+                  <span className="min-w-0 flex-1 leading-tight">{copy.branding}</span>
+                  <ChevronRight className="size-4 shrink-0 opacity-55" aria-hidden="true" />
+                </Link>
+              ) : null}
               {(siteSettings.modules?.bagDesigner?.enabled ?? true) ? (
                 <Link href="/bag-designer" className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] px-2.5 py-1.5 text-sm font-semibold text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-surface-inset)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)]">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]">
-                    <PackagePlus className="size-4.5" aria-hidden="true" />
+                  <span className="size-9 shrink-0 overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface)] shadow-[0_1px_4px_rgb(21_27_24/7%)]">
+                    <ServiceArtwork source={siteSettings.modules?.bagDesigner?.navigationImage} fallback={defaultServiceArtwork.bagDesigner} />
                   </span>
                   <span className="min-w-0 flex-1 leading-tight">{copy.bagDesigner}</span>
                   <ChevronRight className="size-4 shrink-0 opacity-55" aria-hidden="true" />
@@ -363,13 +381,15 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
             </Link>
           );
         })}
-        <Link href="/branding" className="flex min-h-24 w-32 shrink-0 snap-start flex-col justify-between rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 transition-transform active:scale-[0.96] motion-reduce:active:scale-100">
-          <span className="grid size-10 place-items-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]"><Printer className="size-5" aria-hidden="true" /></span>
-          <span className="line-clamp-2 text-xs font-bold leading-[1.2] text-[var(--sp-ink)]">{copy.branding}</span>
-        </Link>
+        {(siteSettings.modules?.branding?.enabled ?? true) ? (
+          <Link href="/branding" className="flex min-h-24 w-32 shrink-0 snap-start flex-col justify-between rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 transition-transform active:scale-[0.96] motion-reduce:active:scale-100">
+            <span className="size-10 overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)]"><ServiceArtwork source={siteSettings.modules?.branding?.navigationImage} fallback={defaultServiceArtwork.branding} /></span>
+            <span className="line-clamp-2 text-xs font-bold leading-[1.2] text-[var(--sp-ink)]">{copy.branding}</span>
+          </Link>
+        ) : null}
         {(siteSettings.modules?.bagDesigner?.enabled ?? true) ? (
           <Link href="/bag-designer" className="flex min-h-24 w-32 shrink-0 snap-start flex-col justify-between rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 transition-transform active:scale-[0.96] motion-reduce:active:scale-100">
-            <span className="grid size-10 place-items-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]"><PackagePlus className="size-5" aria-hidden="true" /></span>
+            <span className="size-10 overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)]"><ServiceArtwork source={siteSettings.modules?.bagDesigner?.navigationImage} fallback={defaultServiceArtwork.bagDesigner} /></span>
             <span className="line-clamp-2 text-xs font-bold leading-[1.2] text-[var(--sp-ink)]">{copy.bagDesigner}</span>
           </Link>
         ) : null}

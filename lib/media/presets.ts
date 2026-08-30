@@ -29,6 +29,13 @@ export const mediaPresets = {
     quality: 88,
     label: 'Обложка категории',
   },
+  'service-navigation': {
+    directory: 'media/services',
+    width: 800,
+    height: 800,
+    quality: 88,
+    label: 'Иллюстрация сервиса',
+  },
   product: {
     directory: 'media/products',
     width: 1200,

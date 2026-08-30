@@ -26,6 +26,7 @@ export type MediaFolderKey =
   | 'all'
   | 'products'
   | 'categories'
+  | 'services'
   | 'banners'
   | 'clients'
   | 'bag-designer'

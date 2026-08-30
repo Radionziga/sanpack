@@ -369,10 +369,14 @@ const attributeValueTranslations: Record<string, SeedProductTranslation> = {
   'сыр с голубой плесенью': { uz: 'Ko‘k mog‘orli pishloq', en: 'Blue cheese' },
   'мягкий сыр': { uz: 'Yumshoq pishloq', en: 'Soft cheese' },
   'фритюрное масло': { uz: 'Fritür moyi', en: 'Frying oil' },
+  'фрукт': { uz: 'Meva', en: 'Fruit' },
+  'ягода': { uz: 'Rezavor', en: 'Berry' },
+  'овощ': { uz: 'Sabzavot', en: 'Vegetable' },
   'Дани Нан': { uz: 'Dani Nan', en: 'Dani Nan' },
   'Алтын Нан': { uz: 'Oltin Nan', en: 'Altyn Nan' },
   'Мутабар': { uz: 'Mo‘tabar', en: 'Mutabar' },
   'Олейна': { uz: 'Oleyna', en: 'Oleyna' },
+  'алюминиевая фольга': { uz: 'Alyuminiy folga', en: 'Aluminium foil' },
   'Салтанат': { uz: 'Saltanat', en: 'Saltanat' },
   'Ризамат': { uz: 'Rizamat', en: 'Rizamat' },
   'Рава': { uz: 'Rava', en: 'Rava' },
@@ -411,6 +415,7 @@ const chineseAttributeValues: Record<string, string> = {
   'Assorted red, yellow and green': '红黄绿混色', Peeled: '去皮', Shredded: '切丝',
   Butter: '黄油', 'Cheese slices': '芝士片', 'Cream cheese': '奶油奶酪', Cheese: '奶酪',
   'Blue cheese': '蓝纹奶酪', 'Soft cheese': '软质奶酪', 'Frying oil': '炸油',
+  Fruit: '水果', Berry: '浆果', Vegetable: '蔬菜', 'Aluminium foil': '铝箔',
 };
 
 export function getSeedProductTranslation(code: string) {
@@ -427,20 +432,20 @@ function localizeMeasurements(value: string, language: Exclude<Language, 'ru'>) 
   const replacements = language === 'uz'
     ? [
       [/(?<!\p{L})шт\.(?!\p{L})/giu, 'dona'],
-      [/(?<!\p{L})см(?!\p{L})/giu, 'sm'], [/(?<!\p{L})кг(?!\p{L})/giu, 'kg'], [/(?<!\p{L})мл(?!\p{L})/giu, 'ml'],
+      [/(?<!\p{L})см(?!\p{L})/giu, 'sm'], [/(?<!\p{L})мм(?!\p{L})/giu, 'mm'], [/(?<!\p{L})кг(?!\p{L})/giu, 'kg'], [/(?<!\p{L})мл(?!\p{L})/giu, 'ml'],
       [/(?<!\p{L})л(?!\p{L})/giu, 'l'], [/(?<!\p{L})г(?!\p{L})/giu, 'g'], [/(?<!\p{L})шт(?!\p{L})/giu, 'dona'],
       [/(?<!\p{L})м(?!\p{L})/giu, 'm'],
     ] as const
     : language === 'zh'
       ? [
         [/(?<!\p{L})шт\.(?!\p{L})/giu, '件'],
-        [/(?<!\p{L})см(?!\p{L})/giu, '厘米'], [/(?<!\p{L})кг(?!\p{L})/giu, '千克'], [/(?<!\p{L})мл(?!\p{L})/giu, '毫升'],
+        [/(?<!\p{L})см(?!\p{L})/giu, '厘米'], [/(?<!\p{L})мм(?!\p{L})/giu, '毫米'], [/(?<!\p{L})кг(?!\p{L})/giu, '千克'], [/(?<!\p{L})мл(?!\p{L})/giu, '毫升'],
         [/(?<!\p{L})л(?!\p{L})/giu, '升'], [/(?<!\p{L})г(?!\p{L})/giu, '克'], [/(?<!\p{L})шт(?!\p{L})/giu, '件'],
         [/(?<!\p{L})м(?!\p{L})/giu, '米'],
       ] as const
       : [
       [/(?<!\p{L})шт\.(?!\p{L})/giu, 'pcs'],
-      [/(?<!\p{L})см(?!\p{L})/giu, 'cm'], [/(?<!\p{L})кг(?!\p{L})/giu, 'kg'], [/(?<!\p{L})мл(?!\p{L})/giu, 'ml'],
+      [/(?<!\p{L})см(?!\p{L})/giu, 'cm'], [/(?<!\p{L})мм(?!\p{L})/giu, 'mm'], [/(?<!\p{L})кг(?!\p{L})/giu, 'kg'], [/(?<!\p{L})мл(?!\p{L})/giu, 'ml'],
       [/(?<!\p{L})л(?!\p{L})/giu, 'L'], [/(?<!\p{L})г(?!\p{L})/giu, 'g'], [/(?<!\p{L})шт(?!\p{L})/giu, 'pcs'],
       [/(?<!\p{L})м(?!\p{L})/giu, 'm'],
     ] as const;

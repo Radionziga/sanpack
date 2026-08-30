@@ -1,4 +1,4 @@
-import type { SiteSettings } from '@/types';
+import type { SiteSettings, StorefrontServiceSettings } from '@/types';
 
 type StoredSiteSettings = Partial<SiteSettings> & {
   company?: Partial<SiteSettings['company']>;
@@ -7,9 +7,21 @@ type StoredSiteSettings = Partial<SiteSettings> & {
   design?: Partial<SiteSettings['design']>;
   seo?: Partial<SiteSettings['seo']>;
   modules?: {
+    branding?: Partial<NonNullable<NonNullable<SiteSettings['modules']>['branding']>>;
     bagDesigner?: Partial<NonNullable<NonNullable<SiteSettings['modules']>['bagDesigner']>>;
   };
 };
+
+function mergeServiceModule(
+  defaults: StorefrontServiceSettings | undefined,
+  stored: Partial<StorefrontServiceSettings> | undefined,
+): StorefrontServiceSettings {
+  return {
+    ...defaults,
+    ...stored,
+    enabled: stored?.enabled ?? defaults?.enabled ?? true,
+  };
+}
 
 export function mergeSiteSettings(
   defaults: SiteSettings,
@@ -28,11 +40,8 @@ export function mergeSiteSettings(
     modules: {
       ...defaults.modules,
       ...stored.modules,
-      bagDesigner: {
-        enabled: stored.modules?.bagDesigner?.enabled
-          ?? defaults.modules?.bagDesigner?.enabled
-          ?? false,
-      },
+      branding: mergeServiceModule(defaults.modules?.branding, stored.modules?.branding),
+      bagDesigner: mergeServiceModule(defaults.modules?.bagDesigner, stored.modules?.bagDesigner),
     },
   };
 }

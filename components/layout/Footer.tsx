@@ -11,7 +11,7 @@ import { getCatalogPrintPath } from '@/lib/documents/catalogIdentity';
 
 export function Footer() {
   const { t, language } = useLanguage();
-  const { company, contacts } = useSiteSettings();
+  const { company, contacts, modules } = useSiteSettings();
   const copy = {
     ru: {
       categories: ['Мешки для мусора', 'Пакеты «Майка»', 'Одноразовые перчатки', 'Фольга и стрейч-плёнка', 'Бакалея и рис', 'Полиграфия и брендирование'],
@@ -134,11 +134,11 @@ export function Footer() {
                   {t('delivery')}
                 </Link>
               </li>
-              <li>
-                <Link href="/branding" className="transition-colors hover:text-[var(--sp-on-brand)]">
-                  {t('branding')}
-                </Link>
-              </li>
+              {(modules?.branding?.enabled ?? true) ? <li>
+                  <Link href="/branding" className="transition-colors hover:text-[var(--sp-on-brand)]">
+                    {t('branding')}
+                  </Link>
+                </li> : null}
               <li>
                 <Link href="/contacts" className="transition-colors hover:text-[var(--sp-on-brand)]">
                   {t('contacts')}
@@ -183,7 +183,7 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--sp-on-brand)_18%,transparent)] pt-8 text-[11px] text-[color-mix(in_srgb,var(--sp-on-brand)_68%,transparent)] sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--sp-on-brand)_18%,transparent)] pt-8 text-[11px] text-[color-mix(in_srgb,var(--sp-on-brand)_78%,transparent)] sm:flex-row">
           <p>© {currentYear} {company.name}. {t('allRightsReserved')}</p>
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="hover:text-white transition-colors">

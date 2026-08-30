@@ -236,8 +236,8 @@ const produce: PriceRow[] = [
   row('VG-013', 'cat-vegetables', 'Спаржа', 290400, 'кг', 'kilogram'),
 
   row('GN-001', 'cat-greens', 'Салат Айсберг Novagreen, 500 г', 31700, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
-  row('GN-002', 'cat-greens', 'Латук Novagreen, 500 г', 33000, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
-  row('GN-003', 'cat-greens', 'Салат Романо Novagreen, 500 г', 48200, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
+  row('GN-002', 'cat-greens', 'Латук Novagreen, 500 г', 53500, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
+  row('GN-003', 'cat-greens', 'Салат Романо Novagreen, 500 г', 52500, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
   row('GN-004', 'cat-greens', 'Руккола Novagreen', 32800, 'упаковка', 'pack', { weight: '250 / 500 г' }, { brandName: 'Novagreen', variants: [
     { id: '250-g', label: '250 г', price: 32800, attributes: { weight: '250 г' } },
     { id: '500-g', label: '500 г', price: 50000, attributes: { weight: '500 г' } },
@@ -246,7 +246,7 @@ const produce: PriceRow[] = [
     { id: '250-g', label: '250 г', price: 32800, attributes: { weight: '250 г' } },
     { id: '500-g', label: '500 г', price: 52400, attributes: { weight: '500 г' } },
   ] }),
-  row('GN-008', 'cat-greens', 'Салат Лолло Росса Novagreen, 500 г', 55600, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
+  row('GN-008', 'cat-greens', 'Салат Лолло Росса Novagreen, 500 г', 33600, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
   row('GN-009', 'cat-greens', 'Кейл Novagreen, 500 г', 47500, 'упаковка', 'pack', { weight: '500 г' }, { brandName: 'Novagreen' }),
   row('GN-010', 'cat-greens', 'Мангольд Novagreen', 34500, 'упаковка', 'pack', { weight: '250 / 500 г' }, { brandName: 'Novagreen', variants: [
     { id: '250-g', label: '250 г', price: 34500, attributes: { weight: '250 г' } },
@@ -335,6 +335,7 @@ const priceRows: PriceRow[] = [
 ];
 
 const categoryById = new Map(priceList2026Categories.map((category) => [category.id, category]));
+const producePriceOnRequestCategories = new Set(['cat-fruits', 'cat-berries', 'cat-vegetables']);
 
 function slugify(value: string) {
   const transliteration: Record<string, string> = {
@@ -362,6 +363,7 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
   if (!translation) throw new Error(`Не найдены переводы для товара ${entry.code}.`);
   const salesUnitUz = getLocalizedSalesUnitLabel(entry.unitCode, 'uz') || entry.salesUnit;
   const salesUnitEn = getLocalizedSalesUnitLabel(entry.unitCode, 'en') || entry.salesUnit;
+  const priceOnRequest = producePriceOnRequestCategories.has(entry.categoryId);
 
   return {
     id: `price-2026-${entry.code.toLowerCase()}`,
@@ -375,10 +377,18 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
     titleUz: translation.uz,
     titleEn: translation.en,
     titleZh: translation.zh,
-    shortDescriptionRu: `${entry.name}. Цена указана за ${entry.salesUnit}.`,
-    shortDescriptionUz: `${translation.uz}. Narx ${salesUnitUz} uchun ko‘rsatilgan.`,
-    shortDescriptionEn: `${translation.en}. Price is shown per ${salesUnitEn}.`,
-    shortDescriptionZh: `${translation.zh}。价格按所示销售单位计算。`,
+    shortDescriptionRu: priceOnRequest
+      ? `${entry.name}. Актуальную цену уточняйте у менеджера.`
+      : `${entry.name}. Цена указана за ${entry.salesUnit}.`,
+    shortDescriptionUz: priceOnRequest
+      ? `${translation.uz}. Amaldagi narxni menejerdan aniqlashtiring.`
+      : `${translation.uz}. Narx ${salesUnitUz} uchun ko‘rsatilgan.`,
+    shortDescriptionEn: priceOnRequest
+      ? `${translation.en}. Ask a manager for the current price.`
+      : `${translation.en}. Price is shown per ${salesUnitEn}.`,
+    shortDescriptionZh: priceOnRequest
+      ? `${translation.zh}。当前价格请咨询经理。`
+      : `${translation.zh}。价格按所示销售单位计算。`,
     descriptionRu: 'Товар из актуального прайс-листа SANPACK. Доступность и условия поставки уточняйте у менеджера.',
     descriptionUz: 'SANPACK amaldagi narxlar ro‘yxatidagi mahsulot. Mavjudligi va yetkazib berish shartlarini menejerdan aniqlashtiring.',
     descriptionEn: 'Product from the current SANPACK price list. Confirm availability and delivery terms with a manager.',
@@ -405,15 +415,15 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
       priceMode: 'fixed',
       availability: 'on_order',
     })),
-    price: entry.price,
+    price: priceOnRequest ? undefined : entry.price,
     currency: 'UZS',
-    showPrice: true,
+    showPrice: !priceOnRequest,
     stockStatus: 'on_order',
     minimumOrder: entry.minimumOrder ?? 1,
     salesUnit: entry.salesUnit,
     unitCode: entry.unitCode,
     quantityStep: 1,
-    priceMode: 'fixed',
+    priceMode: priceOnRequest ? 'request' : 'fixed',
     availability: 'on_order',
     featured: false,
     newProduct: true,
@@ -423,9 +433,15 @@ export const priceList2026Products: Product[] = priceRows.map((entry, index) => 
       titleRu: `${entry.name} — купить в SANPACK`,
       titleUz: `${translation.uz} — SANPACK’dan xarid qilish`,
       titleEn: `${translation.en} — buy from SANPACK`,
-      descriptionRu: `${entry.name} по цене ${entry.price.toLocaleString('ru-RU')} сум. Заказ и поставка от SANPACK.`,
-      descriptionUz: `${translation.uz}: narxi ${entry.price.toLocaleString('uz-UZ')} so‘m. SANPACK’dan buyurtma va yetkazib berish.`,
-      descriptionEn: `${translation.en}: ${entry.price.toLocaleString('en-US')} UZS. Order and delivery from SANPACK.`,
+      descriptionRu: priceOnRequest
+        ? `${entry.name}: цена по запросу. Заказ и поставка от SANPACK.`
+        : `${entry.name} по цене ${entry.price.toLocaleString('ru-RU')} сум. Заказ и поставка от SANPACK.`,
+      descriptionUz: priceOnRequest
+        ? `${translation.uz}: narx so‘rov bo‘yicha. SANPACK’dan buyurtma va yetkazib berish.`
+        : `${translation.uz}: narxi ${entry.price.toLocaleString('uz-UZ')} so‘m. SANPACK’dan buyurtma va yetkazib berish.`,
+      descriptionEn: priceOnRequest
+        ? `${translation.en}: price on request. Order and delivery from SANPACK.`
+        : `${translation.en}: ${entry.price.toLocaleString('en-US')} UZS. Order and delivery from SANPACK.`,
     },
     createdAt: IMPORTED_AT,
     updatedAt: IMPORTED_AT,

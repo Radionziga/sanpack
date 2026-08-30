@@ -40,9 +40,7 @@ for (const route of criticalRoutes) {
   test(`@a11y no serious accessibility violations on ${route}`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.documentElement.hasAttribute('lang'));
-    const results = await new AxeBuilder({ page })
-      .disableRules(['color-contrast'])
-      .analyze();
+    const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations.filter((violation) => (
       violation.impact === 'critical' || violation.impact === 'serious'
     ))).toEqual([]);

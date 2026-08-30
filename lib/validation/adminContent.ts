@@ -187,10 +187,20 @@ export const companySettingsSchema = z.object({
   descriptionZh: optionalText,
 }).passthrough();
 
+const storefrontServiceSettingsSchema = z.object({
+  enabled: z.boolean().optional(),
+  navigationImage: optionalUrl,
+  navigationImagePath: z.string().trim().max(500).optional(),
+}).strict();
+
 export const settingsMutationSchema = z.object({
   design: designSettingsSchema.optional(),
   contacts: contactSettingsSchema.optional(),
   company: companySettingsSchema.optional(),
+  modules: z.object({
+    branding: storefrontServiceSettingsSchema.optional(),
+    bagDesigner: storefrontServiceSettingsSchema.optional(),
+  }).strict().optional(),
 }).passthrough();
 
 const productOrderPackagingSchema = z.object({

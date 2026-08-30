@@ -255,15 +255,6 @@ export interface RequestItem {
   variant?: ProductVariant;
 }
 
-export type RequestStatus =
-  | 'new'
-  | 'viewed'
-  | 'in_progress'
-  | 'clarification'
-  | 'offer_sent'
-  | 'completed'
-  | 'canceled';
-
 export interface CustomerInfo {
   name: string;
   company?: string;
@@ -360,6 +351,12 @@ export interface Banner {
   active: boolean;
 }
 
+export interface StorefrontServiceSettings {
+  enabled: boolean;
+  navigationImage?: string;
+  navigationImagePath?: string;
+}
+
 export interface SiteSettings {
   company: {
     name: string;
@@ -422,9 +419,8 @@ export interface SiteSettings {
     defaultDescriptionZh?: string;
   };
   modules?: {
-    bagDesigner?: {
-      enabled: boolean;
-    };
+    branding?: StorefrontServiceSettings;
+    bagDesigner?: StorefrontServiceSettings;
   };
 }
 

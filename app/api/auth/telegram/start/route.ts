@@ -9,13 +9,9 @@ import {
   TELEGRAM_LOGIN_FLOW_COOKIE_NAME,
   TELEGRAM_LOGIN_FLOW_MAX_AGE_SECONDS,
 } from '@/lib/telegram/login';
+import { sanitizeLocalizedReturnPath } from '@/lib/i18n/pathLocale';
 
 export const runtime = 'nodejs';
-
-function safeReturnTo(value: string | null) {
-  if (!value || !/^\/(ru|uz|en)(\/|$)/.test(value)) return '/ru/request';
-  return value;
-}
 
 function withAuthError(request: Request, returnTo: string) {
   const url = createPublicSiteUrl(returnTo, request.url);
@@ -24,7 +20,7 @@ function withAuthError(request: Request, returnTo: string) {
 }
 
 export async function GET(request: Request) {
-  const returnTo = safeReturnTo(new URL(request.url).searchParams.get('returnTo'));
+  const returnTo = sanitizeLocalizedReturnPath(new URL(request.url).searchParams.get('returnTo'));
   try {
     const settings = await getTelegramPrivateSettings();
     const login = settings.login;

@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next';
-import { initialCategories, initialProducts } from '@/lib/seedData';
 import { routing } from '@/i18n/routing';
 import {
   getPublicCategories,
@@ -31,8 +30,8 @@ function languageAlternates(baseUrl: string, path: string) {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   const [products, categories] = await Promise.all([
-    getPublicProducts().catch(() => initialProducts),
-    getPublicCategories().catch(() => initialCategories),
+    getPublicProducts().catch(() => []),
+    getPublicCategories().catch(() => []),
   ]);
   const localizedStatic = routing.locales.flatMap((locale) =>
     staticRoutes.map((route) => ({

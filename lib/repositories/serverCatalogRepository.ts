@@ -152,9 +152,9 @@ function getPublicFirestoreRestUrl(pathname: string) {
   return `${root}/${pathname}${pathname.includes('?') ? '&' : '?'}key=${encodeURIComponent(apiKey)}`;
 }
 
-async function fetchPublicFirestoreJson<T>(pathname: string): Promise<T> {
+async function fetchPublicFirestoreJson<T>(pathname: string, tag: string): Promise<T> {
   const response = await fetch(getPublicFirestoreRestUrl(pathname), {
-    next: { revalidate: 300 },
+    next: { revalidate: 300, tags: [tag] },
   });
   if (!response.ok) {
     throw new Error(`Firestore public read failed with status ${response.status}.`);
@@ -172,7 +172,7 @@ async function readPublicCollection<T>(name: string): Promise<T[]> {
     const payload = await fetchPublicFirestoreJson<{
       documents?: FirestoreRestDocument[];
       nextPageToken?: string;
-    }>(`${encodeURIComponent(name)}?${params.toString()}`);
+    }>(`${encodeURIComponent(name)}?${params.toString()}`, name);
 
     for (const document of payload.documents || []) {
       result.push({
@@ -188,7 +188,7 @@ async function readPublicCollection<T>(name: string): Promise<T[]> {
 
 async function readPublicDocument<T>(path: string): Promise<T | null> {
   const response = await fetch(getPublicFirestoreRestUrl(path), {
-    next: { revalidate: 300 },
+    next: { revalidate: 300, tags: [path.split('/')[0] || path] },
   });
   if (response.status === 404) return null;
   if (!response.ok) {
@@ -248,7 +248,7 @@ const getCachedPublicProducts = unstable_cache(
   async () => filterPublicProducts(
     await readCollection<Product>('products', initialProducts)
   ).map(withSeedChineseLocalization).map(withGeneratedProductImage).map(withOptimizedProductAssets),
-  ['public-products-v12-local-webp-2026-08-27'],
+  ['public-products-v13-produce-request-pricing-2026-08-29'],
   { revalidate: 300, tags: ['products'] }
 );
 

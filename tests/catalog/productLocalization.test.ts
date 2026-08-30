@@ -9,6 +9,7 @@ import {
   priceList2026Attributes,
   priceList2026Products,
 } from '@/lib/catalog/sanpackPriceLists2026';
+import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
 
 const cyrillic = /[А-Яа-яЁё]/u;
 
@@ -56,6 +57,24 @@ describe('2026 seed catalogue localization', () => {
     expect(formatMoney(285000, 'ru')).toBe('285\u00a0000\u00a0сум');
     expect(formatMoney(285000, 'uz')).toBe('285\u00a0000\u00a0so‘m');
     expect(formatMoney(285000, 'en')).toBe('285,000\u00a0UZS');
+  });
+
+  it('keeps fresh fruits, berries and vegetables on request pricing in seed mode', () => {
+    const categoryIds = new Set(['cat-fruits', 'cat-berries', 'cat-vegetables']);
+    const produce = priceList2026Products.filter((product) => categoryIds.has(product.categoryId));
+
+    expect(produce).toHaveLength(42);
+    for (const product of produce) {
+      expect(product.priceMode).toBe('request');
+      expect(product.showPrice).toBe(false);
+      expect(product.price).toBeUndefined();
+    }
+  });
+
+  it('localizes generic produce attribute values', () => {
+    expect(localizeSeedAttributeValue('фрукт', 'uz')).toBe('Meva');
+    expect(localizeSeedAttributeValue('ягода', 'en')).toBe('Berry');
+    expect(localizeSeedAttributeValue('овощ', 'zh')).toBe('蔬菜');
   });
 
   it('does not leak Russian attribute values into Uzbek or English presentation', () => {

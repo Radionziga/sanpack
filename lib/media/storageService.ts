@@ -9,6 +9,7 @@ function determineFolder(path: string): string {
   const lower = path.toLowerCase();
   if (lower.startsWith('media/products') || lower.startsWith('products/')) return 'products';
   if (lower.startsWith('media/categories') || lower.startsWith('categories/')) return 'categories';
+  if (lower.startsWith('media/services') || lower.startsWith('services/')) return 'services';
   if (lower.startsWith('media/banners') || lower.startsWith('banners/')) return 'banners';
   if (lower.startsWith('media/clients') || lower.startsWith('clients/')) return 'clients';
   if (lower.startsWith('bag-design-requests') || lower.startsWith('bag-designer')) return 'bag-designer';
@@ -45,6 +46,7 @@ export async function getAllMediaLibrary(): Promise<MediaLibraryResponse> {
     all: 0,
     products: 0,
     categories: 0,
+    services: 0,
     banners: 0,
     clients: 0,
     'bag-designer': 0,

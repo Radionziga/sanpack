@@ -28,6 +28,7 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { useMobileStorefrontChrome } from '@/components/layout/MobileStorefrontChrome';
 import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { ProductImage } from '@/components/catalog/ProductImage';
+import { searchAndRankProducts } from '@/lib/catalog/productSearch';
 
 export function Header({
   initialProducts = [],
@@ -107,26 +108,7 @@ export function Header({
           });
       loadProducts.then((products) => {
         if (!active) return;
-        const filtered = products
-          .filter(
-            (p) =>
-              (p.titleRu || '').toLowerCase().includes(q) ||
-              (p.titleUz || '').toLowerCase().includes(q) ||
-              (p.titleEn || '').toLowerCase().includes(q) ||
-              (p.titleZh || '').toLowerCase().includes(q) ||
-              (p.sku || '').toLowerCase().includes(q) ||
-              (p.shortDescriptionRu || '').toLowerCase().includes(q) ||
-              (p.categorySlug || '').toLowerCase().includes(q)
-          )
-          .sort((a, b) => {
-            const aTitle = ((language === 'uz' ? a.titleUz : language === 'en' ? a.titleEn : language === 'zh' ? a.titleZh : a.titleRu) || a.titleRu || '').toLowerCase();
-            const bTitle = ((language === 'uz' ? b.titleUz : language === 'en' ? b.titleEn : language === 'zh' ? b.titleZh : b.titleRu) || b.titleRu || '').toLowerCase();
-            const aStarts = aTitle.startsWith(q) || aTitle.split(' ').some((w) => w.startsWith(q));
-            const bStarts = bTitle.startsWith(q) || bTitle.split(' ').some((w) => w.startsWith(q));
-            if (aStarts && !bStarts) return -1;
-            if (!aStarts && bStarts) return 1;
-            return aTitle.localeCompare(bTitle);
-          });
+        const filtered = searchAndRankProducts(products, q, language);
         setSearchResults(filtered.slice(0, 8));
         setIsSearchOpen(true);
       }).catch(() => {

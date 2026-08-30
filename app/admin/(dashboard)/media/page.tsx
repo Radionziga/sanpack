@@ -256,6 +256,7 @@ export default function MediaLibraryPage() {
       if (selectedFolder !== 'all') {
         if (selectedFolder === 'products' && file.folder !== 'products') return false;
         if (selectedFolder === 'categories' && file.folder !== 'categories') return false;
+        if (selectedFolder === 'services' && file.folder !== 'services') return false;
         if (selectedFolder === 'banners' && file.folder !== 'banners') return false;
         if (selectedFolder === 'clients' && file.folder !== 'clients') return false;
         if (selectedFolder === 'bag-designer' && file.folder !== 'bag-designer') return false;
@@ -293,6 +294,7 @@ export default function MediaLibraryPage() {
       { key: 'all', label: 'Все файлы', count: counts.all || 0 },
       { key: 'products', label: 'Товары', count: counts.products || 0 },
       { key: 'categories', label: 'Категории', count: counts.categories || 0 },
+      { key: 'services', label: 'Сервисы', count: counts.services || 0 },
       { key: 'banners', label: 'Баннеры', count: counts.banners || 0 },
       { key: 'clients', label: 'Клиенты', count: counts.clients || 0 },
       { key: 'bag-designer', label: 'Пакеты (конструктор)', count: counts['bag-designer'] || 0 },

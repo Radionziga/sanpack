@@ -16,6 +16,10 @@ export function hasProductImage(source?: string | null): source is string {
   return path !== PRODUCT_IMAGE_PLACEHOLDER;
 }
 
+export function canRetryProductImageDirectly(source?: string | null): source is string {
+  return Boolean(source && /^https?:\/\//i.test(source));
+}
+
 export function withGeneratedProductImage<
   T extends { id: string; mainImage?: string; mainImagePath?: string; images?: string[] },
 >(product: T): T {

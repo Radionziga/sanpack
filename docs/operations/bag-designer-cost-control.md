@@ -1,18 +1,14 @@
 # Bag designer cost control
 
-The public generation endpoint currently has a process-local IP limiter. It reduces accidental bursts on one server instance, but it is not distributed protection and can reset or be bypassed when traffic reaches another instance.
+The public generation endpoint uses the shared Firestore transaction limiter in `lib/security/distributedRateLimit.ts`. The bucket is common to all App Hosting instances, stores a SHA-256 client fingerprint rather than the raw IP, and expires through the `rateLimits.expiresAt` TTL policy described in `docs/PRODUCTION_OPERATIONS.md`.
 
 Generation requests use a client idempotency key and reserve one Firestore draft before Gemini runs. A retry with the same payload reuses the same document and completed assets. Drafts move through `processing`, `failed`, and `ready`; submission atomically changes `draft` to `new`. Submitted records are never selected by the cleanup dry-run.
 
-## Distributed rate-limit options
+## Selected distributed rate limit
 
-| Option | Strength | Trade-off |
-| --- | --- | --- |
-| Firestore counters with expiry buckets | Uses existing Google/Firebase infrastructure and needs no new vendor | Adds reads/writes per anonymous request and needs careful contention handling |
-| Managed Redis-compatible limiter | Atomic increments and TTLs are a natural fit for rate limiting | Adds a service, credentials, billing, and regional configuration |
-| Hosting/WAF rate limiting | Rejects abuse before Next.js, Gemini, or Storage code runs | Rules are infrastructure-specific and generally have less product context |
+Firestore counters with expiry buckets were selected because they reuse the existing Firebase operational boundary and provide atomic, cross-instance enforcement without another credentialed service. The trade-off is one transactional Firestore operation per checked request and an operational TTL prerequisite.
 
-No distributed option is selected yet. The choice should consider expected traffic, acceptable per-request cost, and who will operate the service.
+Hosting/WAF throttling can still be added as an outer production layer if traffic or abuse patterns justify it; it is not required for correctness of the application limiter.
 
 ## Cleanup scheduling options
 

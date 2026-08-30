@@ -39,8 +39,10 @@
     --sp-surface-muted: var(--sp-surface-inset);
     --sp-ink: #151B18;
     --sp-ink-secondary: #4C5751;
-    --sp-ink-tertiary: #6E7973;
-    --sp-ink-muted: #929C96;
+    /* Small supporting copy must remain WCAG AA against canvas, surface and
+       inset backgrounds; these tokens are deliberately darker than decoration. */
+    --sp-ink-tertiary: #59645E;
+    --sp-ink-muted: #626D67;
     --sp-line: #DCE2DE;
     --sp-line-soft: #E8ECE9;
     --sp-line-strong: #AEB9B2;

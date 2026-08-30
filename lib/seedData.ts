@@ -62,8 +62,13 @@ export const initialSiteSettings: SiteSettings = {
     defaultDescriptionZh: '为餐厅、酒店和企业生产并批发垃圾袋、包装袋、手套、铝箔、保鲜膜、食品和印刷服务。',
   },
   modules: {
+    branding: {
+      enabled: true,
+      navigationImage: '/catalog/category-icons-v3/branding-service-v2.webp',
+    },
     bagDesigner: {
       enabled: true,
+      navigationImage: '/catalog/category-icons-v3/bag-designer-service-v2.webp',
     },
   },
 };

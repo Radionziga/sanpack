@@ -27,11 +27,9 @@ export async function GET(request: Request) {
 
   try {
     const data = await resources[resource as keyof typeof resources]();
-    return NextResponse.json(data, {
-      headers: {
-        'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
-      },
-    });
+    // The repository owns caching and tag invalidation. A second CDN stale
+    // layer here could keep serving pre-mutation catalog responses.
+    return NextResponse.json(data);
   } catch (error) {
     console.error(`Catalog read failed for ${resource}.`, error);
     return NextResponse.json(

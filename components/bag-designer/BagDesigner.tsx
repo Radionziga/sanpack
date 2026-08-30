@@ -388,7 +388,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
             aria-current={index === step ? 'step' : undefined}
             className={`min-h-11 min-w-max flex-1 rounded-[var(--sp-radius-control)] border px-4 text-left text-xs font-bold transition-colors ${index === step ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : index < step ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-muted)]'}`}
           >
-            <span className="mr-2 opacity-70">0{index + 1}</span>{label}
+            <span className="mr-2 opacity-80">0{index + 1}</span>{label}
           </button>
         ))}
       </nav>
@@ -432,6 +432,7 @@ export function BagDesigner({ settings }: { settings: BagDesignerSettings }) {
                           src={bagTypeImages[type]}
                           alt=""
                           fill
+                          priority={type === 'tshirt'}
                           sizes="(min-width: 1280px) 560px, (min-width: 1024px) 44vw, 100vw"
                           className="object-cover transition-transform duration-300 group-hover:scale-[1.015]"
                         />

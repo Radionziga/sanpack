@@ -11,12 +11,16 @@ const categoryArtworkById: Record<string, string> = {
   'cat-flour': '/catalog/category-icons-v3/flour.webp',
   'cat-food': '/catalog/category-icons-v3/food.webp',
   'cat-food-packaging': '/catalog/category-icons-v3/food-packaging.webp',
+  'cat-frozen-food': '/catalog/category-icons-v3/frozen-food.webp',
   'cat-fruits': '/catalog/category-icons-v3/fruits.webp',
   'cat-gloves': '/catalog/category-icons-v3/gloves.webp',
   'cat-greens': '/catalog/category-icons-v3/greens.webp',
   'cat-groats': '/catalog/category-icons-v3/groats.webp',
   'cat-microgreens': '/catalog/category-icons-v3/microgreens.webp',
   'cat-oils': '/catalog/category-icons-v3/oils.webp',
+  'cat-salt': '/catalog/category-icons-v3/salt.webp',
+  'cat-baking-ingredients': '/catalog/category-icons-v3/baking-ingredients.webp',
+  'cat-tomato-sauces': '/catalog/category-icons-v3/tomato-sauces.webp',
   'cat-packaging': '/catalog/category-icons-v3/packaging.webp',
   'cat-paper-goods': '/catalog/category-icons-v3/paper-goods.webp',
   'cat-special-bags': '/catalog/category-icons-v3/special-bags.webp',
@@ -28,6 +32,6 @@ const categoryArtworkById: Record<string, string> = {
 
 export function getCategoryArtwork(category: Category) {
   return category.navigationImage
-    || category.image
-    || categoryArtworkById[category.id];
+    || categoryArtworkById[category.id]
+    || category.image;
 }

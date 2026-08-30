@@ -14,7 +14,10 @@ import {
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 
 async function read<T>(resource: string): Promise<T> {
-  const response = await fetch(`/api/catalog?resource=${resource}`);
+  // ServerCatalogRepository already owns the tagged cache. Keeping a second
+  // browser cache here can make client-only product pages lag behind category
+  // pages after an administrator updates Firestore.
+  const response = await fetch(`/api/catalog?resource=${resource}`, { cache: 'no-store' });
   return parseJsonResponse<T>(response, 'Не удалось загрузить данные каталога.');
 }
 

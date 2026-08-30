@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image, { type ImageProps } from 'next/image';
 import { PhotoIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from '@/context/LanguageContext';
-import { hasProductImage } from '@/lib/catalog/productImages';
+import { canRetryProductImageDirectly, hasProductImage } from '@/lib/catalog/productImages';
 
 type ProductImageVariant = 'card' | 'detail' | 'compact';
 
@@ -28,18 +28,30 @@ export function ProductImage({
   fetchPriority,
 }: ProductImageProps) {
   const { t } = useLanguage();
-  const [failedSource, setFailedSource] = useState<string>();
+  const [loadFailure, setLoadFailure] = useState<{
+    source: string;
+    stage: 'direct' | 'failed';
+  }>();
+  const failureStage = loadFailure && loadFailure.source === source ? loadFailure.stage : undefined;
 
-  if (hasProductImage(source) && failedSource !== source) {
+  if (hasProductImage(source) && failureStage !== 'failed') {
+    const useDirectSource = failureStage === 'direct';
     return (
       <Image
+        key={`${source}:${useDirectSource ? 'direct' : 'optimized'}`}
         src={source}
         alt={alt}
         fill
         sizes={sizes}
         loading={loading}
         fetchPriority={fetchPriority}
-        onError={() => setFailedSource(source)}
+        unoptimized={useDirectSource}
+        onError={() => {
+          setLoadFailure({
+            source,
+            stage: useDirectSource || !canRetryProductImageDirectly(source) ? 'failed' : 'direct',
+          });
+        }}
         className={`rounded-[inherit] ${imageClassName ?? ''}`}
       />
     );

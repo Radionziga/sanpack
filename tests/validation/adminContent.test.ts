@@ -4,6 +4,7 @@ import {
   clientMutationSchema,
   productMutationSchema,
   productVariantSchema,
+  settingsMutationSchema,
 } from '@/lib/validation/adminContent';
 import { createProduct, createVariant } from '@/tests/fixtures/products';
 
@@ -117,6 +118,35 @@ describe('attribute admin validation', () => {
         ...validAttribute.options,
         { value: '500_G', labelRu: 'Дубликат', labelUz: 'Dublikat' },
       ],
+    }).success).toBe(false);
+  });
+});
+
+describe('storefront service settings validation', () => {
+  it('accepts service visibility and a managed navigation image', () => {
+    expect(settingsMutationSchema.safeParse({
+      modules: {
+        branding: {
+          enabled: true,
+          navigationImage: 'https://cdn.example.com/branding.webp',
+          navigationImagePath: 'media/services/branding.webp',
+        },
+        bagDesigner: {
+          enabled: false,
+          navigationImage: '/catalog/category-icons-v3/bag-designer-service-v2.webp',
+        },
+      },
+    }).success).toBe(true);
+  });
+
+  it('rejects an unsafe service image URL', () => {
+    expect(settingsMutationSchema.safeParse({
+      modules: {
+        branding: {
+          enabled: true,
+          navigationImage: 'javascript:alert(1)',
+        },
+      },
     }).success).toBe(false);
   });
 });

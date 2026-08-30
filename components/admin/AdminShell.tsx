@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Package,
+  PanelsTopLeft,
   Settings2,
   Bot,
   ContactRound,
@@ -51,6 +52,7 @@ const navigation = [
   {
     label: 'Модули',
     items: [
+      { label: 'Сервисы витрины', href: '/admin/services', icon: PanelsTopLeft },
       { label: 'Конструктор пакета', href: '/admin/bag-designer', icon: Package },
     ],
   },

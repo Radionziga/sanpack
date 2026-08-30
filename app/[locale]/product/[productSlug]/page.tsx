@@ -436,7 +436,7 @@ export default function ProductDetailPage({
                 href="/catalog"
                 aria-label={copy.back || t('catalog')}
                 title={copy.back || t('catalog')}
-                className="sp-icon-button absolute left-[max(0.75rem,env(safe-area-inset-left))] top-3 z-20 size-11 border border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_92%,transparent)] text-[var(--sp-ink)] shadow-[var(--sp-shadow-raised)] backdrop-blur-md active:bg-[var(--sp-surface-inset)] md:hidden"
+                className="sp-icon-button absolute left-[max(0.75rem,env(safe-area-inset-left))] top-3 z-20 size-11 border border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_92%,transparent)] text-[var(--sp-ink)] shadow-[var(--sp-shadow-raised)] backdrop-blur-md active:bg-[var(--sp-surface-inset)] md:left-4 md:top-4"
               >
                 <ChevronLeft className="size-5" aria-hidden="true" />
               </Link>

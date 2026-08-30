@@ -42,6 +42,7 @@ import type { Product } from '@/types';
 import { formatMoney, getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { ProductImage } from '@/components/catalog/ProductImage';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
+import { searchAndRankProducts } from '@/lib/catalog/productSearch';
 
 type MobilePanel = 'search' | 'more' | null;
 
@@ -358,32 +359,7 @@ export function MobileStorefrontChrome({
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
 
-    return products
-      .filter((p) => {
-        const titleRu = (p.titleRu || '').toLowerCase();
-        const titleUz = (p.titleUz || '').toLowerCase();
-        const titleEn = (p.titleEn || '').toLowerCase();
-        const sku = (p.sku || '').toLowerCase();
-        const desc = (p.shortDescriptionRu || '').toLowerCase();
-        const cat = (p.categorySlug || '').toLowerCase();
-        return (
-          titleRu.includes(q) ||
-          titleUz.includes(q) ||
-          titleEn.includes(q) ||
-          sku.includes(q) ||
-          desc.includes(q) ||
-          cat.includes(q)
-        );
-      })
-      .sort((a, b) => {
-        const aTitle = ((language === 'uz' ? a.titleUz : language === 'en' ? a.titleEn : a.titleRu) || a.titleRu || '').toLowerCase();
-        const bTitle = ((language === 'uz' ? b.titleUz : language === 'en' ? b.titleEn : b.titleRu) || b.titleRu || '').toLowerCase();
-        const aStarts = aTitle.startsWith(q) || aTitle.split(' ').some((w) => w.startsWith(q));
-        const bStarts = bTitle.startsWith(q) || bTitle.split(' ').some((w) => w.startsWith(q));
-        if (aStarts && !bStarts) return -1;
-        if (!aStarts && bStarts) return 1;
-        return aTitle.localeCompare(bTitle);
-      });
+    return searchAndRankProducts(products, q, language);
   }, [searchQuery, products, language]);
 
   const moreLinks = [
@@ -392,7 +368,9 @@ export function MobileStorefrontChrome({
     { href: '/about' as const, label: t('about'), icon: Info },
     { href: '/clients' as const, label: t('clients'), icon: Users },
     { href: '/delivery' as const, label: t('delivery'), icon: Truck },
-    { href: '/branding' as const, label: t('branding'), icon: Palette },
+    ...(modules?.branding?.enabled ?? true
+      ? [{ href: '/branding' as const, label: t('branding'), icon: Palette }]
+      : []),
     { href: '/contacts' as const, label: t('contacts'), icon: Phone },
     ...(modules?.bagDesigner?.enabled ?? true
       ? [{ href: '/bag-designer' as const, label: copy.bagDesigner, icon: PackageSearch }]

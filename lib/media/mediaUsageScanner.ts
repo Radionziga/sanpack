@@ -169,6 +169,42 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
           editUrl,
         });
       }
+      if (c.navigationImage) {
+        registerUsage(index, c.navigationImage, {
+          type: 'category',
+          id: doc.id,
+          title: catTitle,
+          field: 'Иконка навигации',
+          editUrl,
+        });
+      }
+      if (c.navigationImagePath) {
+        registerUsage(index, c.navigationImagePath, {
+          type: 'category',
+          id: doc.id,
+          title: catTitle,
+          field: 'Путь иконки навигации',
+          editUrl,
+        });
+      }
+      if (c.cardImage) {
+        registerUsage(index, c.cardImage, {
+          type: 'category',
+          id: doc.id,
+          title: catTitle,
+          field: 'Обложка bento-карточки',
+          editUrl,
+        });
+      }
+      if (c.cardImagePath) {
+        registerUsage(index, c.cardImagePath, {
+          type: 'category',
+          id: doc.id,
+          title: catTitle,
+          field: 'Путь bento-обложки',
+          editUrl,
+        });
+      }
       if (c.banner) {
         registerUsage(index, c.banner, {
           type: 'category',
@@ -274,6 +310,31 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
             field: 'Настройки внешнего вида',
             editUrl: '/admin/settings',
           });
+        }
+        const serviceModules = [
+          ['branding', 'Полиграфия и брендирование'],
+          ['bagDesigner', 'Конструктор пакета'],
+        ] as const;
+        for (const [moduleKey, title] of serviceModules) {
+          const service = s?.modules?.[moduleKey];
+          if (service?.navigationImage) {
+            registerUsage(index, service.navigationImage, {
+              type: 'settings',
+              id: `service-${moduleKey}`,
+              title,
+              field: 'Иллюстрация в навигации',
+              editUrl: '/admin/services',
+            });
+          }
+          if (service?.navigationImagePath) {
+            registerUsage(index, service.navigationImagePath, {
+              type: 'settings',
+              id: `service-${moduleKey}`,
+              title,
+              field: 'Путь иллюстрации в навигации',
+              editUrl: '/admin/services',
+            });
+          }
         }
       }
     } catch {

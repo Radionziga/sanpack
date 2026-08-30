@@ -38,6 +38,7 @@ const hiddenAttributeKeys = new Set([
 
 const chineseAttributeLabels: Record<string, string> = {
   brand: '品牌', product_type: '商品类型', size: '尺寸', weight: '重量', volume: '容量',
+  length: '长度', width: '宽度', height: '高度', lid_included: '含盖',
   units_per_pack: '每包数量', package_quantity: '包装数量', packs_per_sack: '每袋或每箱包数',
   load: '承重', load_capacity: '承重', grade: '等级', origin: '产地', material: '材质',
   thickness: '厚度', density: '密度', fat: '脂肪含量', packaging_type: '包装类型',
@@ -76,6 +77,18 @@ const fallbackAttributePresentation: Record<string, AttributePresentationFallbac
     labels: { ru: 'Объём', uz: 'Hajm', en: 'Volume' },
     sortOrder: 50,
   },
+  length: {
+    labels: { ru: 'Длина', uz: 'Uzunlik', en: 'Length' },
+    sortOrder: 51,
+  },
+  width: {
+    labels: { ru: 'Ширина', uz: 'Kenglik', en: 'Width' },
+    sortOrder: 52,
+  },
+  height: {
+    labels: { ru: 'Высота', uz: 'Balandlik', en: 'Height' },
+    sortOrder: 53,
+  },
   units_per_pack: {
     labels: { ru: 'Количество в упаковке', uz: 'Qadoqdagi miqdor', en: 'Units per pack' },
     units: { ru: 'шт.', uz: 'dona', en: 'pcs' },
@@ -110,6 +123,10 @@ const fallbackAttributePresentation: Record<string, AttributePresentationFallbac
   material: {
     labels: { ru: 'Материал', uz: 'Material', en: 'Material' },
     sortOrder: 110,
+  },
+  lid_included: {
+    labels: { ru: 'Крышка в комплекте', uz: 'Qopqoq to‘plamda', en: 'Lid included' },
+    sortOrder: 111,
   },
   thickness: {
     labels: { ru: 'Толщина', uz: 'Qalinlik', en: 'Thickness' },
@@ -156,6 +173,7 @@ const localizedUnits: Record<string, Record<ContentLanguage, string>> = {
   'гр': { ru: 'г', uz: 'g', en: 'g' },
   'л': { ru: 'л', uz: 'l', en: 'L' },
   'мл': { ru: 'мл', uz: 'ml', en: 'ml' },
+  'мм': { ru: 'мм', uz: 'mm', en: 'mm' },
 };
 
 interface UnitForms {

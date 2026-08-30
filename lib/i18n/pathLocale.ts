@@ -8,3 +8,11 @@ export function getPathLanguage(pathname: string, fallback: Language): Language 
     ? candidate as Language
     : fallback;
 }
+
+export function sanitizeLocalizedReturnPath(
+  pathname: string | null,
+  fallback = '/ru/request',
+) {
+  if (!pathname || !/^\/(ru|uz|en|zh)(\/|$)/.test(pathname)) return fallback;
+  return pathname;
+}

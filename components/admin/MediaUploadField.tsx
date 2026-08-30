@@ -95,6 +95,8 @@ export function MediaUploadField({
       ? 'aspect-square'
       : kind === 'product'
         ? 'aspect-square'
+        : kind === 'service-navigation'
+          ? 'aspect-square'
         : kind === 'category-card'
           ? 'aspect-[5/3]'
         : 'aspect-[4/3]';

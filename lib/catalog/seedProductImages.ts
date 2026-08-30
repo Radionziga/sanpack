@@ -57,6 +57,8 @@ const seedProductImages: Record<string, string> = {
     'FR-013', 'FR-014', 'FR-015', 'FR-016', 'FR-017', 'FR-018',
     'FR-019', 'FR-020', 'FR-021', 'FR-022',
   ]),
+  'SP-VG-007': '/catalog/generated-products/price-2026-vg-007-v2.webp',
+  'SP-VG-012': '/catalog/generated-products/price-2026-vg-012-v2.webp',
 
   // Novagreen catalogue photography. Some products intentionally share a photo.
   'SP-GN-001': '/catalog/extracted_p11_img2.jpeg',

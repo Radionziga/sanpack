@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterProductsBySearch } from '@/lib/catalog/productSearch';
+import { filterProductsBySearch, searchAndRankProducts } from '@/lib/catalog/productSearch';
 import { createProduct } from '@/tests/fixtures/products';
 
 const products = [
@@ -9,6 +9,8 @@ const products = [
     titleRu: 'Салфетки V',
     titleUz: 'V salfetkalari',
     titleEn: 'V napkins',
+    titleZh: 'V 型餐巾纸',
+    descriptionZh: '适合餐饮服务',
     brandName: 'Bulut',
   }),
   createProduct({
@@ -25,6 +27,7 @@ describe('catalog product search', () => {
     expect(filterProductsBySearch(products, 'салфетки').map((product) => product.id)).toEqual(['napkins']);
     expect(filterProductsBySearch(products, 'salfetkalari').map((product) => product.id)).toEqual(['napkins']);
     expect(filterProductsBySearch(products, 'cheese').map((product) => product.id)).toEqual(['cheese']);
+    expect(filterProductsBySearch(products, '餐饮').map((product) => product.id)).toEqual(['napkins']);
   });
 
   it('matches SKU and brand without case sensitivity', () => {
@@ -34,5 +37,16 @@ describe('catalog product search', () => {
 
   it('returns no results for an empty query', () => {
     expect(filterProductsBySearch(products, '   ')).toEqual([]);
+  });
+
+  it('ranks a localized title prefix before a description-only match', () => {
+    const descriptionMatch = createProduct({
+      id: 'description-match',
+      titleZh: '其他产品',
+      descriptionZh: '餐巾纸产品',
+    });
+
+    expect(searchAndRankProducts([...products, descriptionMatch], '餐巾纸', 'zh')
+      .map((product) => product.id)).toEqual(['napkins', 'description-match']);
   });
 });

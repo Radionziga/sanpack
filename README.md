@@ -15,10 +15,11 @@ separate Node version manager or another package manager.
 3. Start the application with `npm run dev`.
 4. Open `http://localhost:3000`.
 
-The storefront is available in Russian, Uzbek and English at `/ru`, `/uz` and
-`/en`. Localized content can explicitly fall back to Russian when a translation
-is absent; the UI does not treat identical Russian text as a completed
-translation.
+The storefront is available in Russian, Uzbek, English and Chinese at `/ru`,
+`/uz`, `/en` and `/zh`. Localized content can explicitly fall back when a
+translation is absent; the UI does not treat a fallback string as a completed
+translation. Catalog translations are stored content managed from the admin
+panel, not generated on every public read.
 
 Normal development reads the configured Firebase project. For an isolated
 demo, set `SANPACK_USE_SEED_DATA=true`; bundled seed data is never an implicit
@@ -81,11 +82,17 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run test:e2e
+npm run test:a11y
 ```
 
-Bag-designer generation currently uses a process-local limiter and idempotent
-Firestore drafts. Distributed limiting and cleanup scheduling are intentionally
-not selected yet; see `docs/operations/bag-designer-cost-control.md`.
+Public mutations, sessions and bag-designer generation use the shared
+Firestore transaction rate limiter. Enable the production TTL policy for
+`rateLimits.expiresAt`; see `docs/PRODUCTION_OPERATIONS.md`. Bag-designer
+generation also uses idempotent Firestore drafts. Destructive cleanup of stale
+draft assets is deliberately not automated yet; the repository provides a
+read-only inspection command documented in
+`docs/operations/bag-designer-cost-control.md`.
 
 The current cleanup classification and retained operational artifacts are
 documented in `docs/cleanup-audit-2026-08-22.md`.

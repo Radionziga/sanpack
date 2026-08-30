@@ -17,6 +17,7 @@ import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
 import { firebaseAdminUnavailableMessage } from '@/lib/firebase/adminErrors';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
 import { createCatalogSlug } from '@/lib/catalog/catalogSlugs';
+import { getPublishedProductStructuralIssues } from '@/lib/catalog/publicProducts';
 
 export const runtime = 'nodejs';
 
@@ -119,7 +120,14 @@ async function normalizeAndValidateProduct(
   if (missing.length > 0) {
     return { error: `Заполните обязательные характеристики: ${missing.map((attribute) => attribute.titleRu).join(', ')}.` } as const;
   }
-  return { data: { ...product, slug, categorySlug: category.slug } } as const;
+  const normalized = { ...product, slug, categorySlug: category.slug };
+  const structuralIssues = getPublishedProductStructuralIssues(normalized);
+  if (structuralIssues.length > 0) {
+    return {
+      error: `Для публикации заполните обязательные поля: ${structuralIssues.join(', ')}.`,
+    } as const;
+  }
+  return { data: normalized } as const;
 }
 
 async function denyUnlessAdmin() {

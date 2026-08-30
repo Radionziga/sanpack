@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  canRetryProductImageDirectly,
   GENERATED_PRODUCT_IMAGES,
   hasProductImage,
   PRODUCT_IMAGE_PLACEHOLDER,
@@ -21,6 +22,13 @@ describe('product images', () => {
   it('keeps actual local and remote product images', () => {
     expect(hasProductImage('/catalog/extracted_p12_img1.jpeg')).toBe(true);
     expect(hasProductImage('https://firebasestorage.googleapis.com/product.webp')).toBe(true);
+  });
+
+  it('retries only remote images directly after an optimizer failure', () => {
+    expect(canRetryProductImageDirectly('https://firebasestorage.googleapis.com/product.webp')).toBe(true);
+    expect(canRetryProductImageDirectly('http://localhost:3000/product.webp')).toBe(true);
+    expect(canRetryProductImageDirectly('/catalog/product.webp')).toBe(false);
+    expect(canRetryProductImageDirectly()).toBe(false);
   });
 
   it('maps reviewed seed products without inventing an image for unknown SKUs', () => {
