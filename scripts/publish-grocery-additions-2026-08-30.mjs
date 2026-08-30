@@ -120,7 +120,7 @@ const categories = [
     descriptionUz: 'HoReCa va ishlab chiqarish uchun professional qadoqdagi osh tuzi.',
     descriptionEn: 'Food salt in professional packs for HoReCa and food production.',
     descriptionZh: '适用于餐饮和食品生产的专业大包装食用盐。',
-    sortOrder: 34, featuredSortOrder: 12, attributeIds: ['attr-product-type', 'attr-weight'],
+    sortOrder: 34, featuredSortOrder: 32, attributeIds: ['attr-product-type', 'attr-weight'],
     cardFile: 'public/catalog/categories/salt.webp', iconFile: 'public/catalog/category-icons-v3/salt.webp',
   }),
   category({
@@ -130,7 +130,7 @@ const categories = [
     descriptionUz: 'Nonvoyxona, qandolatchilik va HoReCa oshxonasi uchun professional masalliqlar.',
     descriptionEn: 'Professional ingredients for bakeries, pastry production, and HoReCa kitchens.',
     descriptionZh: '适用于面包房、糕点生产和餐饮厨房的专业原料。',
-    sortOrder: 35, featuredSortOrder: 13, attributeIds: ['attr-brand', 'attr-product-type', 'attr-weight'],
+    sortOrder: 35, featuredSortOrder: 33, attributeIds: ['attr-brand', 'attr-product-type', 'attr-weight'],
     cardFile: 'public/catalog/categories/baking-ingredients.webp', iconFile: 'public/catalog/category-icons-v3/baking-ingredients.webp',
   }),
   category({
@@ -140,7 +140,7 @@ const categories = [
     descriptionUz: 'Oshxona, savdo va HoReCa uchun turli qadoqdagi tomat pastalari va souslar.',
     descriptionEn: 'Tomato paste and sauces in formats for kitchens, retail, and HoReCa.',
     descriptionZh: '适用于厨房、零售和餐饮的不同规格番茄酱及调味酱。',
-    sortOrder: 36, featuredSortOrder: 14, attributeIds: ['attr-brand', 'attr-product-type', 'attr-volume', 'attr-units-per-pack'],
+    sortOrder: 36, featuredSortOrder: 34, attributeIds: ['attr-brand', 'attr-product-type', 'attr-volume', 'attr-units-per-pack'],
     cardFile: 'public/catalog/categories/tomato-sauces.webp', iconFile: 'public/catalog/category-icons-v3/tomato-sauces.webp',
   }),
 ];
@@ -319,7 +319,7 @@ try {
       navigationImage: frozenIcon.url,
       navigationImagePath: frozenIcon.destination,
       featured: true,
-      featuredSortOrder: 11,
+      featuredSortOrder: 31,
     });
 
     for (const source of products) {

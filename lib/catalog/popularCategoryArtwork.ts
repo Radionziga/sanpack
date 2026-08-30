@@ -29,6 +29,10 @@ export interface StorefrontCategoryGroup {
   categories: Category[];
 }
 
+function hasLegacyPopularCategoryArtwork(category: Pick<Category, 'id'>) {
+  return Boolean(legacyPopularCategoryArtworkById[category.id]);
+}
+
 /**
  * Builds the storefront showcase entirely from the category tree. Explicitly
  * featured children win; legacy documents fall back to ordered children so a
@@ -36,7 +40,7 @@ export interface StorefrontCategoryGroup {
  */
 export function getStorefrontCategoryGroups(
   categories: Category[],
-  limitPerGroup = 6,
+  limitPerGroup = 12,
 ): StorefrontCategoryGroup[] {
   const active = categories.filter((category) => category.status === 'active');
   const groups = active
@@ -52,9 +56,21 @@ export function getStorefrontCategoryGroups(
         return leftOrder - rightOrder;
       });
     const explicitlyFeatured = children.filter((category) => category.featured === true);
-    const showcaseCandidates = explicitlyFeatured.length > 0
-      ? explicitlyFeatured
-      : children;
+    const legacyFeatured = children.filter((category) => (
+      category.featured !== false && hasLegacyPopularCategoryArtwork(category)
+    ));
+    const curatedById = new Map(
+      [...explicitlyFeatured, ...legacyFeatured].map((category) => [category.id, category]),
+    );
+    const curated = [...curatedById.values()].sort((left, right) => {
+      const leftOrder = left.featuredSortOrder ?? left.sortOrder;
+      const rightOrder = right.featuredSortOrder ?? right.sortOrder;
+      return leftOrder - rightOrder;
+    });
+    const managedCardFallback = children.filter((category) => (
+      Boolean(category.cardImage || category.banner) && category.featured !== false
+    ));
+    const showcaseCandidates = curated.length > 0 ? curated : managedCardFallback;
     return {
       group,
       categories: showcaseCandidates.slice(0, limitPerGroup),

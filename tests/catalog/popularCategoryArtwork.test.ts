@@ -35,6 +35,47 @@ describe('storefront category groups', () => {
     expect(getStorefrontCategoryGroups(categories)[0].categories.map(({ id }) => id)).toEqual(['first', 'second']);
   });
 
+  it('keeps more than six explicitly featured cards inside one business group', () => {
+    const categories = [
+      category({ id: 'group', slug: 'group' }),
+      ...Array.from({ length: 10 }, (_, index) => category({
+        id: `featured-${index + 1}`,
+        slug: `featured-${index + 1}`,
+        parentId: 'group',
+        featured: true,
+        featuredSortOrder: index + 1,
+      })),
+    ];
+
+    expect(getStorefrontCategoryGroups(categories)[0].categories).toHaveLength(10);
+  });
+
+  it('merges legacy curated cards with new managed cards and ignores arbitrary category images', () => {
+    const categories = [
+      category({ id: 'cat-food', slug: 'food' }),
+      category({ id: 'cat-beef', slug: 'beef', parentId: 'cat-food', sortOrder: 20 }),
+      category({ id: 'cat-fruits', slug: 'fruits', parentId: 'cat-food', sortOrder: 27 }),
+      category({
+        id: 'new-managed',
+        slug: 'new-managed',
+        parentId: 'cat-food',
+        featured: true,
+        featuredSortOrder: 31,
+        cardImage: '/new-managed.webp',
+      }),
+      category({
+        id: 'unrelated-image',
+        slug: 'unrelated-image',
+        parentId: 'cat-food',
+        sortOrder: 32,
+        image: '/first-product.webp',
+      }),
+    ];
+
+    expect(getStorefrontCategoryGroups(categories)[0].categories.map(({ id }) => id))
+      .toEqual(['cat-beef', 'cat-fruits', 'new-managed']);
+  });
+
   it('prefers the Firestore card image and keeps tracked legacy artwork as fallback', () => {
     expect(getPopularCategoryArtwork(category({ id: 'cat-trash-bags', cardImage: '/custom/card.webp' })))
       .toBe('/custom/card.webp');
