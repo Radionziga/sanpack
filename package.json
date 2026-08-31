@@ -11,7 +11,7 @@
     "test:e2e": "playwright test",
     "test:a11y": "playwright test --grep @a11y",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "catalog:audit": "node --env-file=.env.local scripts/audit-catalog-cms.mjs",
     "catalog:migrate:dry-run": "node --env-file=.env.local scripts/migrate-catalog-cms.mjs",
     "bag-designer:cleanup:dry-run": "node --env-file=.env.local scripts/inspect-stale-bag-designer-drafts.mjs",

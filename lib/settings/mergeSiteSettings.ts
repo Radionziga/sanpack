@@ -1,6 +1,6 @@
 import type { SiteSettings, StorefrontServiceSettings } from '@/types';
 
-type StoredSiteSettings = Partial<SiteSettings> & {
+type StoredSiteSettings = Omit<Partial<SiteSettings>, 'company' | 'contacts' | 'locale' | 'design' | 'seo' | 'modules'> & {
   company?: Partial<SiteSettings['company']>;
   contacts?: Partial<SiteSettings['contacts']>;
   locale?: Partial<SiteSettings['locale']>;

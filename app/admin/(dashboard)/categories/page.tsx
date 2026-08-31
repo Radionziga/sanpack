@@ -9,6 +9,7 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import type { Category } from '@/types';
+import { getCategoryDepth, getCategoryLabel, getOrderedCategories, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
 
 const newCategory: Partial<Category> = {
   titleRu: '',
@@ -78,16 +79,23 @@ export default function AdminCategoriesPage() {
     return () => { active = false; };
   }, []);
 
-  const startCreate = (kind: 'group' | 'category' = 'category') => {
+  const startCreate = (kind: 'group' | 'category' | 'subcategory' = 'category') => {
     cleanupStagedImage();
     const firstGroup = categories.find((category) => !category.parentId);
     if (kind === 'category' && !firstGroup) {
       setPageError('Сначала создайте группу каталога, затем добавьте внутрь неё категорию.');
       return;
     }
+    const firstCategory = categories.find((category) => getCategoryDepth(category.id, categories) === 1);
+    if (kind === 'subcategory' && !firstCategory) {
+      setPageError('Сначала создайте категорию внутри группы.');
+      return;
+    }
+    const selectedParent = categories.find((category) => category.id === editingCategory.id
+      && getCategoryDepth(category.id, categories) === (kind === 'subcategory' ? 1 : 0));
     setEditingCategory({
       ...newCategory,
-      parentId: kind === 'group' ? null : firstGroup?.id || null,
+      parentId: kind === 'group' ? null : selectedParent?.id || (kind === 'subcategory' ? firstCategory?.id : firstGroup?.id) || null,
       sortOrder: categories.length + 1,
     });
     setNotice('');
@@ -107,6 +115,8 @@ export default function AdminCategoriesPage() {
       setPageError('Заполните названия RU/UZ и URL категории.');
       return;
     }
+    const taxonomyError = validateCategorySave(editingCategory.id || '__new__', editingCategory, categories);
+    if (taxonomyError) { setPageError(taxonomyError); return; }
     setSaving(true);
     try {
       const previous = editingCategory.id
@@ -168,19 +178,18 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const parentCategories = categories.filter((category) => !category.parentId && category.id !== editingCategory.id);
+  const parentCategories = getOrderedCategories(categories).filter((category) => (
+    (getCategoryDepth(category.id, categories) ?? 3) < 2
+    && !validateCategoryPlacement(editingCategory.id || '__new__', category.id, categories)
+  ));
   const orderedCategories = useMemo(() => {
-    const roots = categories.filter((category) => !category.parentId);
-    const nestedIds = new Set<string>();
-    const ordered = roots.flatMap((root) => {
-      nestedIds.add(root.id);
-      const children = categories.filter((category) => category.parentId === root.id);
-      children.forEach((category) => nestedIds.add(category.id));
-      return [root, ...children];
-    });
+    const ordered = getOrderedCategories(categories);
+    const nestedIds = new Set(ordered.map((category) => category.id));
     return [...ordered, ...categories.filter((category) => !nestedIds.has(category.id))];
   }, [categories]);
   const editingIsGroup = !editingCategory.parentId;
+  const editingIsSubcategory = Boolean(editingCategory.parentId
+    && getCategoryDepth(editingCategory.parentId, categories) === 1);
 
   return (
     <div className="admin-page space-y-6">
@@ -193,6 +202,9 @@ export default function AdminCategoriesPage() {
           </button>
           <button type="button" onClick={() => startCreate('category')} className="admin-button-primary">
             <Plus className="size-4" aria-hidden="true" /> Новая категория
+          </button>
+          <button type="button" onClick={() => startCreate('subcategory')} className="admin-button-secondary">
+            <Plus className="size-4" aria-hidden="true" /> Новая подкатегория
           </button>
         </div>}
       />
@@ -220,7 +232,7 @@ export default function AdminCategoriesPage() {
           ) : (
             <ul className="divide-y divide-[var(--sp-line-soft)]">
               {orderedCategories.map((category) => (
-                <li key={category.id} className={category.parentId ? 'pl-5' : ''}>
+                <li key={category.id} style={{ paddingLeft: (getCategoryDepth(category.id, categories) ?? 0) * 16 }}>
                   <div className={`flex items-center gap-3 px-3 py-3 ${editingCategory.id === category.id ? 'bg-[var(--sp-surface-inset)]' : ''}`}>
                     <div className="relative size-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)]">
                       {category.navigationImage || category.image ? <Image src={category.navigationImage || category.image!} alt="" fill sizes="48px" className="object-contain" /> : <ImagePlus className="absolute inset-0 m-auto size-4 text-[var(--sp-ink-muted)]" />}
@@ -229,7 +241,7 @@ export default function AdminCategoriesPage() {
                       <span className="line-clamp-1 text-xs font-bold text-[var(--sp-ink)]">{category.titleRu}</span>
                       <span className="mt-1 flex items-center gap-1 truncate font-mono text-[10px] text-[var(--sp-ink-tertiary)]">
                         {category.parentId ? <Layers3 className="size-3" aria-hidden="true" /> : <FolderTree className="size-3" aria-hidden="true" />}
-                        {category.parentId ? 'категория' : 'группа'} · /{category.slug}
+                        {getCategoryDepth(category.id, categories) === 2 ? 'подкатегория' : category.parentId ? 'категория' : 'группа'} · /{category.slug}
                       </span>
                     </button>
                     <button type="button" onClick={() => selectCategory(category)} aria-label={`Редактировать ${category.titleRu}`} className="admin-icon-button size-9">
@@ -248,7 +260,7 @@ export default function AdminCategoriesPage() {
         <form onSubmit={saveCategory} className="admin-panel overflow-hidden">
           <div className="border-b border-[var(--sp-line)] px-5 py-5 md:px-6">
             <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">
-              {editingCategory.id ? `Редактирование ${editingIsGroup ? 'группы' : 'категории'}` : `Новая ${editingIsGroup ? 'группа' : 'категория'}`}
+              {editingCategory.id ? `Редактирование ${editingIsGroup ? 'группы' : editingIsSubcategory ? 'подкатегории' : 'категории'}` : `Новая ${editingIsGroup ? 'группа' : editingIsSubcategory ? 'подкатегория' : 'категория'}`}
             </h2>
             <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Сначала заполните основную информацию, затем изображение и правила публикации.</p>
           </div>
@@ -298,7 +310,7 @@ export default function AdminCategoriesPage() {
 
           <section className="admin-section">
             <h3 className="admin-section-heading">Место в каталоге</h3>
-            <p className="admin-section-description">Корневая запись — группа. Реальная товарная категория всегда находится внутри группы.</p>
+            <p className="admin-section-description">Группа → категория → необязательная подкатегория. Товары могут оставаться в категории даже при наличии подкатегорий. Максимум три уровня; подкатегория не может иметь детей.</p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="admin-field-label">
               URL категории *
@@ -307,9 +319,10 @@ export default function AdminCategoriesPage() {
             </label>
             <CustomSelect label="Родительская категория" value={editingCategory.parentId || ''} onChange={(value) => setEditingCategory((current) => ({ ...current, parentId: value || null }))} options={[
               { value: '', label: '— Это группа каталога —' },
-              ...parentCategories.map((category) => ({ value: category.id, label: category.titleRu })),
+              ...parentCategories.map((category) => ({ value: category.id, label: getCategoryLabel(category.id, categories) })),
             ]} />
           </div>
+          <p className="mt-3 text-xs text-[var(--sp-ink-tertiary)]">Характеристики назначаются в разделе «Характеристики» и наследуются от группы и категории. Перенос меняет наследование, но не переносит товары и не изменяет их значения автоматически.</p>
           </section>
 
           <section className="admin-section">
@@ -356,7 +369,7 @@ export default function AdminCategoriesPage() {
           </div>
           {!editingIsGroup ? <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="admin-panel-muted flex cursor-pointer items-center justify-between gap-3 p-3">
-              <span><strong className="block text-xs text-[var(--sp-ink)]">Показывать в bento-блоке группы</strong><span className="mt-1 block text-[11px] text-[var(--sp-ink-tertiary)]">Если ни одна категория группы не отмечена, storefront использует первые шесть по порядку.</span></span>
+              <span><strong className="block text-xs text-[var(--sp-ink)]">Показывать в bento-блоке группы</strong><span className="mt-1 block text-[11px] text-[var(--sp-ink-tertiary)]">Подкатегории включаются только явно. Обложка необязательна; обычная навигация работает без неё.</span></span>
               <input type="checkbox" checked={editingCategory.featured ?? false} onChange={(event) => setEditingCategory((current) => ({ ...current, featured: event.target.checked }))} className="size-4 accent-[var(--sp-brand)]" />
             </label>
             <label className="admin-field-label">Порядок в bento-блоке

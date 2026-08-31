@@ -19,10 +19,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import type { Attribute, Category, ClientPartner, Language, Product, SiteSettings } from '@/types';
-import { formatMoney, getPresentedProductAttributes } from '@/lib/catalog/productPresentation';
+import { getProductCatalogPriceText, getPresentedProductAttributes } from '@/lib/catalog/productPresentation';
 import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
+import { getCategoryDepth, getCategoryLabel, getCategoryLineage, getCategoryScopeIds, getOrderedCategories, getProductsInCategoryScope, getVisibleCategories, resolveProductCategory } from '@/lib/catalog/categoryHierarchy';
 import {
   getCatalogCompanyName,
   getCatalogDocumentTheme,
@@ -181,9 +182,7 @@ export function CatalogPrintDocument({
 
   // Sort categories
   const sortedCategories = useMemo(() => {
-    return initialCategories
-      .filter((category) => category.status === 'active')
-      .sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
+    return getOrderedCategories(getVisibleCategories(initialCategories));
   }, [initialCategories]);
 
   // Separate parent categories (parentId is empty/undefined) and child categories
@@ -198,25 +197,7 @@ export function CatalogPrintDocument({
     const targetCat = sortedCategories.find(
       (c) => c.id === selectedCategory || c.slug === selectedCategory
     );
-    if (!targetCat) return new Set([selectedCategory]);
-
-    const ids = new Set<string>();
-    ids.add(targetCat.id);
-    if (targetCat.slug) ids.add(targetCat.slug);
-
-    // Recursively add children
-    const addDescendants = (parentId: string) => {
-      for (const c of sortedCategories) {
-        if (c.parentId === parentId) {
-          ids.add(c.id);
-          if (c.slug) ids.add(c.slug);
-          addDescendants(c.id);
-        }
-      }
-    };
-    addDescendants(targetCat.id);
-
-    return ids;
+    return targetCat ? getCategoryScopeIds(targetCat.id, sortedCategories) : new Set<string>();
   }, [selectedCategory, sortedCategories]);
 
   // Filter products by selected category hierarchy and published status
@@ -224,14 +205,13 @@ export function CatalogPrintDocument({
     return initialProducts.filter((p) => {
       if (p.status && p.status !== 'published') return false;
       if (matchingCategoryIds) {
-        const match =
-          (p.categoryId && matchingCategoryIds.has(p.categoryId)) ||
-          (p.categorySlug && matchingCategoryIds.has(p.categorySlug));
+        const category = resolveProductCategory(p, sortedCategories);
+        const match = category && matchingCategoryIds.has(category.id);
         if (!match) return false;
       }
       return true;
     });
-  }, [initialProducts, matchingCategoryIds]);
+  }, [initialProducts, matchingCategoryIds, sortedCategories]);
 
   // Dynamic category page solver:
   // - 1..4 items -> 1 page (2 cols x 2 rows)
@@ -244,12 +224,12 @@ export function CatalogPrintDocument({
     const pages: CategoryPageChunk[] = [];
 
     const activeCategories = matchingCategoryIds
-      ? sortedCategories.filter((c) => matchingCategoryIds.has(c.id) || (c.slug && matchingCategoryIds.has(c.slug)))
+      ? sortedCategories.filter((c) => matchingCategoryIds.has(c.id))
       : sortedCategories;
 
     for (const cat of activeCategories) {
       const catProds = filteredProducts.filter(
-        (p) => p.categoryId === cat.id || p.categorySlug === cat.slug || p.categoryId === cat.slug
+        (p) => resolveProductCategory(p, sortedCategories)?.id === cat.id
       );
       if (catProds.length === 0) continue;
 
@@ -454,11 +434,8 @@ export function CatalogPrintDocument({
             >
               <option value="">{copy.allSections} ({initialProducts.length} {copy.productsShort})</option>
               {parentCategories.map((parent) => {
-                const children = sortedCategories.filter((c) => c.parentId === parent.id);
-                const parentChildIds = new Set([parent.id, ...children.map((ch) => ch.id)]);
-                const parentTotalProds = initialProducts.filter(
-                  (p) => p.categoryId && parentChildIds.has(p.categoryId)
-                ).length;
+                const children = sortedCategories.filter((c) => c.id !== parent.id && getCategoryLineage(c.id, sortedCategories)[0]?.id === parent.id);
+                const parentTotalProds = getProductsInCategoryScope(initialProducts, sortedCategories, parent.id).length;
 
                 return (
                   <optgroup
@@ -469,12 +446,10 @@ export function CatalogPrintDocument({
                       {copy.allInSection}: {getLocalizedCategoryTitle(parent, language)} ({parentTotalProds})
                     </option>
                     {children.map((child) => {
-                      const childProds = initialProducts.filter(
-                        (p) => p.categoryId === child.id || p.categorySlug === child.slug
-                      ).length;
+                      const childProds = getProductsInCategoryScope(initialProducts, sortedCategories, child.id).length;
                       return (
                         <option key={child.id} value={child.id}>
-                          — {getLocalizedCategoryTitle(child, language)} ({childProds})
+                          {'—'.repeat(getCategoryDepth(child.id, sortedCategories) ?? 1)} {getCategoryLabel(child.id, sortedCategories, (node) => getLocalizedCategoryTitle(node, language))} ({childProds})
                         </option>
                       );
                     })}
@@ -798,14 +773,7 @@ export function CatalogPrintDocument({
                       .map((attribute) => `${attribute.label}: ${attribute.value}`);
 
                     // Pricing
-                    let displayPrice = '';
-                    if (withPrices) {
-                      if (product.variants && product.variants.length > 0 && product.variants[0].price) {
-                        displayPrice = formatMoney(product.variants[0].price, language, product.currency || 'UZS');
-                      } else if (product.price) {
-                        displayPrice = formatMoney(product.price, language, product.currency || 'UZS');
-                      }
-                    }
+                    const displayPrice = withPrices ? getProductCatalogPriceText(product, language) : '';
 
                     const salesUnitLabel = getLocalizedSalesUnitLabel(product.salesUnit, language);
 

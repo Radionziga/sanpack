@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { areComparisonUnitsCompatible } from '@/lib/commerce/productOffer';
 
 const optionalText = z.string().trim().max(500).optional();
 const optionalButtonText = z.string().trim().max(80).optional();
@@ -193,10 +194,22 @@ const storefrontServiceSettingsSchema = z.object({
   navigationImagePath: z.string().trim().max(500).optional(),
 }).strict();
 
+const defaultSeoSettingsSchema = z.object({
+  defaultTitleRu: z.string().trim().max(200).optional(),
+  defaultTitleUz: z.string().trim().max(200).optional(),
+  defaultTitleEn: z.string().trim().max(200).optional(),
+  defaultTitleZh: z.string().trim().max(200).optional(),
+  defaultDescriptionRu: z.string().trim().max(1_000).optional(),
+  defaultDescriptionUz: z.string().trim().max(1_000).optional(),
+  defaultDescriptionEn: z.string().trim().max(1_000).optional(),
+  defaultDescriptionZh: z.string().trim().max(1_000).optional(),
+}).strict();
+
 export const settingsMutationSchema = z.object({
   design: designSettingsSchema.optional(),
   contacts: contactSettingsSchema.optional(),
   company: companySettingsSchema.optional(),
+  seo: defaultSeoSettingsSchema.optional(),
   modules: z.object({
     branding: storefrontServiceSettingsSchema.optional(),
     bagDesigner: storefrontServiceSettingsSchema.optional(),
@@ -293,6 +306,20 @@ const quantityUnitSchema = z.enum([
   'custom',
 ]);
 
+const productUnitPricingSchema = z.object({
+  quantity: z.number().positive().max(1_000_000_000),
+  unit: quantityUnitSchema,
+  displayUnit: quantityUnitSchema.optional(),
+}).strict().superRefine((values, context) => {
+  if (values.displayUnit && !areComparisonUnitsCompatible(values.unit, values.displayUnit)) {
+    context.addIssue({
+      code: 'custom',
+      path: ['displayUnit'],
+      message: 'Единица сравнения должна измерять ту же физическую величину.',
+    });
+  }
+});
+
 export const productVariantSchema = z.object({
   id: z.string().trim().min(1).max(160),
   sku: z.string().trim().min(1).max(160),
@@ -305,7 +332,8 @@ export const productVariantSchema = z.object({
   wholesaleTiers: z.array(wholesaleTierSchema).max(100).optional(),
   stockStatus: stockStatusSchema,
   stockQuantity: z.number().nonnegative().max(1_000_000_000).optional(),
-  attributes: z.record(z.string().trim().min(1).max(160), z.string().trim().max(500)),
+  attributes: z.record(z.string().trim().min(1).max(160), productAttributeValueSchema),
+  unitPricing: productUnitPricingSchema.optional(),
   image: optionalUrl,
   minOrder: z.number().positive().max(1_000_000_000).optional(),
   priceMode: z.enum(['fixed', 'from', 'request', 'informational']).optional(),
@@ -374,6 +402,8 @@ export const productMutationSchema = z.object({
   maximumOrder: z.number().positive().max(1_000_000_000).optional(),
   catchWeight: z.boolean().optional(),
   priceMode: z.enum(['fixed', 'from', 'request', 'informational']).optional(),
+  catalogPriceBasis: z.enum(['sale', 'comparison']).optional(),
+  unitPricing: productUnitPricingSchema.optional(),
   availability: productAvailabilitySchema.optional(),
   orderPackaging: productOrderPackagingSchema.optional(),
   variants: z.array(productVariantSchema).max(100).optional(),

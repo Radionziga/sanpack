@@ -1,4 +1,5 @@
 import type { Category } from '@/types';
+import { getCategoryDepth, getCategoryLineage, getVisibleCategories } from './categoryHierarchy';
 
 const legacyPopularCategoryArtworkById: Record<string, string> = {
   'cat-trash-bags': '/catalog/popular-categories/trash-bags-20260823.webp',
@@ -35,14 +36,14 @@ function hasLegacyPopularCategoryArtwork(category: Pick<Category, 'id'>) {
 
 /**
  * Builds the storefront showcase entirely from the category tree. Explicitly
- * featured children win; legacy documents fall back to ordered children so a
- * new group never requires a frontend code change.
+ * featured nodes join legacy top-level category cards. Subcategories require
+ * explicit opt-in; merely adding children must not flood the homepage.
  */
 export function getStorefrontCategoryGroups(
   categories: Category[],
   limitPerGroup = 12,
 ): StorefrontCategoryGroup[] {
-  const active = categories.filter((category) => category.status === 'active');
+  const active = getVisibleCategories(categories);
   const groups = active
     .filter((category) => !category.parentId)
     .sort((left, right) => left.sortOrder - right.sortOrder);
@@ -55,9 +56,10 @@ export function getStorefrontCategoryGroups(
         const rightOrder = right.featuredSortOrder ?? right.sortOrder;
         return leftOrder - rightOrder;
       });
-    const explicitlyFeatured = children.filter((category) => category.featured === true);
+    const explicitlyFeatured = active.filter((category) => category.featured === true
+      && category.id !== group.id && getCategoryLineage(category.id, categories)[0]?.id === group.id);
     const legacyFeatured = children.filter((category) => (
-      category.featured !== false && hasLegacyPopularCategoryArtwork(category)
+      getCategoryDepth(category.id, categories) === 1 && category.featured !== false && hasLegacyPopularCategoryArtwork(category)
     ));
     const curatedById = new Map(
       [...explicitlyFeatured, ...legacyFeatured].map((category) => [category.id, category]),

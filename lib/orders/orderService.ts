@@ -5,7 +5,7 @@ import type { CheckoutLineInput } from '@/lib/validation/order';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
 import { getProductOrderRule, isValidOrderQuantity } from '@/lib/commerce/orderQuantities';
-import { getProductPriceMode, getProductUnitPrice } from '@/lib/commerce/productOffer';
+import { getProductOrderUnitPrice, getProductPriceMode } from '@/lib/commerce/productOffer';
 
 function resolvePriceMode(product: Product, variantId?: string): ProductPriceMode {
   const variant = variantId
@@ -69,7 +69,7 @@ export async function createOrderSnapshots(lines: CheckoutLineInput[]) {
     }
     assertQuantity(product, line.quantity, variant);
 
-    const price = getProductUnitPrice(product, variant);
+    const price = getProductOrderUnitPrice(product, variant, line.quantity);
     const lineTotal = price === undefined ? undefined : price * line.quantity;
 
     return omitUndefinedFields({

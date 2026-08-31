@@ -134,7 +134,9 @@
     "title": "Фильтры",
     "reset": "Сбросить все",
     "inStockOnly": "Только в наличии",
-    "ownProductionOnly": "Собственное производство",
+    "ownProductionOnly": "Товары собственного производства",
+    "rangeMin": "От",
+    "rangeMax": "До",
     "showLess": "Скрыть",
     "showMore": "Показать ещё"
   }

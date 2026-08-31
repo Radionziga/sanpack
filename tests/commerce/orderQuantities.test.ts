@@ -55,6 +55,25 @@ describe('product order quantities', () => {
     expect(normalizeOrderQuantity(product, 160)).toBe(160);
   });
 
+  it('does not let comparison-unit pricing change commercial quantity rules', () => {
+    const product = createProduct({
+      price: 66_000,
+      salesUnit: 'упаковка',
+      unitCode: 'pack',
+      unitPricing: { quantity: 2, unit: 'kilogram', displayUnit: 'kilogram' },
+      minimumOrder: 2,
+      quantityStep: 1,
+    });
+
+    expect(getProductOrderRule(product)).toMatchObject({
+      salesUnit: 'упаковка',
+      minimumQuantity: 2,
+      quantityStep: 1,
+      packageEnabled: false,
+    });
+    expect(normalizeOrderQuantity(product, 1)).toBe(2);
+  });
+
   it('accepts floating-point noise on a valid fractional step', () => {
     const product = createProduct({ minimumOrder: 0.1, quantityStep: 0.1 });
 

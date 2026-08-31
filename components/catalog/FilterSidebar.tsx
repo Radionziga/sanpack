@@ -1,24 +1,41 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Check, ChevronDown, ChevronUp, Filter, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Attribute, Product } from '@/types';
+
+import type { Attribute, Product } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
-import { Filter, RotateCcw, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
+import {
+  buildAttributeFacet,
+  isAttributeFilterActive,
+  type AttributeFilterSelection,
+  type CatalogAttributeFilters,
+} from '@/lib/catalog/productFacets';
 
 interface FilterSidebarProps {
   attributes: Attribute[];
   products?: Product[];
-  selectedFilters: Record<string, string[]>;
-  onFilterChange: (key: string, values: string[]) => void;
+  selectedFilters: CatalogAttributeFilters;
+  onFilterChange: (key: string, selection: AttributeFilterSelection | undefined) => void;
   inStockOnly: boolean;
-  onInStockChange: (val: boolean) => void;
+  onInStockChange: (value: boolean) => void;
   ownProductionOnly: boolean;
-  onOwnProductionChange: (val: boolean) => void;
+  onOwnProductionChange: (value: boolean) => void;
   onReset: () => void;
   embedded?: boolean;
   hideHeader?: boolean;
+}
+
+function optionalNumber(value: string) {
+  if (!value.trim()) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function isCssColor(value: string) {
+  return /^#[0-9a-f]{3,8}$/i.test(value) || /^(?:rgb|hsl)a?\(/i.test(value);
 }
 
 export function FilterSidebar({
@@ -36,258 +53,136 @@ export function FilterSidebar({
 }: FilterSidebarProps) {
   const t = useTranslations('catalogFilters');
   const { getLocalizedText, language } = useLanguage();
-
-  // Keep the long attribute list compact until a user needs a group.
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-
-  // State to track expanded "show more" options per group
   const [showAllOptions, setShowAllOptions] = useState<Record<string, boolean>>({});
-
-  const toggleGroup = (key: string, isExpanded: boolean) => {
-    setExpandedGroups((prev) => ({
-      ...prev,
-      [key]: !isExpanded,
-    }));
-  };
-
-  const toggleShowMore = (key: string) => {
-    setShowAllOptions((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
-  const handleToggleValue = (key: string, val: string) => {
-    const current = selectedFilters[key] || [];
-    if (current.includes(val)) {
-      onFilterChange(
-        key,
-        current.filter((v) => v !== val)
-      );
-    } else {
-      onFilterChange(key, [...current, val]);
-    }
-  };
-
-  const activeAttributeCount = Object.values(selectedFilters).filter((arr) => arr.length > 0).length;
-  const hasActiveFilters =
-    inStockOnly || ownProductionOnly || activeAttributeCount > 0;
+  const facets = useMemo(
+    () => attributes.map((attribute) => buildAttributeFacet(attribute, products)),
+    [attributes, products],
+  );
+  const activeAttributeCount = Object.values(selectedFilters).filter(isAttributeFilterActive).length;
+  const showOwnProduction = products.some((product) => product.ownProduction);
+  const hasActiveFilters = inStockOnly || ownProductionOnly || activeAttributeCount > 0;
+  const yesLabel = language === 'zh' ? '是' : language === 'uz' ? 'Ha' : language === 'en' ? 'Yes' : 'Да';
 
   return (
     <div className={embedded ? 'space-y-5' : 'space-y-5 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 shadow-[var(--sp-shadow-soft)]'}>
-      {/* Sidebar Header */}
-      {!hideHeader ? <div className="flex items-center justify-between border-b border-[var(--sp-line-soft)] pb-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--sp-ink)]">
-          <Filter className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
-          <span>{t('title')}</span>
-          {activeAttributeCount > 0 && (
-            <span className="rounded-[var(--sp-radius-control-inner)] border border-[color-mix(in_srgb,var(--sp-brand)_22%,var(--sp-line))] bg-[var(--sp-brand-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--sp-brand)]">
-              {activeAttributeCount}
-            </span>
-          )}
+      {!hideHeader ? (
+        <div className="flex items-center justify-between border-b border-[var(--sp-line-soft)] pb-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--sp-ink)]">
+            <Filter className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
+            <span>{t('title')}</span>
+            {activeAttributeCount > 0 ? <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] px-2 py-0.5 text-[10px] text-[var(--sp-brand)]">{activeAttributeCount}</span> : null}
+          </div>
+          {hasActiveFilters ? (
+            <button type="button" onClick={onReset} className="flex min-h-9 items-center gap-1 rounded-[var(--sp-radius-control-inner)] px-2 text-[11px] font-semibold text-rose-600 hover:bg-rose-50">
+              <RotateCcw className="size-3" aria-hidden="true" />{t('reset')}
+            </button>
+          ) : null}
         </div>
+      ) : null}
 
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="flex min-h-9 cursor-pointer items-center gap-1 rounded-[var(--sp-radius-control-inner)] px-2 text-[11px] font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-800"
-          >
-            <RotateCcw className="size-3" aria-hidden="true" />
-            <span>{t('reset')}</span>
-          </button>
-        )}
-      </div> : null}
-
-      {/* Quick Toggles */}
       <div className="space-y-2">
-        <label className="flex min-h-11 cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5 transition-colors hover:border-[var(--sp-line)]">
-          <span className="text-xs font-medium text-[var(--sp-ink)]">
-            {t('inStockOnly')}
-          </span>
-          <input
-            type="checkbox"
-            checked={inStockOnly}
-            onChange={(e) => onInStockChange(e.target.checked)}
-            className="size-4 cursor-pointer accent-[var(--sp-brand)]"
-          />
+        <label className="flex min-h-11 cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5">
+          <span className="text-xs font-medium text-[var(--sp-ink)]">{t('inStockOnly')}</span>
+          <input type="checkbox" checked={inStockOnly} onChange={(event) => onInStockChange(event.target.checked)} className="size-4 accent-[var(--sp-brand)]" />
         </label>
-
-        <label className="flex min-h-11 cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5 transition-colors hover:border-[var(--sp-line)]">
-          <span className="text-xs font-medium text-[var(--sp-ink)]">
-            {t('ownProductionOnly')}
-          </span>
-          <input
-            type="checkbox"
-            checked={ownProductionOnly}
-            onChange={(e) => onOwnProductionChange(e.target.checked)}
-            className="size-4 cursor-pointer accent-[var(--sp-brand)]"
-          />
-        </label>
+        {showOwnProduction ? (
+          <label className="flex min-h-11 cursor-pointer items-center justify-between rounded-[var(--sp-radius-control)] border border-[var(--sp-line-soft)] bg-[var(--sp-surface-inset)] p-2.5">
+            <span className="text-xs font-medium text-[var(--sp-ink)]">{t('ownProductionOnly')}</span>
+            <input type="checkbox" checked={ownProductionOnly} onChange={(event) => onOwnProductionChange(event.target.checked)} className="size-4 accent-[var(--sp-brand)]" />
+          </label>
+        ) : null}
       </div>
 
-      {/* Dynamic Collapsible Attributes Filters */}
       <div className="space-y-3">
-        {attributes.map((attr) => {
-          if (!attr.filterable) return null;
+        {facets.map((facet) => {
+          const { attribute } = facet;
+          const current = selectedFilters[attribute.key];
+          const active = isAttributeFilterActive(current);
+          const isRange = attribute.type === 'number' || attribute.type === 'range';
+          const isBoolean = attribute.type === 'boolean';
+          if (isRange && facet.minimum === undefined && facet.maximum === undefined) return null;
+          if (!isRange && !isBoolean && facet.options.length === 0) return null;
 
-          // 1. Gather all unique options and their counts from products
-          const optionCounts: Record<string, number> = {};
-          products.forEach((p) => {
-            const val = p.attributes?.[attr.key];
-            if (val !== undefined && val !== null) {
-              const values = Array.isArray(val) ? val : [val];
-              for (const item of values) {
-                const valStr = String(item);
-                optionCounts[valStr] = (optionCounts[valStr] || 0) + 1;
-              }
-            }
-          });
-
-          // 2. Build complete list of available options
-          const predefined = attr.options || [];
-          const predefinedValues = new Set(predefined.map((o) => o.value));
-          const combinedOptions: {
-            value: string;
-            labelRu: string;
-            labelUz: string;
-            labelEn?: string;
-            labelZh?: string;
-            count: number;
-          }[] = [];
-
-          predefined.forEach((opt) => {
-            const count = optionCounts[opt.value] || 0;
-            combinedOptions.push({
-              value: opt.value,
-              labelRu: opt.labelRu,
-              labelUz: opt.labelUz,
-              labelEn: opt.labelEn,
-              labelZh: opt.labelZh,
-              count,
-            });
-          });
-
-          Object.keys(optionCounts).forEach((valStr) => {
-            if (!predefinedValues.has(valStr)) {
-              combinedOptions.push({
-                value: valStr,
-                labelRu: valStr,
-                labelUz: localizeSeedAttributeValue(valStr, 'uz'),
-                labelEn: localizeSeedAttributeValue(valStr, 'en'),
-                labelZh: localizeSeedAttributeValue(valStr, 'zh'),
-                count: optionCounts[valStr],
-              });
-            }
-          });
-
-          const currentVals = selectedFilters[attr.key] || [];
-          const visibleOptions = combinedOptions.filter(
-            (opt) => opt.count > 0 || currentVals.includes(opt.value)
-          );
-
-          if (visibleOptions.length === 0) return null;
-
-          const isExpanded = expandedGroups[attr.key] === true || currentVals.length > 0;
-          const isShowMore = showAllOptions[attr.key] === true;
-          const INITIAL_LIMIT = 5;
-          const displayedOptions = isShowMore ? visibleOptions : visibleOptions.slice(0, INITIAL_LIMIT);
-          const hasMore = visibleOptions.length > INITIAL_LIMIT;
+          const isExpanded = expandedGroups[attribute.key] === true || active;
+          const selectedOptions = current?.kind === 'options' ? current.values : [];
+          const predefined = attribute.options || [];
+          const counts = new Map(facet.options.map((option) => [option.value.toLocaleLowerCase(), option.count]));
+          const predefinedValues = new Set(predefined.map((option) => option.value.toLocaleLowerCase()));
+          const options = [
+            ...predefined.map((option) => ({ ...option, count: counts.get(option.value.toLocaleLowerCase()) || 0 })),
+            ...facet.options.filter((option) => !predefinedValues.has(option.value.toLocaleLowerCase())).map((option) => ({
+              value: option.value,
+              labelRu: option.value,
+              labelUz: localizeSeedAttributeValue(option.value, 'uz'),
+              labelEn: localizeSeedAttributeValue(option.value, 'en'),
+              labelZh: localizeSeedAttributeValue(option.value, 'zh'),
+              count: option.count,
+            })),
+          ].filter((option) => option.count > 0 || selectedOptions.includes(option.value));
+          const showAll = showAllOptions[attribute.key] === true;
+          const displayedOptions = showAll ? options : options.slice(0, 5);
 
           return (
-            <div key={attr.id} className="border-t border-[var(--sp-line-soft)] pt-3">
-              {/* Accordion Group Header */}
-              <button
-                type="button"
-                onClick={() => toggleGroup(attr.key, isExpanded)}
-                aria-expanded={isExpanded}
-                className="group flex min-h-11 w-full select-none items-center justify-between py-2 text-left text-xs font-semibold text-[var(--sp-ink)] transition-colors hover:text-[var(--sp-brand)]"
-              >
-                <div className="flex items-center gap-2">
-                  <span>
-                    {getLocalizedText(attr.titleRu, attr.titleUz, attr.titleEn, attr.titleZh)}
-                  </span>
-                  {attr.unit && (
-                    <span className="text-[10px] font-normal lowercase text-[var(--sp-ink-muted)]">
-                      ({localizeSeedAttributeValue(attr.unit, language)})
-                    </span>
-                  )}
-                  {currentVals.length > 0 && (
-                    <span className="flex min-h-4 min-w-4 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand)] px-1 text-[9px] font-semibold tabular-nums text-[var(--sp-on-brand)]">
-                      {currentVals.length}
-                    </span>
-                  )}
-                </div>
-
-                <div className="text-[var(--sp-ink-muted)] transition-transform duration-200 group-hover:text-[var(--sp-brand)]">
-                  {isExpanded ? (
-                    <ChevronUp className="size-4" aria-hidden="true" />
-                  ) : (
-                    <ChevronDown className="size-4" aria-hidden="true" />
-                  )}
-                </div>
+            <section key={attribute.id} className="border-t border-[var(--sp-line-soft)] pt-3">
+              <button type="button" onClick={() => setExpandedGroups((state) => ({ ...state, [attribute.key]: !isExpanded }))} aria-expanded={isExpanded} className="group flex min-h-11 w-full items-center justify-between py-2 text-left text-xs font-semibold text-[var(--sp-ink)] hover:text-[var(--sp-brand)]">
+                <span className="flex items-center gap-2">
+                  {getLocalizedText(attribute.titleRu, attribute.titleUz, attribute.titleEn, attribute.titleZh)}
+                  {attribute.unit ? <small className="font-normal text-[var(--sp-ink-muted)]">({localizeSeedAttributeValue(attribute.unit, language)})</small> : null}
+                  {active ? <span className="size-2 rounded-full bg-[var(--sp-brand)]" aria-hidden="true" /> : null}
+                </span>
+                {isExpanded ? <ChevronUp className="size-4" aria-hidden="true" /> : <ChevronDown className="size-4" aria-hidden="true" />}
               </button>
 
-              {/* Collapsible Content */}
-              {isExpanded && (
+              {isExpanded ? (
                 <div className="mt-2 space-y-1.5">
-                  {displayedOptions.map((opt) => {
-                    const isSelected = currentVals.includes(opt.value);
-                    return (
-                      <label
-                        key={opt.value}
-                        className="group flex min-h-9 cursor-pointer select-none items-center justify-between rounded-[var(--sp-radius-control-inner)] px-1 py-1 text-xs text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleValue(attr.key, opt.value)}
-                            className="peer sr-only"
-                          />
-                          <div
-                            aria-hidden="true"
-                            className={`flex size-4 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] border transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--sp-focus)] ${
-                              isSelected
-                                ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)]'
-                                : 'border-[var(--sp-line-strong)] bg-[var(--sp-surface)] group-hover:border-[var(--sp-brand)]'
-                            }`}
-                          >
-                            {isSelected && <Check className="size-3 stroke-[3]" />}
-                          </div>
-                          <span
-                            className={`truncate ${
-                              isSelected ? 'font-semibold text-[var(--sp-brand)]' : 'text-[var(--sp-ink-secondary)]'
-                            }`}
-                          >
-                            {getLocalizedText(opt.labelRu, opt.labelUz, opt.labelEn, opt.labelZh)}
-                          </span>
-                        </div>
-
-                        {opt.count > 0 && (
-                          <span className="shrink-0 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--sp-ink-muted)]">
-                            {opt.count}
-                          </span>
-                        )}
+                  {isRange ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="text-[10px] font-semibold text-[var(--sp-ink-secondary)]">{t('rangeMin')}
+                        <input type="number" step="any" min={facet.minimum} max={facet.maximum} value={current?.kind === 'range' ? current.min ?? '' : ''} placeholder={String(facet.minimum)} onChange={(event) => {
+                          const min = optionalNumber(event.target.value);
+                          const max = current?.kind === 'range' ? current.max : undefined;
+                          onFilterChange(attribute.key, min === undefined && max === undefined ? undefined : { kind: 'range', min, max });
+                        }} className="admin-control mt-1 min-h-10 text-xs font-normal" />
                       </label>
-                    );
-                  })}
-
-                  {/* Show More / Less button */}
-                  {hasMore && (
-                    <button
-                      type="button"
-                      onClick={() => toggleShowMore(attr.key)}
-                      className="block min-h-9 cursor-pointer rounded-[var(--sp-radius-control-inner)] px-1 pt-1 text-[11px] font-medium text-[var(--sp-brand)] hover:underline"
-                    >
-                      {isShowMore
-                        ? t('showLess')
-                        : `+ ${t('showMore')} ${visibleOptions.length - INITIAL_LIMIT}`}
-                    </button>
+                      <label className="text-[10px] font-semibold text-[var(--sp-ink-secondary)]">{t('rangeMax')}
+                        <input type="number" step="any" min={facet.minimum} max={facet.maximum} value={current?.kind === 'range' ? current.max ?? '' : ''} placeholder={String(facet.maximum)} onChange={(event) => {
+                          const max = optionalNumber(event.target.value);
+                          const min = current?.kind === 'range' ? current.min : undefined;
+                          onFilterChange(attribute.key, min === undefined && max === undefined ? undefined : { kind: 'range', min, max });
+                        }} className="admin-control mt-1 min-h-10 text-xs font-normal" />
+                      </label>
+                    </div>
+                  ) : isBoolean ? (
+                    <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control-inner)] px-1 text-xs">
+                      <input type="checkbox" checked={current?.kind === 'boolean'} onChange={(event) => onFilterChange(attribute.key, event.target.checked ? { kind: 'boolean', value: true } : undefined)} className="size-4 accent-[var(--sp-brand)]" />
+                      <span>{yesLabel}</span>
+                    </label>
+                  ) : (
+                    <>
+                      {displayedOptions.map((option) => {
+                        const selected = selectedOptions.includes(option.value);
+                        return (
+                          <label key={option.value} className="group flex min-h-9 cursor-pointer items-center justify-between rounded-[var(--sp-radius-control-inner)] px-1 py-1 text-xs hover:bg-[var(--sp-surface-inset)]">
+                            <span className="flex min-w-0 items-center gap-2">
+                              <input type="checkbox" checked={selected} onChange={() => {
+                                const values = selected ? selectedOptions.filter((value) => value !== option.value) : [...selectedOptions, option.value];
+                                onFilterChange(attribute.key, values.length ? { kind: 'options', values } : undefined);
+                              }} className="peer sr-only" />
+                              <span className={`flex size-4 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] border ${selected ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'border-[var(--sp-line-strong)]'}`}>{selected ? <Check className="size-3 stroke-[3]" aria-hidden="true" /> : null}</span>
+                              {attribute.type === 'color' && isCssColor(option.value) ? <span className="size-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: option.value }} aria-hidden="true" /> : null}
+                              <span className={selected ? 'truncate font-semibold text-[var(--sp-brand)]' : 'truncate text-[var(--sp-ink-secondary)]'}>{getLocalizedText(option.labelRu, option.labelUz, option.labelEn, option.labelZh)}</span>
+                            </span>
+                            <span className="rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-1.5 py-0.5 text-[10px] text-[var(--sp-ink-muted)]">{option.count}</span>
+                          </label>
+                        );
+                      })}
+                      {options.length > 5 ? <button type="button" onClick={() => setShowAllOptions((state) => ({ ...state, [attribute.key]: !showAll }))} className="min-h-9 px-1 text-[11px] font-medium text-[var(--sp-brand)] hover:underline">{showAll ? t('showLess') : `+ ${t('showMore')} ${options.length - 5}`}</button> : null}
+                    </>
                   )}
                 </div>
-              )}
-            </div>
+              ) : null}
+            </section>
           );
         })}
       </div>

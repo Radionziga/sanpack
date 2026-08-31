@@ -18,6 +18,8 @@ import { firebaseAdminUnavailableMessage } from '@/lib/firebase/adminErrors';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
 import { createCatalogSlug } from '@/lib/catalog/catalogSlugs';
 import { getPublishedProductStructuralIssues } from '@/lib/catalog/publicProducts';
+import { hasRequiredProductOrVariantAttribute } from '@/lib/catalog/productAttributeRequirements';
+import { isProductCategory, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
 
 export const runtime = 'nodejs';
 
@@ -47,32 +49,6 @@ function canMutate(role: UserRole, resource?: Resource, _action?: string) {
   return false;
 }
 
-function hasAttributeValue(product: Partial<Product>, key: string) {
-  const value = product.attributes?.[key];
-  return value !== undefined && value !== null && value !== ''
-    && (!Array.isArray(value) || value.length > 0);
-}
-
-async function validateCategoryMutation(
-  database: ReturnType<typeof getAdminDb>,
-  id: string,
-  category: Partial<Category>,
-) {
-  if (category.parentId) {
-    if (category.parentId === id) return 'Категория не может быть родителем самой себя.';
-    const parent = await database.collection('categories').doc(category.parentId).get();
-    if (!parent.exists) return 'Выбранная группа не существует.';
-    if ((parent.data() as Partial<Category>).parentId) return 'Поддерживается только структура «группа → категория».';
-    const children = await database.collection('categories').where('parentId', '==', id).limit(1).get();
-    if (!children.empty) return 'Группу с дочерними категориями нельзя превратить в категорию.';
-  }
-  if (category.slug) {
-    const duplicate = await database.collection('categories').where('slug', '==', category.slug).limit(2).get();
-    if (duplicate.docs.some((document) => document.id !== id)) return 'Категория с таким URL уже существует.';
-  }
-  return null;
-}
-
 async function validateAttributeMutation(
   database: ReturnType<typeof getAdminDb>,
   id: string,
@@ -94,13 +70,6 @@ async function normalizeAndValidateProduct(
   id: string,
   product: Partial<Product>,
 ) {
-  const categoryDocument = product.categoryId
-    ? await database.collection('categories').doc(product.categoryId).get()
-    : null;
-  if (!categoryDocument?.exists) return { error: 'Выбранная категория не существует.' } as const;
-  const category = { id: categoryDocument.id, ...categoryDocument.data() } as Category;
-  if (!category.parentId) return { error: 'Товар нельзя привязать напрямую к группе. Выберите категорию внутри группы.' } as const;
-
   const slug = product.slug || createCatalogSlug(product.titleRu || '', product.sku || '');
   const [duplicateSlug, duplicateSku, categorySnapshot, attributeSnapshot] = await Promise.all([
     database.collection('products').where('slug', '==', slug).limit(2).get(),
@@ -112,10 +81,13 @@ async function normalizeAndValidateProduct(
   if (duplicateSku?.docs.some((document) => document.id !== id)) return { error: 'Товар с таким SKU уже существует.' } as const;
 
   const categories = categorySnapshot.docs.map((document) => ({ id: document.id, ...document.data() } as Category));
+  const category = categories.find((candidate) => candidate.id === product.categoryId);
+  if (!category) return { error: 'Выбранная категория не существует.' } as const;
+  if (!isProductCategory(category.id, categories)) return { error: 'Выберите категорию или подкатегорию с корректной группой.' } as const;
   const attributes = attributeSnapshot.docs.map((document) => ({ id: document.id, ...document.data() } as Attribute));
   const missing = product.status === 'published'
     ? getApplicableAttributes(attributes, category.id, categories)
-        .filter((attribute) => attribute.required && !hasAttributeValue(product, attribute.key))
+        .filter((attribute) => attribute.required && !hasRequiredProductOrVariantAttribute(product, attribute.key))
     : [];
   if (missing.length > 0) {
     return { error: `Заполните обязательные характеристики: ${missing.map((attribute) => attribute.titleRu).join(', ')}.` } as const;
@@ -257,8 +229,12 @@ export async function POST(request: Request) {
         if (key) {
           const products = await database.collection('products').get();
           const used = products.docs.some((productDocument) => {
-            const attributes = (productDocument.data() as Partial<Product>).attributes;
-            return attributes && Object.prototype.hasOwnProperty.call(attributes, key);
+            const product = productDocument.data() as Partial<Product>;
+            return Boolean(
+              product.attributes && Object.prototype.hasOwnProperty.call(product.attributes, key)
+            ) || (product.variants || []).some((variant) => (
+              Object.prototype.hasOwnProperty.call(variant.attributes || {}, key)
+            ));
           });
           if (used) {
             return NextResponse.json({
@@ -294,8 +270,29 @@ export async function POST(request: Request) {
 
     let normalizedData = validatedData.data as Record<string, unknown>;
     if (mutation.resource === 'categories') {
-      const categoryError = await validateCategoryMutation(database, mutation.id, normalizedData as Partial<Category>);
+      // Validate and write against one snapshot: two concurrent moves must not
+      // each pass using stale parents and create a cycle/depth overflow.
+      const categoryId = mutation.id;
+      const category = normalizedData as Partial<Category>;
+      const categoryError = await database.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(database.collection('categories'));
+        const categories = snapshot.docs.map((entry) => ({ ...entry.data(), id: entry.id } as Category));
+        const error = validateCategorySave(categoryId, category, categories);
+        if (error) return error;
+        if (!category.parentId) {
+          const products = await transaction.get(database.collection('products').where('categoryId', '==', categoryId).limit(1));
+          if (!products.empty) return 'Нельзя превратить категорию с товарами в группу. Сначала перенесите товары.';
+        }
+        transaction.set(document, {
+          ...normalizedData, id: categoryId,
+          updatedAt: new Date().toISOString(), updatedBy: authorization.admin!.uid,
+        });
+        return null;
+      });
       if (categoryError) return NextResponse.json({ error: categoryError }, { status: 409 });
+      revalidateTag('categories', { expire: 0 });
+      const saved = await document.get();
+      return NextResponse.json({ ...saved.data(), id: saved.id });
     }
     if (mutation.resource === 'attributes') {
       const attributeError = await validateAttributeMutation(database, mutation.id, normalizedData as Partial<Attribute>);

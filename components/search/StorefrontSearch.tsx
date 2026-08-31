@@ -9,6 +9,7 @@ import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { CatalogListing } from '@/components/catalog/CatalogListing';
 import type { Category, Product } from '@/types';
+import { getCategoryLabel, getCategoryPath, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
 
 const copyByLanguage = {
   ru: {
@@ -78,7 +79,7 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
       .then(([nextProducts, nextCategories]) => {
         if (cancelled) return;
         setProducts(nextProducts.filter((product) => product.status === 'published'));
-        setCategories(nextCategories.filter((category) => category.status === 'active'));
+        setCategories(getVisibleCategories(nextCategories));
       })
       .catch(() => undefined);
     return () => { cancelled = true; };
@@ -166,7 +167,7 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-8">
                 {featuredCategories.map((category) => (
-                  <Link key={category.id} href={`/catalog/${category.slug}`} className="flex min-h-20 items-end rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] p-3 text-sm font-semibold leading-snug text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-brand-soft)]">
+                  <Link key={category.id} href={getCategoryPath(category, categories)} title={getCategoryLabel(category.id, categories)} className="flex min-h-20 items-end rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] p-3 text-sm font-semibold leading-snug text-[var(--sp-ink)] transition-colors hover:bg-[var(--sp-brand-soft)]">
                     {getCategoryTitle(category, language, getLocalizedText(category.titleRu, category.titleUz, category.titleEn, category.titleZh))}
                   </Link>
                 ))}

@@ -24,6 +24,7 @@ import {
   getStorefrontCategoryGroups,
 } from '@/lib/catalog/popularCategoryArtwork';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
+import { getCategoryDepth, getCategoryPath, getProductsInCategoryScope } from '@/lib/catalog/categoryHierarchy';
 import {
   StorefrontCartSidebar,
   StorefrontCategorySidebar,
@@ -110,15 +111,7 @@ export function CatalogHome({
 
   const categoryCards = useMemo(() => categories
       .map((category) => {
-        const subcategories = categories.filter((c) => c.parentId === category.id);
-        const childCategoryIds = new Set([category.id, ...subcategories.map((c) => c.id)]);
-        const categoryProducts = products.filter(
-          (product) =>
-            childCategoryIds.has(product.categoryId) ||
-            childCategoryIds.has(product.categorySlug) ||
-            product.categoryId === category.id ||
-            product.categorySlug === category.slug
-        );
+        const categoryProducts = getProductsInCategoryScope(products, categories, category.id);
 
         return {
           category,
@@ -149,7 +142,7 @@ export function CatalogHome({
   // Real product groups are more useful here than the two broad parent sections.
   const mainCategories = useMemo(() => {
     const categoriesWithProducts = categories.filter((category) => (
-      Boolean(category.parentId)
+      getCategoryDepth(category.id, categories) === 1
       && category.status === 'active'
       && (categoryProductCounts[category.id] ?? 0) > 0
     ));
@@ -162,11 +155,10 @@ export function CatalogHome({
   const categorySections = useMemo(() => mainCategories
     .map((category) => ({
       category,
-      products: products
-        .filter((product) => product.categoryId === category.id || product.categorySlug === category.slug)
+      products: getProductsInCategoryScope(products, categories, category.id)
         .slice(0, 6),
     }))
-    .filter((section) => section.products.length > 0), [mainCategories, products]);
+    .filter((section) => section.products.length > 0), [mainCategories, products, categories]);
 
   const storefrontCopy = {
     ru: { all: 'Смотреть все', empty: 'Каталог временно недоступен' },
@@ -197,7 +189,7 @@ export function CatalogHome({
                     <h2 id={`featured-category-group-${group.id}`} className="text-2xl font-extrabold tracking-[-0.035em] text-[var(--sp-ink)]">
                       {categoryTitle(group)}
                     </h2>
-                    <Link href={`/catalog/${group.slug}`} className="flex min-h-11 items-center gap-1.5 rounded-[var(--sp-radius-control)] px-3 text-xs font-bold text-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)]">
+                    <Link href={getCategoryPath(group, categories)} className="flex min-h-11 items-center gap-1.5 rounded-[var(--sp-radius-control)] px-3 text-xs font-bold text-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)]">
                       {storefrontCopy.all}<ArrowRight className="size-4" aria-hidden="true" />
                     </Link>
                   </div>
@@ -205,15 +197,15 @@ export function CatalogHome({
                     {cards.map(({ category, count }) => (
                       <Link
                         key={category.id}
-                        href={`/catalog/${category.slug}`}
+                        href={getCategoryPath(category, categories)}
                         className="group relative isolate min-h-40 overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-brand-soft)] p-4 ring-1 ring-inset ring-[var(--sp-line)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0"
                       >
                         {getPopularCategoryArtwork(category) ? (
                           <Image src={getPopularCategoryArtwork(category)!} alt="" fill sizes="(min-width: 1024px) 26vw, 320px" className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
                         ) : null}
-                        <div className="relative z-10 max-w-[52%] pt-0.5 text-white">
+                        <div className={`relative z-10 max-w-[52%] pt-0.5 ${getPopularCategoryArtwork(category) ? 'text-white' : 'text-[var(--sp-ink)]'}`}>
                           <h3 className="line-clamp-3 text-sm font-extrabold leading-[1.18]">{categoryTitle(category)}</h3>
-                          <p className="mt-1.5 text-[11px] font-semibold text-white/85">{t('categoryItemsCount', { count })}</p>
+                          <p className="mt-1.5 text-[11px] font-semibold opacity-85">{t('categoryItemsCount', { count })}</p>
                         </div>
                       </Link>
                     ))}
@@ -237,7 +229,7 @@ export function CatalogHome({
                       <p className="mt-1 line-clamp-1 text-xs text-[var(--sp-ink-secondary)]">{getLocalizedText(category.descriptionRu, category.descriptionUz, category.descriptionEn, category.descriptionZh)}</p>
                     ) : null}
                   </div>
-                  <Link href={`/catalog/${category.slug}`} className="flex min-h-11 shrink-0 items-center gap-1 rounded-[var(--sp-radius-control)] px-2.5 text-xs font-bold text-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)]">
+                  <Link href={getCategoryPath(category, categories)} className="flex min-h-11 shrink-0 items-center gap-1 rounded-[var(--sp-radius-control)] px-2.5 text-xs font-bold text-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)]">
                     {storefrontCopy.all}<ArrowRight className="size-4" aria-hidden="true" />
                   </Link>
                 </div>

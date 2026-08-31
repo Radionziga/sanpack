@@ -10,7 +10,6 @@ import {
 import { useTranslations } from 'next-intl';
 import {
   ChevronLeft,
-  ChevronRight,
   Filter,
   Grid2X2,
   List,
@@ -29,8 +28,17 @@ import {
 } from '@/lib/catalog/attributeApplicability';
 import { FilterSidebar } from '@/components/catalog/FilterSidebar';
 import { ProductCard } from '@/components/catalog/ProductCard';
+import { CatalogBreadcrumbs, SubcategoryNavigation } from '@/components/catalog/CategoryNavigation';
+import { getCategoryBreadcrumbs, getProductsInCategoryScope, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { filterProductsBySearch } from '@/lib/catalog/productSearch';
+import {
+  getProductAttributeValues,
+  isAttributeFilterActive,
+  productMatchesAttributeFilters,
+  type CatalogAttributeFilters,
+} from '@/lib/catalog/productFacets';
+import { getEffectiveCatalogPrice } from '@/lib/commerce/productOffer';
 import {
   StorefrontCartSidebar,
   StorefrontCategorySidebar,
@@ -83,7 +91,7 @@ export function CatalogListing({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('popular');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
+  const [selectedFilters, setSelectedFilters] = useState<CatalogAttributeFilters>({});
   const [inStockOnly, setInStockOnly] = useState(false);
   const [ownProductionOnly, setOwnProductionOnly] = useState(false);
   const filterTriggerRef = useRef<HTMLButtonElement>(null);
@@ -137,23 +145,13 @@ export function CatalogListing({
     [activeCategorySlug, categories],
   );
 
-  const parentCategory = useMemo(
-    () => (currentCategory?.parentId ? categories.find((c) => c.id === currentCategory.parentId) ?? null : null),
-    [categories, currentCategory],
-  );
-
-  const parentTitle = parentCategory
-    ? getLocalizedText(parentCategory.titleRu, parentCategory.titleUz, parentCategory.titleEn, parentCategory.titleZh)
-    : t('catalog');
+  const categoryCrumbs = currentCategory ? getCategoryBreadcrumbs(currentCategory, categories) : [];
+  const parentPath = categoryCrumbs.at(-2)?.href ?? '/catalog';
 
   const scopedProducts = useMemo(() => {
     let nextProducts = products;
     if (currentCategory) {
-      const childIds = categories
-        .filter((category) => category.parentId === currentCategory.id)
-        .map((category) => category.id);
-      const categoryIds = new Set([currentCategory.id, ...childIds]);
-      nextProducts = products.filter((product) => categoryIds.has(product.categoryId));
+      nextProducts = getProductsInCategoryScope(products, getVisibleCategories(categories), currentCategory.id);
     }
     return searchQuery === undefined
       ? nextProducts
@@ -169,10 +167,7 @@ export function CatalogListing({
       if (![...categoryIds].some((id) => isAttributeApplicableToCategory(attribute, id, categories))) {
         return false;
       }
-      return scopedProducts.some((product) => {
-        const value = product.attributes[attribute.key];
-        return value !== undefined && value !== null && String(value).trim() !== '';
-      });
+      return scopedProducts.some((product) => getProductAttributeValues(product, attribute.key).length > 0);
     });
   }, [attributes, categories, currentCategory, scopedProducts]);
 
@@ -186,17 +181,8 @@ export function CatalogListing({
   const filteredProducts = useMemo(() => {
     return scopedProducts
       .filter((product) => {
-        if (inStockOnly && product.stockStatus !== 'in_stock') return false;
         if (ownProductionOnly && !product.ownProduction) return false;
-        return Object.entries(applicableSelectedFilters).every(([key, values]) => {
-          if (values.length === 0) return true;
-          const attributeValue = product.attributes[key];
-          if (attributeValue === undefined || attributeValue === null) return false;
-          const comparableValues = Array.isArray(attributeValue)
-            ? attributeValue.map(String)
-            : [String(attributeValue)];
-          return values.some((value) => comparableValues.some((candidate) => candidate === value));
-        });
+        return productMatchesAttributeFilters(product, applicableSelectedFilters, { inStockOnly });
       })
       .sort((left, right) => {
         if (sortBy === 'newest') return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
@@ -205,8 +191,14 @@ export function CatalogListing({
           const rightTitle = getLocalizedText(right.titleRu, right.titleUz, right.titleEn, right.titleZh);
           return leftTitle.localeCompare(rightTitle, language);
         }
-        if (sortBy === 'price_asc') return (left.price ?? Number.POSITIVE_INFINITY) - (right.price ?? Number.POSITIVE_INFINITY);
-        if (sortBy === 'price_desc') return (right.price ?? 0) - (left.price ?? 0);
+        if (sortBy === 'price_asc') {
+          return (getEffectiveCatalogPrice(left)?.amount ?? Number.POSITIVE_INFINITY)
+            - (getEffectiveCatalogPrice(right)?.amount ?? Number.POSITIVE_INFINITY);
+        }
+        if (sortBy === 'price_desc') {
+          return (getEffectiveCatalogPrice(right)?.amount ?? Number.NEGATIVE_INFINITY)
+            - (getEffectiveCatalogPrice(left)?.amount ?? Number.NEGATIVE_INFINITY);
+        }
         return right.sortOrder - left.sortOrder;
       });
   }, [applicableSelectedFilters, getLocalizedText, inStockOnly, language, ownProductionOnly, scopedProducts, sortBy]);
@@ -214,7 +206,7 @@ export function CatalogListing({
   const activeFilterCount =
     Number(inStockOnly) +
     Number(ownProductionOnly) +
-    Object.values(applicableSelectedFilters).reduce((total, values) => total + values.length, 0);
+    Object.values(applicableSelectedFilters).reduce((total, selection) => total + Number(isAttributeFilterActive(selection)), 0);
   const normalizedSearchQuery = searchQuery?.trim() || '';
   const categoryTitle = searchQuery !== undefined
     ? normalizedSearchQuery
@@ -260,33 +252,14 @@ export function CatalogListing({
         </div>
 
         <div className="min-w-0">
-        {/* Desktop Breadcrumb */}
-        <nav className="mb-6 hidden items-center gap-2 text-xs font-medium text-[var(--sp-ink-tertiary)] md:flex" aria-label="Breadcrumb">
-          <Link href="/" className="transition-colors hover:text-[var(--sp-brand)]">{t('home')}</Link>
-          <ChevronRight className="size-3.5" aria-hidden="true" />
-          <Link href="/catalog" className="transition-colors hover:text-[var(--sp-brand)]">{t('catalog')}</Link>
-          {parentCategory ? (
-            <>
-              <ChevronRight className="size-3.5" aria-hidden="true" />
-              <Link href={`/catalog/${parentCategory.slug}`} className="transition-colors hover:text-[var(--sp-brand)]">
-                {parentTitle}
-              </Link>
-            </>
-          ) : null}
-          {currentCategory ? (
-            <>
-              <ChevronRight className="size-3.5" aria-hidden="true" />
-              <span className="font-semibold text-[var(--sp-ink)]">{categoryTitle}</span>
-            </>
-          ) : null}
-        </nav>
+        <CatalogBreadcrumbs category={currentCategory} categories={categories} />
 
         <div className="md:flex md:items-end md:justify-between md:gap-5">
         <div className="mb-4 min-w-0 md:mb-0 md:flex-1">
           <div className="flex items-center gap-2.5 sm:gap-3">
             {currentCategory ? (
               <Link
-                href={parentCategory ? `/catalog/${parentCategory.slug}` : '/catalog'}
+                href={parentPath}
                 className="flex size-11 shrink-0 items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink)] shadow-xs transition-[border-color,color,transform] hover:border-[var(--sp-brand)] hover:text-[var(--sp-brand)] active:scale-[0.96] md:hidden"
                 aria-label={t('back')}
                 title={t('back')}
@@ -356,6 +329,7 @@ export function CatalogListing({
         <div className="mt-5 lg:hidden">
           <StorefrontMobileCategoryRail categories={categories} activeCategorySlug={activeCategorySlug} />
         </div>
+        {currentCategory ? <SubcategoryNavigation category={currentCategory} categories={categories} /> : null}
 
         <div className="mt-5">
           <div className="min-w-0">
@@ -427,7 +401,12 @@ export function CatalogListing({
                 attributes={filterAttributes}
                 products={scopedProducts}
                 selectedFilters={applicableSelectedFilters}
-                onFilterChange={(key, values) => setSelectedFilters((current) => ({ ...current, [key]: values }))}
+                onFilterChange={(key, selection) => setSelectedFilters((current) => {
+                  if (selection) return { ...current, [key]: selection };
+                  const next = { ...current };
+                  delete next[key];
+                  return next;
+                })}
                 inStockOnly={inStockOnly}
                 onInStockChange={setInStockOnly}
                 ownProductionOnly={ownProductionOnly}

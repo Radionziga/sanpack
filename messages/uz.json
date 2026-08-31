@@ -134,7 +134,9 @@
     "title": "Filtrlar",
     "reset": "Barchasini tozalash",
     "inStockOnly": "Faqat mavjudlari",
-    "ownProductionOnly": "O‘z ishlab chiqarishimiz",
+    "ownProductionOnly": "O‘z ishlab chiqarish mahsulotlari",
+    "rangeMin": "Dan",
+    "rangeMax": "Gacha",
     "showLess": "Yashirish",
     "showMore": "Yana ko‘rsatish"
   }

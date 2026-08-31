@@ -134,7 +134,9 @@
     "title": "筛选",
     "reset": "全部重置",
     "inStockOnly": "仅看有货",
-    "ownProductionOnly": "SANPACK 自有生产",
+    "ownProductionOnly": "自有生产商品",
+    "rangeMin": "最低",
+    "rangeMax": "最高",
     "showLess": "收起",
     "showMore": "展开"
   }

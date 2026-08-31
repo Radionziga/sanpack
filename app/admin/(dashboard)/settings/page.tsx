@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch, type UseFormRegisterReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Check, Image as ImageIcon, Loader2, Moon, Palette, RotateCcw, Save, Sun, Type, Upload } from 'lucide-react';
+import { Building2, Check, Image as ImageIcon, Loader2, Moon, Palette, RotateCcw, Save, Search, SlidersHorizontal, Sun, Type, Upload } from 'lucide-react';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { accessibleForeground, contrastRatio, normalizeHex } from '@/lib/theme/colors';
 import { BrandLogo } from '@/components/ui/BrandLogo';
@@ -16,8 +16,24 @@ const DEFAULT_PRIMARY = '#0F6E43';
 const DEFAULT_SECONDARY = '#DCE9AF';
 
 const settingsFormSchema = z.object({
+  companyName: z.string().trim().min(1, 'Укажите название магазина.').max(160),
   logo: z.string().optional(),
   logoDark: z.string().optional(),
+  favicon: z.string().optional(),
+  descriptionRu: z.string().max(5_000).optional(),
+  descriptionUz: z.string().max(5_000).optional(),
+  descriptionEn: z.string().max(5_000).optional(),
+  descriptionZh: z.string().max(5_000).optional(),
+  defaultTitleRu: z.string().max(200).optional(),
+  defaultTitleUz: z.string().max(200).optional(),
+  defaultTitleEn: z.string().max(200).optional(),
+  defaultTitleZh: z.string().max(200).optional(),
+  defaultDescriptionRu: z.string().max(1_000).optional(),
+  defaultDescriptionUz: z.string().max(1_000).optional(),
+  defaultDescriptionEn: z.string().max(1_000).optional(),
+  defaultDescriptionZh: z.string().max(1_000).optional(),
+  brandingEnabled: z.boolean(),
+  bagDesignerEnabled: z.boolean(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Укажите цвет в формате #RRGGBB.'),
   borderRadius: z.number().int().min(0).max(32),
@@ -128,8 +144,24 @@ export default function AdminSettingsPage() {
     mode: 'onSubmit',
     reValidateMode: 'onBlur',
     defaultValues: {
+      companyName: '',
       logo: '',
       logoDark: '',
+      favicon: '',
+      descriptionRu: '',
+      descriptionUz: '',
+      descriptionEn: '',
+      descriptionZh: '',
+      defaultTitleRu: '',
+      defaultTitleUz: '',
+      defaultTitleEn: '',
+      defaultTitleZh: '',
+      defaultDescriptionRu: '',
+      defaultDescriptionUz: '',
+      defaultDescriptionEn: '',
+      defaultDescriptionZh: '',
+      brandingEnabled: true,
+      bagDesignerEnabled: true,
       primaryColor: DEFAULT_PRIMARY,
       secondaryColor: DEFAULT_SECONDARY,
       borderRadius: 14,
@@ -150,6 +182,7 @@ export default function AdminSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingLogoDark, setUploadingLogoDark] = useState(false);
   const [currentCompany, setCurrentCompany] = useState<SiteSettings['company'] | null>(null);
+  const [currentModules, setCurrentModules] = useState<SiteSettings['modules']>();
 
   useEffect(() => {
     let active = true;
@@ -158,9 +191,26 @@ export default function AdminSettingsPage() {
         const settings = await AdminRepository.getSettings();
         if (!active) return;
         setCurrentCompany(settings.company || null);
+        setCurrentModules(settings.modules);
         reset({
+          companyName: settings.company?.name || '',
           logo: settings.company?.logo || '',
           logoDark: settings.company?.logoDark || '',
+          favicon: settings.company?.favicon || '',
+          descriptionRu: settings.company?.descriptionRu || '',
+          descriptionUz: settings.company?.descriptionUz || '',
+          descriptionEn: settings.company?.descriptionEn || '',
+          descriptionZh: settings.company?.descriptionZh || '',
+          defaultTitleRu: settings.seo?.defaultTitleRu || '',
+          defaultTitleUz: settings.seo?.defaultTitleUz || '',
+          defaultTitleEn: settings.seo?.defaultTitleEn || '',
+          defaultTitleZh: settings.seo?.defaultTitleZh || '',
+          defaultDescriptionRu: settings.seo?.defaultDescriptionRu || '',
+          defaultDescriptionUz: settings.seo?.defaultDescriptionUz || '',
+          defaultDescriptionEn: settings.seo?.defaultDescriptionEn || '',
+          defaultDescriptionZh: settings.seo?.defaultDescriptionZh || '',
+          brandingEnabled: settings.modules?.branding?.enabled ?? true,
+          bagDesignerEnabled: settings.modules?.bagDesigner?.enabled ?? true,
           primaryColor: settings.design?.primaryColor || DEFAULT_PRIMARY,
           secondaryColor: settings.design?.designVersion === 2
             ? settings.design.secondaryColor || DEFAULT_SECONDARY
@@ -233,12 +283,32 @@ export default function AdminSettingsPage() {
     };
     const company = {
       ...(currentCompany || {}),
+      name: values.companyName.trim(),
       logo: values.logo?.trim() || '',
       logoDark: values.logoDark?.trim() || '',
+      favicon: values.favicon?.trim() || '',
+      descriptionRu: values.descriptionRu?.trim() || '',
+      descriptionUz: values.descriptionUz?.trim() || '',
+      descriptionEn: values.descriptionEn?.trim() || '',
+      descriptionZh: values.descriptionZh?.trim() || '',
+    };
+    const seo: SiteSettings['seo'] = {
+      defaultTitleRu: values.defaultTitleRu?.trim() || '',
+      defaultTitleUz: values.defaultTitleUz?.trim() || '',
+      defaultTitleEn: values.defaultTitleEn?.trim() || '',
+      defaultTitleZh: values.defaultTitleZh?.trim() || '',
+      defaultDescriptionRu: values.defaultDescriptionRu?.trim() || '',
+      defaultDescriptionUz: values.defaultDescriptionUz?.trim() || '',
+      defaultDescriptionEn: values.defaultDescriptionEn?.trim() || '',
+      defaultDescriptionZh: values.defaultDescriptionZh?.trim() || '',
+    };
+    const modules: SiteSettings['modules'] = {
+      branding: { ...(currentModules?.branding || {}), enabled: values.brandingEnabled },
+      bagDesigner: { ...(currentModules?.bagDesigner || {}), enabled: values.bagDesignerEnabled },
     };
     try {
-      await AdminRepository.saveSettings({ design, company } as Partial<SiteSettings>);
-      setNotice('Настройки сохранены. Логотипы (для светлого и тёмного фона), цвета, тема, шрифты и геометрия успешно обновлены.');
+      await AdminRepository.saveSettings({ design, company, seo, modules } as Partial<SiteSettings>);
+      setNotice('Настройки магазина, SEO, модули и дизайн успешно обновлены.');
       router.refresh();
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Настройки не сохранены.');
@@ -277,6 +347,61 @@ export default function AdminSettingsPage() {
       ) : (
         <form onSubmit={save} className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-5">
+            <section className="space-y-5 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6">
+              <div className="flex items-start gap-3">
+                <Building2 className="mt-0.5 size-5 text-[var(--sp-brand)]" aria-hidden="true" />
+                <div>
+                  <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">Идентичность магазина</h2>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Базовые данные white-label витрины. Маркетинговые тексты отдельных страниц остаются самостоятельным содержимым магазина.</p>
+                </div>
+              </div>
+              <label className="block text-xs font-bold text-[var(--sp-ink)]">Название магазина
+                <input {...register('companyName')} className="admin-control mt-1.5 font-normal" />
+                {errors.companyName ? <span className="mt-1 block text-xs text-[var(--sp-danger)]">{errors.companyName.message}</span> : null}
+              </label>
+              <label className="block text-xs font-bold text-[var(--sp-ink)]">Favicon
+                <input {...register('favicon')} placeholder="/favicon.ico или URL" className="admin-control mt-1.5 font-normal" />
+              </label>
+              <div className="grid gap-3 md:grid-cols-2">
+                {(['Ru', 'Uz', 'En', 'Zh'] as const).map((locale) => (
+                  <label key={locale} className="block text-xs font-bold text-[var(--sp-ink)]">Описание компании · {locale.toUpperCase()}
+                    <textarea {...register(`description${locale}`)} rows={3} className="admin-control mt-1.5 resize-y font-normal" />
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-5 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6">
+              <div className="flex items-start gap-3">
+                <Search className="mt-0.5 size-5 text-[var(--sp-brand)]" aria-hidden="true" />
+                <div>
+                  <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">SEO по умолчанию</h2>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Используется там, где у страницы или товара нет собственного SEO-заголовка и описания.</p>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                {(['Ru', 'Uz', 'En', 'Zh'] as const).map((locale) => (
+                  <div key={locale} className="space-y-2 rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3">
+                    <strong className="text-xs text-[var(--sp-ink)]">{locale.toUpperCase()}</strong>
+                    <input {...register(`defaultTitle${locale}`)} placeholder="SEO title" className="admin-control font-normal" />
+                    <textarea {...register(`defaultDescription${locale}`)} rows={3} placeholder="SEO description" className="admin-control resize-y font-normal" />
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-4 rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6">
+              <div className="flex items-start gap-3">
+                <SlidersHorizontal className="mt-0.5 size-5 text-[var(--sp-brand)]" aria-hidden="true" />
+                <div>
+                  <h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">Модули витрины</h2>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">Необязательные SANPACK-сервисы можно отключить для другой товарной ниши.</p>
+                </div>
+              </div>
+              <label className="flex min-h-11 items-center justify-between rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 text-sm font-semibold text-[var(--sp-ink)]">Полиграфия и брендирование<input type="checkbox" {...register('brandingEnabled')} className="size-4 accent-[var(--sp-brand)]" /></label>
+              <label className="flex min-h-11 items-center justify-between rounded-lg border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] px-3 text-sm font-semibold text-[var(--sp-ink)]">Конструктор пакета<input type="checkbox" {...register('bagDesignerEnabled')} className="size-4 accent-[var(--sp-brand)]" /></label>
+            </section>
+
             {/* Section: Logos (Light & Dark) */}
             <section className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 md:p-6 space-y-6">
               <div className="flex items-start gap-3">

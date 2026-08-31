@@ -4,7 +4,20 @@ import { useEffect, useRef } from 'react';
 import { useFieldArray, useForm, useWatch, type Control, type UseFormRegister } from 'react-hook-form';
 import { Plus, Trash2 } from 'lucide-react';
 
-import type { ProductAvailability, ProductPriceMode, ProductVariant, StockStatus } from '@/types';
+import type {
+  Attribute,
+  ProductAttributeValue,
+  ProductAvailability,
+  ProductPriceMode,
+  ProductUnitPricing,
+  ProductVariant,
+  QuantityUnit,
+  StockStatus,
+} from '@/types';
+import {
+  attributeValueAsText,
+  parseEditedAttributeValue,
+} from '@/lib/catalog/attributeValues';
 
 interface VariantAttributeRow {
   key: string;
@@ -27,6 +40,9 @@ interface VariantFormRow {
   minQuantity?: number;
   quantityStep?: number;
   maxQuantity?: number;
+  unitPricingQuantity?: number;
+  unitPricingUnit?: QuantityUnit;
+  unitPricingDisplayUnit?: QuantityUnit;
   image?: string;
   wholesaleTiers: Array<{ minQuantity?: number; price?: number }>;
   attributes: VariantAttributeRow[];
@@ -38,6 +54,7 @@ interface VariantEditorForm {
 
 interface ProductVariantsEditorProps {
   initialVariants: ProductVariant[];
+  attributes: Attribute[];
   currency: string;
   onChange: (variants: ProductVariant[]) => void;
 }
@@ -74,18 +91,44 @@ function toFormVariant(variant: ProductVariant): VariantFormRow {
     minQuantity: variant.minQuantity ?? variant.minOrder,
     quantityStep: variant.quantityStep,
     maxQuantity: variant.maxQuantity,
+    unitPricingQuantity: variant.unitPricing?.quantity,
+    unitPricingUnit: variant.unitPricing?.unit,
+    unitPricingDisplayUnit: variant.unitPricing?.displayUnit,
     image: variant.image || '',
     wholesaleTiers: (variant.wholesaleTiers || []).map((tier) => ({ minQuantity: tier.minQuantity, price: tier.price })),
-    attributes: Object.entries(variant.attributes || {}).map(([key, value]) => ({ key, value })),
+    attributes: Object.entries(variant.attributes || {}).map(([key, value]) => ({
+      key,
+      value: attributeValueAsText(value),
+    })),
   };
 }
 
-function toProductVariant(variant: VariantFormRow, original?: ProductVariant): ProductVariant {
+function toProductVariant(
+  variant: VariantFormRow,
+  attributeDefinitions: Attribute[],
+  original?: ProductVariant,
+): ProductVariant {
+  const definitionByKey = new Map(attributeDefinitions.map((attribute) => [attribute.key, attribute]));
   const attributes = Object.fromEntries(
     (variant.attributes || [])
-      .map(({ key, value }) => [key.trim(), value.trim()] as const)
-      .filter(([key]) => Boolean(key)),
-  );
+      .flatMap(({ key, value }) => {
+        const normalizedKey = key.trim();
+        if (!normalizedKey) return [];
+        const parsed = parseEditedAttributeValue(
+          value,
+          original?.attributes?.[normalizedKey],
+          definitionByKey.get(normalizedKey),
+        );
+        return parsed === undefined ? [] : [[normalizedKey, parsed] as const];
+      }),
+  ) as Record<string, ProductAttributeValue>;
+  const unitPricing = Number.isFinite(variant.unitPricingQuantity) && variant.unitPricingUnit
+    ? {
+        quantity: variant.unitPricingQuantity!,
+        unit: variant.unitPricingUnit,
+        displayUnit: variant.unitPricingDisplayUnit || variant.unitPricingUnit,
+      } satisfies ProductUnitPricing
+    : undefined;
 
   return {
     ...original,
@@ -102,6 +145,7 @@ function toProductVariant(variant: VariantFormRow, original?: ProductVariant): P
     priceMode: variant.priceMode,
     availability: variant.availability,
     attributes,
+    unitPricing,
     minQuantity: Number.isFinite(variant.minQuantity) ? variant.minQuantity : undefined,
     quantityStep: Number.isFinite(variant.quantityStep) ? variant.quantityStep : undefined,
     maxQuantity: Number.isFinite(variant.maxQuantity) ? variant.maxQuantity : undefined,
@@ -143,10 +187,12 @@ function VariantAttributesEditor({
   variantIndex,
   control,
   register,
+  attributes,
 }: {
   variantIndex: number;
   control: Control<VariantEditorForm>;
   register: UseFormRegister<VariantEditorForm>;
+  attributes: Attribute[];
 }) {
   const { fields, append, remove } = useFieldArray({
     control,
@@ -175,32 +221,15 @@ function VariantAttributesEditor({
       {fields.length ? (
         <div className="space-y-2">
           {fields.map((field, attributeIndex) => (
-            <div key={field.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_44px] gap-2">
-              <input
-                type="text"
-                maxLength={160}
-                placeholder="weight или size"
-                aria-label={`Ключ характеристики варианта ${attributeIndex + 1}`}
-                className="admin-control font-normal"
-                {...register(`variants.${variantIndex}.attributes.${attributeIndex}.key`)}
-              />
-              <input
-                type="text"
-                maxLength={500}
-                placeholder="1 кг или 90×60 см"
-                aria-label={`Значение характеристики варианта ${attributeIndex + 1}`}
-                className="admin-control font-normal"
-                {...register(`variants.${variantIndex}.attributes.${attributeIndex}.value`)}
-              />
-              <button
-                type="button"
-                onClick={() => remove(attributeIndex)}
-                className="flex size-11 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] text-[var(--sp-danger)] transition-colors hover:bg-red-500/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sp-brand)] focus-visible:ring-offset-2"
-                aria-label={`Удалить характеристику ${attributeIndex + 1}`}
-              >
-                <Trash2 className="size-4" aria-hidden="true" />
-              </button>
-            </div>
+            <VariantAttributeEditorRow
+              key={field.id}
+              variantIndex={variantIndex}
+              attributeIndex={attributeIndex}
+              attributes={attributes}
+              control={control}
+              register={register}
+              onRemove={() => remove(attributeIndex)}
+            />
           ))}
         </div>
       ) : null}
@@ -208,7 +237,83 @@ function VariantAttributesEditor({
   );
 }
 
-export function ProductVariantsEditor({ initialVariants, currency, onChange }: ProductVariantsEditorProps) {
+function VariantAttributeEditorRow({
+  variantIndex,
+  attributeIndex,
+  attributes,
+  control,
+  register,
+  onRemove,
+}: {
+  variantIndex: number;
+  attributeIndex: number;
+  attributes: Attribute[];
+  control: Control<VariantEditorForm>;
+  register: UseFormRegister<VariantEditorForm>;
+  onRemove: () => void;
+}) {
+  const key = useWatch({
+    control,
+    name: `variants.${variantIndex}.attributes.${attributeIndex}.key`,
+  });
+  const definition = attributes.find((attribute) => attribute.key === key);
+  const legacyKey = key && !definition ? key : '';
+  const valueField = `variants.${variantIndex}.attributes.${attributeIndex}.value` as const;
+
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_44px] gap-2">
+      <select
+        aria-label={`Характеристика варианта ${attributeIndex + 1}`}
+        className="admin-control cursor-pointer font-normal"
+        {...register(`variants.${variantIndex}.attributes.${attributeIndex}.key`)}
+      >
+        <option value="">Выберите характеристику</option>
+        {legacyKey ? <option value={legacyKey}>{legacyKey} (сохранённое поле)</option> : null}
+        {attributes.map((attribute) => (
+          <option key={attribute.id} value={attribute.key}>
+            {attribute.titleRu}{attribute.unit ? ` (${attribute.unit})` : ''}
+          </option>
+        ))}
+      </select>
+
+      {definition?.type === 'boolean' ? (
+        <select className="admin-control cursor-pointer font-normal" {...register(valueField)}>
+          <option value="">Не выбрано</option>
+          <option value="true">Да</option>
+          <option value="false">Нет</option>
+        </select>
+      ) : definition?.type === 'select' && definition.options?.length ? (
+        <select className="admin-control cursor-pointer font-normal" {...register(valueField)}>
+          <option value="">Не выбрано</option>
+          {definition.options.map((option) => (
+            <option key={option.value} value={option.value}>{option.labelRu}</option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={definition?.type === 'number' || definition?.type === 'range' ? 'number' : 'text'}
+          step={definition?.type === 'number' || definition?.type === 'range' ? 'any' : undefined}
+          maxLength={500}
+          placeholder={definition?.type === 'multiselect' ? 'Значения через запятую' : 'Значение варианта'}
+          aria-label={`Значение характеристики варианта ${attributeIndex + 1}`}
+          className="admin-control font-normal"
+          {...register(valueField)}
+        />
+      )}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        className="flex size-11 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] text-[var(--sp-danger)] transition-colors hover:bg-red-500/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sp-brand)] focus-visible:ring-offset-2"
+        aria-label={`Удалить характеристику ${attributeIndex + 1}`}
+      >
+        <Trash2 className="size-4" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+export function ProductVariantsEditor({ initialVariants, attributes, currency, onChange }: ProductVariantsEditorProps) {
   const onChangeRef = useRef(onChange);
   const initialVariantsRef = useRef(new Map(initialVariants.map((variant) => [variant.id, variant])));
   const lastValueRef = useRef(JSON.stringify(initialVariants));
@@ -227,13 +332,13 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
 
   useEffect(() => {
     const nextVariants = (variants || []).map((variant) => (
-      toProductVariant(variant, initialVariantsRef.current.get(variant.id))
+      toProductVariant(variant, attributes, initialVariantsRef.current.get(variant.id))
     ));
     const serialized = JSON.stringify(nextVariants);
     if (serialized === lastValueRef.current) return;
     lastValueRef.current = serialized;
     onChangeRef.current(nextVariants);
-  }, [variants]);
+  }, [attributes, variants]);
 
   return (
     <section className="admin-panel space-y-5 p-5 md:p-6">
@@ -262,6 +367,9 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
             minQuantity: 1,
             quantityStep: 1,
             maxQuantity: undefined,
+            unitPricingQuantity: undefined,
+            unitPricingUnit: undefined,
+            unitPricingDisplayUnit: undefined,
             image: '',
             wholesaleTiers: [],
             attributes: [{ key: '', value: '' }],
@@ -383,11 +491,14 @@ export function ProductVariantsEditor({ initialVariants, currency, onChange }: P
                   />
                 </label>
                 <label className="font-bold text-[var(--sp-ink)]">Максимальное количество<input type="number" min="0.001" step="any" className="admin-control mt-1.5 font-normal" {...register(`variants.${index}.maxQuantity`, { setValueAs: optionalNumber })} /></label>
+                <label className="font-bold text-[var(--sp-ink)]">Содержимое позиции<input type="number" min="0.001" step="any" placeholder="Например, 500" className="admin-control mt-1.5 font-normal" {...register(`variants.${index}.unitPricingQuantity`, { setValueAs: optionalNumber })} /></label>
+                <label className="font-bold text-[var(--sp-ink)]">Единица содержимого<select className="admin-control mt-1.5 cursor-pointer font-normal" {...register(`variants.${index}.unitPricingUnit`)}><option value="">Не задано</option><option value="gram">Грамм</option><option value="kilogram">Килограмм</option><option value="milliliter">Миллилитр</option><option value="liter">Литр</option><option value="piece">Штука</option><option value="meter">Метр</option><option value="square_meter">Квадратный метр</option></select></label>
+                <label className="font-bold text-[var(--sp-ink)]">Сравнивать за<select className="admin-control mt-1.5 cursor-pointer font-normal" {...register(`variants.${index}.unitPricingDisplayUnit`)}><option value="">Как содержимое</option><option value="gram">Грамм</option><option value="kilogram">Килограмм</option><option value="milliliter">Миллилитр</option><option value="liter">Литр</option><option value="piece">Штуку</option><option value="meter">Метр</option><option value="square_meter">Квадратный метр</option></select></label>
                 <label className="font-bold text-[var(--sp-ink)] md:col-span-2">Изображение варианта (URL)<input type="text" placeholder="/media/products/...webp" className="admin-control mt-1.5 font-normal" {...register(`variants.${index}.image`)} /></label>
               </div>
 
               <div className="mt-5 grid gap-5 border-t border-[var(--sp-line)] pt-4 xl:grid-cols-2">
-                <VariantAttributesEditor variantIndex={index} control={control} register={register} />
+                <VariantAttributesEditor variantIndex={index} control={control} register={register} attributes={attributes} />
                 <VariantWholesaleTiersEditor variantIndex={index} control={control} register={register} />
               </div>
             </article>

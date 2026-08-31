@@ -26,6 +26,7 @@ import {
 } from '@/lib/catalog/popularCategoryArtwork';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import type { Category } from '@/types';
+import { getCategoryDepth, getCategoryLineage, getCategoryPath, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
 
 const panelCopy = {
   ru: {
@@ -42,7 +43,7 @@ const panelCopy = {
     delivery: 'Доставка по Ташкенту',
     deliveryHint: 'Срок и стоимость уточнит менеджер',
     categories: 'Категории товаров',
-    services: 'Сервисы SANPACK',
+    services: 'Сервисы',
     branding: 'Полиграфия и брендирование',
     bagDesigner: 'Конструктор пакета',
     decrease: 'Уменьшить количество',
@@ -64,7 +65,7 @@ const panelCopy = {
     delivery: 'Toshkent bo‘ylab yetkazib berish',
     deliveryHint: 'Muddat va narxni menejer aniqlashtiradi',
     categories: 'Mahsulot toifalari',
-    services: 'SANPACK xizmatlari',
+    services: 'Xizmatlar',
     branding: 'Poligrafiya va brendlash',
     bagDesigner: 'Paket konstruktori',
     decrease: 'Miqdorni kamaytirish',
@@ -86,7 +87,7 @@ const panelCopy = {
     delivery: 'Delivery across Tashkent',
     deliveryHint: 'A manager will confirm timing and cost',
     categories: 'Product categories',
-    services: 'SANPACK services',
+    services: 'Services',
     branding: 'Printing and branding',
     bagDesigner: 'Bag designer',
     decrease: 'Decrease quantity',
@@ -98,7 +99,7 @@ const panelCopy = {
     catalog: '目录', allProducts: '全部商品', viewAll: '查看全部', cart: '购物车', empty: '购物车为空',
     emptyHint: '从目录中添加商品，它们会显示在这里。', items: '件商品', preliminary: '预估总计',
     priceOnRequest: '价格面议', checkout: '打开购物车', delivery: '塔什干配送',
-    deliveryHint: '经理将确认时间和费用', categories: '商品分类', services: 'SANPACK 服务',
+    deliveryHint: '经理将确认时间和费用', categories: '商品分类', services: '服务',
     branding: '印刷与品牌定制', bagDesigner: '包装袋设计器', decrease: '减少数量', increase: '增加数量',
     showCategory: '展开分类', hideCategory: '收起分类',
   },
@@ -153,16 +154,15 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
   const { language, getLocalizedText } = useLanguage();
   const siteSettings = useSiteSettings();
   const copy = panelCopy[language];
-  const parents = categories
-    .filter((category) => !category.parentId && category.status === 'active')
+  const visible = getVisibleCategories(categories);
+  const parents = visible
+    .filter((category) => !category.parentId)
     .sort((left, right) => left.sortOrder - right.sortOrder);
-  const activeParentId = parents.find((parent) => (
-    parent.slug === activeCategorySlug
-    || categories.some((category) => category.parentId === parent.id && category.slug === activeCategorySlug)
-  ))?.id;
-  const [expandedParents, setExpandedParents] = useState<Set<string>>(
-    () => new Set(activeParentId ? [activeParentId] : []),
-  );
+  const currentCategory = visible.find((category) => category.slug === activeCategorySlug);
+  const activeLineageIds = new Set(currentCategory ? getCategoryLineage(currentCategory.id, categories).map((node) => node.id) : []);
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
+  const isExpanded = (id: string) => expandedNodes[id] ?? activeLineageIds.has(id);
+  const toggle = (id: string) => setExpandedNodes((current) => ({ ...current, [id]: !(current[id] ?? activeLineageIds.has(id)) }));
   const categoryTitle = (category: Category) => getCategoryTitle(
     category,
     language,
@@ -193,12 +193,11 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
           </Link>
 
           {parents.map((parent) => {
-            const children = categories
-              .filter((category) => category.parentId === parent.id && category.status === 'active')
+            const children = visible
+              .filter((category) => category.parentId === parent.id)
               .sort((left, right) => left.sortOrder - right.sortOrder);
-            const parentActive = activeCategorySlug === parent.slug
-              || children.some((category) => category.slug === activeCategorySlug);
-            const expanded = expandedParents.has(parent.id) || parentActive;
+            const parentActive = activeLineageIds.has(parent.id);
+            const expanded = isExpanded(parent.id);
             return (
               <section key={parent.id} aria-labelledby={`storefront-parent-${parent.id}`}>
                 <div className={`mb-1 flex min-h-11 items-center rounded-[var(--sp-radius-control)] transition-colors ${
@@ -207,7 +206,7 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
                       : 'text-[var(--sp-ink)] hover:bg-[var(--sp-surface-inset)]'
                   }`}>
                   <Link
-                    href={`/catalog/${parent.slug}`}
+                    href={getCategoryPath(parent, categories)}
                     aria-current={activeCategorySlug === parent.slug ? 'page' : undefined}
                     className="flex min-w-0 flex-1 items-center gap-3 rounded-l-[var(--sp-radius-control)] py-1.5 pl-2.5 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)]"
                   >
@@ -221,12 +220,7 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
                   {children.length > 0 ? (
                     <button
                       type="button"
-                      onClick={() => setExpandedParents((current) => {
-                        const next = new Set(current);
-                        if (next.has(parent.id)) next.delete(parent.id);
-                        else next.add(parent.id);
-                        return next;
-                      })}
+                      onClick={() => toggle(parent.id)}
                       aria-expanded={expanded}
                       aria-controls={`storefront-children-${parent.id}`}
                       aria-label={`${expanded ? copy.hideCategory : copy.showCategory}: ${categoryTitle(parent)}`}
@@ -240,12 +234,15 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
                 <div id={`storefront-children-${parent.id}`} hidden={!expanded} className="space-y-0.5">
                   {children.map((category) => {
                     const active = category.slug === activeCategorySlug;
+                    const subcategories = visible.filter((node) => node.parentId === category.id).sort((a, b) => a.sortOrder - b.sortOrder);
+                    const childExpanded = isExpanded(category.id);
                     return (
+                      <div key={category.id}>
+                      <div className="flex items-center">
                       <Link
-                        key={category.id}
-                        href={`/catalog/${category.slug}`}
+                        href={getCategoryPath(category, categories)}
                         aria-current={active ? 'page' : undefined}
-                        className={`group flex min-h-10 items-center gap-2.5 rounded-[var(--sp-radius-control)] px-2 py-1 text-[13px] font-medium leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${
+                        className={`group flex min-h-10 min-w-0 flex-1 items-center gap-2.5 rounded-[var(--sp-radius-control)] px-2 py-1 text-[13px] font-medium leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] ${
                           active
                             ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]'
                             : 'text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-ink)]'
@@ -256,6 +253,19 @@ export function StorefrontCategorySidebar({ categories, activeCategorySlug }: Ca
                         </span>
                         <span className="min-w-0 flex-1">{categoryTitle(category)}</span>
                       </Link>
+                      {subcategories.length ? <button type="button" onClick={() => toggle(category.id)} aria-expanded={childExpanded}
+                        aria-controls={`storefront-subcategories-${category.id}`} aria-label={`${childExpanded ? copy.hideCategory : copy.showCategory}: ${categoryTitle(category)}`}
+                        className="grid size-11 shrink-0 place-items-center rounded-[var(--sp-radius-control)] focus-visible:outline-2 focus-visible:outline-[var(--sp-focus)]">
+                        <ChevronDown className={`size-4 ${childExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
+                      </button> : null}
+                      </div>
+                      {subcategories.length ? <div id={`storefront-subcategories-${category.id}`} hidden={!childExpanded} className="ml-6 border-l border-[var(--sp-line)] pl-2">
+                        {subcategories.map((node) => <Link key={node.id} href={getCategoryPath(node, categories)} aria-current={node.slug === activeCategorySlug ? 'page' : undefined}
+                          className={`flex min-h-10 items-center rounded-[var(--sp-radius-control)] px-2 py-1 text-xs font-medium ${node.slug === activeCategorySlug ? 'bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]' : 'text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-surface-inset)]'}`}>
+                          {categoryTitle(node)}
+                        </Link>)}
+                      </div> : null}
+                      </div>
                     );
                   })}
                 </div>
@@ -299,11 +309,14 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
   const { language, getLocalizedText } = useLanguage();
   const siteSettings = useSiteSettings();
   const copy = panelCopy[language];
-  const parents = categories
-    .filter((category) => !category.parentId && category.status === 'active')
+  const visible = getVisibleCategories(categories);
+  const activeCategory = visible.find((node) => node.slug === activeCategorySlug);
+  const activeLineage = activeCategory ? getCategoryLineage(activeCategory.id, categories) : [];
+  const parents = visible
+    .filter((category) => !category.parentId)
     .sort((left, right) => left.sortOrder - right.sortOrder);
-  const leaves = categories
-    .filter((category) => category.parentId && category.status === 'active')
+  const leaves = visible
+    .filter((category) => getCategoryDepth(category.id, categories) === 1)
     .sort((left, right) => left.sortOrder - right.sortOrder);
   const groupedLeaves = parents.flatMap((parent) => leaves
     .filter((category) => category.parentId === parent.id)
@@ -331,7 +344,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
         return (
           <Link
             key={category.id}
-            href={`/catalog/${category.slug}`}
+            href={getCategoryPath(category, categories)}
             aria-current={active ? 'page' : undefined}
             className={`group relative isolate min-h-32 overflow-hidden rounded-[var(--sp-radius-card)] ring-1 ring-inset transition-[box-shadow,transform] active:scale-[0.985] motion-reduce:active:scale-100 ${wide ? 'col-span-2 min-h-40' : ''} ${active ? 'ring-[var(--sp-brand)]' : 'ring-[var(--sp-line)]'}`}
           >
@@ -340,7 +353,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
             ) : (
               <span className="absolute inset-0 bg-[var(--sp-brand-soft)]"><CategoryArtwork category={category} size={160} /></span>
             )}
-            <span className="absolute left-3 top-3 z-10 max-w-[58%] text-left text-sm font-extrabold leading-[1.16] text-white">
+              <span className={`absolute left-3 top-3 z-10 max-w-[58%] text-left text-sm font-extrabold leading-[1.16] ${artwork ? 'text-white' : 'text-[var(--sp-ink)]'}`}>
               <span className="line-clamp-2">{categoryTitle(category)}</span>
             </span>
           </Link>
@@ -350,7 +363,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
   );
 
   return (
-    <section aria-labelledby="mobile-category-rail-title" className="lg:hidden">
+    <section aria-label={copy.categories} className="lg:hidden">
       <nav
         className="no-scrollbar -mx-4 mb-7 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1"
         aria-label={copy.categories}
@@ -366,11 +379,11 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
           <span className="text-xs font-bold leading-[1.2] text-[var(--sp-ink)]">{copy.allProducts}</span>
         </Link>
         {railCategories.map((category) => {
-          const active = category.slug === activeCategorySlug;
+          const active = activeLineage.some((node) => node.id === category.id);
           return (
             <Link
               key={category.id}
-              href={`/catalog/${category.slug}`}
+              href={getCategoryPath(category, categories)}
               aria-current={active ? 'page' : undefined}
               className={`flex min-h-24 w-32 shrink-0 snap-start flex-col justify-between rounded-[var(--sp-radius-card)] border p-3 transition-[border-color,background-color,transform] active:scale-[0.96] motion-reduce:active:scale-100 ${active ? 'border-[var(--sp-brand)] bg-[var(--sp-brand-soft)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface)]'}`}
             >
@@ -395,7 +408,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
         ) : null}
       </nav>
 
-      {showFeaturedGroups ? (
+      {activeCategorySlug ? null : showFeaturedGroups ? (
         <div className="space-y-8">
           {featuredGroups.map(({ group, categories: groupCategories }, index) => (
             <section key={group.id} aria-labelledby={index === 0 ? 'mobile-category-rail-title' : `mobile-category-group-${group.id}`}>
@@ -403,7 +416,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
                 <h2 id={index === 0 ? 'mobile-category-rail-title' : `mobile-category-group-${group.id}`} className="text-xl font-extrabold tracking-[-0.03em] text-[var(--sp-ink)]">
                   {categoryTitle(group)}
                 </h2>
-                <Link href={`/catalog/${group.slug}`} className="text-xs font-bold text-[var(--sp-brand)]">{copy.viewAll}</Link>
+                <Link href={getCategoryPath(group, categories)} className="text-xs font-bold text-[var(--sp-brand)]">{copy.viewAll}</Link>
               </div>
               {renderCategoryGrid(groupCategories, categoryTitle(group))}
             </section>

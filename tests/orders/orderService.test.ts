@@ -87,6 +87,38 @@ describe('order snapshots with product variants', () => {
     expect(snapshot.lineTotal).toBe(0);
   });
 
+  it('uses the canonical wholesale tier for the submitted quantity', async () => {
+    const product = createProduct({
+      price: 66_000,
+      wholesaleTiers: [{ minQuantity: 10, price: 60_000 }],
+      minimumOrder: 1,
+      quantityStep: 1,
+    });
+    provideProducts([product]);
+
+    const [snapshot] = await createOrderSnapshots([
+      { productId: product.id, quantity: 10 },
+    ]);
+
+    expect(snapshot.price).toBe(60_000);
+    expect(snapshot.lineTotal).toBe(600_000);
+  });
+
+  it('never uses comparison pricing as the commercial order price', async () => {
+    const product = createProduct({
+      price: 66_000,
+      unitPricing: { quantity: 2, unit: 'kilogram', displayUnit: 'kilogram' },
+    });
+    provideProducts([product]);
+
+    const [snapshot] = await createOrderSnapshots([
+      { productId: product.id, quantity: 1 },
+    ]);
+
+    expect(snapshot.price).toBe(66_000);
+    expect(snapshot.lineTotal).toBe(66_000);
+  });
+
   it('rejects an order quantity above the product maximum', async () => {
     const product = createProduct({ maximumOrder: 10 });
     provideProducts([product]);

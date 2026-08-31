@@ -8,19 +8,20 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref } from '@/lib/settings/contacts';
 
 const contactCopy = {
-  ru: { open: 'Связаться', close: 'Закрыть контакты', title: 'Связаться с SANPACK', phone: 'Позвонить' },
-  uz: { open: 'Bog‘lanish', close: 'Kontaktlarni yopish', title: 'SANPACK bilan bog‘lanish', phone: 'Qo‘ng‘iroq qilish' },
-  en: { open: 'Contact us', close: 'Close contacts', title: 'Contact SANPACK', phone: 'Call us' },
-  zh: { open: '联系我们', close: '关闭联系方式', title: '联系 SANPACK', phone: '拨打电话' },
+  ru: { open: 'Связаться', close: 'Закрыть контакты', title: (name: string) => `Связаться с ${name}`, phone: 'Позвонить' },
+  uz: { open: 'Bog‘lanish', close: 'Kontaktlarni yopish', title: (name: string) => `${name} bilan bog‘lanish`, phone: 'Qo‘ng‘iroq qilish' },
+  en: { open: 'Contact us', close: 'Close contacts', title: (name: string) => `Contact ${name}`, phone: 'Call us' },
+  zh: { open: '联系我们', close: '关闭联系方式', title: (name: string) => `联系 ${name}`, phone: '拨打电话' },
 } as const;
 
 export function FloatingContactMenu() {
   const pathname = usePathname();
   const { language } = useLanguage();
-  const { contacts } = useSiteSettings();
+  const { company, contacts } = useSiteSettings();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const copy = contactCopy[language];
+  const title = copy.title(company.name);
   const phones = [contacts.phone1, contacts.phone2].filter(Boolean);
 
   useEffect(() => {
@@ -41,9 +42,9 @@ export function FloatingContactMenu() {
       className="fixed bottom-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+1rem)] right-4 z-50 md:bottom-6 md:right-6"
     >
       {open ? (
-        <div role="dialog" aria-label={copy.title} className="mb-3 w-[min(19rem,calc(100vw-2rem))] rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 shadow-[0_20px_60px_rgb(21_27_24/22%)]">
+        <div role="dialog" aria-label={title} className="mb-3 w-[min(19rem,calc(100vw-2rem))] rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 shadow-[0_20px_60px_rgb(21_27_24/22%)]">
           <div className="flex items-center justify-between gap-3 px-1 pb-2">
-            <strong className="text-sm text-[var(--sp-ink)]">{copy.title}</strong>
+            <strong className="text-sm text-[var(--sp-ink)]">{title}</strong>
             <button type="button" onClick={() => setOpen(false)} aria-label={copy.close} className="grid size-10 place-items-center rounded-[var(--sp-radius-control-inner)] text-[var(--sp-ink-muted)] hover:bg-[var(--sp-surface-inset)]">
               <X className="size-4" aria-hidden="true" />
             </button>

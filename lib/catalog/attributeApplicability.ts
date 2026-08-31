@@ -1,17 +1,5 @@
 import type { Attribute, Category } from '@/types';
-
-function getCategoryLineage(categoryId: string, categories: Category[]) {
-  const byId = new Map(categories.map((category) => [category.id, category]));
-  const lineage = new Set<string>();
-  let current = byId.get(categoryId);
-
-  while (current && !lineage.has(current.id)) {
-    lineage.add(current.id);
-    current = current.parentId ? byId.get(current.parentId) : undefined;
-  }
-
-  return lineage;
-}
+import { getCategoryLineage, getCategoryScopeIds } from './categoryHierarchy';
 
 export function isAttributeApplicableToCategory(
   attribute: Attribute,
@@ -21,7 +9,7 @@ export function isAttributeApplicableToCategory(
   if (!attribute.categoryIds?.length) return true;
   if (!categoryId) return false;
   const lineage = getCategoryLineage(categoryId, categories);
-  return attribute.categoryIds.some((id) => lineage.has(id));
+  return attribute.categoryIds.some((id) => lineage.some((category) => category.id === id));
 }
 
 export function getApplicableAttributes(
@@ -35,16 +23,5 @@ export function getApplicableAttributes(
 }
 
 export function getCategoryDescendantIds(categoryId: string, categories: Category[]) {
-  const descendants = new Set([categoryId]);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const category of categories) {
-      if (category.parentId && descendants.has(category.parentId) && !descendants.has(category.id)) {
-        descendants.add(category.id);
-        changed = true;
-      }
-    }
-  }
-  return descendants;
+  return getCategoryScopeIds(categoryId, categories);
 }

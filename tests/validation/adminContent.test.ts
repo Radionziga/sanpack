@@ -48,6 +48,23 @@ describe('commerce admin validation', () => {
     expect(productMutationSchema.safeParse(createProduct()).success).toBe(true);
   });
 
+  it('accepts typed variant attributes and generic comparison pricing', () => {
+    expect(productVariantSchema.safeParse(createVariant({
+      attributes: { storage: 256, color: 'blue', nfc: true, bands: ['5g', 'lte'] },
+      unitPricing: { quantity: 500, unit: 'gram', displayUnit: 'kilogram' },
+    })).success).toBe(true);
+    expect(productMutationSchema.safeParse({
+      catalogPriceBasis: 'comparison',
+      unitPricing: { quantity: 2, unit: 'kilogram', displayUnit: 'kilogram' },
+    }).success).toBe(true);
+  });
+
+  it('rejects comparison pricing across incompatible physical dimensions', () => {
+    expect(productMutationSchema.safeParse({
+      unitPricing: { quantity: 2, unit: 'kilogram', displayUnit: 'liter' },
+    }).success).toBe(false);
+  });
+
   it.each([
     { field: 'slug', patch: { slug: 'Bad slug' } },
     { field: 'images', patch: { images: ['javascript:alert(1)'] } },

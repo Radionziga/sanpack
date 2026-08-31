@@ -31,6 +31,21 @@ export type QuantityUnit =
   | 'service'
   | 'custom';
 
+export type ProductAttributeValue = string | number | boolean | string[];
+
+/**
+ * Physical contents of one priced sellable item. This is used only to derive a
+ * transparent comparison price (for example, per kilogram) and never changes
+ * the quantity that a customer can order.
+ */
+export interface ProductUnitPricing {
+  quantity: number;
+  unit: QuantityUnit;
+  displayUnit?: QuantityUnit;
+}
+
+export type CatalogPriceBasis = 'sale' | 'comparison';
+
 export type UserRole = 'super_admin' | 'content_manager' | 'sales_manager' | 'viewer';
 
 export type ProductStatus = 'draft' | 'published' | 'hidden' | 'archived';
@@ -63,7 +78,8 @@ export interface ProductVariant {
   wholesaleTiers?: WholesaleTier[];
   stockStatus: StockStatus;
   stockQuantity?: number;
-  attributes: Record<string, string>;
+  attributes: Record<string, ProductAttributeValue>;
+  unitPricing?: ProductUnitPricing;
   image?: string;
   minOrder?: number;
   priceMode?: ProductPriceMode;
@@ -121,7 +137,7 @@ export interface Product {
   imagePaths?: string[];
   mainImage: string;
   mainImagePath?: string;
-  attributes: Record<string, string | number | boolean | string[]>;
+  attributes: Record<string, ProductAttributeValue>;
   variants: ProductVariant[];
   price?: number;
   oldPrice?: number;
@@ -138,6 +154,10 @@ export interface Product {
   catchWeight?: boolean;
   orderPackaging?: ProductOrderPackaging;
   priceMode?: ProductPriceMode;
+  /** Which correctly-derived price is emphasized on catalogue surfaces. */
+  catalogPriceBasis?: CatalogPriceBasis;
+  /** Physical contents of the base sellable item for comparison pricing. */
+  unitPricing?: ProductUnitPricing;
   availability?: ProductAvailability;
   featured: boolean;
   newProduct: boolean;
@@ -164,6 +184,7 @@ export interface Product {
 
 export interface Category {
   id: string;
+  /** No parent: Group (0). Group parent: Category (1). Category parent: Subcategory (2). Max depth 2. */
   parentId?: string | null;
   slug: string;
   titleRu: string;

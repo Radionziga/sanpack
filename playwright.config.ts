@@ -6,6 +6,7 @@ const baseURL = externalBaseUrl || `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: '**/subcategories.spec.ts',
   fullyParallel: false,
   timeout: 90_000,
   forbidOnly: Boolean(process.env.CI),

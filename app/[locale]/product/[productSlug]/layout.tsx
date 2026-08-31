@@ -4,6 +4,7 @@ import { getPublicProducts } from '@/lib/repositories/serverCatalogRepository';
 import { routing } from '@/i18n/routing';
 import type { Language } from '@/types';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
+import { getMinimumSalePrice } from '@/lib/commerce/productOffer';
 
 function localized(
   locale: Language,
@@ -97,6 +98,7 @@ export default async function ProductSeoLayout({
     : product.stockStatus === 'out_of_stock'
       ? 'https://schema.org/OutOfStock'
       : 'https://schema.org/PreOrder';
+  const minimumSalePrice = getMinimumSalePrice(product);
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -111,11 +113,11 @@ export default async function ProductSeoLayout({
           name: product.brandName,
         }
       : undefined,
-    offers: product.showPrice && product.price
+    offers: minimumSalePrice
       ? {
           '@type': 'Offer',
           priceCurrency: product.currency === 'сум' ? 'UZS' : product.currency,
-          price: product.price,
+          price: minimumSalePrice.amount,
           availability,
           url: productUrl,
         }

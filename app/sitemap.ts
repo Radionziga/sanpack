@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
+import { getCategoryPath, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
 import {
   getPublicCategories,
   getPublicProducts,
@@ -42,14 +43,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
   const localizedCategories = routing.locales.flatMap((locale) =>
-    categories
-      .filter((category) => category.status === 'active')
+    getVisibleCategories(categories)
       .map((category) => ({
-        url: `${baseUrl}/${locale}/catalog/${category.slug}`,
+        url: `${baseUrl}/${locale}${getCategoryPath(category, categories)}`,
         changeFrequency: 'weekly' as const,
         priority: 0.8,
         alternates: {
-          languages: languageAlternates(baseUrl, `/catalog/${category.slug}`),
+          languages: languageAlternates(baseUrl, getCategoryPath(category, categories)),
         },
       }))
   );

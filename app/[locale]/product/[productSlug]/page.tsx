@@ -15,7 +15,6 @@ import { useRequestCart } from '@/context/RequestCartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import {
   ChevronLeft,
-  ChevronRight,
   ShieldCheck,
   Heart,
   ShoppingCart,
@@ -38,11 +37,15 @@ import {
   normalizeOrderQuantity,
 } from '@/lib/commerce/orderQuantities';
 import {
-  getProductUnitPrice,
+  getMinimumSalePrice,
+  getNormalizedUnitPrice,
+  getProductOrderUnitPrice,
+  getProductWholesaleTiers,
   isProductOrderable,
 } from '@/lib/commerce/productOffer';
 import {
   formatMoney,
+  formatComparisonUnitPrice,
   formatProductQuantity,
   getPresentedProductAttributes,
   getProductDescriptionText,
@@ -51,6 +54,8 @@ import {
 } from '@/lib/catalog/productPresentation';
 import { getProductGalleryImages } from '@/lib/catalog/productGallery';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
+import { getCategoryPath, resolveProductCategory } from '@/lib/catalog/categoryHierarchy';
+import { CatalogBreadcrumbs } from '@/components/catalog/CategoryNavigation';
 
 function MobileProductDescription({
   text,
@@ -363,25 +368,17 @@ export default function ProductDetailPage({
   const effectiveQuantity = cartItem?.quantity ?? quantity;
 
   // Dynamic price computation considering wholesale tiers
-  const activeTiers = selectedVariant?.wholesaleTiers || product.wholesaleTiers || [];
-  const variantStartingPrice = product.variants
-    ?.map((variant) => variant.price)
-    .filter((price): price is number => typeof price === 'number' && price > 0)
-    .sort((left, right) => left - right)[0];
+  const activeTiers = getProductWholesaleTiers(product, selectedVariant || undefined);
+  const variantStartingPrice = getMinimumSalePrice(product)?.amount;
   let unitPrice = selectedVariant
-    ? getProductUnitPrice(product, selectedVariant) ?? 0
-    : variantStartingPrice ?? getProductUnitPrice(product) ?? 0;
-
-  if (activeTiers.length > 0) {
-    // Find matching tier
-    const sortedTiers = [...activeTiers].sort((a, b) => b.minQuantity - a.minQuantity);
-    const matchedTier = sortedTiers.find((t) => effectiveQuantity >= t.minQuantity);
-    if (matchedTier) {
-      unitPrice = matchedTier.price;
-    }
-  }
+    ? getProductOrderUnitPrice(product, selectedVariant, effectiveQuantity) ?? 0
+    : variantStartingPrice ?? getProductOrderUnitPrice(product, undefined, effectiveQuantity) ?? 0;
 
   const totalPrice = unitPrice * effectiveQuantity;
+  const comparisonPrice = getNormalizedUnitPrice(
+    unitPrice,
+    selectedVariant?.unitPricing ?? product.unitPricing,
+  );
 
   const visibleAttributes = getPresentedProductAttributes(
     product,
@@ -410,18 +407,7 @@ export default function ProductDetailPage({
 
       <main className="flex-1 pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+5.5rem)] md:py-8">
         <div className="mx-auto max-w-7xl md:px-4">
-          {/* Kept for document structure and assistive navigation without adding visual chrome. */}
-          <nav aria-label="Breadcrumb" className="sr-only">
-            <Link href="/" className="transition-colors hover:text-[var(--sp-brand)]">
-              {t('home')}
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <Link href="/catalog" className="transition-colors hover:text-[var(--sp-brand)]">
-              {t('catalog')}
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="max-w-xs truncate font-semibold text-[var(--sp-ink)]" aria-current="page">{title}</span>
-          </nav>
+          <div className="px-4 pt-4 md:px-0 md:pt-0"><CatalogBreadcrumbs category={resolveProductCategory(product, categories)} categories={categories} productTitle={title} /></div>
 
           <h1 className="mb-7 hidden max-w-5xl break-words text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] text-[var(--sp-ink)] md:block xl:text-5xl">
             {title}
@@ -433,7 +419,7 @@ export default function ProductDetailPage({
             <div className="relative order-1 lg:col-span-7">
               <ProductGallery images={galleryImages} title={title} mobileEdgeToEdge />
               <Link
-                href="/catalog"
+                href={resolveProductCategory(product, categories) ? getCategoryPath(resolveProductCategory(product, categories)!, categories) : '/catalog'}
                 aria-label={copy.back || t('catalog')}
                 title={copy.back || t('catalog')}
                 className="sp-icon-button absolute left-[max(0.75rem,env(safe-area-inset-left))] top-3 z-20 size-11 border border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_92%,transparent)] text-[var(--sp-ink)] shadow-[var(--sp-shadow-raised)] backdrop-blur-md active:bg-[var(--sp-surface-inset)] md:left-4 md:top-4"
@@ -554,6 +540,11 @@ export default function ProductDetailPage({
                         : t('priceOnRequest')}
                     </span>
                     <p className="mt-1.5 text-xs leading-5 text-[var(--sp-ink-secondary)]">{orderRuleSummary}</p>
+                    {comparisonPrice && !variantRequired ? (
+                      <p className="mt-1 text-xs font-semibold text-[var(--sp-ink-secondary)]">
+                        {formatComparisonUnitPrice(comparisonPrice.amount, comparisonPrice.unit, language, product.currency)}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="mt-4 grid grid-cols-[minmax(180px,0.85fr)_minmax(0,1.15fr)] items-end gap-5 border-t border-[var(--sp-line-soft)] pt-4">

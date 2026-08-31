@@ -6,6 +6,7 @@ import { Attribute, Category, AttributeOption, AttributeType } from '@/types';
 import { Button, CustomInput, Badge, CustomSelect } from '@/components/ui';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
+import { getCategoryDepth, getCategoryLineage, getOrderedCategories } from '@/lib/catalog/categoryHierarchy';
 import {
   SlidersHorizontal,
   Plus,
@@ -470,7 +471,7 @@ export default function AdminAttributesPage() {
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
                 <div>
                   <label className="admin-field-label block">Применение по категориям</label>
-                  <p className="mt-1 text-[11px] leading-4 text-[var(--sp-ink-tertiary)]">Пустой список означает универсальную характеристику. Выбор группы применяет её ко всем категориям внутри группы.</p>
+                  <p className="mt-1 text-[11px] leading-4 text-[var(--sp-ink-tertiary)]">Пустой список — универсальная характеристика. Выбор группы или категории распространяется на все её подкатегории и их товары.</p>
                 </div>
                 <label className="admin-field-label">Порядок показа
                   <input type="number" min="0" value={sortOrder} onChange={(event) => setSortOrder(Number(event.target.value) || 0)} className="admin-control mt-1.5 text-sm font-normal" />
@@ -479,7 +480,7 @@ export default function AdminAttributesPage() {
 
               <div className="admin-panel-muted max-h-72 space-y-4 overflow-y-auto p-4">
                 {categories.filter((category) => !category.parentId).sort((a, b) => a.sortOrder - b.sortOrder).map((group) => {
-                  const children = categories.filter((category) => category.parentId === group.id).sort((a, b) => a.sortOrder - b.sortOrder);
+                  const children = getOrderedCategories(categories).filter((category) => category.id !== group.id && getCategoryLineage(category.id, categories)[0]?.id === group.id);
                   const groupSelected = selectedCategoryIds.includes(group.id);
                   return <fieldset key={group.id} className="space-y-2">
                     <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control-inner)] px-2 font-bold text-[var(--sp-ink)] hover:bg-[var(--sp-surface)]">
@@ -488,10 +489,13 @@ export default function AdminAttributesPage() {
                       <span>{group.titleRu} <span className="font-normal text-[var(--sp-ink-tertiary)]">(вся группа)</span></span>
                     </label>
                     <div className="grid gap-1 pl-7 sm:grid-cols-2">
-                      {children.map((category) => <label key={category.id} className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control-inner)] px-2 text-xs ${groupSelected ? 'opacity-45' : 'hover:bg-[var(--sp-surface)]'}`}>
-                        <input type="checkbox" disabled={groupSelected} checked={groupSelected || selectedCategoryIds.includes(category.id)} onChange={(event) => setSelectedCategoryIds((current) => event.target.checked ? [...new Set([...current, category.id])] : current.filter((id) => id !== category.id))} className="size-4 accent-[var(--sp-brand)]" />
-                        <span>{category.titleRu}</span>
-                      </label>)}
+                      {children.map((category) => {
+                        const inherited = getCategoryLineage(category.id, categories).slice(0, -1).some((parent) => selectedCategoryIds.includes(parent.id));
+                        return <label key={category.id} style={{ paddingLeft: getCategoryDepth(category.id, categories) === 2 ? 20 : 8 }} className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control-inner)] px-2 text-xs ${inherited ? 'opacity-45' : 'hover:bg-[var(--sp-surface)]'}`}>
+                          <input type="checkbox" disabled={inherited} checked={inherited || selectedCategoryIds.includes(category.id)} onChange={(event) => setSelectedCategoryIds((current) => event.target.checked ? [...new Set([...current, category.id])] : current.filter((id) => id !== category.id))} className="size-4 accent-[var(--sp-brand)]" />
+                          <span>{category.titleRu}{inherited ? ' (наследуется)' : ''}</span>
+                        </label>;
+                      })}
                     </div>
                   </fieldset>;
                 })}

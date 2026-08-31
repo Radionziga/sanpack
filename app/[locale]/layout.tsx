@@ -72,6 +72,9 @@ export async function generateMetadata({
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
     title,
     description,
+    icons: settings.company?.favicon
+      ? { icon: settings.company.favicon }
+      : undefined,
     alternates: {
       canonical: `/${locale}`,
       languages: {

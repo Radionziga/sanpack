@@ -5,7 +5,7 @@ import { RequestItem, Product, ProductVariant } from '@/types';
 import { normalizeOrderQuantity } from '@/lib/commerce/orderQuantities';
 import {
   getProductPriceMode,
-  getProductUnitPrice,
+  getProductOrderUnitPrice,
   isProductOrderable,
 } from '@/lib/commerce/productOffer';
 import { getSeedProductTranslation } from '@/lib/catalog/seedProductLocalization';
@@ -35,15 +35,28 @@ function readStoredItems(): RequestItem[] {
     const parsed: unknown = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
     return (parsed as RequestItem[]).map((item) => {
-      if (item.productTitleZh?.trim()) return item;
-      const seedCode = item.product?.sku?.replace(/^SP-/i, '');
-      const translation = seedCode ? getSeedProductTranslation(seedCode) : undefined;
-      if (!translation?.zh) return item;
-      return {
-        ...item,
-        productTitleZh: translation.zh,
-        product: item.product ? { ...item.product, titleZh: translation.zh } : item.product,
-      };
+      let restored = item;
+      if (!item.productTitleZh?.trim()) {
+        const seedCode = item.product?.sku?.replace(/^SP-/i, '');
+        const translation = seedCode ? getSeedProductTranslation(seedCode) : undefined;
+        if (translation?.zh) {
+          restored = {
+            ...restored,
+            productTitleZh: translation.zh,
+            product: item.product ? { ...item.product, titleZh: translation.zh } : item.product,
+          };
+        }
+      }
+      return restored.product
+        ? {
+            ...restored,
+            price: getProductOrderUnitPrice(
+              restored.product,
+              restored.variant,
+              restored.quantity,
+            ),
+          }
+        : restored;
     });
   } catch {
     return [];
@@ -82,15 +95,22 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
       if (existingIdx !== -1) {
         const updated = [...prev];
         const existing = updated[existingIdx];
-        existing.quantity = normalizeOrderQuantity(
+        const nextQuantity = normalizeOrderQuantity(
           existing.product || product,
           existing.quantity + quantity,
           existing.variant || variant,
+        );
+        existing.quantity = nextQuantity;
+        existing.price = getProductOrderUnitPrice(
+          existing.product || product,
+          existing.variant || variant,
+          nextQuantity,
         );
         if (comment) updated[existingIdx].comment = comment;
         return updated;
       }
 
+      const normalizedQuantity = normalizeOrderQuantity(product, quantity, variant);
       const newItem: RequestItem = {
         productId: product.id,
         productTitleRu: product.titleRu,
@@ -104,9 +124,9 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         variantTitleEn: variant?.titleEn,
         variantTitleZh: variant?.titleZh,
         sku: variant?.sku || product.sku,
-        quantity: normalizeOrderQuantity(product, quantity, variant),
+        quantity: normalizedQuantity,
         unit: product.salesUnit || 'шт',
-        price: getProductUnitPrice(product, variant),
+        price: getProductOrderUnitPrice(product, variant, normalizedQuantity),
         priceMode: getProductPriceMode(product, variant),
         comment,
         image: variant?.image || product.mainImage,
@@ -132,12 +152,18 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
     setItems((prev) =>
       prev.map((i) =>
         i.productId === productId && i.variantId === variantId
-          ? {
-              ...i,
-              quantity: i.product
+          ? (() => {
+              const normalizedQuantity = i.product
                 ? normalizeOrderQuantity(i.product, quantity, i.variant)
-                : Math.max(1, quantity),
-            }
+                : Math.max(1, quantity);
+              return {
+                ...i,
+                quantity: normalizedQuantity,
+                price: i.product
+                  ? getProductOrderUnitPrice(i.product, i.variant, normalizedQuantity)
+                  : i.price,
+              };
+            })()
           : i
       )
     );

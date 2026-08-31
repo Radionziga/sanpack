@@ -1,7 +1,8 @@
-import type { Attribute, Language, Product, QuantityUnit } from '@/types';
+import type { Attribute, Language, Product, ProductAttributeValue, QuantityUnit } from '@/types';
 import { fixPrepositions } from '@/lib/utils/formatText';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
+import { getEffectiveCatalogPrice } from '@/lib/commerce/productOffer';
 
 type ContentLanguage = Exclude<Language, 'zh'>;
 
@@ -19,6 +20,13 @@ const currencyLabelByLanguage: Record<ContentLanguage, string> = {
   ru: 'сум',
   uz: 'so‘m',
   en: 'UZS',
+};
+
+const comparisonUnitLabelByLanguage: Record<Language, Partial<Record<QuantityUnit, string>>> = {
+  ru: { piece: 'шт.', gram: 'г', kilogram: 'кг', milliliter: 'мл', liter: 'л', meter: 'м', square_meter: 'м²' },
+  uz: { piece: 'dona', gram: 'g', kilogram: 'kg', milliliter: 'ml', liter: 'l', meter: 'm', square_meter: 'm²' },
+  en: { piece: 'pc', gram: 'g', kilogram: 'kg', milliliter: 'ml', liter: 'L', meter: 'm', square_meter: 'm²' },
+  zh: { piece: '件', gram: '克', kilogram: '千克', milliliter: '毫升', liter: '升', meter: '米', square_meter: '平方米' },
 };
 
 const hiddenAttributeKeys = new Set([
@@ -493,7 +501,7 @@ export function getPresentedProductAttributes(
   product: Product,
   definitions: Attribute[],
   language: Language,
-  attributeOverrides: Record<string, string> = {},
+  attributeOverrides: Record<string, ProductAttributeValue> = {},
 ): PresentedProductAttribute[] {
   const definitionByKey = new Map(
     definitions.map((definition) => [normalizeKey(definition.key), definition]),
@@ -638,37 +646,31 @@ export function getProductPriceLabel(product: Product, language: Language) {
   return unit ? `Цена за ${unit}` : 'Цена';
 }
 
+export function formatComparisonUnitPrice(
+  amount: number,
+  unit: QuantityUnit,
+  language: Language,
+  currency: string,
+) {
+  const unitLabel = comparisonUnitLabelByLanguage[language][unit];
+  return unitLabel ? `${formatMoney(amount, language, currency)} / ${unitLabel}` : formatMoney(amount, language, currency);
+}
+
 export function getProductCatalogPriceText(product: Product, language: Language) {
-  if (language === 'zh') {
-    if (!product.showPrice) return '价格面议';
-    const variantPrices = (product.variants || [])
-      .map((variant) => variant.price)
-      .filter((price): price is number => typeof price === 'number' && price > 0);
-    if (product.variants?.length) {
-      if (!variantPrices.length) return '价格面议';
-      return `起价 ${formatMoney(Math.min(...variantPrices), language, product.currency)}`;
-    }
-    return product.price && product.price > 0
-      ? formatMoney(product.price, language, product.currency)
-      : '价格面议';
-  }
   const priceOnRequest = {
     ru: 'Цена по запросу',
     uz: 'Narx so‘rov bo‘yicha',
     en: 'Price on request',
-  }[getContentLanguage(language)];
-  if (!product.showPrice) return priceOnRequest;
+  }[getContentLanguage(language)] || '价格面议';
+  const price = getEffectiveCatalogPrice(product);
+  if (!price) return language === 'zh' ? '价格面议' : priceOnRequest;
 
-  const variantPrices = (product.variants || [])
-    .map((variant) => variant.price)
-    .filter((price): price is number => typeof price === 'number' && price > 0);
-  if (product.variants?.length) {
-    if (!variantPrices.length) return priceOnRequest;
-    const from = { ru: 'от', uz: 'dan', en: 'from' }[getContentLanguage(language)];
-    return `${from} ${formatMoney(Math.min(...variantPrices), language, product.currency)}`;
-  }
-
-  return product.price && product.price > 0
-    ? formatMoney(product.price, language, product.currency)
-    : priceOnRequest;
+  const from = language === 'zh'
+    ? '起价'
+    : { ru: 'от', uz: 'dan', en: 'from' }[getContentLanguage(language)];
+  const comparisonUnit = price.unit ? comparisonUnitLabelByLanguage[language][price.unit] : undefined;
+  const amount = comparisonUnit
+    ? formatComparisonUnitPrice(price.amount, price.unit!, language, price.currency)
+    : formatMoney(price.amount, language, price.currency);
+  return `${price.isFrom ? `${from} ` : ''}${amount}`;
 }
