@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/lib/security/readJsonBody';
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
@@ -41,7 +42,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const parsed = checkoutRequestSchema.safeParse(await request.json().catch(() => null));
+  const parsed = checkoutRequestSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Проверьте контактные данные, доставку и состав заявки.', fields: parsed.error.flatten().fieldErrors },

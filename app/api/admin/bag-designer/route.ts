@@ -1,3 +1,5 @@
+import { withPrivateBagAssetUrls } from '@/lib/bag-designer/privateAssets';
+import { logError } from '@/lib/observability/logger';
 import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -36,15 +38,19 @@ export async function GET() {
   try {
     const admin = await getAdminSession();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+    if (!['super_admin', 'sales_manager'].includes(admin.role)) {
+      return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
+    }
     const [settings, requests] = await Promise.all([
       getBagDesignerSettings(),
       getAdminDb().collection('bagDesignRequests').orderBy('createdAt', 'desc').limit(100).get(),
     ]);
     const list = requests.docs.map((document) => ({ id: document.id, ...document.data(), requestTokenHash: undefined }) as unknown as BagDesignRequestRecord)
+      .map((record) => withPrivateBagAssetUrls(record))
       .sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));
     return NextResponse.json({ settings, requests: list });
   } catch (error) {
-    console.error('Bag designer admin loading failed.', error);
+    logError('Bag designer admin loading failed.', error);
     return NextResponse.json({ error: 'Не удалось загрузить модуль конструктора.' }, { status: 503 });
   }
 }
@@ -55,6 +61,10 @@ export async function POST(request: Request) {
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
     const parsed = actionSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: 'Проверьте заполненные настройки.' }, { status: 400 });
+    const roles = parsed.data.action === 'status' ? ['super_admin', 'sales_manager'] : ['super_admin'];
+    if (!roles.includes(admin.role)) {
+      return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
+    }
     if (parsed.data.action === 'status') {
       await getAdminDb().collection('bagDesignRequests').doc(parsed.data.id).update({ status: parsed.data.status, updatedAt: new Date().toISOString() });
       return NextResponse.json({ message: 'Статус заявки обновлён.' });
@@ -67,7 +77,7 @@ export async function POST(request: Request) {
     revalidateTag('settings', { expire: 0 });
     return NextResponse.json({ settings, message: 'Настройки конструктора сохранены.' });
   } catch (error) {
-    console.error('Bag designer admin operation failed.', error);
+    logError('Bag designer admin operation failed.', error);
     return NextResponse.json({ error: 'Изменения не сохранены. Попробуйте ещё раз.' }, { status: 503 });
   }
 }

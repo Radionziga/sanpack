@@ -63,6 +63,8 @@ export function getProductOrderUnitPrice(
   variant?: ProductVariant,
   quantity?: number,
 ) {
+  const mode = getProductPriceMode(product, variant);
+  if (mode === 'request' || mode === 'informational') return undefined;
   const basePrice = getProductUnitPrice(product, variant);
   if (!Number.isFinite(quantity)) return basePrice;
   const tier = [...getProductWholesaleTiers(product, variant)]

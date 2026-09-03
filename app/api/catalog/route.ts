@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import {
   getPublicAttributes,
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
     // layer here could keep serving pre-mutation catalog responses.
     return NextResponse.json(data);
   } catch (error) {
-    console.error(`Catalog read failed for ${resource}.`, error);
+    logError(`Catalog read failed for ${resource}.`, error);
     return NextResponse.json(
       { error: 'Catalog data is temporarily unavailable.' },
       { status: 503 }

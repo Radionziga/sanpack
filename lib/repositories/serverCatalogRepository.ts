@@ -17,7 +17,11 @@ import {
   initialProducts,
   initialSiteSettings,
 } from '@/lib/seedData';
-import { filterPublicProducts } from '@/lib/catalog/publicProducts';
+import { getAdminDb } from '@/lib/firebase/admin';
+import {
+  projectPublicProducts, projectPublicCategories, projectPublicAttributes,
+  projectPublicClients, projectPublicBanners, projectPublicSettings,
+} from '@/lib/catalog/publicProjection';
 import { withGeneratedProductImage } from '@/lib/catalog/productImages';
 import { getSeedProductTranslation, localizeSeedVariantLabel } from '@/lib/catalog/seedProductLocalization';
 import {
@@ -97,105 +101,19 @@ function withSeedBannerChineseLocalization(banner: Banner): Banner {
   };
 }
 
-type FirestoreRestValue = {
-  nullValue?: null;
-  booleanValue?: boolean;
-  integerValue?: string;
-  doubleValue?: number;
-  timestampValue?: string;
-  stringValue?: string;
-  bytesValue?: string;
-  referenceValue?: string;
-  geoPointValue?: { latitude: number; longitude: number };
-  arrayValue?: { values?: FirestoreRestValue[] };
-  mapValue?: { fields?: Record<string, FirestoreRestValue> };
-};
-
-type FirestoreRestDocument = {
-  name: string;
-  fields?: Record<string, FirestoreRestValue>;
-};
-
-function decodeFirestoreRestValue(value: FirestoreRestValue): unknown {
-  if ('nullValue' in value) return null;
-  if ('booleanValue' in value) return value.booleanValue;
-  if ('integerValue' in value) return Number(value.integerValue);
-  if ('doubleValue' in value) return value.doubleValue;
-  if ('timestampValue' in value) return value.timestampValue;
-  if ('stringValue' in value) return value.stringValue;
-  if ('bytesValue' in value) return value.bytesValue;
-  if ('referenceValue' in value) return value.referenceValue;
-  if ('geoPointValue' in value) return value.geoPointValue;
-  if ('arrayValue' in value) {
-    return (value.arrayValue?.values || []).map(decodeFirestoreRestValue);
-  }
-  if ('mapValue' in value) {
-    return decodeFirestoreRestFields(value.mapValue?.fields || {});
-  }
-  return undefined;
-}
-
-function decodeFirestoreRestFields(fields: Record<string, FirestoreRestValue>) {
-  return Object.fromEntries(
-    Object.entries(fields).map(([key, value]) => [key, decodeFirestoreRestValue(value)])
-  );
-}
-
-function getPublicFirestoreRestUrl(pathname: string) {
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  if (!projectId || !apiKey) {
-    throw new Error('Firebase public project configuration is incomplete.');
-  }
-
-  const root = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents`;
-  return `${root}/${pathname}${pathname.includes('?') ? '&' : '?'}key=${encodeURIComponent(apiKey)}`;
-}
-
-async function fetchPublicFirestoreJson<T>(pathname: string, tag: string): Promise<T> {
-  const response = await fetch(getPublicFirestoreRestUrl(pathname), {
-    next: { revalidate: 300, tags: [tag] },
-  });
-  if (!response.ok) {
-    throw new Error(`Firestore public read failed with status ${response.status}.`);
-  }
-  return response.json() as Promise<T>;
-}
-
+// Existing repository, now trusted server reads. No user/admin cookie is needed
+// for storefront reads. Rules deny direct browser access; projection below is
+// the public BFF boundary. Keep SDK initialization lazy for credentialless builds.
 async function readPublicCollection<T>(name: string): Promise<T[]> {
-  const result: T[] = [];
-  let pageToken = '';
-
-  do {
-    const params = new URLSearchParams({ pageSize: '300' });
-    if (pageToken) params.set('pageToken', pageToken);
-    const payload = await fetchPublicFirestoreJson<{
-      documents?: FirestoreRestDocument[];
-      nextPageToken?: string;
-    }>(`${encodeURIComponent(name)}?${params.toString()}`, name);
-
-    for (const document of payload.documents || []) {
-      result.push({
-        id: document.name.split('/').at(-1) || '',
-        ...decodeFirestoreRestFields(document.fields || {}),
-      } as T);
-    }
-    pageToken = payload.nextPageToken || '';
-  } while (pageToken);
-
-  return result;
+  const snapshot = await getAdminDb().collection(name).get();
+  return snapshot.docs.map((document) => serializeFirestoreData<T>({
+    ...document.data(), id: document.id,
+  }));
 }
 
 async function readPublicDocument<T>(path: string): Promise<T | null> {
-  const response = await fetch(getPublicFirestoreRestUrl(path), {
-    next: { revalidate: 300, tags: [path.split('/')[0] || path] },
-  });
-  if (response.status === 404) return null;
-  if (!response.ok) {
-    throw new Error(`Firestore public read failed with status ${response.status}.`);
-  }
-  const document = await response.json() as FirestoreRestDocument;
-  return decodeFirestoreRestFields(document.fields || {}) as T;
+  const snapshot = await getAdminDb().doc(path).get();
+  return snapshot.exists ? serializeFirestoreData<T>(snapshot.data()) : null;
 }
 
 function serializeFirestoreData<T>(value: unknown): T {
@@ -245,10 +163,10 @@ async function readCollection<T>(name: string, fallback: T[]): Promise<T[]> {
 }
 
 const getCachedPublicProducts = unstable_cache(
-  async () => filterPublicProducts(
+  async () => projectPublicProducts(
     await readCollection<Product>('products', initialProducts)
   ).map(withSeedChineseLocalization).map(withGeneratedProductImage).map(withOptimizedProductAssets),
-  ['public-products-v13-produce-request-pricing-2026-08-29'],
+  ['trusted-projection-v1-products-v13-produce-request-pricing-2026-08-29', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
   { revalidate: 300, tags: ['products'] }
 );
 
@@ -258,8 +176,8 @@ export async function getPublicProducts() {
 }
 
 const getCachedPublicCategories = unstable_cache(
-  async () => (await readCollection<Category>('categories', initialCategories)).map(withOptimizedCategoryAssets),
-  ['public-categories-v7-local-webp-2026-08-27'],
+  async () => projectPublicCategories(await readCollection<Category>('categories', initialCategories)).map(withOptimizedCategoryAssets),
+  ['trusted-projection-v1-categories-v7-local-webp-2026-08-27', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
   { revalidate: 1800, tags: ['categories'] }
 );
 
@@ -269,8 +187,8 @@ export async function getPublicCategories() {
 }
 
 const getCachedPublicAttributes = unstable_cache(
-  () => readCollection<Attribute>('attributes', initialAttributes),
-  ['public-attributes-v5-fail-honest-2026-08-22'],
+  async () => projectPublicAttributes(await readCollection<Attribute>('attributes', initialAttributes)),
+  ['trusted-projection-v1-attributes-v5-fail-honest-2026-08-22', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
   { revalidate: 1800, tags: ['attributes'] }
 );
 
@@ -280,8 +198,8 @@ export async function getPublicAttributes() {
 }
 
 const getCachedPublicClients = unstable_cache(
-  () => readCollection<ClientPartner>('clients', initialClients),
-  ['public-clients-v4-fail-honest-2026-08-22'],
+  async () => projectPublicClients(await readCollection<ClientPartner>('clients', initialClients)),
+  ['trusted-projection-v1-clients-v4-fail-honest-2026-08-22', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
   { revalidate: 3600, tags: ['clients'] }
 );
 
@@ -291,9 +209,9 @@ export async function getPublicClients() {
 }
 
 const getCachedPublicBanners = unstable_cache(
-  async () => (await readCollection<Banner>('banners', initialBanners))
+  async () => projectPublicBanners(await readCollection<Banner>('banners', initialBanners))
     .map(withSeedBannerChineseLocalization),
-  ['public-banners-v8-local-webp-2026-08-27'],
+  ['trusted-projection-v1-banners-v8-local-webp-2026-08-27', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
   { revalidate: 900, tags: ['banners'] }
 );
 
@@ -303,7 +221,7 @@ export async function getPublicBanners() {
 }
 
 const getCachedPublicSettings = unstable_cache(
-  () => loadPublicData({
+  async () => projectPublicSettings(await loadPublicData({
     resource: 'settings',
     seedEnabled: isSeedFallbackEnabled(),
     seed: initialSiteSettings,
@@ -317,8 +235,8 @@ const getCachedPublicSettings = unstable_cache(
       }
       throw new Error('The global settings document does not exist.');
     },
-  }),
-  ['public-settings-v4-fail-honest-2026-08-22'],
+  })),
+  ['trusted-projection-v1-settings-v4-fail-honest-2026-08-22', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
   { revalidate: 1800, tags: ['settings'] }
 );
 

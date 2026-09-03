@@ -1,3 +1,5 @@
+import { logError } from '@/lib/observability/logger';
+import { readJsonBody } from '@/lib/security/readJsonBody';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminAuth } from '@/lib/firebase/admin';
@@ -7,6 +9,7 @@ import {
   verifyAdminToken,
 } from '@/lib/auth/server';
 import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
+import { hasTrustedMutationOrigin } from '@/lib/security/requestOrigin';
 
 export const runtime = 'nodejs';
 
@@ -15,7 +18,10 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+  if (!hasTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: 'Недопустимый источник запроса.' }, { status: 403 });
+  }
+  const parsed = requestSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Некорректные данные для входа.' }, { status: 400 });
   }
@@ -35,6 +41,9 @@ export async function POST(request: Request) {
     const isLocalSession = process.env.NODE_ENV !== 'production'
       && !process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
     const decoded = await getAdminAuth().verifyIdToken(body.idToken, !isLocalSession);
+    if (!Number.isFinite(decoded.auth_time) || Math.abs(Date.now() / 1000 - decoded.auth_time) > 300) {
+      return NextResponse.json({ error: 'Войдите заново для создания сессии.' }, { status: 401 });
+    }
     const admin = await verifyAdminToken(decoded);
 
     if (!admin) {
@@ -66,7 +75,7 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
-      console.error('Admin session creation failed.', error);
+      logError('Admin session creation failed.', error);
     }
     return NextResponse.json(
       { error: 'Не удалось войти. Обновите страницу и попробуйте снова.' },

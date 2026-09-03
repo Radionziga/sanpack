@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/auth/server';
@@ -56,6 +57,7 @@ export async function GET() {
   try {
     const admin = await getAdminSession();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+    if (admin.role !== 'super_admin') return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
     const settings = await getGeminiPrivateSettings();
     let models: GeminiModelOption[] = [];
     let imageModels: GeminiModelOption[] = [];
@@ -68,7 +70,7 @@ export async function GET() {
           listGeminiImageModels(apiKey),
         ]);
       } catch (error) {
-        console.error('Gemini model list loading failed.', error);
+        logError('Gemini model list loading failed.', error);
         modelsWarning = publicError(error);
       }
     }
@@ -79,7 +81,7 @@ export async function GET() {
       modelsWarning,
     });
   } catch (error) {
-    console.error('Gemini settings loading failed.', error);
+    logError('Gemini settings loading failed.', error);
     return NextResponse.json({ error: 'Не удалось загрузить настройки Gemini.' }, { status: 503 });
   }
 }
@@ -88,6 +90,7 @@ export async function POST(request: Request) {
   try {
     const admin = await getAdminSession();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+    if (admin.role !== 'super_admin') return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
     const body = await request.json().catch(() => null);
     const parsed = actionSchema.safeParse(body);
     if (!parsed.success) {
@@ -148,7 +151,7 @@ export async function POST(request: Request) {
       modelsWarning: '',
     });
   } catch (error) {
-    console.error('Gemini settings operation failed.', error);
+    logError('Gemini settings operation failed.', error);
     return NextResponse.json({ error: publicError(error) }, { status: 503 });
   }
 }

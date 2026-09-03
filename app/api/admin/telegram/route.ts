@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/auth/server';
@@ -64,10 +65,11 @@ export async function GET() {
   try {
     const admin = await requireAdmin();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+    if (admin.role !== 'super_admin') return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
     const settings = await getTelegramPrivateSettings();
     return NextResponse.json(toPublicAdminTelegramSettings(settings));
   } catch (error) {
-    console.error('Telegram settings loading failed.', error);
+    logError('Telegram settings loading failed.', error);
     return NextResponse.json(
       { error: firebaseAdminUnavailableMessage('данных', error) },
       { status: 503 }
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
   try {
     const admin = await requireAdmin();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+    if (admin.role !== 'super_admin') return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
 
     const parsed = actionSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
@@ -186,7 +189,7 @@ export async function POST(request: Request) {
       settings: toPublicAdminTelegramSettings(settings),
     });
   } catch (error) {
-    console.error('Telegram settings operation failed.', error);
+    logError('Telegram settings operation failed.', error);
     const message = telegramErrorMessage(error);
     return NextResponse.json({ error: message }, { status: telegramErrorStatus(error) });
   }

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { getAdminDb } from '@/lib/firebase/admin';
+import { logError } from '@/lib/observability/logger';
 import { defaultBagDesignerSettings } from './defaults';
 import type { BagDesignerSettings } from './types';
 
@@ -39,7 +40,7 @@ export async function getBagDesignerSettings(
     };
   } catch (error) {
     if (!options.fallbackOnError) throw error;
-    console.warn('Bag designer settings are unavailable; using public defaults.', error);
+    logError('bag_designer.settings_fallback', error);
     return defaultBagDesignerSettings;
   }
 }

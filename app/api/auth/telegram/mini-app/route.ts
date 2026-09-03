@@ -1,3 +1,5 @@
+import { logError } from '@/lib/observability/logger';
+import { readJsonBody } from '@/lib/security/readJsonBody';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -18,7 +20,7 @@ const miniAppSessionSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const parsed = miniAppSessionSchema.safeParse(await request.json().catch(() => null));
+  const parsed = miniAppSessionSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Некорректные данные Telegram.' }, { status: 400 });
   }
@@ -63,13 +65,13 @@ export async function POST(request: Request) {
     response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, sessionToken, {
       maxAge: CUSTOMER_SESSION_MAX_AGE_SECONDS,
       httpOnly: true,
-      secure: new URL(request.url).protocol === 'https:',
+      secure: process.env.NODE_ENV === 'production' || new URL(request.url).protocol === 'https:',
       sameSite: 'lax',
       path: '/',
     });
     return response;
   } catch (error) {
-    console.warn('Telegram Mini App session verification failed.', error);
+    logError('Telegram Mini App session verification failed.', error);
     return NextResponse.json({ error: 'Не удалось подтвердить Telegram-сессию.' }, { status: 401 });
   }
 }

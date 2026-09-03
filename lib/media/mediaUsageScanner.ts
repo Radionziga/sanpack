@@ -338,12 +338,12 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
         }
       }
     } catch {
-      // ignore
+      throw new Error('Cannot verify settings media usage.');
     }
 
     // 6. Scan document settings
     try {
-      const docSettingsDoc = await db.collection('settings').doc('documents').get();
+      const docSettingsDoc = await db.collection('backofficeSettings').doc('documents').get();
       if (docSettingsDoc.exists) {
         const ds = docSettingsDoc.data();
         if (ds?.logoUrl) {
@@ -357,12 +357,12 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
         }
       }
     } catch {
-      // ignore
+      throw new Error('Cannot verify document media usage.');
     }
 
-    // 7. Scan bag design requests (sample latest 200)
+    // 7. A partial sample cannot establish that an asset is unused.
     try {
-      const bagRequestsSnapshot = await db.collection('bagDesignRequests').limit(200).get();
+      const bagRequestsSnapshot = await db.collection('bagDesignRequests').get();
       for (const doc of bagRequestsSnapshot.docs) {
         const br = doc.data();
         const requestTitle = `Заказ пакета ${br.number || doc.id}`;
@@ -397,10 +397,10 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
         }
       }
     } catch {
-      // ignore
+      throw new Error('Cannot verify bag design media usage.');
     }
-  } catch (error) {
-    console.error('Error building site media usage index:', error);
+  } catch {
+    throw new Error('Media usage audit incomplete. Deletion is blocked.');
   }
 
   return index;

@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // CMS assets only. get permits existing public URLs/metadata; never listing.
+    match /media/{path=**} {
+      allow get: if true;
+    }
+    // Includes customer attachments in bag-design-requests. Access through
+    // server-authorized /api/bag-designer/asset, no permanent download tokens.
+    // Admin browser identity does NOT permit direct upload/delete/list either.
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

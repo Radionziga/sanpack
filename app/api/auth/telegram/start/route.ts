@@ -1,3 +1,5 @@
+import { logError } from '@/lib/observability/logger';
+import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 import { NextResponse } from 'next/server';
 import { createPublicSiteUrl } from '@/lib/http/publicSiteUrl';
 import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
@@ -22,6 +24,8 @@ function withAuthError(request: Request, returnTo: string) {
 export async function GET(request: Request) {
   const returnTo = sanitizeLocalizedReturnPath(new URL(request.url).searchParams.get('returnTo'));
   try {
+    const limit = await checkDistributedRateLimit(request, 'telegram-login-start', 10, 10 * 60 * 1000);
+    if (!limit.allowed) return NextResponse.json({ error: 'Too many attempts.' }, { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } });
     const settings = await getTelegramPrivateSettings();
     const login = settings.login;
     if (!login.enabled || !login.clientId || !canDecryptSecret(login.clientSecretEncrypted) || !login.redirectUri) {
@@ -52,7 +56,7 @@ export async function GET(request: Request) {
     });
     return response;
   } catch (error) {
-    console.error('Telegram login could not start.', error);
+    logError('Telegram login could not start.', error);
     return withAuthError(request, returnTo);
   }
 }

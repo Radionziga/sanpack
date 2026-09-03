@@ -12,6 +12,13 @@ import {
 import { createProduct, createVariant } from '@/tests/fixtures/products';
 
 describe('product offer resolution', () => {
+  it('never charges a stale stored price for request/informational modes', () => {
+    for (const priceMode of ['request', 'informational'] as const) {
+      expect(getProductOrderUnitPrice(createProduct({ priceMode, price: 123 }), undefined, 1)).toBeUndefined();
+      expect(getProductOrderUnitPrice(createProduct({ price: 123 }), createVariant({ priceMode, price: 50 }), 2)).toBeUndefined();
+    }
+    expect(getProductOrderUnitPrice(createProduct({ priceMode: 'request' }), createVariant({ priceMode: 'fixed', price: 50 }), 2)).toBe(50);
+  });
   it.each([
     {
       name: 'variant zero price',

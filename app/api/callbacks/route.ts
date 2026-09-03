@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/lib/security/readJsonBody';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -13,7 +14,7 @@ const callbackSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const parsed = callbackSchema.safeParse(await request.json().catch(() => null));
+  const parsed = callbackSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Проверьте имя и номер телефона.' }, { status: 400 });
   }

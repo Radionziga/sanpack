@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests/e2e', testMatch: ['storefront.spec.ts', 'subcategories.spec.ts'],
+  testDir: './tests/e2e', testMatch: ['storefront.spec.ts', 'subcategories.spec.ts', 'security-boundaries.spec.ts'],
   // Isolated production build and slow machines get a bounded startup budget.
   workers: 1, timeout: 180_000, fullyParallel: false, reporter: 'list',
   expect: { timeout: 15_000 },

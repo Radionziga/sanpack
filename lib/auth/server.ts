@@ -3,7 +3,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { getAdminAuth } from '@/lib/firebase/admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
 import { authorizeAdminIdentity } from '@/lib/auth/adminAuthorization';
 import type { UserRole } from '@/types';
 
@@ -18,11 +18,12 @@ export interface AdminSession {
 }
 
 export async function verifyAdminToken(token: DecodedIdToken): Promise<AdminSession | null> {
+  const grant = await getAdminDb().collection('admins').doc(token.uid).get();
   return authorizeAdminIdentity({
     uid: token.uid,
     email: token.email,
     name: token.name,
-  });
+  }, grant.exists ? grant.data() : null);
 }
 
 export async function getAdminSession(): Promise<AdminSession | null> {
@@ -36,7 +37,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     const decoded = isLocalIdToken
       ? await getAdminAuth().verifyIdToken(sessionCookie.slice('local:'.length), false)
       : await getAdminAuth().verifySessionCookie(sessionCookie, true);
-    return verifyAdminToken(decoded);
+    return await verifyAdminToken(decoded);
   } catch {
     return null;
   }

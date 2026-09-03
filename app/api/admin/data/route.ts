@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
@@ -35,9 +36,9 @@ const resourceSchema = z.enum([
 type Resource = z.infer<typeof resourceSchema>;
 
 const mutationSchema = z.object({
-  action: z.enum(['save', 'delete', 'seed', 'updateRequestStatus']),
+  action: z.enum(['save', 'delete', 'seed']),
   resource: resourceSchema.optional(),
-  id: z.string().max(160).optional(),
+  id: z.string().min(1).max(160).regex(/^[^/]+$/).refine((id) => id !== '.' && id !== '..').optional(),
   data: z.record(z.string(), z.unknown()).optional(),
 }).strict();
 
@@ -124,6 +125,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Неизвестный ресурс.' }, { status: 400 });
   }
 
+  if (parsed.data === 'requests' && !['super_admin', 'sales_manager'].includes(authorization.admin!.role)) {
+    return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
+  }
+
   try {
     if (parsed.data === 'settings') {
       const document = await getAdminDb().collection('settings').doc('global').get();
@@ -140,7 +145,7 @@ export async function GET(request: Request) {
     }));
     return NextResponse.json(data);
   } catch (error) {
-    console.error(`Admin read failed for ${parsed.data}.`, error);
+    logError(`Admin read failed for ${parsed.data}.`, error);
     return NextResponse.json(
       { error: firebaseAdminUnavailableMessage('данных', error) },
       { status: 503 }
@@ -178,6 +183,9 @@ export async function POST(request: Request) {
     const database = getAdminDb();
 
     if (mutation.action === 'seed') {
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Seed запрещён в production. Используйте отдельно проверенный import workflow.' }, { status: 403 });
+      }
       const batch = database.batch();
       const collections = [
         ['products', initialProducts],
@@ -207,6 +215,10 @@ export async function POST(request: Request) {
         { error: 'Для операции не указан ресурс или ID.' },
         { status: 400 }
       );
+    }
+
+    if (mutation.resource === 'settings' && (mutation.id !== 'global' || mutation.action !== 'save')) {
+      return NextResponse.json({ error: 'Разрешено только сохранение публичных настроек global.' }, { status: 400 });
     }
 
     const document = database.collection(mutation.resource).doc(mutation.id);
@@ -246,15 +258,6 @@ export async function POST(request: Request) {
       await document.delete();
       revalidateTag(mutation.resource, { expire: 0 });
       return NextResponse.json({ success: true });
-    }
-
-    if (mutation.action === 'updateRequestStatus') {
-      await document.update({
-        ...mutation.data,
-        updatedAt: new Date().toISOString(),
-      });
-      const updated = await document.get();
-      return NextResponse.json({ id: updated.id, ...updated.data() });
     }
 
     const validatedData = validateAdminResourceData(
@@ -317,7 +320,7 @@ export async function POST(request: Request) {
     const saved = await document.get();
     return NextResponse.json({ id: saved.id, ...saved.data() });
   } catch (error) {
-    console.error('Admin mutation failed.', error);
+    logError('Admin mutation failed.', error);
     return NextResponse.json(
       { error: firebaseAdminUnavailableMessage('данных', error) },
       { status: 503 }

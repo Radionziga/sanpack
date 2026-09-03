@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createHash } from 'node:crypto';
+import { isIP } from 'node:net';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase/admin';
 
@@ -9,14 +10,30 @@ export interface RateLimitResult {
   retryAfter: number;
 }
 
-function clientFingerprint(request: Request) {
-  const address = request.headers.get('x-appengine-user-ip')
-    || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    || request.headers.get('x-real-ip')
-    || 'unknown';
-  const userAgent = request.headers.get('user-agent') || 'unknown';
-  return createHash('sha256').update(`${address}\n${userAgent}`).digest('hex');
+export function trustedClientAddress(request: Request): string | null {
+  // App Hosting does not establish an application-level header trust contract.
+  // Opt in ONLY after proving edge overwrite + no direct-origin bypass. Never
+  // parse an attacker-controlled XFF chain or fall back to another header.
+  const header = process.env.TRUSTED_CLIENT_IP_HEADER?.trim().toLowerCase();
+  if (!header || !/^[a-z0-9-]+$/.test(header)) return null;
+  const address = request.headers.get(header)?.trim();
+  if (!address || !isIP(address)) return null;
+  // Canonicalize equivalent IPv6 spellings so they cannot reset a bucket.
+  return isIP(address) === 6 ? new URL(`http://[${address}]/`).hostname : address;
 }
+
+export function clientFingerprint(request: Request) {
+  return createHash('sha256').update(trustedClientAddress(request) || 'shared-anonymous').digest('hex');
+}
+
+// Whole-store ceilings, not per-IP quotas. They survive header spoofing,
+// botnets, process restarts and direct-origin requests. Fixed-window semantics.
+const publicCeilings: Record<string, number> = {
+  'order-request': 60, callback: 30, 'admin-session': 60,
+  'telegram-mini-app-session': 120, 'telegram-login-start': 120,
+  'telegram-login-callback': 120, 'bag-designer-generate': 12,
+  'bag-designer-submit': 120, 'bag-private-asset': 600,
+};
 
 export function rateLimitBucket(scope: string, fingerprint: string, now: number, windowMs: number) {
   const bucketStart = Math.floor(now / windowMs) * windowMs;
@@ -30,24 +47,31 @@ export async function checkDistributedRateLimit(
   scope: string,
   limit: number,
   windowMs: number,
+  identity?: string,
 ): Promise<RateLimitResult> {
   const now = Date.now();
-  const bucket = rateLimitBucket(scope, clientFingerprint(request), now, windowMs);
-  const reference = getAdminDb().collection('rateLimits').doc(bucket.id);
+  const limits = identity
+    ? [{ identity, limit }]
+    : [
+      { identity: 'global-public', limit: publicCeilings[scope] ?? limit },
+      ...(trustedClientAddress(request) ? [{ identity: `ip:${clientFingerprint(request)}`, limit }] : []),
+    ];
+  const buckets = limits.map((entry) => ({
+    ...rateLimitBucket(scope, entry.identity, now, windowMs), limit: entry.limit,
+  }));
+  const references = buckets.map((bucket) => getAdminDb().collection('rateLimits').doc(bucket.id));
 
   return getAdminDb().runTransaction(async (transaction) => {
-    const snapshot = await transaction.get(reference);
-    const count = Number(snapshot.data()?.count || 0) + 1;
-    transaction.set(reference, {
-      scope,
-      count,
-      bucketStart: Timestamp.fromMillis(bucket.bucketStart),
-      expiresAt: Timestamp.fromMillis(bucket.resetAt + windowMs),
-      updatedAt: Timestamp.fromMillis(now),
-    }, { merge: true });
+    const snapshots = await Promise.all(references.map((reference) => transaction.get(reference)));
+    const counts = snapshots.map((snapshot) => Number(snapshot.data()?.count || 0) + 1);
+    const blocked = buckets.find((bucket, index) => counts[index] > bucket.limit);
+    if (!blocked) buckets.forEach((bucket, index) => transaction.set(references[index], {
+      scope, count: counts[index], bucketStart: Timestamp.fromMillis(bucket.bucketStart),
+      expiresAt: Timestamp.fromMillis(bucket.resetAt + windowMs), updatedAt: Timestamp.fromMillis(now),
+    }, { merge: true }));
     return {
-      allowed: count <= limit,
-      retryAfter: count <= limit ? 0 : Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
+      allowed: !blocked,
+      retryAfter: blocked ? Math.max(1, Math.ceil((blocked.resetAt - now) / 1000)) : 0,
     };
   });
 }

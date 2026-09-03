@@ -1,8 +1,9 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { readJsonBody } from '@/lib/security/readJsonBody';
+import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
-import { getAdminDb, getAdminStorage } from '@/lib/firebase/admin';
+import { getAdminDb } from '@/lib/firebase/admin';
 import { getBagDesignerSettings } from '@/lib/bag-designer/settings';
 import { BAG_TYPE_LABELS } from '@/lib/bag-designer/defaults';
 import { generateBagMockup } from '@/lib/bag-designer/gemini';
@@ -12,6 +13,7 @@ import { notifyAboutBagDesignRequest } from '@/lib/telegram/notifications';
 import type { BagDesignRequestRecord } from '@/lib/bag-designer/types';
 import { decideBagGeneration } from '@/lib/bag-designer/draftLifecycle';
 import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
+import { savePrivateBagAsset, withPrivateBagAssetUrls } from '@/lib/bag-designer/privateAssets';
 import { logError } from '@/lib/observability/logger';
 
 export const runtime = 'nodejs';
@@ -114,18 +116,6 @@ function parseDataUrl(dataUrl: string) {
   return { mimeType: match[1].toLowerCase(), data: match[2], buffer };
 }
 
-async function saveAsset(path: string, buffer: Buffer, contentType: string) {
-  const bucket = getAdminStorage().bucket();
-  const token = randomUUID();
-  const file = bucket.file(path);
-  await file.save(buffer, {
-    resumable: false,
-    contentType,
-    metadata: { metadata: { firebaseStorageDownloadTokens: token } },
-  });
-  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
-}
-
 function tokenHash(value: string) {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -155,7 +145,7 @@ function generationPayloadHash({
 export async function POST(request: Request) {
   let responseLanguage: DesignerLanguage = 'ru';
   try {
-    const body = await request.json().catch(() => null);
+    const body = await readJsonBody(request, 24_100_000);
     const requestedLanguage = languageSchema.safeParse(
       body && typeof body === 'object' && 'language' in body ? body.language : undefined,
     );
@@ -175,6 +165,18 @@ export async function POST(request: Request) {
         { error: copy.rateLimited },
         { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
       );
+    }
+
+    // A shared ceiling bounds anonymous AI spend even across spoofed IPs/botnets.
+    if (parsed.data.action === 'generate') {
+      const configured = Number(process.env.BAG_DESIGNER_DAILY_GENERATION_LIMIT);
+      const limit = Number.isSafeInteger(configured) && configured > 0 ? configured : 60;
+      const budget = await checkDistributedRateLimit(request, 'bag-designer-daily', limit, 24 * 60 * 60 * 1000, 'global');
+      if (!budget.allowed) {
+        return NextResponse.json({ error: copy.rateLimited }, {
+          status: 429, headers: { 'Retry-After': String(budget.retryAfter) },
+        });
+      }
     }
 
     if (parsed.data.action === 'submit') {
@@ -209,7 +211,7 @@ export async function POST(request: Request) {
       if (result.outcome === 'not-ready') {
         return NextResponse.json({ error: copy.notReady }, { status: 409 });
       }
-      const submitted = result.record as unknown as BagDesignRequestRecord;
+      const submitted = withPrivateBagAssetUrls(result.record as unknown as BagDesignRequestRecord);
       try { await notifyAboutBagDesignRequest(submitted); } catch (error) { logError('bag_designer.notification_failed', error, { requestId: submitted.id }); }
       return NextResponse.json({ message: copy.submitted, number: submitted.number });
     }
@@ -276,7 +278,7 @@ export async function POST(request: Request) {
         requestId: id,
         requestToken: generation.requestToken,
         number: decision.existing?.number,
-        aiMockupUrl: decision.existing?.aiMockupUrl,
+        aiMockupUrl: withPrivateBagAssetUrls(decision.existing || {}, true).aiMockupUrl,
       });
     }
 
@@ -312,9 +314,9 @@ export async function POST(request: Request) {
         aiMockup: `${folder}/ai-mockup.${mockup.mimeType.split('/')[1] || 'png'}`,
       };
       const [logoUrl, technicalPreviewUrl, aiMockupUrl] = await Promise.all([
-        saveAsset(assetPaths.logo, logo.buffer, logo.mimeType),
-        saveAsset(assetPaths.technicalPreview, technical.buffer, technical.mimeType),
-        saveAsset(assetPaths.aiMockup, Buffer.from(mockup.data, 'base64'), mockup.mimeType),
+        savePrivateBagAsset(assetPaths.logo, logo.buffer, logo.mimeType),
+        savePrivateBagAsset(assetPaths.technicalPreview, technical.buffer, technical.mimeType),
+        savePrivateBagAsset(assetPaths.aiMockup, Buffer.from(mockup.data, 'base64'), mockup.mimeType),
       ]);
       await reference.update({
         generationState: 'ready',
@@ -324,7 +326,7 @@ export async function POST(request: Request) {
         assetPaths,
         updatedAt: FieldValue.serverTimestamp(),
       });
-      return NextResponse.json({ requestId: id, requestToken: generation.requestToken, number, aiMockupUrl });
+      return NextResponse.json({ requestId: id, requestToken: generation.requestToken, number, aiMockupUrl: withPrivateBagAssetUrls({ aiMockupUrl, assetPaths }, true).aiMockupUrl });
     } catch (error) {
       await reference.update({
         generationState: 'failed',

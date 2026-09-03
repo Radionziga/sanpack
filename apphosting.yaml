@@ -1,11 +1,21 @@
 runConfig:
   minInstances: 0
   maxInstances: 10
-  concurrency: 80
+  concurrency: 8
   cpu: 1
-  memoryMiB: 512
+  memoryMiB: 1024
 
 env:
+  # No forwarding header is trusted by default. Global abuse ceilings always
+  # apply. Enable a single overwritten IP header only after ingress verification.
+  - variable: TRUSTED_CLIENT_IP_HEADER
+    value: ""
+    availability:
+      - RUNTIME
+  - variable: BAG_DESIGNER_DAILY_GENERATION_LIMIT
+    value: "60"
+    availability:
+      - RUNTIME
   - variable: NEXT_PUBLIC_SITE_URL
     value: https://sanpack.uz
     availability:

@@ -98,9 +98,11 @@ URLs: Group/Category сохраняют `/[locale]/catalog/slug`, Subcategory п
 
 Путь сохранения: **form → AdminRepository (HTTP wrapper) → `/api/admin/data` → auth + validation → Admin SDK/Firestore → cache invalidation**. Не считать AdminRepository отдельным server persistence layer.
 
-Firebase Authentication зарезервирован для вручную созданных администраторов: валидный Firebase user с email получает `super_admin`. Покупатели используют отдельную Telegram identity. Не включать публичную Firebase-регистрацию без пересмотра этой модели.
+После Production Security Audit Firebase user с email **не получает роль автоматически**: требуется `admins/{uid}` с `active: true` и известной `role`, проверяемый сервером на каждом запросе. При отсутствии grant/ошибке доступа login закрыт. Owner grant нужно проверить до rollout; в этом аудите provisioning не выполнялся. Покупатели используют отдельную Telegram identity.
 
 ## White-label boundaries
+
+Historical Production Security Audit: [PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md](PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md). Его launch blockers закрыты в local code/config plan: [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md), статус **READY FOR CONTROLLED ROLLOUT**. Это не означает deployment: owner grant, runtime IAM/secrets, Firestore/Storage rules и application rollout ещё не применены/не проверены cloud credentials; порядок обязателен из PRODUCTION_OPERATIONS.
 
 Через `SiteSettings` меняются name, logos/dark logo/favicon, descriptions, contacts, theme tokens/font preset, default SEO и сервисная навигация. Generic floating contact использует company name. `ownProduction` остаётся флагом, фильтр скрыт, если в текущем scope нет таких товаров; это не новая tags subsystem.
 
@@ -132,7 +134,7 @@ Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, 
 - JSON-LD — один sale Offer с product stockStatus, не полный variant inventory feed; нет currency conversion.
 - Missing ZH content ещё маскируется fallback/legacy seed localization adapters; SEO и некоторые страницы остаются SANPACK-oriented.
 - Нет Brand pages, collections/tags engine; это отложенный scope, не основание переписывать Product.
-- Firestore rules публично читают каталог без status-фильтра; app-level published projection не закрывает прямое чтение drafts. Подробнее — security section архитектуры.
+- Firestore public boundary подготовлена как Admin-SDK server read → explicit allowlist projection → SSR/`/api/catalog`; local rules deny all direct client reads/writes. Products published-only, Category lineage/Banners active-only, unknown fields stripped. Никакой schema migration нет. До controlled apply действующий production по-прежнему использует старые rules/revision.
 - Public read получает коллекции целиком; client filtering/search — не индекс для огромного каталога. Admin SDK credentials/TTL/alerts — эксплуатационные prerequisites.
 - Slugs категорий остаются глобально уникальными. Flat legacy URL перенаправляется по текущему lineage; старый nested URL после будущего изменения parent/slug не хранится в истории (нужен согласованный redirect plan). Существующие статические marketing links не переписываются автоматически.
 
@@ -154,4 +156,4 @@ Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, 
 
 После независимого review пользователь отдельно разрешил финальную уборку и один checkpoint commit. Неиспользуемые `1.png` и `public/catalog/categories/raw_1.png`–`raw_22.png` исключены из source: raw PNG побайтно дублировали сохранённые изображения с смысловыми названиями. Runtime assets и WebP не удалялись. Исторический Subcategory handoff описывает состояние **до** checkpoint.
 
-Следующий этап — отдельный **production-readiness/security audit перед первым deploy обновлённой архитектуры**, только по новой команде пользователя. Push/deploy, Firestore writes и SANPACK taxonomy mapping не разрешены этим checkpoint. Deferred limitations не исправлять автоматически.
+Production readiness/security audit и local launch-blocker remediation завершены; актуальный следующий этап — только отдельный **controlled production rollout** по PRODUCTION_OPERATIONS после явного разрешения. До него push/deploy/rules/IAM/grants/secrets/Firestore writes не разрешены. После успешного rollout smoke можно переходить к Admin Panel Operational UX + SEO Architecture/CMS. Deferred limitations не исправлять автоматически.

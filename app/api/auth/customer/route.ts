@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -26,7 +27,7 @@ export async function GET() {
       const document = await getAdminDb().collection('customers').doc(customer.sub).get();
       storedProfile = document.exists ? document.data() || {} : {};
     } catch (error) {
-      console.warn('Customer profile could not be loaded; session data was used.', error);
+      logError('Customer profile could not be loaded; session data was used.', error);
     }
   }
   return NextResponse.json({
@@ -76,13 +77,13 @@ export async function PUT(request: Request) {
     response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, sessionToken, {
       maxAge: CUSTOMER_SESSION_MAX_AGE_SECONDS,
       httpOnly: true,
-      secure: new URL(request.url).protocol === 'https:',
+      secure: process.env.NODE_ENV === 'production' || new URL(request.url).protocol === 'https:',
       sameSite: 'lax',
       path: '/',
     });
     return response;
   } catch (error) {
-    console.error('Customer profile update failed.', error);
+    logError('Customer profile update failed.', error);
     return NextResponse.json({ error: 'Не удалось сохранить профиль.' }, { status: 503 });
   }
 }

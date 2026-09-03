@@ -1,9 +1,12 @@
+import { logError } from '@/lib/observability/logger';
+import { readJsonBody } from '@/lib/security/readJsonBody';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/auth/server';
 import { generateGeminiImage, geminiImageModelIds } from '@/lib/gemini/api';
 import { getGeminiPrivateSettings } from '@/lib/gemini/settings';
 import { decryptSecret } from '@/lib/telegram/secrets';
+import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 
 export const runtime = 'nodejs';
 
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'У вашей роли нет прав на генерацию изображений.' }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => null);
+  const body = await readJsonBody(request);
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({
@@ -85,6 +88,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    const limit = await checkDistributedRateLimit(request, 'admin-product-image', 20, 60 * 60 * 1000, admin.uid);
+    if (!limit.allowed) return NextResponse.json({ error: 'Лимит запросов исчерпан.' }, { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } });
     const settings = await getGeminiPrivateSettings();
     if (!settings.enabled) {
       return NextResponse.json({ error: 'Сначала включите Gemini в разделе «Интеграции».' }, { status: 409 });
@@ -107,7 +112,7 @@ export async function POST(request: Request) {
       model,
     });
   } catch (error) {
-    console.error('Product image generation failed.', error);
+    logError('Product image generation failed.', error);
     return NextResponse.json({ error: publicError(error) }, { status: 503 });
   }
 }

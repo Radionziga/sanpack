@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { getDownloadURL } from 'firebase-admin/storage';
-import sharp from 'sharp';
+import { isPublicMediaPath } from './storagePaths';
+import { prepareMediaUpload } from './prepareUpload';
+import { logError } from '@/lib/observability/logger';
 import { getAdminDb, getAdminStorage } from '@/lib/firebase/admin';
 import { buildSiteMediaUsageIndex, lookupMediaUsage } from './mediaUsageScanner';
 import type { MediaItem, MediaLibraryResponse, MediaStats } from './types';
@@ -57,7 +58,7 @@ export async function getAllMediaLibrary(): Promise<MediaLibraryResponse> {
 
   for (const file of rawFiles) {
     // Skip folder marker placeholder files ending with '/'
-    if (file.name.endsWith('/')) continue;
+    if (file.name.endsWith('/') || !isPublicMediaPath(file.name)) continue;
 
     const metadata = file.metadata || {};
     const size = parseInt(String(metadata.size || '0'), 10) || 0;
@@ -128,26 +129,10 @@ export async function uploadSingleMediaFile({
   const bucket = getAdminStorage().bucket();
   const token = randomUUID();
   const sanitizedFolder = folder.replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'uploads';
-  const ext = originalName.split('.').pop()?.toLowerCase() || 'bin';
-
-  let outputBuffer = buffer;
-  let outputMimeType = mimeType;
-  let targetExt = ext;
-
-  // Optimize raster images to WebP if possible
-  if (['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) {
-    try {
-      outputBuffer = await sharp(buffer)
-        .rotate()
-        .webp({ quality: 90, effort: 4 })
-        .toBuffer();
-      outputMimeType = 'image/webp';
-      targetExt = 'webp';
-    } catch {
-      // If sharp fails for some reason, keep original buffer
-      outputBuffer = buffer;
-    }
-  }
+  const prepared = await prepareMediaUpload(buffer, mimeType);
+  const outputBuffer = prepared.buffer;
+  const outputMimeType = prepared.mimeType;
+  const targetExt = prepared.extension;
 
   const cleanBaseName = originalName
     .replace(/\.[^/.]+$/, '')
@@ -157,6 +142,7 @@ export async function uploadSingleMediaFile({
 
   const fileName = `${cleanBaseName || 'file'}_${randomUUID().slice(0, 8)}.${targetExt}`;
   const storagePath = `media/${sanitizedFolder}/${fileName}`;
+  if (!isPublicMediaPath(storagePath)) throw new Error('Invalid public media path.');
   const file = bucket.file(storagePath);
 
   await file.save(outputBuffer, {
@@ -164,6 +150,7 @@ export async function uploadSingleMediaFile({
     validation: 'crc32c',
     metadata: {
       contentType: outputMimeType,
+      contentDisposition: prepared.disposition,
       cacheControl: 'public,max-age=31536000,immutable',
       metadata: {
         firebaseStorageDownloadTokens: token,
@@ -202,6 +189,7 @@ export async function deleteMediaFileWithSafety({
   path: string;
   force?: boolean;
 }): Promise<{ success: boolean; usage?: ReturnType<typeof lookupMediaUsage> }> {
+  if (!isPublicMediaPath(path)) throw new Error('Only public CMS media can be deleted here.');
   const bucket = getAdminStorage().bucket();
   const db = getAdminDb();
 
@@ -254,6 +242,7 @@ export async function deleteBatchMediaFilesWithSafety({
 
   for (const path of uniquePaths) {
     try {
+      if (!isPublicMediaPath(path)) throw new Error('Only public CMS media can be deleted here.');
       if (!force && usageIndex) {
         const usage = lookupMediaUsage(usageIndex, path);
         if (usage.isUsed) {
@@ -265,10 +254,10 @@ export async function deleteBatchMediaFilesWithSafety({
       await bucket.file(path).delete({ ignoreNotFound: true });
       result.deleted.push(path);
     } catch (err) {
-      console.error(`Failed to delete media file ${path}:`, err);
+      logError('media.delete_failed', err);
       result.failed.push({
         path,
-        error: err instanceof Error ? err.message : 'Не удалось удалить файл',
+        error: 'Не удалось удалить файл',
       });
     }
   }

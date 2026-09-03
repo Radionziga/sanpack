@@ -1,3 +1,5 @@
+import { logError } from '@/lib/observability/logger';
+import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { createPublicSiteUrl } from '@/lib/http/publicSiteUrl';
@@ -50,6 +52,8 @@ export async function GET(request: Request) {
   }
 
   try {
+    const limit = await checkDistributedRateLimit(request, 'telegram-login-callback', 10, 10 * 60 * 1000);
+    if (!limit.allowed) return finish(request, returnTo, 'error');
     const settings = await getTelegramPrivateSettings();
     const login = settings.login;
     const encryptedClientSecret = login.clientSecretEncrypted;
@@ -100,7 +104,7 @@ export async function GET(request: Request) {
     });
     return response;
   } catch (error) {
-    console.error('Telegram login callback failed.', error);
+    logError('Telegram login callback failed.', error);
     return finish(request, returnTo, 'error');
   }
 }

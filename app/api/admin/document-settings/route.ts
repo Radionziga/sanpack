@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth/server';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -11,9 +12,10 @@ export async function GET() {
   try {
     const admin = await getAdminSession();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+    if (admin.role !== 'super_admin') return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
     return NextResponse.json(await getInternalDocumentSettings());
   } catch (error) {
-    console.error('Document settings loading failed.', error);
+    logError('Document settings loading failed.', error);
     return NextResponse.json(
       { error: firebaseAdminUnavailableMessage('данных', error) },
       { status: 503 }
@@ -25,6 +27,7 @@ export async function POST(request: Request) {
   try {
     const admin = await getAdminSession();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+    if (admin.role !== 'super_admin') return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
     const parsed = internalDocumentSettingsSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Проверьте реквизиты документа.', issues: parsed.error.issues }, { status: 400 });
@@ -36,7 +39,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(parsed.data);
   } catch (error) {
-    console.error('Document settings saving failed.', error);
+    logError('Document settings saving failed.', error);
     return NextResponse.json(
       { error: firebaseAdminUnavailableMessage('данных', error) },
       { status: 503 }

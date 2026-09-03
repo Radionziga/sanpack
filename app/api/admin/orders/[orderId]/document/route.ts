@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth/server';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -14,6 +15,9 @@ export async function GET(
 ) {
   const admin = await getAdminSession();
   if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+  if (!['super_admin', 'sales_manager'].includes(admin.role)) {
+    return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
+  }
   const { orderId } = await params;
   const reference = getAdminDb().collection('requests').doc(orderId);
   const [snapshot, settings] = await Promise.all([reference.get(), getInternalDocumentSettings()]);
@@ -32,7 +36,7 @@ export async function GET(
       revision: order.revision || 1,
     }],
     documentGeneratedAt: now,
-  }).catch((error) => console.error('Document audit update failed.', error));
+  }).catch((error) => logError('Document audit update failed.', error));
 
   return new Response(new Uint8Array(buffer), {
     headers: {
@@ -42,4 +46,3 @@ export async function GET(
     },
   });
 }
-

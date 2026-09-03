@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/auth/server';
@@ -22,6 +23,9 @@ export async function PATCH(
 ) {
   const admin = await getAdminSession();
   if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
+  if (!['super_admin', 'sales_manager'].includes(admin.role)) {
+    return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
+  }
 
   const parsed = mutationSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -116,7 +120,7 @@ export async function PATCH(
     if (inputError) {
       return NextResponse.json({ error: inputError }, { status: 400 });
     }
-    console.error('Admin order update failed.', error);
+    logError('Admin order update failed.', error);
     return NextResponse.json(
       { error: 'Заказ не был обновлён. Повторите попытку позже.' },
       { status: 503 }

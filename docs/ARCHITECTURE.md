@@ -27,7 +27,7 @@
 
 ```text
 Explicit seed flag ──→ seed data ────────────────────────────┐
-Firestore REST ──→ serverCatalogRepository + public guards ──┤
+Firestore Admin SDK ──→ serverCatalogRepository + explicit public projection ──┤
                                                            ├─→ server routes / metadata
                                                            └─→ /api/catalog
                                                                 ↓
@@ -44,7 +44,7 @@ Cart snapshot → IDs + quantity + delivery → /api/requests
                                                         └─→ Telegram notification
 ```
 
-ServerCatalogRepository — `server-only`, читает Firestore **REST**, используя project/public web config, а не Admin SDK. Admin routes и orders работают через `getAdminDb()` напрямую. Успешный public GET поэтому не доказывает работоспособность privileged writes/ADC.
+ServerCatalogRepository — `server-only`, читает Firestore через runtime Admin SDK и перед кешированием применяет explicit allowlist projection каждого публичного ресурса. Browser получает только `/api/catalog`/SSR output; Firestore rules запрещают все direct client reads/writes. Storefront не требует admin/customer identity, но production runtime обязан иметь Firestore IAM. Успешный build с seed/unavailable shells не доказывает runtime IAM.
 
 ## 3. Catalog and merchandising
 
@@ -233,9 +233,9 @@ Telegram: отдельные login/start/callback/mini-app/customer session endp
 
 Основные коллекции: `products`, `categories`, `attributes`, `clients`, `banners`, `settings/global`, `requests`, `bagDesignRequests`; private settings Telegram/Gemini и backoffice document settings отделены от public config.
 
-Public REST collection reader пагинирует чтение Firestore (page size 300), затем декодирует typed Firestore values. Это не server-side faceted index. `publicProducts.ts` пропускает published structurally valid products, не требуя от старых документов новых optional fields.
+Trusted server reader получает коллекции Admin SDK. `publicProjection.ts` пропускает только published structurally valid Products, active Category lineage, active Banners и явные allowlists полей Product/Category/Attribute/Client/SiteSettings. Неизвестные top-level/nested Firestore fields не сериализуются. Это не server-side faceted index и не требует новых полей или migration.
 
-Caching serverCatalogRepository: inner fetch 300s/resource tag; outer unstable_cache products 300s, categories/attributes/settings 1800s, banners 900s, clients 3600s. Admin writes вызывают resource-tag invalidation. Browser PublicRepository использует `/api/catalog` с no-store; отдельного browser cache слепка нет.
+Caching serverCatalogRepository: unstable_cache products 300s, categories/attributes/settings 1800s, banners 900s, clients 3600s; key включает project/seed mode и projection version. Admin writes вызывают resource-tag invalidation. Browser PublicRepository использует `/api/catalog` с no-store; отдельного browser cache слепка нет.
 
 Seed-mode включается **только** `SANPACK_USE_SEED_DATA=true`. При live read failure `PublicDataUnavailableError`/503, а не незаметная подмена seed. Credentialless production-build guard отдельно блокирует remote reads; успешная сборка со seed/empty unavailable shells не проверяет live backend.
 
@@ -291,13 +291,17 @@ Image optimization/Storage/WebP и tagged server caching решают други
 
 ## 16. Security / data safety boundaries
 
-- Firebase Auth в приложении зарезервирован под admins. `authorizeAdminIdentity` намеренно выдаёт `super_admin` любому валидному Firebase user с email; публичная Firebase registration нарушила бы это допущение. Customer Telegram identity отдельная.
-- Admin session проверяется сервером; private writes используют Admin SDK, который обходит Firestore rules. Прямые client rules и API authorization — разные слои, не взаимозаменяемы.
-- Текущие Firestore catalog read rules не фильтруют drafts по publication. Application public projection не препятствует прямому REST read. Это известная граница, не исправленная documentation-задачей.
-- Public order API валидирует IDs/quantity и пересчитывает цены; client snapshots, totals и phone не являются доверенной authority.
-- Distributed rate limits используют Firestore transactions; TTL cleanup/alerts требуют cloud configuration. `/api/health` не является полной проверкой целостности каталога или Storage.
+- Firebase identity **не** даёт admin-права сама по себе. Сервер читает существующую коллекцию `admins/{uid}` на каждой проверке session: необходимы `active: true` и явная известная `role`. Отсутствующая/отключённая запись и ошибка чтения закрывают доступ. Перед rollout нужно отдельно подтвердить owner grant; автоматического bootstrap нет. Customer Telegram identity отдельная.
+- Admin session проверяется сервером с revocation check; login требует свежий `auth_time` (5 минут). Cookie mutation endpoints защищены Origin-проверкой в Next proxy, login дополнительно в handler. Cookie-authenticated checkout тоже проверяет Origin. Роли проверяются в privileged handlers: настройки — owner, заявки — owner/sales, AI/media — owner/content; generic CMS writes остаются owner-only. Private writes используют Admin SDK, который обходит Firestore rules. Локальные rules теперь запрещают browser writes и прямое чтение заказов/admin grants даже администратору; используются server API. Изменённые rules **не применены в production**.
+- Подготовленные Firestore rules deny all direct client reads/writes. Public boundary — trusted server + explicit projection; draft/hidden documents и неизвестные fields не уходят в client response. Rules ещё не применены в production, поэтому rollout выполняется только по Operations plan: сначала совместимый application revision, затем deny-all rules.
+- Public order API валидирует IDs/quantity и пересчитывает цены; client snapshots, totals и phone не являются доверенной authority. Одинаковые Product/Variant строки нельзя дублировать для обхода maximumOrder. Request/informational price mode не возвращает старую числовую sale price в cart/order helper.
+- Distributed limits используют Firestore transactions и whole-store ceilings, которые не зависят от IP/User-Agent и не обходятся spoofed forwarding headers. По умолчанию IP headers вообще не доверяются. Optional `TRUSTED_CLIENT_IP_HEADER` добавляет более строгий per-IP bucket только после доказанного edge overwrite/no-origin-bypass; неверное/пустое значение не отключает global ceiling. Admin AI остаётся UID-based; bag generation также имеет общий daily ceiling. JSON bounded до parse; App Hosting concurrency снижен до 8 при 1 GiB, но provider budgets/monitoring остаются operator controls.
+- Storage namespaces разделены: `media/**` — public CMS get-only через rules; list/write/delete direct clients denied. `bag-design-requests/**` — private server-only. Новые customer assets не получают permanent Firebase download token и выдаются через short-lived signed `/api/bag-designer/asset` либо owner/sales session, с no-store/nosniff. Historical tokens требуют explicit dry-run/apply audit after rollout. Runtime SDK object access uses IAM and bypasses rules; bucket IAM must not grant `allUsers`/`allAuthenticatedUsers` access.
+- API получает `private, no-store` и `noindex`; request/orders/profile/search/favorites/print — `noindex`. JSON-LD экранирует `<`, тексты React не вставляются как HTML. Critical server logs не включают upstream message/stack/cause.
 - Secrets/private integration settings не должны оказаться в SiteSettings/public JSON, git, logs или документах. Не использовать production migrations для проверки гипотез.
 - Production data, migration apply, media deletion, deployment — отдельные явно разрешённые действия. Подробные эксплуатационные шаги: [PRODUCTION_OPERATIONS.md](PRODUCTION_OPERATIONS.md).
+
+Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md) зафиксировал NOT READY. Текущий код/config plan закрывает его launch blockers; актуальное состояние — [Launch Blockers Remediation](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md): **READY FOR CONTROLLED ROLLOUT**, но не утверждение о применённых production rules/IAM/grants/secrets.
 
 ## 17. Architectural invariants
 
@@ -323,7 +327,7 @@ Image optimization/Storage/WebP и tagged server caching решают други
 - CMS type/options validation не строгая schema registry для всех legacy значений; stockStatus/availability и некоторые reverse/legacy fields сосуществуют.
 - Local/seed adapters, ZH gaps и SANPACK marketing content требуют отдельного white-label content review.
 - Locale settings не dynamic locale registry; static icons и page-specific metadata требуют rebrand smoke.
-- Большие client boundaries/full-collection reads, direct draft read rules и эксплуатационные prerequisites остаются отдельными задачами.
+- Большие client boundaries/full-collection trusted-server reads остаются scalability limitation; production IAM/secrets/rules/grant всё ещё нужно проверить и применить строго по controlled rollout plan.
 - Tags/collections/richer badges/brand pages — отложенный P2, не недостающий фундамент текущего этапа.
 
 `inStockOnly` по подходящему варианту **больше не limitation**. Не исправлять остальные пункты автоматически под видом документации или checkpoint.

@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability/logger';
 import { randomUUID } from 'node:crypto';
 import { getDownloadURL } from 'firebase-admin/storage';
 import { NextResponse } from 'next/server';
@@ -45,6 +46,9 @@ async function authorizeMediaRead() {
   if (!admin) {
     return { response: NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 }), admin: null };
   }
+  if (!['super_admin', 'content_manager'].includes(admin.role)) {
+    return { response: NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 }), admin: null };
+  }
   return { response: null, admin };
 }
 
@@ -67,7 +71,7 @@ export async function GET() {
     const data = await getAllMediaLibrary();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Failed to list media files:', error);
+    logError('Failed to list media files:', error);
     return NextResponse.json(
       { error: firebaseAdminUnavailableMessage('изображений', error) },
       { status: 503 }
@@ -173,7 +177,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(uploadedItem, { status: 201 });
   } catch (error) {
-    console.error('Admin media upload failed.', error);
+    logError('Admin media upload failed.', error);
     return NextResponse.json(
       { error: firebaseAdminUnavailableMessage('изображений', error) },
       { status: 503 }
@@ -195,6 +199,10 @@ export async function DELETE(request: Request) {
   const parsed = deleteSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Некорректные параметры удаления.' }, { status: 400 });
+  }
+
+  if (parsed.data.force && authorization.admin?.role !== 'super_admin') {
+    return NextResponse.json({ error: 'Принудительное удаление разрешено только владельцу.' }, { status: 403 });
   }
 
   try {
@@ -227,7 +235,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Admin media deletion failed.', error);
+    logError('Admin media deletion failed.', error);
     return NextResponse.json({ error: firebaseAdminUnavailableMessage('изображений', error) }, { status: 503 });
   }
 }

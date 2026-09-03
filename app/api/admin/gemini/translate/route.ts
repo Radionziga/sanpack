@@ -1,8 +1,11 @@
+import { logError } from '@/lib/observability/logger';
+import { readJsonBody } from '@/lib/security/readJsonBody';
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth/server';
 import { decryptSecret } from '@/lib/telegram/secrets';
 import { getGeminiPrivateSettings } from '@/lib/gemini/settings';
 import { translateCommerceFields, translationRequestSchema } from '@/lib/gemini/translation';
+import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 
 export const runtime = 'nodejs';
 
@@ -24,11 +27,16 @@ export async function POST(request: Request) {
   try {
     const admin = await getAdminSession();
     if (!admin) return NextResponse.json({ error: 'Требуется авторизация.' }, { status: 401 });
-    const body = await request.json().catch(() => null);
+    if (!['super_admin', 'content_manager'].includes(admin.role)) {
+      return NextResponse.json({ error: 'Недостаточно прав.' }, { status: 403 });
+    }
+    const body = await readJsonBody(request);
     const parsed = translationRequestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Добавьте исходный текст и выберите язык.', issues: parsed.error.issues }, { status: 400 });
     }
+    const limit = await checkDistributedRateLimit(request, 'admin-translate', 30, 60 * 60 * 1000, admin.uid);
+    if (!limit.allowed) return NextResponse.json({ error: 'Лимит запросов исчерпан.' }, { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } });
     const settings = await getGeminiPrivateSettings();
     if (!settings.enabled || !settings.apiKeyEncrypted) {
       return NextResponse.json({ error: 'Сначала включите Gemini в настройках интеграций.' }, { status: 409 });
@@ -41,7 +49,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ translations, model: settings.model });
   } catch (error) {
-    console.error('Gemini translation failed.', error);
+    logError('Gemini translation failed.', error);
     return NextResponse.json({ error: translationError(error) }, { status: 503 });
   }
 }

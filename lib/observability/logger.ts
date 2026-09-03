@@ -4,7 +4,8 @@ type LogLevel = 'info' | 'warn' | 'error';
 
 function serializeError(error: unknown) {
   if (!(error instanceof Error)) return { type: 'UnknownError' };
-  return { type: error.name, message: error.message.slice(0, 500) };
+  // Upstream messages/causes may contain URLs with tokens, credentials or PII.
+  return { type: error.name === 'TypeError' ? 'TypeError' : 'Error' };
 }
 
 export function logEvent(

@@ -8,8 +8,8 @@ export const orderStatusSchema = z.enum([
 ]);
 
 export const checkoutLineSchema = z.object({
-  productId: z.string().trim().min(1).max(160),
-  variantId: z.string().trim().min(1).max(160).optional(),
+  productId: z.string().trim().min(1).max(160).regex(/^[^/]+$/).refine((id) => id !== '.' && id !== '..'),
+  variantId: z.string().trim().min(1).max(160).regex(/^[^/]+$/).optional(),
   quantity: z.number().positive().max(1_000_000),
   comment: z.string().trim().max(500).optional(),
 }).strict();
@@ -23,7 +23,14 @@ export const checkoutRequestSchema = z.object({
   notes: z.string().trim().max(1_000).optional().default(''),
   items: z.array(checkoutLineSchema).min(1).max(100),
   telegramInitData: z.string().max(16_000).optional(),
-}).strict();
+}).strict().superRefine((order, context) => {
+  const seen = new Set<string>();
+  order.items.forEach((line, index) => {
+    const key = JSON.stringify([line.productId, line.variantId || '']);
+    if (seen.has(key)) context.addIssue({ code: 'custom', path: ['items', index], message: 'Объедините одинаковые позиции заявки.' });
+    seen.add(key);
+  });
+});
 
 export const adminOrderLineSchema = checkoutLineSchema.extend({
   lineId: z.string().trim().min(1).max(160).optional(),

@@ -13,20 +13,19 @@ export interface AuthorizedAdmin {
   role: UserRole;
 }
 
-/**
- * Firebase Authentication is reserved for administrators in this project.
- * Accounts are provisioned manually in Firebase Console; public customers use
- * the separate Telegram identity flow. Every valid Firebase user with an email
- * is therefore intentionally a super administrator.
- */
-export function authorizeAdminIdentity(identity: AdminIdentity): AuthorizedAdmin | null {
+/** Identity is not authorization: only an explicitly provisioned admins/{uid} grants access. */
+export function authorizeAdminIdentity(
+  identity: AdminIdentity,
+  grant?: { role?: unknown; active?: unknown } | null,
+): AuthorizedAdmin | null {
   const email = identity.email?.trim().toLowerCase();
-  if (!email) return null;
+  const roles: UserRole[] = ['super_admin', 'content_manager', 'sales_manager', 'viewer'];
+  if (!email || !grant || grant.active !== true || !roles.includes(grant.role as UserRole)) return null;
 
   return {
     uid: identity.uid,
     email,
     name: identity.name?.trim() || email,
-    role: 'super_admin',
+    role: grant.role as UserRole,
   };
 }
