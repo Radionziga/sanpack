@@ -303,6 +303,8 @@ Image optimization/Storage/WebP и tagged server caching решают други
 
 Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md) зафиксировал NOT READY. Текущий код/config plan закрывает его launch blockers; актуальное состояние — [Launch Blockers Remediation](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md): **READY FOR CONTROLLED ROLLOUT**, но не утверждение о применённых production rules/IAM/grants/secrets.
 
+Production preflight 2026-09-04 обнаружил shared control-plane constraint: тот же Firebase project содержит App Hosting backend `vetclinics`, а Storage release — его namespaces. Storage rules применяются ко всему bucket, поэтому SANPACK-only rules не могут быть deployed независимо. Rollout остановлен до writes; следующий retry требует выделенного SANPACK bucket/project либо единого проверенного ruleset и regression coverage обоих приложений. Firestore/application checkpoint остаётся не deployed.
+
 ## 17. Architectural invariants
 
 1. Категория/характеристика новой ниши задаётся существующей CMS, без frontend conditions по smartphone/tire/SANPACK SKU.

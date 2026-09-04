@@ -22,6 +22,17 @@ Anonymous bag designer дополнительно использует глоб�
 Code/config plan status: **READY FOR CONTROLLED ROLLOUT**, not deployed. Full rationale:
 [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md).
 
+> **Production preflight 2026-09-04 — rollout stopped before writes.** Project
+> `stamply-4df8a` also contains the `vetclinics` App Hosting backend, while the
+> deployed Storage release contains its `doctors/**`, `departments/**`,
+> `services/**` and `reviews/**` namespaces plus a shared fallback. Firebase
+> Storage rules are bucket-wide: deploying SANPACK's isolated `media/**` rules
+> would replace that release and can break the other application. Before retry,
+> choose a dedicated SANPACK bucket/project or prepare one reviewed combined
+> ruleset with regression tests for **both** applications. Do not deploy the
+> current SANPACK-only `storage.rules` to this shared bucket. No application,
+> Firestore/Storage rules, IAM, secrets or data were changed in this attempt.
+
 ### Mandatory preflight (read-only except explicit owner provisioning)
 
 1. Restore operator authentication; do not reuse a personal service-account JSON in production.

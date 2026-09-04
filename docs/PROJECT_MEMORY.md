@@ -102,7 +102,9 @@ URLs: Group/Category сохраняют `/[locale]/catalog/slug`, Subcategory п
 
 ## White-label boundaries
 
-Historical Production Security Audit: [PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md](PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md). Его launch blockers закрыты в local code/config plan: [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md), статус **READY FOR CONTROLLED ROLLOUT**. Это не означает deployment: owner grant, runtime IAM/secrets, Firestore/Storage rules и application rollout ещё не применены/не проверены cloud credentials; порядок обязателен из PRODUCTION_OPERATIONS.
+Historical Production Security Audit: [PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md](PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md). Его launch blockers закрыты в local code/config plan: [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md), статус **READY FOR CONTROLLED ROLLOUT**. Это не означает deployment: на момент remediation owner grant, runtime IAM/secrets, Firestore/Storage rules и application rollout ещё не были применены/проверены cloud credentials; актуальный preflight status указан ниже и порядок обязателен из PRODUCTION_OPERATIONS.
+
+Controlled rollout preflight **2026-09-04** остановлен до production writes: Firebase project содержит второй backend `vetclinics`, а deployed Storage rules включают его namespaces. SANPACK-only `storage.rules` нельзя применять к общему bucket до изоляции bucket/project либо совместного review и emulator coverage правил обоих приложений. Read-only preflight подтвердил существующий active `super_admin` grant, runtime IAM/secret bindings и отсутствие bucket/object public IAM/ACL; это не означает, что новый application/rules были deployed. Точная stop condition зафиксирована в `PRODUCTION_OPERATIONS.md`.
 
 Через `SiteSettings` меняются name, logos/dark logo/favicon, descriptions, contacts, theme tokens/font preset, default SEO и сервисная навигация. Generic floating contact использует company name. `ownProduction` остаётся флагом, фильтр скрыт, если в текущем scope нет таких товаров; это не новая tags subsystem.
 
