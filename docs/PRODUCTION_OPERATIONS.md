@@ -53,9 +53,10 @@ Code/config plan status: **READY FOR CONTROLLED ROLLOUT**, not deployed. Full ra
 5. Read bucket IAM/config and require no `allUsers` or `allAuthenticatedUsers` binding/object ACL.
    Keep public delivery controlled by Storage rules/download tokens, not bucket-wide IAM.
    Run read-only `npm run security:private-storage-audit -- --project PROJECT --bucket BUCKET`.
-6. Keep `TRUSTED_CLIENT_IP_HEADER` empty. App Hosting documentation does not establish a header
-   overwrite/no-direct-origin contract. Whole-store public ceilings work without IP. Only configure
-   one single-IP header after a separately evidenced edge contract.
+6. Keep `TRUSTED_CLIENT_IP_HEADER` unset in App Hosting. The manifest intentionally omits it because
+   App Hosting rejects empty env values; absence is the safe application default. App Hosting
+   documentation does not establish a header overwrite/no-direct-origin contract. Whole-store public
+   ceilings work without IP. Only configure one single-IP header after a separately evidenced edge contract.
 
 Read-only verification examples (replace placeholders; inspect output, do not pipe secrets):
 

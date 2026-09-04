@@ -7,11 +7,9 @@ runConfig:
 
 env:
   # No forwarding header is trusted by default. Global abuse ceilings always
-  # apply. Enable a single overwritten IP header only after ingress verification.
-  - variable: TRUSTED_CLIENT_IP_HEADER
-    value: ""
-    availability:
-      - RUNTIME
+  # apply. TRUSTED_CLIENT_IP_HEADER is intentionally omitted because App Hosting
+  # rejects empty env values. Add one verified overwritten header only after
+  # ingress verification; absence is the safe application default.
   - variable: BAG_DESIGNER_DAILY_GENERATION_LIMIT
     value: "60"
     availability:
