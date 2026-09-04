@@ -11,16 +11,38 @@
 
 Публичные мутации и создание сессий используют коллекцию `rateLimits`. В документах хранится только SHA-256 отпечаток клиента внутри ID документа; сырой IP не сохраняется. Окно и счётчик обновляются транзакцией Firestore, поэтому лимит общий для всех экземпляров App Hosting.
 
-В Firebase Console нужно один раз включить TTL policy для поля `expiresAt` коллекции `rateLimits`. TTL отвечает только за уборку старых buckets и не влияет на корректность лимита.
+TTL policy для поля `expiresAt` collection group `rateLimits` включена в production и имеет state `ACTIVE`. При переносе в другой Firebase project её нужно создать заново. TTL отвечает только за уборку старых buckets и не влияет на корректность лимита.
 
 User-Agent и непроверенные forwarding headers не определяют baseline allowance. Для каждого launch-critical public scope действует whole-store ceiling. `TRUSTED_CLIENT_IP_HEADER` по умолчанию пуст: optional per-IP bucket включается только для одного валидного IP после доказанного edge overwrite/no-origin-bypass; XFF chains отвергаются. Ошибочная настройка не отключает global ceiling.
 
 Anonymous bag designer дополнительно использует глобальный Firestore daily bucket: `BAG_DESIGNER_DAILY_GENERATION_LIMIT`, default **60 attempts/day** для всех instances/IP вместе. Retry тоже тратит allowance; fixed windows могут дать двойную квоту возле границы суток. Владелец должен согласовать лимит и provider quotas; это не денежный billing budget. Admin image generation: 20/hour/UID; translation: 30/hour/UID. При недоступном limiter costly action не выполняется. Malformed/oversized JSON отклоняется до JSON parse (256 KB, bag payload 24.1 MB); это не заменяет ingress body/connection/concurrency limits.
 
-## Controlled security rollout prerequisites
+## Production foundation status
 
-Code/config plan status: **READY FOR CONTROLLED ROLLOUT**, not deployed. Full rationale:
-[LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md).
+Status as of **2026-09-04**: **PRODUCTION FOUNDATION LIVE**. Historical rationale and the pre-deploy
+plan remain in [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md).
+
+- Deployed source: `39c1ceaec4e9d2e9a7a27e6e080e1dd9be1373b9`.
+- App Hosting revision: `sanpack-build-2026-09-04-002` (100% traffic after smoke).
+- Production domains: `https://sanpack.uz` and
+  `https://sanpack--stamply-4df8a.asia-southeast1.hosted.app`.
+- Storage ruleset: `c1c6f62a-1377-4c2a-8833-b9c02ee58a08`.
+- Firestore ruleset: `404a711f-2e4f-46a6-b0be-0cea21c8ca74`.
+- `rateLimits.expiresAt` TTL state: active.
+- Owner grant, runtime IAM and required secret bindings were verified without exposing values.
+- Direct Firestore catalog/private reads return 403; trusted SSR/API/admin reads remain operational.
+- Public `media/**` remained available; direct list/write/delete and private/legacy paths are denied.
+- Authenticated owner admin and private asset proxy were smoke-tested. A live order was deliberately
+  not created because the current workflow would send a real Telegram notification and has no safe
+  test/suppress marker; canonical order price/quantity remains covered by the release tests.
+
+The first attempted App Hosting build (`build-2026-09-04-001`) failed before deployment because an
+empty `TRUSTED_CLIENT_IP_HEADER` manifest value is invalid. The binding was removed (unset is the
+safe application default), the next build succeeded, and failed build 001 never received traffic.
+
+The sections below remain the authoritative repeatable preflight, rollout and rollback runbook for
+future releases; completed checks must be repeated when project, runtime identity or infrastructure
+changes.
 
 > **Storage ownership decision 2026-09-04.** The owner confirmed that the
 > experimental `vetclinics` backend is discontinued. The default bucket
@@ -146,6 +168,12 @@ GitHub Actions выполняет тот же quality gate и отдельный
 
 ## Осознанно отложено
 
-- Code/config launch blockers закрыты; cloud owner/IAM/secrets/rules и controlled smoke остаются обязательной rollout процедурой, не post-launch backlog.
-- Production alerts, Firestore TTL и HTTPS security headers проверяются после подключения реального App Hosting environment.
-- Backup/export Firestore и rollback rehearsal выполняются перед первым production rollout.
+- Production alerts/cost dashboards and a live order/Telegram smoke remain operational follow-up;
+  they do not weaken the deployed auth, Firestore or Storage boundary. Do not create a real order
+  only to satisfy a checklist without an agreed test-notification workflow.
+- Historical public `media/**` download tokens remain intentionally valid because these are public
+  SANPACK assets. No `bag-design-requests/**` objects or private tokens existed during rollout.
+- Physical cleanup of the discontinued `vetclinics` backend and any non-Storage cloud resources is a
+  separate owner-approved operation. No legacy Storage objects were found.
+- Production taxonomy mapping, content migration and deferred product features were not part of the
+  rollout.
