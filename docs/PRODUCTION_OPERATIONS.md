@@ -22,16 +22,14 @@ Anonymous bag designer дополнительно использует глоб�
 Code/config plan status: **READY FOR CONTROLLED ROLLOUT**, not deployed. Full rationale:
 [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md).
 
-> **Production preflight 2026-09-04 — rollout stopped before writes.** Project
-> `stamply-4df8a` also contains the `vetclinics` App Hosting backend, while the
-> deployed Storage release contains its `doctors/**`, `departments/**`,
-> `services/**` and `reviews/**` namespaces plus a shared fallback. Firebase
-> Storage rules are bucket-wide: deploying SANPACK's isolated `media/**` rules
-> would replace that release and can break the other application. Before retry,
-> choose a dedicated SANPACK bucket/project or prepare one reviewed combined
-> ruleset with regression tests for **both** applications. Do not deploy the
-> current SANPACK-only `storage.rules` to this shared bucket. No application,
-> Firestore/Storage rules, IAM, secrets or data were changed in this attempt.
+> **Storage ownership decision 2026-09-04.** The owner confirmed that the
+> experimental `vetclinics` backend is discontinued. The default bucket
+> `stamply-4df8a.firebasestorage.app` is the SANPACK production Storage boundary;
+> its old vetclinics rule namespaces are not an active contract. Read-only
+> inventory found 252 objects, all under `media/**`, and no legacy or private
+> objects. SANPACK-only Storage rules were deployed and verified: public media
+> get remains available while list/write/delete/private/legacy paths are denied.
+> Physical deletion of any other legacy cloud resources remains a separate task.
 
 ### Mandatory preflight (read-only except explicit owner provisioning)
 
