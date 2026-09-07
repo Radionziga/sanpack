@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { Product, Category, Attribute } from '@/types';
@@ -119,6 +119,8 @@ export default function AdminProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editorBaseline, setEditorBaseline] = useState('');
   const hasUnsavedChanges = Boolean(editingProduct && serializeProductDraft(editingProduct) !== editorBaseline);
+  const dialogStateRef = useRef({ saving, hasUnsavedChanges, editingProduct, products });
+  dialogStateRef.current = { saving, hasUnsavedChanges, editingProduct, products };
   useUnsavedNavigationGuard(isModalOpen && hasUnsavedChanges, 'Перейти на другую страницу и потерять несохранённые изменения товара?');
 
   const showSaveError = (message: string) => {
@@ -135,13 +137,14 @@ export default function AdminProductsPage() {
     const previousOverflow = document.body.style.overflow;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || saving) return;
-      if (hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
-      const persistedProduct = editingProduct?.id
-        ? products.find((product) => product.id === editingProduct.id)
+      const current = dialogStateRef.current;
+      if (event.key !== 'Escape' || current.saving) return;
+      if (current.hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
+      const persistedProduct = current.editingProduct?.id
+        ? current.products.find((product) => product.id === current.editingProduct?.id)
         : undefined;
       const persistedPaths = getManagedMediaPaths(persistedProduct);
-      for (const stagedPath of getManagedMediaPaths(editingProduct)) {
+      for (const stagedPath of getManagedMediaPaths(current.editingProduct)) {
         if (!persistedPaths.has(stagedPath)) {
           void deleteUploadedMedia(stagedPath).catch((error) => {
             console.warn('Could not remove staged product image.', error);
@@ -162,7 +165,7 @@ export default function AdminProductsPage() {
       window.removeEventListener('keydown', closeOnEscape);
       previousFocus?.focus();
     };
-  }, [isModalOpen, saving, editingProduct, products, hasUnsavedChanges]);
+  }, [isModalOpen]);
 
   useEffect(() => {
     if (!isModalOpen || !hasUnsavedChanges) return;

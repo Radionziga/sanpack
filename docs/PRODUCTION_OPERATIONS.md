@@ -44,6 +44,27 @@ The sections below remain the authoritative repeatable preflight, rollout and ro
 future releases; completed checks must be repeated when project, runtime identity or infrastructure
 changes.
 
+### Stabilization verification deploy preflight (2026-09-08)
+
+The local release candidate after the Astra verification contains no Firestore/Storage schema
+migration, rules change, IAM change or new secret binding. Before moving traffic:
+
+1. Restore operator CLI authentication and confirm the current production revision and rollback
+   target. The last read-only verification still reported `sanpack-build-2026-09-04-002`; do not
+   assume it is current without checking App Hosting again.
+2. Verify the customer-history composite index from `firestore.indexes.json` is actually `READY` in
+   project `stamply-4df8a`. A tracked index declaration is not evidence of deployed state. If absent,
+   apply only the separately approved scoped index workflow and wait for `READY` before traffic.
+3. Reconfirm the existing owner grant, runtime IAM, public/server environment, secret bindings,
+   Storage rules and deny-all direct-client Firestore rules. This release does not require widening
+   any of them.
+4. After deploying the single reviewed checkpoint, smoke: published Product save; draft edit with
+   unchanged creation metadata; direct-page denial for a role without mutation capability; exact
+   checkout replay without a duplicate request/notification; order PDF plus a concurrent manager
+   update; mobile cart dock/contact action geometry.
+5. On failure, move traffic back to the previously recorded healthy App Hosting revision. Do not
+   weaken rules or run migrations as a workaround.
+
 > **Storage ownership decision 2026-09-04.** The owner confirmed that the
 > experimental `vetclinics` backend is discontinued. The default bucket
 > `stamply-4df8a.firebasestorage.app` is the SANPACK production Storage boundary;

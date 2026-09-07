@@ -22,6 +22,7 @@ import { getPublishedProductStructuralIssues } from '@/lib/catalog/publicProduct
 import { hasRequiredProductOrVariantAttribute } from '@/lib/catalog/productAttributeRequirements';
 import { isProductCategory, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
 import { canMutateAdminResource } from '@/lib/auth/adminCapabilities';
+import { withoutServerFields } from '@/lib/admin/mutationInputs';
 
 export const runtime = 'nodejs';
 
@@ -258,10 +259,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    const validatedData = validateAdminResourceData(
-      mutation.resource,
-      mutation.data ?? {}
-    );
+    // The mutation envelope owns identity. Audit metadata is always server-owned,
+    // even when a caller submits a hand-crafted payload instead of AdminRepository.
+    const clientData = withoutServerFields(mutation.data ?? {});
+    const validationInput = mutation.resource === 'products'
+      ? { ...clientData, id: mutation.id }
+      : clientData;
+    const validatedData = validateAdminResourceData(mutation.resource, validationInput);
     if (!validatedData.success) {
       return NextResponse.json(
         { error: 'Проверьте заполненные поля.', issues: validatedData.error.issues },
@@ -312,8 +316,21 @@ export async function POST(request: Request) {
       updatedAt: timestamp,
       updatedBy: authorization.admin.uid,
     };
-    if (mutation.resource === 'settings') await document.set(data, { merge: true });
-    else await document.set(data);
+    if (mutation.resource === 'settings') {
+      await document.set(data, { merge: true });
+    } else if (mutation.resource === 'products') {
+      await database.runTransaction(async (transaction) => {
+        const existing = await transaction.get(document);
+        const existingData = existing.data() as Partial<Product> | undefined;
+        transaction.set(document, {
+          ...data,
+          createdAt: existingData?.createdAt || timestamp,
+          createdBy: existingData?.createdBy || authorization.admin.uid,
+        });
+      });
+    } else {
+      await document.set(data);
+    }
     revalidateTag(mutation.resource, { expire: 0 });
     const saved = await document.get();
     return NextResponse.json({ id: saved.id, ...saved.data() });

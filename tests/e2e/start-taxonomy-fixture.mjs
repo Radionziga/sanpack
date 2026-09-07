@@ -37,9 +37,15 @@ ${seed}`
   })]`));
 // These replacements exist ONLY in the temporary fixture directory, never in the working tree.
 writeFileSync(path.join(fixture, 'lib/auth/server.ts'), `
+import { cookies } from 'next/headers';
 export const SESSION_COOKIE_NAME = '__session';
 export const SESSION_MAX_AGE_MS = 1;
-export async function getAdminSession() { return { uid: 'fixture', email: 'fixture@example.test', name: 'Fixture', role: 'super_admin' }; }
+export async function getAdminSession() {
+  const requestedRole = (await cookies()).get('fixture_admin_role')?.value;
+  const role = ['super_admin', 'content_manager', 'sales_manager', 'viewer'].includes(requestedRole || '')
+    ? requestedRole : 'super_admin';
+  return { uid: 'fixture', email: 'fixture@example.test', name: 'Fixture', role };
+}
 export const requireAdmin = getAdminSession;
 export async function verifyAdminToken() { return null; }
 `);

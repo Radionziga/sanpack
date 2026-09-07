@@ -1,6 +1,14 @@
 type ApiErrorBody = {
   error?: unknown;
+  code?: unknown;
 };
+
+export class ApiResponseError extends Error {
+  constructor(message: string, public readonly status: number, public readonly code?: string) {
+    super(message);
+    this.name = 'ApiResponseError';
+  }
+}
 
 function readErrorMessage(body: unknown) {
   if (!body || typeof body !== 'object') return '';
@@ -28,7 +36,10 @@ export async function parseJsonResponse<T>(
   }
 
   if (!response.ok) {
-    throw new Error(readErrorMessage(body) || fallbackMessage);
+    const code = body && typeof body === 'object' && typeof (body as ApiErrorBody).code === 'string'
+      ? (body as ApiErrorBody).code as string
+      : undefined;
+    throw new ApiResponseError(readErrorMessage(body) || fallbackMessage, response.status, code);
   }
 
   if (body === null) {

@@ -1,4 +1,3 @@
-import { logError } from '@/lib/observability/logger';
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth/server';
 import { getAdminDb } from '@/lib/firebase/admin';
@@ -23,25 +22,35 @@ export async function GET(
   const [snapshot, settings] = await Promise.all([reference.get(), getInternalDocumentSettings()]);
   if (!snapshot.exists) return NextResponse.json({ error: 'Заказ не найден.' }, { status: 404 });
   const order = { id: snapshot.id, ...snapshot.data() } as RequestOrder;
+  const generatedRevision = order.revision || 1;
   const buffer = await createInternalDocument(order, settings);
   const now = new Date().toISOString();
-  await reference.update({
-    auditTrail: [...(order.auditTrail || []), {
+  const auditEntry = {
       id: crypto.randomUUID(),
       action: 'document_generated',
       actorUid: admin.uid,
       actorLabel: admin.email,
       createdAt: now,
       summary: 'Сформирована внутренняя накладная PDF.',
-      revision: order.revision || 1,
-    }],
-    documentGeneratedAt: now,
-  }).catch((error) => logError('Document audit update failed.', error));
+      revision: generatedRevision,
+  } as const;
+  // PDF rendering may be slow. Append the audit entry in a short transaction
+  // afterwards so a manager update made during rendering is never overwritten.
+  await getAdminDb().runTransaction(async (transaction) => {
+    const currentSnapshot = await transaction.get(reference);
+    if (!currentSnapshot.exists) return;
+    const current = currentSnapshot.data() as Partial<RequestOrder>;
+    transaction.update(reference, {
+      auditTrail: [...(current.auditTrail || []), auditEntry],
+      documentGeneratedAt: now,
+      documentGeneratedRevision: generatedRevision,
+    });
+  });
 
   return new Response(new Uint8Array(buffer), {
     headers: {
       'content-type': 'application/pdf',
-      'content-disposition': `attachment; filename="internal-${order.requestNumber}-r${order.revision || 1}.pdf"`,
+      'content-disposition': `attachment; filename="internal-${order.requestNumber}-r${generatedRevision}.pdf"`,
       'cache-control': 'private, no-store',
     },
   });

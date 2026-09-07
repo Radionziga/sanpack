@@ -2,7 +2,7 @@ import type { Attribute, Banner, Category, ClientPartner, Product, SiteSettings 
 
 const SERVER_FIELDS = new Set(['id', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy']);
 
-function withoutServerFields<T extends object>(value: T): Partial<T> {
+export function withoutServerFields<T extends object>(value: T): Partial<T> {
   return Object.fromEntries(
     Object.entries(value).filter(([key]) => !SERVER_FIELDS.has(key)),
   ) as Partial<T>;

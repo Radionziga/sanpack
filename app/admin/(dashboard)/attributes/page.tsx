@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { Attribute, Category, AttributeOption, AttributeType } from '@/types';
 import { Button, CustomInput, Badge, CustomSelect } from '@/components/ui';
@@ -80,6 +80,8 @@ export default function AdminAttributesPage() {
   const [editorBaseline, setEditorBaseline] = useState('');
   const editorState = JSON.stringify({ key, titleRu, titleUz, titleEn, titleZh, type, unit, required, filterable, cardVisible, productVisible, selectedCategoryIds, sortOrder, options });
   const hasUnsavedChanges = isModalOpen && editorBaseline !== editorState;
+  const dialogStateRef = useRef({ hasUnsavedChanges });
+  dialogStateRef.current = { hasUnsavedChanges };
   useUnsavedNavigationGuard(hasUnsavedChanges, 'Перейти на другую страницу и потерять несохранённые изменения характеристики?');
   const closeEditor = () => {
     if (hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
@@ -96,7 +98,7 @@ export default function AdminAttributesPage() {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
+      if (dialogStateRef.current.hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
       setIsModalOpen(false);
     };
     document.body.style.overflow = 'hidden';
@@ -108,7 +110,7 @@ export default function AdminAttributesPage() {
       window.removeEventListener('keydown', closeOnEscape);
       previousFocus?.focus();
     };
-  }, [isModalOpen, hasUnsavedChanges]);
+  }, [isModalOpen]);
 
   useEffect(() => {
     if (!hasUnsavedChanges) return;

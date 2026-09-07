@@ -25,11 +25,17 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { formatMoney } from '@/lib/catalog/productPresentation';
-import { PublicRepository } from '@/lib/repositories/publicRepository';
+import { PublicRepository, type CheckoutBusinessInput } from '@/lib/repositories/publicRepository';
 import type { Language } from '@/types';
 import { readCustomerProfileDraft } from '@/lib/customer/profileDraft';
 import { DeliveryDatePicker } from '@/components/checkout/DeliveryDatePicker';
 import { reconcileCartItems } from '@/lib/orders/cartReconciliation';
+import { ApiResponseError } from '@/lib/http/parseJsonResponse';
+import {
+  checkoutIntentsMatch,
+  readPendingCheckoutIntent,
+  type PendingCheckoutIntent,
+} from '@/lib/orders/checkoutIntent';
 
 interface CustomerStatus {
   authenticated: boolean;
@@ -45,7 +51,7 @@ interface FieldErrors {
 }
 
 const CHECKOUT_DRAFT_KEY = 'sanpack_checkout_draft_v1';
-const CHECKOUT_IDEMPOTENCY_KEY = 'sanpack_checkout_intent_v1';
+const CHECKOUT_IDEMPOTENCY_KEY = 'sanpack_checkout_intent_v2';
 const DELIVERY_WINDOWS = ['09:00-13:00', '13:00-17:00', '17:00-21:00'] as const;
 
 const checkoutCopy = {
@@ -96,6 +102,11 @@ const checkoutCopy = {
     submitting: 'Отправляем заявку…',
     genericError: 'Не удалось отправить заявку. Проверьте соединение и попробуйте ещё раз.',
     rateError: 'Слишком много попыток. Подождите несколько минут и попробуйте снова.',
+    pendingIntentError: 'Предыдущая отправка не получила однозначного ответа, а данные формы изменились. Сначала повторите прежнюю отправку или явно начните новую.',
+    retryPendingIntent: 'Повторить прежнюю отправку',
+    startNewIntent: 'Начать новую заявку',
+    newIntentReady: 'Новая попытка подготовлена. Проверьте данные и снова нажмите «Отправить заявку».',
+    intentServerConflict: 'Сервер не может безопасно сопоставить эту повторную отправку. Начните новую заявку либо восстановите прежний аккаунт и данные.',
     successTitle: 'Заявка принята',
     successText: 'Менеджер свяжется с вами по указанному номеру телефона.',
     requestNumber: 'Номер заявки',
@@ -152,6 +163,11 @@ const checkoutCopy = {
     submitting: 'Ariza yuborilmoqda…',
     genericError: 'Arizani yuborib bo‘lmadi. Internet aloqasini tekshirib, qayta urinib ko‘ring.',
     rateError: 'Urinishlar juda ko‘p. Bir necha daqiqadan keyin qayta urinib ko‘ring.',
+    pendingIntentError: 'Oldingi yuborish bo‘yicha aniq javob olinmadi, lekin forma o‘zgardi. Avval oldingi yuborishni takrorlang yoki yangi arizani aniq boshlang.',
+    retryPendingIntent: 'Oldingi yuborishni takrorlash',
+    startNewIntent: 'Yangi ariza boshlash',
+    newIntentReady: 'Yangi urinish tayyor. Ma’lumotlarni tekshirib, yana “Ariza yuborish” tugmasini bosing.',
+    intentServerConflict: 'Server bu takroriy yuborishni xavfsiz aniqlay olmadi. Yangi ariza boshlang yoki oldingi akkaunt va ma’lumotlarni tiklang.',
     successTitle: 'Ariza qabul qilindi',
     successText: 'Menejer ko‘rsatilgan telefon raqami orqali siz bilan bog‘lanadi.',
     requestNumber: 'Ariza raqami',
@@ -208,6 +224,11 @@ const checkoutCopy = {
     submitting: 'Submitting your request…',
     genericError: 'We could not submit the request. Check your connection and try again.',
     rateError: 'There have been too many attempts. Wait a few minutes and try again.',
+    pendingIntentError: 'The previous submission has no definite result, but the form has changed. Retry the exact previous submission or explicitly start a new request.',
+    retryPendingIntent: 'Retry previous submission',
+    startNewIntent: 'Start a new request',
+    newIntentReady: 'A new attempt is ready. Review the details and press “Submit request” again.',
+    intentServerConflict: 'The server cannot safely match this retry. Start a new request or restore the previous account and details.',
     successTitle: 'Request received',
     successText: 'A manager will contact you using the phone number provided.',
     requestNumber: 'Request number',
@@ -264,6 +285,11 @@ const checkoutCopy = {
     submitting: '正在提交申请…',
     genericError: '申请提交失败，请检查网络连接后重试。',
     rateError: '尝试次数过多，请等待几分钟后重试。',
+    pendingIntentError: '上次提交尚无明确结果，但表单内容已更改。请先重试原提交，或明确开始新的申请。',
+    retryPendingIntent: '重试原提交',
+    startNewIntent: '开始新申请',
+    newIntentReady: '新的提交已准备好。请检查信息并再次点击“提交申请”。',
+    intentServerConflict: '服务器无法安全匹配此次重试。请开始新申请，或恢复原账号和原数据。',
     successTitle: '申请已收到',
     successText: '经理将通过您提供的电话号码与您联系。',
     requestNumber: '申请编号',
@@ -277,6 +303,9 @@ const checkoutCopy = {
 
 function checkoutErrorMessage(error: unknown, language: Language) {
   const copy = checkoutCopy[language];
+  if (error instanceof ApiResponseError && error.code === 'IDEMPOTENCY_CONFLICT') {
+    return copy.intentServerConflict;
+  }
   if (error instanceof Error && error.message.startsWith('Слишком много попыток')) {
     return copy.rateError;
   }
@@ -310,6 +339,7 @@ export default function RequestPage() {
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const [submittedRequestNumber, setSubmittedRequestNumber] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pendingIntentConflict, setPendingIntentConflict] = useState<PendingCheckoutIntent | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -428,25 +458,9 @@ export default function RequestPage() {
 
     setIsSubmitting(true);
     setSubmitError(null);
+    setPendingIntentConflict(null);
     try {
-      const reconciliation = reconcileCartItems(items, await PublicRepository.getProducts());
-      if (reconciliation.issues.length > 0) {
-        replaceItems(reconciliation.items);
-        setSubmitError(language === 'ru'
-          ? 'Каталог изменился: мы обновили цены, количество или доступность. Проверьте корзину и отправьте заявку ещё раз.'
-          : language === 'uz'
-            ? 'Katalog yangilandi: narx, miqdor yoki mavjudlik o‘zgardi. Savatni tekshirib, yana yuboring.'
-            : language === 'zh'
-              ? '商品目录已更新：价格、数量或库存发生变化。请检查购物车后再次提交。'
-              : 'The catalog changed: prices, quantities, or availability were updated. Review the cart and submit again.');
-        return;
-      }
-      let idempotencyKey = window.sessionStorage.getItem(CHECKOUT_IDEMPOTENCY_KEY);
-      if (!idempotencyKey) {
-        idempotencyKey = crypto.randomUUID();
-        window.sessionStorage.setItem(CHECKOUT_IDEMPOTENCY_KEY, idempotencyKey);
-      }
-      const created = await PublicRepository.createRequest({
+      const input: CheckoutBusinessInput = {
         contactName: contactName.trim(),
         phone: phone.trim(),
         deliveryAddress: deliveryAddress.trim(),
@@ -459,17 +473,92 @@ export default function RequestPage() {
           quantity: item.quantity,
           comment: item.comment,
         })),
+      };
+      const currentTransport = () => ({
+        ...input,
         telegramInitData: window.Telegram?.WebApp?.initData || undefined,
-      }, idempotencyKey);
+      });
+      const pending = readPendingCheckoutIntent(window.sessionStorage, CHECKOUT_IDEMPOTENCY_KEY);
+      if (pending) {
+        if (!checkoutIntentsMatch(pending.input, input)) {
+          setPendingIntentConflict(pending);
+          setSubmitError(copy.pendingIntentError);
+          return;
+        }
+        const replayed = await PublicRepository.createRequest({
+          ...pending.input,
+          telegramInitData: window.Telegram?.WebApp?.initData || undefined,
+        }, pending.key);
+        window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+        window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
+        setSubmittedRequestNumber(replayed.requestNumber);
+        clearCart();
+        return;
+      }
+
+      const reconciliation = reconcileCartItems(items, await PublicRepository.getProducts());
+      if (reconciliation.issues.length > 0) {
+        replaceItems(reconciliation.items);
+        setSubmitError(language === 'ru'
+          ? 'Каталог изменился: мы обновили цены, количество или доступность. Проверьте корзину и отправьте заявку ещё раз.'
+          : language === 'uz'
+            ? 'Katalog yangilandi: narx, miqdor yoki mavjudlik o‘zgardi. Savatni tekshirib, yana yuboring.'
+            : language === 'zh'
+              ? '商品目录已更新：价格、数量或库存发生变化。请检查购物车后再次提交。'
+              : 'The catalog changed: prices, quantities, or availability were updated. Review the cart and submit again.');
+        return;
+      }
+      const intent = { key: crypto.randomUUID(), input };
+      window.sessionStorage.setItem(CHECKOUT_IDEMPOTENCY_KEY, JSON.stringify(intent));
+      const created = await PublicRepository.createRequest(currentTransport(), intent.key);
       window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
       window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
       setSubmittedRequestNumber(created.requestNumber);
       clearCart();
     } catch (error) {
+      if (error instanceof ApiResponseError && error.code === 'IDEMPOTENCY_CONFLICT') {
+        setPendingIntentConflict(readPendingCheckoutIntent(window.sessionStorage, CHECKOUT_IDEMPOTENCY_KEY));
+      } else if (error instanceof ApiResponseError && error.status >= 400 && error.status < 500 && error.status !== 429) {
+        // A definite rejection cannot have created this intent. A transport or
+        // server failure remains pending because its outcome is unknown.
+        window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
+      }
       setSubmitError(checkoutErrorMessage(error, language));
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function retryPendingIntent() {
+    const pending = pendingIntentConflict
+      || readPendingCheckoutIntent(window.sessionStorage, CHECKOUT_IDEMPOTENCY_KEY);
+    if (!pending || isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const replayed = await PublicRepository.createRequest({
+        ...pending.input,
+        telegramInitData: window.Telegram?.WebApp?.initData || undefined,
+      }, pending.key);
+      window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+      window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
+      setPendingIntentConflict(null);
+      setSubmittedRequestNumber(replayed.requestNumber);
+      clearCart();
+    } catch (error) {
+      if (error instanceof ApiResponseError && error.code === 'IDEMPOTENCY_CONFLICT') {
+        setPendingIntentConflict(pending);
+      }
+      setSubmitError(checkoutErrorMessage(error, language));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function startNewIntent() {
+    window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
+    setPendingIntentConflict(null);
+    setSubmitError(copy.newIntentReady);
   }
 
   const formattedTotal = totalAmount > 0
@@ -628,7 +717,13 @@ export default function RequestPage() {
                   </div>
 
                   {submitError ? (
-                    <p className="sp-alert sp-alert-danger mt-4 text-xs leading-5" role="alert">{submitError}</p>
+                    <div className="sp-alert sp-alert-danger mt-4 text-xs leading-5" role="alert">
+                      <p>{submitError}</p>
+                      {pendingIntentConflict ? <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" disabled={isSubmitting} onClick={() => void retryPendingIntent()} className="admin-button-secondary min-h-10">{copy.retryPendingIntent}</button>
+                        <button type="button" disabled={isSubmitting} onClick={startNewIntent} className="admin-button-secondary min-h-10">{copy.startNewIntent}</button>
+                      </div> : null}
+                    </div>
                   ) : null}
 
                   <div className="mt-5 bg-[var(--sp-surface-inset)] p-3 rounded-[var(--sp-radius-control-inner)]">

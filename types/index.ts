@@ -319,6 +319,9 @@ export interface RequestOrder {
   total?: number;
   revision?: number;
   auditTrail?: OrderAuditEntry[];
+  documentGeneratedAt?: string;
+  /** Revision whose snapshot was rendered into the most recent internal PDF. */
+  documentGeneratedRevision?: number;
   createdAt: string;
   updatedAt?: string;
 }

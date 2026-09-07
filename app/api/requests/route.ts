@@ -23,6 +23,17 @@ export const runtime = 'nodejs';
 
 class IdempotencyConflictError extends Error {}
 
+type StoredIntent = {
+  intentHash?: string;
+  payloadHash?: string;
+  customerIdentity?: string;
+  requestId?: string;
+};
+
+function digest(value: unknown) {
+  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
 export async function GET() {
   const customer = await getCustomerSession();
   if (!customer) {
@@ -58,14 +69,6 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const rateLimit = await checkDistributedRateLimit(request, 'order-request', 5, 10 * 60 * 1000);
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: 'Слишком много попыток. Попробуйте позже.' },
-      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
-    );
-  }
-
   try {
     const customer = await getCustomerSession();
     let telegramUser: RequestOrder['telegramUser'] = customer ? omitUndefinedFields({
@@ -92,7 +95,70 @@ export async function POST(request: Request) {
     }
 
     const phoneNormalized = normalizeUzbekPhone(parsed.data.phone);
-    const items = await createOrderSnapshots(parsed.data.items);
+    const customerIdentity = customer?.sub
+      || (telegramUser ? `telegram:${telegramUser.id}` : `phone:${phoneNormalized}`);
+    const { telegramInitData: _transportIdentity, ...businessInput } = parsed.data;
+    const intentHash = digest(businessInput);
+    // Compatibility with intents written before the stable business-intent hash.
+    const legacyPayloadHash = digest({
+      customer: customer?.sub || telegramUser?.id || phoneNormalized,
+      input: parsed.data,
+    });
+    const keyHash = createHash('sha256').update(idempotencyKey).digest('hex');
+    const idempotencyReference = getAdminDb().collection('requestIdempotency').doc(keyHash);
+    const resolveStoredIntent = async (
+      priorData: StoredIntent,
+      readOrder: (requestId: string) => Promise<{ id: string; exists: boolean; data: () => unknown }>,
+    ) => {
+      if (!priorData.requestId) throw new IdempotencyConflictError();
+      const priorOrder = await readOrder(priorData.requestId);
+      if (!priorOrder.exists) throw new IdempotencyConflictError();
+      const order = { id: priorOrder.id, ...(priorOrder.data() as Record<string, unknown>) } as RequestOrder;
+      const storedIdentity = priorData.customerIdentity || order.customerUid;
+      const storedHash = priorData.intentHash || priorData.payloadHash;
+      if (storedIdentity !== customerIdentity
+        || !storedHash
+        || (storedHash !== intentHash && storedHash !== legacyPayloadHash)) {
+        throw new IdempotencyConflictError();
+      }
+      return order;
+    };
+
+    // Replay is resolved before consulting mutable Product state. A previously
+    // accepted intent remains replayable even if its Product is later hidden.
+    const priorIntent = await idempotencyReference.get();
+    if (priorIntent.exists) {
+      const priorOrder = await resolveStoredIntent(
+        priorIntent.data() as StoredIntent,
+        (requestId) => getAdminDb().collection('requests').doc(requestId).get(),
+      );
+      return NextResponse.json(projectCustomerOrder(priorOrder));
+    }
+
+    const rateLimit = await checkDistributedRateLimit(request, 'order-request', 5, 10 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Слишком много попыток. Попробуйте позже.' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
+      );
+    }
+
+    let items;
+    try {
+      items = await createOrderSnapshots(parsed.data.items);
+    } catch (catalogError) {
+      // A concurrent identical request may have committed after our first
+      // idempotency read. Prefer its receipt over a mutable-catalog error.
+      const concurrentIntent = await idempotencyReference.get();
+      if (concurrentIntent.exists) {
+        const concurrentOrder = await resolveStoredIntent(
+          concurrentIntent.data() as StoredIntent,
+          (requestId) => getAdminDb().collection('requests').doc(requestId).get(),
+        );
+        return NextResponse.json(projectCustomerOrder(concurrentOrder));
+      }
+      throw catalogError;
+    }
     const totals = calculateOrderTotals(items);
     const document = getAdminDb().collection('requests').doc();
     const now = new Date().toISOString();
@@ -108,7 +174,7 @@ export async function POST(request: Request) {
       deliveryDate: parsed.data.deliveryDate,
       deliveryWindow: parsed.data.deliveryWindow,
       notes: parsed.data.notes,
-      customerUid: customer?.sub || (telegramUser ? `telegram:${telegramUser.id}` : `phone:${phoneNormalized}`),
+      customerUid: customerIdentity,
       source: telegramUser ? 'telegram_mini_app' : 'web',
       ...(telegramUser ? { telegramUser } : {}),
       items,
@@ -129,30 +195,26 @@ export async function POST(request: Request) {
       updatedAt: now,
     };
 
-    const keyHash = createHash('sha256').update(idempotencyKey).digest('hex');
-    const payloadHash = createHash('sha256').update(JSON.stringify({
-      customer: customer?.sub || telegramUser?.id || phoneNormalized,
-      input: parsed.data,
-    })).digest('hex');
-    const idempotencyReference = getAdminDb().collection('requestIdempotency').doc(keyHash);
     const persisted = await getAdminDb().runTransaction(async (transaction) => {
       const prior = await transaction.get(idempotencyReference);
       if (prior.exists) {
-        const priorData = prior.data() as { payloadHash?: string; requestId?: string };
-        if (priorData.payloadHash !== payloadHash || !priorData.requestId) throw new IdempotencyConflictError();
-        const priorOrder = await transaction.get(getAdminDb().collection('requests').doc(priorData.requestId));
-        if (!priorOrder.exists) throw new IdempotencyConflictError();
-        return { order: { id: priorOrder.id, ...priorOrder.data() } as RequestOrder, created: false };
+        const priorData = prior.data() as StoredIntent;
+        const priorOrder = await resolveStoredIntent(
+          priorData,
+          (requestId) => transaction.get(getAdminDb().collection('requests').doc(requestId)),
+        );
+        return { order: priorOrder, created: false };
       }
       transaction.create(document, { ...order, serverCreatedAt: FieldValue.serverTimestamp() });
       transaction.create(idempotencyReference, {
-        payloadHash,
+        intentHash,
+        customerIdentity,
         requestId: document.id,
         createdAt: FieldValue.serverTimestamp(),
       });
       return { order, created: true };
     });
-    if (!persisted.created) return NextResponse.json(persisted.order);
+    if (!persisted.created) return NextResponse.json(projectCustomerOrder(persisted.order));
     try {
       const notification = await notifyAboutNewOrder(order);
       await document.update({
@@ -168,10 +230,13 @@ export async function POST(request: Request) {
         },
       }).catch(() => undefined);
     }
-    return NextResponse.json(order, { status: 201 });
+    return NextResponse.json(projectCustomerOrder(order), { status: 201 });
   } catch (error) {
     if (error instanceof IdempotencyConflictError) {
-      return NextResponse.json({ error: 'Эта попытка отправки уже использована для другой заявки.' }, { status: 409 });
+      return NextResponse.json({
+        error: 'Эта попытка отправки уже связана с другой заявкой или покупателем.',
+        code: 'IDEMPOTENCY_CONFLICT',
+      }, { status: 409 });
     }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Проверьте заполненные поля.' }, { status: 400 });

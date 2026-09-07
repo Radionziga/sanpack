@@ -4,7 +4,7 @@ import { getProductOrderUnitPrice, getProductPriceMode } from '@/lib/commerce/pr
 
 export interface CartReconciliationIssue {
   productId: string;
-  kind: 'unavailable' | 'variant_removed' | 'quantity_changed' | 'price_changed';
+  kind: 'unavailable' | 'variant_required' | 'variant_removed' | 'informational' | 'quantity_changed' | 'price_changed';
 }
 
 export function reconcileCartItems(items: RequestItem[], products: Product[]) {
@@ -16,11 +16,19 @@ export function reconcileCartItems(items: RequestItem[], products: Product[]) {
       issues.push({ productId: item.productId, kind: 'unavailable' });
       continue;
     }
+    if (product.variants?.length && !item.variantId) {
+      issues.push({ productId: item.productId, kind: 'variant_required' });
+      continue;
+    }
     const variant = item.variantId
       ? product.variants?.find((candidate) => candidate.id === item.variantId)
       : undefined;
     if (item.variantId && !variant) {
       issues.push({ productId: item.productId, kind: 'variant_removed' });
+      continue;
+    }
+    if (getProductPriceMode(product, variant) === 'informational') {
+      issues.push({ productId: item.productId, kind: 'informational' });
       continue;
     }
     const quantity = normalizeOrderQuantity(product, item.quantity, variant);

@@ -1,5 +1,30 @@
 import { expect, test } from '@playwright/test';
 
+const checkoutItem = {
+  productId: 'fixture-grocery', productTitleRu: 'Fixture grocery', productTitleUz: 'Fixture grocery',
+  productSlug: 'fixture-grocery', sku: 'FIXTURE-grocery', quantity: 1, unit: 'шт', price: 100,
+};
+
+const checkoutDraft = {
+  contactName: 'Reload Customer', phone: '+998 90 123 45 67', deliveryAddress: 'Tashkent fixture address',
+  deliveryDate: '2026-09-10', deliveryWindow: '09:00-13:00', notes: '',
+};
+
+async function seedPendingCheckout(page: import('@playwright/test').Page, pendingName = checkoutDraft.contactName) {
+  await page.addInitScript(({ item, draft, name }) => {
+    localStorage.setItem('sanpack_request_cart_v1', JSON.stringify([item]));
+    sessionStorage.setItem('sanpack_checkout_draft_v1', JSON.stringify(draft));
+    sessionStorage.setItem('sanpack_checkout_intent_v2', JSON.stringify({
+      key: 'checkout-intent-reload-0001',
+      input: {
+        contactName: name, phone: draft.phone, deliveryAddress: draft.deliveryAddress,
+        deliveryDate: draft.deliveryDate, deliveryWindow: draft.deliveryWindow,
+        items: [{ productId: item.productId, quantity: item.quantity }],
+      },
+    }));
+  }, { item: checkoutItem, draft: checkoutDraft, name: pendingName });
+}
+
 test.describe('production-like hard entries', () => {
   for (const route of ['/ru', '/ru/catalog', '/ru/search?q=Fixture', '/ru/favorites', '/ru/request', '/ru/profile']) {
     test(`hard GET ${route} renders the real application`, async ({ page }) => {
@@ -42,6 +67,60 @@ test.describe('production-like hard entries', () => {
     await page.goto('/ru/product/fixture-grocery', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Fixture grocery', level: 1 }).last()).toBeVisible();
     await expect(page.getByRole('button', { name: /Связаться/ })).toHaveCount(0);
+  });
+
+  test('mobile cart dock owns the fixed-action area on Category and checkout', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/ru/product/fixture-grocery', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'В корзину', exact: true }).click();
+    for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 430, height: 932 }]) {
+      await page.setViewportSize(viewport);
+      await page.goto('/ru/catalog/grocery', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('link', { name: 'Открыть корзину' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Связаться' })).toHaveCount(0);
+    }
+    await page.goto('/ru/request', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: 'Связаться' })).toHaveCount(0);
+  });
+
+  test('checkout reload retries the exact pending intent without catalog revalidation', async ({ page }) => {
+    await seedPendingCheckout(page);
+    let submittedBody: unknown;
+    let submittedKey = '';
+    await page.route('**/api/requests', async (route) => {
+      const request = route.request();
+      if (request.method() !== 'POST') return route.continue();
+      submittedBody = request.postDataJSON();
+      submittedKey = request.headers()['idempotency-key'];
+      await route.fulfill({ status: 200, json: {
+        id: 'existing-order', requestNumber: 'ORD-REPLAY', contactName: checkoutDraft.contactName,
+        phone: checkoutDraft.phone, deliveryAddress: checkoutDraft.deliveryAddress,
+        deliveryDate: checkoutDraft.deliveryDate, deliveryWindow: checkoutDraft.deliveryWindow,
+        status: 'new', currency: 'UZS', subtotal: 100, adjustment: 0, total: 100,
+        createdAt: '2026-09-08T00:00:00.000Z', items: [checkoutItem],
+      } });
+    });
+    await page.goto('/ru/request', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Отправить заявку', exact: true }).first().click();
+    await expect(page.getByText('ORD-REPLAY')).toBeVisible();
+    expect(submittedKey).toBe('checkout-intent-reload-0001');
+    expect(submittedBody).toMatchObject({ contactName: checkoutDraft.contactName, items: [{ productId: 'fixture-grocery', quantity: 1 }] });
+  });
+
+  test('checkout does not reuse a pending key for a changed form without explicit recovery', async ({ page }) => {
+    await seedPendingCheckout(page, 'Original Customer');
+    let submissions = 0;
+    await page.route('**/api/requests', (route) => { submissions += 1; return route.abort(); });
+    await page.goto('/ru/request', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Отправить заявку', exact: true }).first().click();
+    const recoveryAlert = page.getByRole('alert').filter({ hasText: 'Предыдущая отправка не получила однозначного ответа' });
+    await expect(recoveryAlert).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Повторить прежнюю отправку' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Начать новую заявку' })).toBeVisible();
+    expect(submissions).toBe(0);
+    await page.getByRole('button', { name: 'Начать новую заявку' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Новая попытка подготовлена' })).toBeVisible();
+    expect(await page.evaluate(() => sessionStorage.getItem('sanpack_checkout_intent_v2'))).toBeNull();
   });
 
   test('global storefront links resolve to real routes', async ({ page, request }) => {
@@ -89,7 +168,7 @@ test.describe('production-like hard entries', () => {
     }
   });
 
-  test('Product editor traps focus, restores focus and confirms dirty close', async ({ page }) => {
+  test('Product editor keeps key-by-key typing focus, allows section links, restores focus and confirms dirty close', async ({ page }) => {
     await page.goto('/admin/products');
     const trigger = page.getByRole('button', { name: 'Добавить товар', exact: true });
     await trigger.click();
@@ -101,12 +180,52 @@ test.describe('production-like hard entries', () => {
     await expect(trigger).toBeFocused();
 
     await trigger.click();
-    await dialog.getByLabel('Название (RU) *').fill('Несохранённый товар');
-    page.once('dialog', (nativeDialog) => nativeDialog.dismiss());
-    await close.click();
+    const title = dialog.getByLabel('Название (RU) *');
+    await title.focus();
+    for (const key of ['KeyA', 'KeyB', 'KeyC']) await page.keyboard.press(key);
+    await expect(title).toHaveValue('abc');
+    await expect(title).toBeFocused();
+
+    let discardPrompts = 0;
+    page.on('dialog', async (nativeDialog) => {
+      discardPrompts += 1;
+      await nativeDialog.dismiss();
+    });
+    await dialog.getByRole('link', { name: 'SEO', exact: true }).click();
+    await expect(page).toHaveURL(/#product-seo$/);
+    expect(discardPrompts).toBe(0);
+
+    await page.keyboard.press('Escape');
     await expect(dialog).toBeVisible();
+    expect(discardPrompts).toBe(1);
+    page.removeAllListeners('dialog');
     page.once('dialog', (nativeDialog) => nativeDialog.accept());
     await close.click();
     await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
+  test('Attribute editor initial focus does not restart while typing', async ({ page }) => {
+    await page.goto('/admin/attributes');
+    const trigger = page.getByRole('button', { name: 'Создать атрибут' }).first();
+    await trigger.click();
+    const dialog = page.getByRole('dialog', { name: 'Новая характеристика' });
+    const close = dialog.getByRole('button', { name: 'Закрыть' });
+    await expect(close).toBeFocused();
+    const title = dialog.getByLabel('Название RU').first();
+    await title.focus();
+    for (const key of ['KeyA', 'KeyB', 'KeyC']) await page.keyboard.press(key);
+    await expect(title).toHaveValue('abc');
+    await expect(title).toBeFocused();
+  });
+
+  test('direct Admin URLs render capability denial instead of editable controls', async ({ context, page }) => {
+    await context.addCookies([{
+      name: 'fixture_admin_role', value: 'sales_manager',
+      domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax',
+    }]);
+    await page.goto('/admin/products');
+    await expect(page.getByRole('heading', { name: 'Раздел недоступен' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Добавить товар', exact: true })).toHaveCount(0);
   });
 });

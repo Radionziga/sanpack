@@ -21,7 +21,8 @@ export function canMutateAdminResource(role: UserRole, resource?: string) {
 }
 
 export function canAccessAdminPath(role: UserRole, path: string) {
-  if (role === 'super_admin' || path === '/admin') return true;
+  if (role === 'super_admin') return true;
+  if (path === '/admin') return false;
   if (path.startsWith('/admin/requests') || path.startsWith('/admin/bag-designer')) {
     return role === 'sales_manager';
   }
@@ -29,4 +30,10 @@ export function canAccessAdminPath(role: UserRole, path: string) {
     || path.startsWith('/admin/integrations') || path.startsWith('/admin/document-settings')
     || path.startsWith('/admin/services')) return false;
   return role === 'content_manager';
+}
+
+export function getAdminLandingPath(role: UserRole) {
+  if (role === 'content_manager') return '/admin/products';
+  if (role === 'sales_manager') return '/admin/requests';
+  return '/admin';
 }

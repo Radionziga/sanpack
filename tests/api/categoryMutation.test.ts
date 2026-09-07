@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { taxonomyCategories, createAttribute } from '@/tests/fixtures/categories';
 import { createProduct, createVariant } from '@/tests/fixtures/products';
+import { AdminRepository } from '@/lib/repositories/adminRepository';
 
 const { store, writes } = vi.hoisted(() => ({ store: new Map<string, Record<string, unknown>>(), writes: vi.fn() }));
 vi.mock('@/lib/auth/server', () => ({ getAdminSession: async () => ({ uid: 'test-admin', role: 'super_admin' }) }));
@@ -40,6 +41,10 @@ function save(resource: string, id: string, data: unknown) {
 beforeEach(() => {
   store.clear(); writes.mockClear();
   taxonomyCategories.forEach((category) => store.set(`categories/${category.id}`, category as unknown as Record<string, unknown>));
+  vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+    const source = input instanceof Request ? input : new Request(new URL(String(input), 'http://localhost'), init);
+    return POST(source);
+  });
 });
 
 describe('admin category API taxonomy validation', () => {
@@ -69,6 +74,63 @@ describe('admin category API taxonomy validation', () => {
 });
 
 describe('admin Product assignment / inherited requirements', () => {
+  it('saves a published Product through the real repository DTO and handler', async () => {
+    const saved = await AdminRepository.saveProduct(createProduct({ id: 'published-through-repository', categoryId: 'grocery' }));
+    expect(saved).toMatchObject({ id: 'published-through-repository', status: 'published' });
+    expect(store.get('products/published-through-repository')).toMatchObject({
+      id: 'published-through-repository',
+      createdBy: 'test-admin',
+      updatedBy: 'test-admin',
+    });
+  });
+
+  it('preserves creation metadata across response → edit → save and rejects client spoofing', async () => {
+    store.set('products/existing-draft', createProduct({
+      id: 'existing-draft', categoryId: 'grocery', status: 'draft', createdAt: '2025-01-01T00:00:00.000Z', createdBy: 'original-owner',
+    }) as unknown as Record<string, unknown>);
+    const response = await AdminRepository.updateProduct('existing-draft', {
+      ...createProduct({ id: 'spoofed-id', categoryId: 'grocery', status: 'draft' }),
+      titleRu: 'Первое редактирование',
+      createdAt: '2099-01-01T00:00:00.000Z',
+      createdBy: 'attacker',
+      updatedBy: 'attacker',
+    });
+    expect(response).toMatchObject({
+      id: 'existing-draft', titleRu: 'Первое редактирование',
+      createdAt: '2025-01-01T00:00:00.000Z', createdBy: 'original-owner', updatedBy: 'test-admin',
+    });
+
+    const savedAgain = await AdminRepository.saveProduct({ ...response, titleRu: 'Второе редактирование' });
+    expect(savedAgain).toMatchObject({
+      id: 'existing-draft', titleRu: 'Второе редактирование',
+      createdAt: '2025-01-01T00:00:00.000Z', createdBy: 'original-owner', updatedBy: 'test-admin',
+    });
+  });
+
+  it('creates server-owned creation metadata for a new draft', async () => {
+    const saved = await AdminRepository.saveProduct(createProduct({
+      id: 'new-draft', categoryId: 'grocery', status: 'draft', createdAt: '2099-01-01T00:00:00.000Z', createdBy: 'attacker',
+    }));
+    expect(saved.id).toBe('new-draft');
+    expect(saved.createdBy).toBe('test-admin');
+    expect(saved.createdAt).not.toBe('2099-01-01T00:00:00.000Z');
+  });
+
+  it('uses the envelope identity and ignores audit fields in a hand-crafted payload', async () => {
+    const product = createProduct({ id: 'payload-id', categoryId: 'grocery', status: 'draft' });
+    const response = await save('products', 'trusted-envelope-id', {
+      ...product,
+      id: 'payload-id',
+      createdAt: '2099-01-01T00:00:00.000Z',
+      createdBy: 'attacker',
+      updatedBy: 'attacker',
+    });
+    expect(response.status).toBe(200);
+    expect(store.get('products/trusted-envelope-id')).toMatchObject({
+      id: 'trusted-envelope-id', createdBy: 'test-admin', updatedBy: 'test-admin',
+    });
+    expect(store.has('products/payload-id')).toBe(false);
+  });
   it.each(['grocery', 'grains'])('accepts existing categoryId at %s without a path field', async (categoryId) => {
     const product = createProduct({ id: 'new-product', categoryId, categorySlug: 'stale-slug' });
     const response = await save('products', product.id, product);

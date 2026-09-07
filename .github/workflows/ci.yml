@@ -44,3 +44,7 @@ jobs:
         env:
           CI: 'true'
           SANPACK_USE_SEED_DATA: 'true'
+      - run: npm run test:e2e:taxonomy
+        env:
+          CI: 'true'
+          SANPACK_USE_SEED_DATA: 'true'

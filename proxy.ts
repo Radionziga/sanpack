@@ -15,9 +15,16 @@ export function proxy(request: NextRequest) {
     }
     return NextResponse.next();
   }
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const requestHeaders = new Headers(request.headers);
+    // Always overwrite a caller-provided value. The dashboard layout uses this
+    // server-internal header for its role/path capability gate.
+    requestHeaders.set('x-sanpack-admin-path', request.nextUrl.pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
   return handleI18nRouting(request);
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/((?!$|api|admin|_next|_vercel|.*\\..*).*)'],
+  matcher: ['/api/:path*', '/admin/:path*', '/((?!$|api|admin|_next|_vercel|.*\\..*).*)'],
 };

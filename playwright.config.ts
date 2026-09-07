@@ -6,7 +6,9 @@ const baseURL = externalBaseUrl || `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testIgnore: ['**/subcategories.spec.ts', '**/stabilization.spec.ts'],
+  // Subcategory routing has its own production-build fixture configuration.
+  // Stabilization regressions are intentionally part of the default release gate.
+  testIgnore: ['**/subcategories.spec.ts'],
   fullyParallel: false,
   timeout: 90_000,
   forbidOnly: Boolean(process.env.CI),

@@ -12,6 +12,21 @@ import {
   findPublicProductBySlug,
 } from '@/lib/catalog/publicProducts';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
+import type { CustomerRequestOrder } from '@/lib/orders/customerOrderProjection';
+
+export interface CheckoutBusinessInput {
+  contactName: string;
+  phone: string;
+  deliveryAddress: string;
+  deliveryDate: string;
+  deliveryWindow: string;
+  notes?: string;
+  items: Array<Pick<RequestOrder['items'][number], 'productId' | 'variantId' | 'quantity' | 'comment'>>;
+}
+
+export type CheckoutRequestInput = CheckoutBusinessInput & {
+  telegramInitData?: string;
+};
 
 async function read<T>(resource: string): Promise<T> {
   // ServerCatalogRepository already owns the tagged cache. Keeping a second
@@ -34,16 +49,7 @@ export const PublicRepository = {
   async getProductById(id: string) {
     return findPublicProductById(await this.getProducts(), id);
   },
-  async createRequest(data: {
-    contactName: string;
-    phone: string;
-    deliveryAddress: string;
-    deliveryDate: string;
-    deliveryWindow: string;
-    notes?: string;
-    items: Array<Pick<RequestOrder['items'][number], 'productId' | 'variantId' | 'quantity' | 'comment'>>;
-    telegramInitData?: string;
-  }, idempotencyKey: string): Promise<RequestOrder> {
+  async createRequest(data: CheckoutRequestInput, idempotencyKey: string): Promise<CustomerRequestOrder> {
     const response = await fetch('/api/requests', {
       method: 'POST',
       headers: {
@@ -52,12 +58,12 @@ export const PublicRepository = {
       },
       body: JSON.stringify(data),
     });
-    return parseJsonResponse<RequestOrder>(response, 'Заявка не была сохранена.');
+    return parseJsonResponse<CustomerRequestOrder>(response, 'Заявка не была сохранена.');
   },
-  async getMyRequests(): Promise<RequestOrder[]> {
+  async getMyRequests(): Promise<CustomerRequestOrder[]> {
     const response = await fetch('/api/requests', {
       cache: 'no-store',
     });
-    return parseJsonResponse<RequestOrder[]>(response, 'Не удалось загрузить историю заявок.');
+    return parseJsonResponse<CustomerRequestOrder[]>(response, 'Не удалось загрузить историю заявок.');
   },
 };

@@ -190,15 +190,16 @@ Product JSON-LD использует minimum **sale** Offer, не normalized amo
 
 `RequestCartContext.tsx` хранит `sanpack_request_cart_v1` в localStorage, восстанавливается после mount. Identity позиции — productId + variantId; сохранён Product/Variant snapshot. Add/update пересчитывает sale/tiers и quantity rules. При restore snapshots позволяют заново вычислить unit price; legacy item без snapshot сохраняет прежнюю unitPrice. Это **не** live refresh цен Firestore.
 
-`PublicRepository.createRequest` отправляет идентификаторы/quantity/comment, customer/delivery, не доверенную client price. `/api/requests` + `orderService.ts`:
+`PublicRepository.createRequest` отправляет идентификаторы/quantity/comment, customer/delivery, не доверенную client price. Client сохраняет idempotency key вместе с точным отправленным business intent до однозначного результата. `/api/requests` + `orderService.ts`:
 
 1. Проверяют strict checkout schema: name, phone, delivery address, date, delivery window, items; normalize phone.
-2. Читают текущие Product из Firestore через Admin SDK, проверяют publication/variant selection, informational mode и quantity rules.
-3. Считают sale/wholesale по серверным данным; comparison configuration не участвует.
-4. Сохраняют `requests` snapshot, `originalItems`, totals, status/revision/audit trail. Unpriced items не превращаются в гарантированно бесплатные товары: это request-price workflow.
-5. Отправляют Telegram notification после сохранения; сбой notification не отменяет уже принятую заявку.
+2. Ищут существующий private idempotency intent до проверки изменяемого каталога. Тот же key + тот же business intent + та же customer identity возвращает прежний customer receipt; несовместимый intent/identity получает controlled conflict. Transport auth proof не входит в business hash.
+3. Для нового intent читают текущие Product из Firestore через Admin SDK, проверяют publication/variant selection, informational mode и quantity rules.
+4. Считают sale/wholesale по серверным данным; comparison configuration не участвует.
+5. Атомарно сохраняют `requests` snapshot и private intent. Первый ответ и replay проходят через одну customer projection без audit, actor и notification internals.
+6. Отправляют Telegram notification только для реально созданной заявки; сбой notification не отменяет уже принятую заявку.
 
-Админский order PATCH — отдельный workflow статуса/редактирования с audit, не переиспользование недоверенного public total. Customer history требует customer session; номер телефона сам по себе не авторизация.
+Админский order PATCH — отдельный workflow статуса/редактирования с optimistic revision и audit, не переиспользование недоверенного public total. PDF строится по зафиксированной revision вне транзакции, затем его audit entry атомарно дописывается к актуальному audit trail без перезаписи конкурентных изменений. Customer history требует customer session; номер телефона сам по себе не авторизация.
 
 Граница: нет payment gateway, reservation/decrement stock или гарантии доступности quantity при submit. Наличие в filter — discovery rule, не WMS. Order contract сейчас UZS-oriented, даже при более общем поле currency у Product.
 

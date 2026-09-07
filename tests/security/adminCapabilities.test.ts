@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canAccessAdminPath, canMutateAdminResource } from '@/lib/auth/adminCapabilities';
+import { canAccessAdminPath, canMutateAdminResource, getAdminLandingPath } from '@/lib/auth/adminCapabilities';
 
 describe('admin role capabilities', () => {
   it('lets content managers maintain catalog without privileged settings/orders', () => {
@@ -13,5 +13,10 @@ describe('admin role capabilities', () => {
     expect(canAccessAdminPath('sales_manager', '/admin/requests')).toBe(true);
     expect(canAccessAdminPath('sales_manager', '/admin/products')).toBe(false);
     expect(canMutateAdminResource('viewer', 'products')).toBe(false);
+    expect(canAccessAdminPath('viewer', '/admin/products')).toBe(false);
+    expect(canAccessAdminPath('viewer', '/admin/settings')).toBe(false);
+    expect(canAccessAdminPath('viewer', '/admin')).toBe(false);
+    expect(getAdminLandingPath('content_manager')).toBe('/admin/products');
+    expect(getAdminLandingPath('sales_manager')).toBe('/admin/requests');
   });
 });

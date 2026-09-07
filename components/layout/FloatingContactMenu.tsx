@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref } from '@/lib/settings/contacts';
+import { useRequestCart } from '@/context/RequestCartContext';
 
 const contactCopy = {
   ru: { open: 'Связаться', close: 'Закрыть контакты', title: (name: string) => `Связаться с ${name}`, phone: 'Позвонить' },
@@ -18,6 +19,7 @@ export function FloatingContactMenu() {
   const pathname = usePathname();
   const { language } = useLanguage();
   const { company, contacts } = useSiteSettings();
+  const { items } = useRequestCart();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const copy = contactCopy[language];
@@ -43,7 +45,7 @@ export function FloatingContactMenu() {
   return (
     <div
       ref={panelRef}
-      className="fixed bottom-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+1rem)] right-4 z-50 md:bottom-6 md:right-6"
+      className={`${items.length > 0 ? 'hidden md:block' : ''} fixed bottom-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+1rem)] right-4 z-50 md:bottom-6 md:right-6`}
     >
       {open ? (
         <div role="dialog" aria-label={title} className="mb-3 w-[min(19rem,calc(100vw-2rem))] rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 shadow-[0_20px_60px_rgb(21_27_24/22%)]">
