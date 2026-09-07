@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProduct, createVariant } from '@/tests/fixtures/products';
 import type { Product } from '@/types';
 const { db, customer, created } = vi.hoisted(() => ({ db: vi.fn(), customer: vi.fn(), created: vi.fn() }));
+const idempotencyStore = new Map<string, Record<string, unknown>>();
+const orderStore = new Map<string, Record<string, unknown>>();
 vi.mock('@/lib/firebase/admin', () => ({ getAdminDb: db }));
 vi.mock('@/lib/auth/customerSession', () => ({ getCustomerSession: customer }));
 vi.mock('@/lib/security/distributedRateLimit', () => ({ checkDistributedRateLimit: async () => ({ allowed: true }) }));
@@ -10,16 +12,28 @@ import { POST, GET } from '@/app/api/requests/route';
 
 const base = { contactName: 'Test customer', phone: '+998901234567', deliveryAddress: 'Tashkent fixture address', deliveryDate: '2026-09-01', deliveryWindow: '09:00-13:00' };
 function request(items: unknown[], extras = {}) {
-  return new Request('https://shop.example/api/requests', { method: 'POST', body: JSON.stringify({ ...base, items, ...extras }) });
+  return new Request('https://shop.example/api/requests', { method: 'POST', headers: { 'idempotency-key': 'test-checkout-intent-0001' }, body: JSON.stringify({ ...base, items, ...extras }) });
 }
 function supply(product: Product) {
-  db.mockReturnValue({ collection: (name: string) => ({
-    doc: (id: string) => name === 'products'
-      ? { get: async () => ({ id, exists: id === product.id, data: () => product }) }
-      : { id: 'new-order', create: created, update: async () => undefined },
-  }) });
+  const database = {
+    collection: (name: string) => ({
+      doc: (id?: string) => name === 'products'
+        ? { id, kind: name, get: async () => ({ id, exists: id === product.id, data: () => product }) }
+        : name === 'requestIdempotency'
+          ? { id, kind: name, get: async () => ({ id, exists: idempotencyStore.has(id!), data: () => idempotencyStore.get(id!) }) }
+          : { id: id || 'new-order', kind: name, get: async () => ({ id, exists: orderStore.has(id || 'new-order'), data: () => orderStore.get(id || 'new-order') }), update: async () => undefined },
+    }),
+    runTransaction: async (callback: (transaction: { get: (reference: { get: () => Promise<unknown> }) => Promise<unknown>; create: (reference: { id?: string }, data: unknown) => void }) => Promise<unknown>) => callback({
+      get: (reference) => reference.get(),
+      create: (reference: { id?: string; kind?: string }, data: unknown) => {
+        if (reference.kind === 'requestIdempotency') idempotencyStore.set(reference.id!, data as Record<string, unknown>);
+        if (reference.kind === 'requests') { orderStore.set(reference.id!, data as Record<string, unknown>); created(data); }
+      },
+    }),
+  };
+  db.mockReturnValue(database);
 }
-beforeEach(() => { vi.clearAllMocks(); customer.mockResolvedValue(null); supply(createProduct()); });
+beforeEach(() => { vi.clearAllMocks(); idempotencyStore.clear(); orderStore.clear(); customer.mockResolvedValue(null); supply(createProduct()); });
 describe('public checkout adversarial HTTP contract', () => {
   it('cannot evade maximum quantity by duplicating the same configuration', async () => {
     supply(createProduct({ maximumOrder: 10 }));
@@ -28,7 +42,7 @@ describe('public checkout adversarial HTTP contract', () => {
   });
   it('queries customer history by signed identity, not contact phone', async () => {
     customer.mockResolvedValue({ sub: 'telegram:123' });
-    const where = vi.fn(() => ({ limit: () => ({ get: async () => ({ docs: [] }) }) }));
+    const where = vi.fn(() => ({ orderBy: () => ({ limit: () => ({ get: async () => ({ docs: [] }) }) }) }));
     db.mockReturnValue({ collection: () => ({ where }) });
     expect((await GET()).status).toBe(200);
     expect(where).toHaveBeenCalledWith('customerUid', '==', 'telegram:123');
@@ -67,6 +81,14 @@ describe('public checkout adversarial HTTP contract', () => {
     const response = await POST(request([{ productId: 'product-1', quantity: 1 }]));
     expect(response.status).toBe(201);
     expect(created.mock.calls[0][0]).toMatchObject({ total: 66_000, items: [{ quantity: 1, price: 66_000, lineTotal: 66_000, unit: 'упаковка' }] });
+  });
+  it('replays the same checkout intent without creating a duplicate request', async () => {
+    const first = await POST(request([{ productId: 'product-1', quantity: 1 }]));
+    const second = await POST(request([{ productId: 'product-1', quantity: 1 }]));
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(200);
+    expect(created).toHaveBeenCalledTimes(1);
+    expect((await second.json()).requestNumber).toBe((await first.json()).requestNumber);
   });
   it('uses current variant tiers and enforces variant maximum', async () => {
     supply(createProduct({ variants: [createVariant({ price: 250, wholesaleTiers: [{ minQuantity: 2, price: 200 }], maxQuantity: 3 })] }));

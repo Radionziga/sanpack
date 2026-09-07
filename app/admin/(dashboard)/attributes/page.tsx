@@ -7,6 +7,9 @@ import { Button, CustomInput, Badge, CustomSelect } from '@/components/ui';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { getCategoryDepth, getCategoryLineage, getOrderedCategories } from '@/lib/catalog/categoryHierarchy';
+import { createCatalogSlug } from '@/lib/catalog/catalogSlugs';
+import { trapDialogFocus } from '@/lib/admin/dialogLifecycle';
+import { useUnsavedNavigationGuard } from '@/lib/admin/useUnsavedNavigationGuard';
 import {
   SlidersHorizontal,
   Plus,
@@ -50,6 +53,7 @@ export default function AdminAttributesPage() {
 
   // Form State
   const [key, setKey] = useState('');
+  const [keyEdited, setKeyEdited] = useState(false);
   const [titleRu, setTitleRu] = useState('');
   const [titleUz, setTitleUz] = useState('');
   const [titleEn, setTitleEn] = useState('');
@@ -73,6 +77,14 @@ export default function AdminAttributesPage() {
 
   const [notification, setNotification] = useState<string | null>(null);
   const [saveError, setSaveError] = useState('');
+  const [editorBaseline, setEditorBaseline] = useState('');
+  const editorState = JSON.stringify({ key, titleRu, titleUz, titleEn, titleZh, type, unit, required, filterable, cardVisible, productVisible, selectedCategoryIds, sortOrder, options });
+  const hasUnsavedChanges = isModalOpen && editorBaseline !== editorState;
+  useUnsavedNavigationGuard(hasUnsavedChanges, 'Перейти на другую страницу и потерять несохранённые изменения характеристики?');
+  const closeEditor = () => {
+    if (hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
+    setIsModalOpen(false);
+  };
 
   useEffect(() => {
     loadData();
@@ -81,16 +93,29 @@ export default function AdminAttributesPage() {
   useEffect(() => {
     if (!isModalOpen) return;
     const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsModalOpen(false);
+      if (event.key !== 'Escape') return;
+      if (hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
+      setIsModalOpen(false);
     };
     document.body.style.overflow = 'hidden';
+    const focusFrame = window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-attribute-dialog-close]')?.focus());
     window.addEventListener('keydown', closeOnEscape);
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.cancelAnimationFrame(focusFrame);
       window.removeEventListener('keydown', closeOnEscape);
+      previousFocus?.focus();
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, hasUnsavedChanges]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsavedChanges]);
 
   async function loadData() {
     setLoading(true);
@@ -118,6 +143,7 @@ export default function AdminAttributesPage() {
     setSaveError('');
     setEditingAttr(null);
     setKey('');
+    setKeyEdited(false);
     setTitleRu('');
     setTitleUz('');
     setTitleEn('');
@@ -131,6 +157,7 @@ export default function AdminAttributesPage() {
     setSelectedCategoryIds([]);
     setSortOrder(attributes.length + 1);
     setOptions([]);
+    setEditorBaseline(JSON.stringify({ key: '', titleRu: '', titleUz: '', titleEn: '', titleZh: '', type: 'select', unit: '', required: false, filterable: true, cardVisible: true, productVisible: true, selectedCategoryIds: [], sortOrder: attributes.length + 1, options: [] }));
     setIsModalOpen(true);
   };
 
@@ -138,6 +165,7 @@ export default function AdminAttributesPage() {
     setSaveError('');
     setEditingAttr(attr);
     setKey(attr.key);
+    setKeyEdited(true);
     setTitleRu(attr.titleRu);
     setTitleUz(attr.titleUz);
     setTitleEn(attr.titleEn || '');
@@ -151,6 +179,7 @@ export default function AdminAttributesPage() {
     setSelectedCategoryIds(attr.categoryIds || []);
     setSortOrder(attr.sortOrder || 0);
     setOptions(attr.options || []);
+    setEditorBaseline(JSON.stringify({ key: attr.key, titleRu: attr.titleRu, titleUz: attr.titleUz, titleEn: attr.titleEn || '', titleZh: attr.titleZh || '', type: attr.type, unit: attr.unit || '', required: attr.required ?? false, filterable: attr.filterable, cardVisible: attr.cardVisible ?? true, productVisible: attr.productVisible ?? true, selectedCategoryIds: attr.categoryIds || [], sortOrder: attr.sortOrder || 0, options: attr.options || [] }));
     setIsModalOpen(true);
   };
 
@@ -395,7 +424,7 @@ export default function AdminAttributesPage() {
 
       {/* Modal Form */}
       {isModalOpen && (
-        <div className="admin-modal-backdrop">
+        <div className="admin-modal-backdrop" role="dialog" aria-modal="true" aria-label={editingAttr ? 'Редактирование характеристики' : 'Новая характеристика'} onKeyDown={trapDialogFocus}>
           <div className="admin-modal-card mx-auto md:my-4 md:max-w-3xl">
             <div className="admin-modal-header flex items-center justify-between gap-4 px-5 py-4 md:px-7">
               <div className="flex items-center gap-2">
@@ -405,7 +434,9 @@ export default function AdminAttributesPage() {
                 </h3>
               </div>
               <button
-                onClick={() => setIsModalOpen(false)}
+                data-attribute-dialog-close
+                type="button"
+                onClick={closeEditor}
                 className="admin-icon-button"
                 aria-label="Закрыть"
               >
@@ -421,7 +452,11 @@ export default function AdminAttributesPage() {
                 <CustomInput
                   label="Название RU"
                   value={titleRu}
-                  onChange={(e) => setTitleRu(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setTitleRu(value);
+                    if (!editingAttr && !keyEdited) setKey(createCatalogSlug(value, '').replace(/-/g, '_'));
+                  }}
                   placeholder="например: Толщина"
                   required
                 />
@@ -453,11 +488,12 @@ export default function AdminAttributesPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <CustomInput
-                  label="Короткое внутреннее имя"
+                  label={editingAttr ? 'Внутреннее имя (зафиксировано)' : 'Внутреннее имя'}
                   value={key}
-                  onChange={(e) => setKey(e.target.value)}
+                  onChange={(e) => { setKeyEdited(true); setKey(e.target.value); }}
                   placeholder="например: thickness, weight"
-                  helperText="Например, weight или packaging_type. Покупатели это значение не увидят."
+                  helperText={editingAttr ? 'Ключ связан с сохранёнными значениями товаров и вариантов, поэтому после создания не меняется.' : 'Создаётся автоматически из названия. Расширенная ручная правка доступна до первого сохранения.'}
+                  disabled={Boolean(editingAttr)}
                   required
                 />
                 <CustomInput
@@ -663,7 +699,7 @@ export default function AdminAttributesPage() {
 
               {/* Submit / Cancel */}
               <div className="admin-modal-footer -mx-5 -mb-6 mt-6 flex justify-end gap-2 px-5 py-4 md:-mx-7 md:px-7">
-                <Button type="button" onClick={() => setIsModalOpen(false)} variant="ghost" size="md">
+                <Button type="button" onClick={closeEditor} variant="ghost" size="md">
                   Отмена
                 </Button>
                 <Button type="submit" variant="primary" size="md">

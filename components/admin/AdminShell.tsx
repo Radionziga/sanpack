@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { BrandLogo } from '@/components/ui/BrandLogo';
+import type { UserRole } from '@/types';
+import { canAccessAdminPath } from '@/lib/auth/adminCapabilities';
 
 const navigation = [
   {
@@ -67,7 +69,7 @@ const navigation = [
   },
 ] as const;
 
-export default function AdminShell({ children, adminEmail }: { children: ReactNode; adminEmail: string }) {
+export default function AdminShell({ children, adminEmail, adminRole }: { children: ReactNode; adminEmail: string; adminRole: UserRole }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
@@ -105,7 +107,7 @@ export default function AdminShell({ children, adminEmail }: { children: ReactNo
           </div>
 
           <nav aria-label="Админ-панель" className="no-scrollbar flex gap-2 overflow-x-auto border-t border-[var(--sp-line)] px-3 py-3 md:block md:flex-1 md:space-y-6 md:overflow-y-auto md:border-t-0 md:px-4 md:py-2">
-            {navigation.map((group) => (
+            {navigation.map((group) => ({ ...group, items: group.items.filter((item) => canAccessAdminPath(adminRole, item.href)) })).filter((group) => group.items.length > 0).map((group) => (
               <div key={group.label} className="flex shrink-0 gap-2 md:block">
                 <p className="hidden px-2 pb-2 font-compact text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--sp-ink-muted)] md:block">{group.label}</p>
                 <div className="flex gap-1.5 md:block md:space-y-1">

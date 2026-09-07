@@ -10,7 +10,7 @@ import { Product } from '@/types';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { pageCopy } from '@/lib/i18n/pageCopy';
-import { Heart, Trash2 } from 'lucide-react';
+import { Heart, RefreshCw, Trash2 } from 'lucide-react';
 
 export default function FavoritesPage() {
   const { favoriteIds, clearFavorites } = useFavorites();
@@ -19,20 +19,30 @@ export default function FavoritesPage() {
 
   const [favProducts, setFavProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     async function loadFavs() {
+      setLoading(true);
+      setLoadError(false);
       if (favoriteIds.length === 0) {
-        setFavProducts([]);
-        setLoading(false);
+        if (!cancelled) { setFavProducts([]); setLoading(false); }
         return;
       }
-      const all = await PublicRepository.getProducts();
-      setFavProducts(all.filter((p) => favoriteIds.includes(p.id)));
-      setLoading(false);
+      try {
+        const all = await PublicRepository.getProducts();
+        if (!cancelled) setFavProducts(all.filter((p) => favoriteIds.includes(p.id)));
+      } catch {
+        if (!cancelled) setLoadError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-    loadFavs();
-  }, [favoriteIds]);
+    void loadFavs();
+    return () => { cancelled = true; };
+  }, [favoriteIds, loadAttempt]);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
@@ -65,6 +75,12 @@ export default function FavoritesPage() {
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-80 animate-pulse rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)]" />
             ))}
+          </div>
+        ) : loadError ? (
+          <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-6 text-center" role="alert">
+            <RefreshCw className="size-7 text-[var(--sp-brand)]" aria-hidden="true" />
+            <h2 className="mt-4 text-lg font-bold">{language === 'ru' ? 'Не удалось загрузить избранное' : language === 'uz' ? 'Tanlanganlarni yuklab bo‘lmadi' : language === 'zh' ? '收藏夹加载失败' : 'Could not load favorites'}</h2>
+            <button type="button" onClick={() => setLoadAttempt((value) => value + 1)} className="mt-5 min-h-11 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)]">{language === 'ru' ? 'Повторить' : language === 'uz' ? 'Qayta urinish' : language === 'zh' ? '重试' : 'Retry'}</button>
           </div>
         ) : favProducts.length === 0 ? (
           <div className="flex min-h-[360px] w-full flex-col items-center justify-center rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-6 py-12 text-center">

@@ -5,6 +5,7 @@ import {
   getPublicCategories,
   getPublicProducts,
 } from '@/lib/repositories/serverCatalogRepository';
+import { logError } from '@/lib/observability/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,8 +32,14 @@ function languageAlternates(baseUrl: string, path: string) {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   const [products, categories] = await Promise.all([
-    getPublicProducts().catch(() => []),
-    getPublicCategories().catch(() => []),
+    getPublicProducts().catch((error) => {
+      logError('sitemap.products_failed', error);
+      return [];
+    }),
+    getPublicCategories().catch((error) => {
+      logError('sitemap.categories_failed', error);
+      return [];
+    }),
   ]);
   const localizedStatic = routing.locales.flatMap((locale) =>
     staticRoutes.map((route) => ({

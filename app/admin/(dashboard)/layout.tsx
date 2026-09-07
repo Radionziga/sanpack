@@ -10,5 +10,5 @@ export default async function ProtectedAdminLayout({
 }) {
   const admin = await requireAdmin();
 
-  return <AdminShell adminEmail={admin.email}>{children}</AdminShell>;
+  return <AdminShell adminEmail={admin.email} adminRole={admin.role}>{children}</AdminShell>;
 }

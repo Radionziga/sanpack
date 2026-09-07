@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getCategoryBreadcrumbs, getCategoryDepth, getCategoryLabel, getCategoryLineage, getCategoryPath, getCategoryScopeIds, getProductsInCategoryScope, getVisibleCategories, isProductCategory, resolveCategoryRoute, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
 import { getCategoryMetadata } from '@/lib/catalog/categoryMetadata';
+import { initialSiteSettings } from '@/lib/seedData';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
 import { hasRequiredProductOrVariantAttribute } from '@/lib/catalog/productAttributeRequirements';
 import { getStorefrontCategoryGroups } from '@/lib/catalog/popularCategoryArtwork';
@@ -107,10 +108,10 @@ describe('routes, breadcrumbs and SEO', () => {
     expect(getCategoryLabel('grains', categories)).toBe('food / grocery / grains');
   });
   it.each(['ru', 'uz', 'en', 'zh'] as const)('generates canonical and hreflang for %s', (locale) => {
-    const meta = getCategoryMetadata(['grocery', 'grains'], locale, categories);
+    const meta = getCategoryMetadata(['grocery', 'grains'], locale, categories, initialSiteSettings);
     expect(meta.alternates?.canonical).toBe(`/${locale}/catalog/grocery/grains`);
     expect(meta.alternates?.languages?.en).toBe('/en/catalog/grocery/grains');
-    expect(getCategoryMetadata(['grains'], locale, categories).alternates).toEqual(meta.alternates);
+    expect(getCategoryMetadata(['grains'], locale, categories, initialSiteSettings).alternates).toEqual(meta.alternates);
   });
   it('keeps subcategories out of automatic showcase and permits explicit promotion', () => {
     const withArtwork = categories.map((category) => ({ ...category, cardImage: '/test.webp' }));

@@ -94,7 +94,7 @@ export default function AdminRequestsPage() {
   async function quickStatus(order: RequestOrder, status: RequestOrder['status']) {
     setError(null);
     try {
-      const updated = await AdminRepository.updateRequestStatus(order.id, status);
+      const updated = await AdminRepository.updateRequestStatus(order.id, status, order.revision || 1);
       setOrders((current) => current.map((item) => item.id === updated.id ? updated : item));
       if (selected?.id === updated.id) setSelected(updated);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Статус не обновлён.'); }
@@ -104,7 +104,7 @@ export default function AdminRequestsPage() {
     if (!selected) return;
     setSaving(true); setError(null); setNotice(null);
     try {
-      const updated = await AdminRepository.updateRequest(selected.id, {
+      const updated = await AdminRepository.updateRequest(selected.id, selected.revision || 1, {
         contactName: selected.contactName,
         phone: selected.phone,
         status: selected.status,

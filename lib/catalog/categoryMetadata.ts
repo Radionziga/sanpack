@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import type { Category, Language } from '@/types';
-import { routing } from '@/i18n/routing';
+import type { Category, Language, SiteSettings } from '@/types';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
+import { buildSeoMetadata } from '@/lib/seo/metadata';
 import { resolveCategoryRoute } from './categoryHierarchy';
 
-export function getCategoryMetadata(segments: string[], locale: Language, categories: Category[]): Metadata {
+export function getCategoryMetadata(segments: string[], locale: Language, categories: Category[], settings: SiteSettings): Metadata {
   const resolved = resolveCategoryRoute(segments, categories);
   if (!resolved) return { robots: { index: false, follow: false } };
   const { category, path } = resolved;
@@ -16,13 +16,13 @@ export function getCategoryMetadata(segments: string[], locale: Language, catego
     ru: category.seo?.descriptionRu || category.descriptionRu, uz: category.seo?.descriptionUz || category.descriptionUz,
     en: category.seo?.descriptionEn || category.descriptionEn, zh: category.seo?.descriptionZh || category.descriptionZh,
   }).text;
-  return {
-    title, description,
-    alternates: {
-      canonical: `/${locale}${path}`,
-      languages: Object.fromEntries([
-        ...routing.locales.map((language) => [language, `/${language}${path}`]), ['x-default', `/ru${path}`],
-      ]),
-    },
-  };
+  const explicitTitle = locale === 'ru' ? category.seo?.titleRu
+    : locale === 'uz' ? category.seo?.titleUz
+      : locale === 'en' ? category.seo?.titleEn
+        : category.seo?.titleZh;
+  return buildSeoMetadata({
+    locale, path, title, description, settings,
+    image: category.cardImage || category.navigationImage || category.image,
+    titleIsExplicit: Boolean(explicitTitle?.trim()),
+  });
 }

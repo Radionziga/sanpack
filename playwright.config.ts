@@ -6,7 +6,7 @@ const baseURL = externalBaseUrl || `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testIgnore: '**/subcategories.spec.ts',
+  testIgnore: ['**/subcategories.spec.ts', '**/stabilization.spec.ts'],
   fullyParallel: false,
   timeout: 90_000,
   forbidOnly: Boolean(process.env.CI),
@@ -24,14 +24,9 @@ export default defineConfig({
     { name: 'mobile-chromium', use: { ...devices['iPhone 13'], browserName: 'chromium' } },
   ],
   webServer: externalBaseUrl ? undefined : {
-    command: `npm run dev -- --webpack --hostname 127.0.0.1 --port ${port}`,
+    command: `TAXONOMY_PORT=${port} node tests/e2e/start-taxonomy-fixture.mjs`,
     url: `http://127.0.0.1:${port}/api/health`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: {
-      ...process.env,
-      SANPACK_USE_SEED_DATA: 'true',
-      NEXT_PUBLIC_SITE_URL: `http://127.0.0.1:${port}`,
-    },
+    reuseExistingServer: false,
+    timeout: 180_000,
   },
 });

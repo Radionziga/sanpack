@@ -77,11 +77,15 @@ function getPricedOffers(product: Product): PricedOffer[] {
   if (!product.showPrice) return [];
   const variants = product.variants || [];
   if (variants.length === 0) {
-    return typeof product.price === 'number' && product.price > 0
+    return getProductPriceMode(product) !== 'request'
+      && getProductPriceMode(product) !== 'informational'
+      && typeof product.price === 'number' && product.price > 0
       ? [{ price: product.price, unitPricing: product.unitPricing }]
       : [];
   }
   return variants.flatMap((variant) => {
+    if (getProductPriceMode(product, variant) === 'request'
+      || getProductPriceMode(product, variant) === 'informational') return [];
     const price = getProductUnitPrice(product, variant);
     return typeof price === 'number' && price > 0
       ? [{ price, variant, unitPricing: variant.unitPricing ?? product.unitPricing }]

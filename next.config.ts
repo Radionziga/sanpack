@@ -66,6 +66,9 @@ const nextConfig: NextConfig = {
     ];
   },
   output: 'standalone',
+  outputFileTracingExcludes: {
+    '/*': ['./.agents/**/*', './playwright-report/**/*', './test-results/**/*'],
+  },
   transpilePackages: ['motion'],
   turbopack: {
     root: process.cwd(),

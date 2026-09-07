@@ -14,22 +14,26 @@ export function Footer() {
   const { company, contacts, modules } = useSiteSettings();
   const copy = {
     ru: {
-      categories: ['Мешки для мусора', 'Пакеты «Майка»', 'Одноразовые перчатки', 'Фольга и стрейч-плёнка', 'Бакалея и рис', 'Полиграфия и брендирование'],
+      catalogOverview: 'Все товары',
+      services: 'Сервисы SANPACK',
       pdf: 'Скачать каталог PDF',
       home: 'На главную',
     },
     uz: {
-      categories: ['Chiqindi paketlari', '“Mayka” paketlar', 'Bir martalik qo‘lqoplar', 'Folga va streych plyonka', 'Oziq-ovqat va guruch', 'Poligrafiya va brendlash'],
+      catalogOverview: 'Barcha mahsulotlar',
+      services: 'SANPACK xizmatlari',
       pdf: 'PDF-katalogni yuklab olish',
       home: 'Bosh sahifaga',
     },
     en: {
-      categories: ['Waste bags', 'Carrier bags', 'Disposable gloves', 'Foil and stretch film', 'Groceries and rice', 'Printing and branding'],
+      catalogOverview: 'All products',
+      services: 'SANPACK services',
       pdf: 'Download PDF catalog',
       home: 'Home',
     },
     zh: {
-      categories: ['垃圾袋', '背心袋', '一次性手套', '铝箔与保鲜膜', '杂货与大米', '印刷与品牌定制'],
+      catalogOverview: '全部商品',
+      services: 'SANPACK 服务',
       pdf: '下载 PDF 目录',
       home: '返回首页',
     },
@@ -74,42 +78,14 @@ export function Footer() {
             </div> : null}
           </div>
 
-          {/* Col 2: Catalog Categories */}
+          {/* Stable catalog/service entry points; taxonomy itself is data-driven. */}
           <div>
             <h4 className="mb-4 border-b border-[color-mix(in_srgb,var(--sp-on-brand)_18%,transparent)] pb-2 font-compact text-sm font-semibold uppercase tracking-wider text-[var(--sp-on-brand)]">
               {t('catalog')}
             </h4>
             <ul className="space-y-2 text-[color-mix(in_srgb,var(--sp-on-brand)_78%,transparent)]">
-              <li>
-                <Link href="/catalog/meshki-dlya-musora" className="transition-colors hover:text-[var(--sp-on-brand)]">
-                  {copy.categories[0]}
-                </Link>
-              </li>
-              <li>
-                <Link href="/catalog/pakety-mayka" className="transition-colors hover:text-[var(--sp-on-brand)]">
-                  {copy.categories[1]}
-                </Link>
-              </li>
-              <li>
-                <Link href="/catalog/perchatki" className="transition-colors hover:text-[var(--sp-on-brand)]">
-                  {copy.categories[2]}
-                </Link>
-              </li>
-              <li>
-                <Link href="/catalog/folga-i-plenka" className="transition-colors hover:text-[var(--sp-on-brand)]">
-                  {copy.categories[3]}
-                </Link>
-              </li>
-              <li>
-                <Link href="/catalog/bakaleya" className="transition-colors hover:text-[var(--sp-on-brand)]">
-                  {copy.categories[4]}
-                </Link>
-              </li>
-              <li>
-                <Link href="/catalog/branding-polygraphy" className="transition-colors hover:text-[var(--sp-on-brand)]">
-                  {copy.categories[5]}
-                </Link>
-              </li>
+              <li><Link href="/catalog" className="transition-colors hover:text-[var(--sp-on-brand)]">{copy.catalogOverview}</Link></li>
+              {(modules?.branding?.enabled ?? true) ? <li><Link href="/branding" className="transition-colors hover:text-[var(--sp-on-brand)]">{copy.services}</Link></li> : null}
             </ul>
           </div>
 

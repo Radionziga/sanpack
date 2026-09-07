@@ -29,6 +29,7 @@ import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { Language } from '@/types';
 import { readCustomerProfileDraft } from '@/lib/customer/profileDraft';
 import { DeliveryDatePicker } from '@/components/checkout/DeliveryDatePicker';
+import { reconcileCartItems } from '@/lib/orders/cartReconciliation';
 
 interface CustomerStatus {
   authenticated: boolean;
@@ -44,6 +45,7 @@ interface FieldErrors {
 }
 
 const CHECKOUT_DRAFT_KEY = 'sanpack_checkout_draft_v1';
+const CHECKOUT_IDEMPOTENCY_KEY = 'sanpack_checkout_intent_v1';
 const DELIVERY_WINDOWS = ['09:00-13:00', '13:00-17:00', '17:00-21:00'] as const;
 
 const checkoutCopy = {
@@ -293,7 +295,7 @@ function CheckoutSkeleton({ label }: { label: string }) {
 export default function RequestPage() {
   const { language, getLocalizedText } = useLanguage();
   const copy = checkoutCopy[language];
-  const { items, updateQuantity, removeItem, clearCart, totalAmount, isHydrated } = useRequestCart();
+  const { items, updateQuantity, removeItem, clearCart, replaceItems, totalAmount, isHydrated } = useRequestCart();
   const [contactName, setContactName] = useState('');
   const [phone, setPhone] = useState('+998 ');
   const [deliveryAddress, setDeliveryAddress] = useState('');
@@ -427,6 +429,23 @@ export default function RequestPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
+      const reconciliation = reconcileCartItems(items, await PublicRepository.getProducts());
+      if (reconciliation.issues.length > 0) {
+        replaceItems(reconciliation.items);
+        setSubmitError(language === 'ru'
+          ? 'Каталог изменился: мы обновили цены, количество или доступность. Проверьте корзину и отправьте заявку ещё раз.'
+          : language === 'uz'
+            ? 'Katalog yangilandi: narx, miqdor yoki mavjudlik o‘zgardi. Savatni tekshirib, yana yuboring.'
+            : language === 'zh'
+              ? '商品目录已更新：价格、数量或库存发生变化。请检查购物车后再次提交。'
+              : 'The catalog changed: prices, quantities, or availability were updated. Review the cart and submit again.');
+        return;
+      }
+      let idempotencyKey = window.sessionStorage.getItem(CHECKOUT_IDEMPOTENCY_KEY);
+      if (!idempotencyKey) {
+        idempotencyKey = crypto.randomUUID();
+        window.sessionStorage.setItem(CHECKOUT_IDEMPOTENCY_KEY, idempotencyKey);
+      }
       const created = await PublicRepository.createRequest({
         contactName: contactName.trim(),
         phone: phone.trim(),
@@ -441,8 +460,9 @@ export default function RequestPage() {
           comment: item.comment,
         })),
         telegramInitData: window.Telegram?.WebApp?.initData || undefined,
-      });
+      }, idempotencyKey);
       window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+      window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
       setSubmittedRequestNumber(created.requestNumber);
       clearCart();
     } catch (error) {

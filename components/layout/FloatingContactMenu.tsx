@@ -33,7 +33,11 @@ export function FloatingContactMenu() {
     return () => window.removeEventListener('keydown', close);
   }, [open]);
 
-  if (pathname.includes('/catalog/print')) return null;
+  const hasCriticalBottomAction = pathname.includes('/product/')
+    || pathname.endsWith('/request')
+    || pathname.includes('/bag-designer')
+    || pathname.includes('/catalog/print');
+  if (hasCriticalBottomAction) return null;
   if (phones.length === 0 && !contacts.telegram && !contacts.whatsapp) return null;
 
   return (

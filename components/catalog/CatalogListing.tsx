@@ -7,6 +7,7 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   ChevronLeft,
@@ -44,6 +45,7 @@ import {
   StorefrontCategorySidebar,
   StorefrontMobileCategoryRail,
 } from '@/components/storefront/StorefrontPanels';
+import { readCatalogQueryState, writeCatalogQueryState } from '@/lib/catalog/catalogQueryState';
 
 interface CatalogListingProps {
   activeCategorySlug?: string;
@@ -81,6 +83,10 @@ export function CatalogListing({
   initialAttributes,
 }: CatalogListingProps) {
   const t = useTranslations('catalogListing');
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialQueryState = readCatalogQueryState(new URLSearchParams(searchParams.toString()));
   const { getLocalizedText, language } = useLanguage();
   const hasInitialCatalog = Boolean(initialProducts && initialCategories && initialAttributes);
   const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
@@ -88,14 +94,37 @@ export function CatalogListing({
   const [attributes, setAttributes] = useState<Attribute[]>(initialAttributes ?? []);
   const [loadState, setLoadState] = useState<LoadState>(hasInitialCatalog ? 'ready' : 'loading');
   const [loadAttempt, setLoadAttempt] = useState(0);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sortBy, setSortBy] = useState('popular');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialQueryState.viewMode);
+  const [sortBy, setSortBy] = useState(initialQueryState.sortBy);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState<CatalogAttributeFilters>({});
-  const [inStockOnly, setInStockOnly] = useState(false);
-  const [ownProductionOnly, setOwnProductionOnly] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState<CatalogAttributeFilters>(initialQueryState.filters);
+  const [inStockOnly, setInStockOnly] = useState(initialQueryState.inStockOnly);
+  const [ownProductionOnly, setOwnProductionOnly] = useState(initialQueryState.ownProductionOnly);
   const filterTriggerRef = useRef<HTMLButtonElement>(null);
   const filterCloseRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const current = new URLSearchParams(searchParams.toString());
+    const next = writeCatalogQueryState(current, {
+      sortBy, viewMode, inStockOnly, ownProductionOnly, filters: selectedFilters,
+    });
+    if (next.toString() !== current.toString()) {
+      router.replace(`${pathname}${next.size ? `?${next}` : ''}`, { scroll: false });
+    }
+  }, [inStockOnly, ownProductionOnly, pathname, router, searchParams, selectedFilters, sortBy, viewMode]);
+
+  useEffect(() => {
+    const restoreFromHistory = () => {
+      const next = readCatalogQueryState(new URLSearchParams(window.location.search));
+      setSortBy(next.sortBy);
+      setViewMode(next.viewMode);
+      setInStockOnly(next.inStockOnly);
+      setOwnProductionOnly(next.ownProductionOnly);
+      setSelectedFilters(next.filters);
+    };
+    window.addEventListener('popstate', restoreFromHistory);
+    return () => window.removeEventListener('popstate', restoreFromHistory);
+  }, []);
 
   useEffect(() => {
     if (hasInitialCatalog && loadAttempt === 0) return;

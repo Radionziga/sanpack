@@ -221,6 +221,10 @@ SANPACK-specific About/marketing/page copy и seed остаются content laye
 
 Category save выполняет transaction: читает categories, проверяет итоговое поддерево/unique slug/reserved print, при создании Group проверяет отсутствие direct products, затем пишет. Parent selector использует ту же placement validation; дерево явно отображает Group/Category/Subcategory. Product selector показывает полный lineage и только depth1/2. Attribute selector позволяет назначать все три уровня и показывает наследование. Существующий media/SEO/sort/status workflow сохранён; drag-and-drop framework не добавлялся.
 
+Operational Admin P1: `/admin/products` применяет чистый `filterAndSortAdminProducts` для поиска по localized name/SKU/brand/variant SKU, taxonomy scope, status/availability и effective-price sorting; UI ограничивает выдачу 50 строками. Category tree считает товары по тому же scope helper. Product Editor имеет explicit save, duplicate-click loading guard, dirty-navigation confirmation, section anchors, field/server error и success status. Attribute key — identifier relation, а не label: новый key автоматически предлагается из RU title, после первого сохранения UI блокирует его, `/api/admin/data` отклоняет mutation существующего key.
+
+`SeoFieldsEditor` не хранит отдельный preview state: он редактирует existing optional entity `seo`, а fallback строит из localized title/description. Canonical preview вычисляется по текущему slug/lineage; изменение existing slug показывает предупреждение, но redirect history по-прежнему не создаётся.
+
 Media: `/api/admin/media`, `MediaUploadField`, `lib/media/*`. Upload в Firebase Storage с обработкой подходящих изображений/metadata; usage scanner защищает от обычного удаления используемого media. Ссылки и storage paths живут в соответствующих content fields. Local файл сам по себе **не** публикует изображение в Storage/production. Batch publication/import scripts — отдельные явные операции.
 
 Admin Gemini endpoints поддерживают product-image generation и translations. API keys/private settings не отдаются публичному storefront. Категорийные иллюстрации могут быть подготовлены вне runtime, затем загружены/привязаны через media/CMS; универсального автоматического генератора категорий на public read нет.
@@ -253,11 +257,13 @@ Routing `i18n/routing.ts`: RU/UZ/EN/ZH, locale prefix always. `SiteSettings.loca
 
 `productSearch.ts` индексирует в памяти SKU Product, brand, localized names/descriptions. Typed attrs и variant SKU/attrs не входят в search text. Это сознательная текущая граница, не отдельный search backend.
 
-Locale layout получает SiteSettings для default metadata/company identity/favicon. Product/category layouts строят localized metadata, canonical/hreflang и OG. Product JSON-LD — sale Offer (см. pricing). Dynamic sitemap сочетает static paths, active categories и published products для четырёх локалей; при backend failure dynamic lists пусты, static routes остаются, seed автоматически не включается.
+Locale layout получает SiteSettings для default metadata/company identity/favicon. `lib/seo/metadata.ts` строит единые localized fallback, canonical, hreflang, OG/Twitter и company identity. Product/category layouts используют этот helper; основные content routes (`about`, `clients`, `delivery`, `branding`, `contacts`, `privacy`, `terms`) имеют собственную metadata вместо наследования Home. Product JSON-LD — sale Offer (см. pricing), locale layout добавляет Organization/WebSite, Product и taxonomy pages — BreadcrumbList. Dynamic sitemap сочетает static paths, active categories и published products для четырёх локалей; при backend failure dynamic lists пусты, static routes остаются, seed автоматически не включается.
+
+Indexability: published Product и active taxonomy indexable; draft/hidden entities не попадают в public repository/sitemap. Admin имеет layout noindex. Search/favorites/request/orders/profile/print и API получают `X-Robots-Tag: noindex, nofollow`; robots дополнительно исключает их из discovery. Filter combinations не являются SEO routes и не создают индексируемые faceted URLs.
 
 Category routing: `[categorySlug]` сохранён; вложенный `[categorySlug]/[subcategorySlug]` добавлен без catch-all и конфликта с `/catalog/print`. Общий CategoryRoutePage и categoryMetadata используют resolveCategoryRoute/getCategoryPath. Group/Category URL flat, Subcategory nested без Group. Старый flat Subcategory slug → 308 canonical; неверный parent/slug и hidden lineage → 404. Breadcrumbs: home/catalog/Category[/Subcategory][/Product]. Slugs глобально уникальны. History старых nested paths после будущего reparent/rename не сохраняется; такой rollout требует отдельного redirect plan.
 
-Product body остаётся большим client boundary с загрузкой public products, хотя server metadata читает данные отдельно. Наличие JSON-LD не означает полный SSR контент карточки товара.
+Product route использует bounded server-first composition: сервер читает текущий Product, taxonomy/Attribute definitions и не более четырёх related Products; raw initial HTML содержит H1, основное изображение/описание, sale-price preview, breadcrumbs и Product/Breadcrumb JSON-LD. `ProductDetailClient` отвечает за variant/quantity/cart interactions и retry state, но не загружает весь каталог при обычном открытии.
 
 ## 14. Tests and validation
 
@@ -277,7 +283,7 @@ git diff --check
 npm run test:e2e
 ```
 
-Playwright: desktop Chromium и iPhone-sized Chromium; seed-backed отдельный server, route/localization/404 smoke и axe. Mobile emulation не равна Safari на устройстве; эти tests не доказывают production checkout/Storage availability. CI использует Node 24, seed build и отдельный E2E job.
+Playwright: desktop Chromium и iPhone-sized Chromium; deterministic seed-backed production build/start fixture, route/localization/404/state/commerce/a11y smoke. Standard suite намеренно не использует Next dev/HMR. Mobile emulation не равна Safari на устройстве; эти tests не доказывают production checkout/Storage availability. CI использует Node 24, seed build и отдельный E2E job.
 
 Исторический baseline до Subcategory: 30 files / 215 tests, build 89 страниц. Фактический quality gate текущего Subcategory-этапа — [HANDOFF](SUBCATEGORY_HANDOFF_2026-08-31.md). Добавлены hierarchy/scope/attribute/routing/metadata tests и реальные Admin API handler tests с mock Firestore. `npx playwright test --config=playwright.taxonomy.config.ts` запускает приложение во временной source copy с synthetic taxonomy, mock admin session/read и отключённым cloud/write доступом. Это проверка UI/SSR, не проверка production auth/Firestore credentials. Production taxonomy не изменялась; migrations не нужны для включения optional уровня.
 
@@ -321,10 +327,11 @@ Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY
 
 ## 18. Known limitations / deferred scope
 
-- Не contextual facet counts, нет filter URL sync; attribute facets требуют category/group scope. Boolean filter true-only, generic CSS-color matching без словаря цветов.
+- Не contextual facet counts; attribute facets требуют category/group scope. Boolean filter true-only, generic CSS-color matching без словаря цветов. Sort/view/stock/own/typed filters уже имеют query-string contract и Back/Forward restore.
 - Search не индексирует attributes/variant SKU; matched variant не выбран автоматически после перехода из списка.
 - Brand fields/legacy brand attribute могут расходиться; нет Brand pages или централизованной Brand CMS.
 - Catalog preview не stock-filtered offer preview; JSON-LD product-level availability, не variant offer feed.
+- Product body и essential SEO content SSR. Интерактивные variant/cart controls остаются client boundary; related payload намеренно ограничен четырьмя товарами. Это текущая граница, а не crawlability blocker.
 - Нет payments, stock reservation/decrement, catch-weight settlement, currency conversion; checkout UZS/Uzbekistan-oriented.
 - CMS type/options validation не строгая schema registry для всех legacy значений; stockStatus/availability и некоторые reverse/legacy fields сосуществуют.
 - Local/seed adapters, ZH gaps и SANPACK marketing content требуют отдельного white-label content review.

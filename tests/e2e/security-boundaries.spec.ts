@@ -12,7 +12,7 @@ test('@security actual Next proxy blocks foreign-origin cookie mutations', async
 });
 
 test('@security public checkout rejects forged totals before any cloud access', async ({ request }) => {
-  const response = await request.post('/api/requests', { data: {
+  const response = await request.post('/api/requests', { headers: { 'idempotency-key': 'e2e-checkout-intent-0001' }, data: {
     contactName: 'Fixture customer', phone: '+998901234567', deliveryAddress: 'Fixture address',
     deliveryDate: '2026-09-01', deliveryWindow: '09:00-13:00',
     items: [{ productId: 'fixture-grocery', quantity: 1, unitPrice: 1 }], total: 1,

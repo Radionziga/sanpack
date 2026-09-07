@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getPublicProducts } from '@/lib/repositories/serverCatalogRepository';
+import { getPublicCategories, getPublicProducts, getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
 import { routing } from '@/i18n/routing';
 import type { Language } from '@/types';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 import { getMinimumSalePrice } from '@/lib/commerce/productOffer';
+import { buildBreadcrumbStructuredData, buildSeoMetadata } from '@/lib/seo/metadata';
+import { getCategoryBreadcrumbs, resolveProductCategory } from '@/lib/catalog/categoryHierarchy';
 
 function localized(
   locale: Language,
@@ -25,7 +27,8 @@ export async function generateMetadata({
   const locale: Language = routing.locales.includes(rawLocale as Language)
     ? (rawLocale as Language)
     : 'ru';
-  const product = (await getPublicProducts()).find(
+  const [products, settings] = await Promise.all([getPublicProducts(), getPublicSettings()]);
+  const product = products.find(
     (candidate) => candidate.slug === productSlug && candidate.status === 'published'
   );
   if (!product) return {};
@@ -46,25 +49,11 @@ export async function generateMetadata({
   );
   const pathname = `/product/${product.slug}`;
 
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `/${locale}${pathname}`,
-      languages: Object.fromEntries(
-        [
-          ...routing.locales.map((language) => [language, `/${language}${pathname}`]),
-          ['x-default', `/ru${pathname}`],
-        ]
-      ),
-    },
-    openGraph: {
-      type: 'website',
-      title,
-      description,
-      images: product.mainImage ? [{ url: product.mainImage, alt: title }] : [],
-    },
-  };
+  const explicitTitle = locale === 'ru' ? product.seo?.titleRu
+    : locale === 'uz' ? product.seo?.titleUz
+      : locale === 'en' ? product.seo?.titleEn
+        : product.seo?.titleZh;
+  return buildSeoMetadata({ locale, path: pathname, title, description, settings, image: product.mainImage, titleIsExplicit: Boolean(explicitTitle?.trim()) });
 }
 
 export default async function ProductSeoLayout({
@@ -78,7 +67,8 @@ export default async function ProductSeoLayout({
   const locale: Language = routing.locales.includes(rawLocale as Language)
     ? (rawLocale as Language)
     : 'ru';
-  const product = (await getPublicProducts()).find(
+  const [products, categories] = await Promise.all([getPublicProducts(), getPublicCategories()]);
+  const product = products.find(
     (candidate) => candidate.slug === productSlug && candidate.status === 'published'
   );
   if (!product) notFound();
@@ -104,7 +94,7 @@ export default async function ProductSeoLayout({
     '@type': 'Product',
     name,
     description,
-    image: product.images,
+    image: [...new Set([product.mainImage, ...(product.images || [])].filter(Boolean))],
     sku: product.sku,
     url: productUrl,
     brand: product.brandName
@@ -123,6 +113,16 @@ export default async function ProductSeoLayout({
         }
       : undefined,
   };
+  const category = resolveProductCategory(product, categories);
+  const breadcrumbData = buildBreadcrumbStructuredData([
+    { name: localized(locale, 'Главная', 'Bosh sahifa', 'Home', '首页'), path: `/${locale}` },
+    { name: localized(locale, 'Каталог', 'Katalog', 'Catalog', '目录'), path: `/${locale}/catalog` },
+    ...(category ? getCategoryBreadcrumbs(category, categories).map(({ category: node, href }) => ({
+      name: localized(locale, node.titleRu, node.titleUz, node.titleEn, node.titleZh),
+      path: `/${locale}${href}`,
+    })) : []),
+    { name, path: `/${locale}/product/${product.slug}` },
+  ]);
 
   return (
     <>
@@ -131,6 +131,10 @@ export default async function ProductSeoLayout({
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
         }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData).replace(/</g, '\\u003c') }}
       />
       {children}
     </>

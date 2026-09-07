@@ -7,9 +7,11 @@ import { MediaUploadField, deleteUploadedMedia } from '@/components/admin/MediaU
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { SeoFieldsEditor } from '@/components/admin/SeoFieldsEditor';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
-import type { Category } from '@/types';
-import { getCategoryDepth, getCategoryLabel, getOrderedCategories, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
+import type { Category, Product } from '@/types';
+import { getCategoryDepth, getCategoryLabel, getCategoryPath, getOrderedCategories, getProductsInCategoryScope, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
+import { useUnsavedNavigationGuard } from '@/lib/admin/useUnsavedNavigationGuard';
 
 const newCategory: Partial<Category> = {
   titleRu: '',
@@ -35,11 +37,15 @@ function getCategoryMediaPaths(category?: Partial<Category>) {
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [editingCategory, setEditingCategory] = useState<Partial<Category>>({ ...newCategory });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState('');
   const [notice, setNotice] = useState('');
+  const [editorBaseline, setEditorBaseline] = useState(() => JSON.stringify(newCategory));
+  const hasUnsavedChanges = JSON.stringify(editingCategory) !== editorBaseline;
+  useUnsavedNavigationGuard(hasUnsavedChanges, 'Перейти на другую страницу и потерять несохранённые изменения категории?');
   const persistedCategory = editingCategory.id
     ? categories.find((category) => category.id === editingCategory.id)
     : undefined;
@@ -55,8 +61,9 @@ export default function AdminCategoriesPage() {
     setLoading(true);
     setPageError('');
     try {
-      const data = await AdminRepository.getCategories();
+      const [data, productData] = await Promise.all([AdminRepository.getCategories(), AdminRepository.getProducts()]);
       setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
+      setProducts(productData);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Не удалось загрузить категории.');
     } finally {
@@ -66,9 +73,12 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => {
     let active = true;
-    AdminRepository.getCategories()
-      .then((data) => {
-        if (active) setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
+    Promise.all([AdminRepository.getCategories(), AdminRepository.getProducts()])
+      .then(([data, productData]) => {
+        if (active) {
+          setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
+          setProducts(productData);
+        }
       })
       .catch((error: unknown) => {
         if (active) setPageError(error instanceof Error ? error.message : 'Не удалось загрузить категории.');
@@ -79,7 +89,18 @@ export default function AdminCategoriesPage() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsavedChanges]);
+
+  const confirmDiscard = () => !hasUnsavedChanges
+    || window.confirm('Перейти к другой категории и потерять несохранённые изменения?');
+
   const startCreate = (kind: 'group' | 'category' | 'subcategory' = 'category') => {
+    if (!confirmDiscard()) return;
     cleanupStagedImage();
     const firstGroup = categories.find((category) => !category.parentId);
     if (kind === 'category' && !firstGroup) {
@@ -93,17 +114,21 @@ export default function AdminCategoriesPage() {
     }
     const selectedParent = categories.find((category) => category.id === editingCategory.id
       && getCategoryDepth(category.id, categories) === (kind === 'subcategory' ? 1 : 0));
-    setEditingCategory({
+    const draft = {
       ...newCategory,
       parentId: kind === 'group' ? null : selectedParent?.id || (kind === 'subcategory' ? firstCategory?.id : firstGroup?.id) || null,
       sortOrder: categories.length + 1,
-    });
+    };
+    setEditingCategory(draft);
+    setEditorBaseline(JSON.stringify(draft));
     setNotice('');
   };
 
   const selectCategory = (category: Category) => {
+    if (category.id === editingCategory.id || !confirmDiscard()) return;
     cleanupStagedImage();
     setEditingCategory({ ...category });
+    setEditorBaseline(JSON.stringify(category));
     setNotice('');
   };
 
@@ -133,6 +158,7 @@ export default function AdminCategoriesPage() {
         ? await AdminRepository.updateCategory(editingCategory.id, payload)
         : await AdminRepository.saveCategory(payload);
       setEditingCategory(saved);
+      setEditorBaseline(JSON.stringify(saved));
       await loadCategories();
       let cleanupFailed = false;
       const savedPaths = getCategoryMediaPaths(saved);
@@ -187,9 +213,20 @@ export default function AdminCategoriesPage() {
     const nestedIds = new Set(ordered.map((category) => category.id));
     return [...ordered, ...categories.filter((category) => !nestedIds.has(category.id))];
   }, [categories]);
+  const productCountsByCategory = useMemo(() => new Map(categories.map((category) => [
+    category.id,
+    getProductsInCategoryScope(products, categories, category.id).length,
+  ])), [products, categories]);
   const editingIsGroup = !editingCategory.parentId;
   const editingIsSubcategory = Boolean(editingCategory.parentId
     && getCategoryDepth(editingCategory.parentId, categories) === 1);
+  const previewCategory = {
+    ...editingCategory,
+    id: editingCategory.id || '__preview__',
+    slug: editingCategory.slug || 'novaya-kategoriya',
+  } as Category;
+  const previewCategories = [...categories.filter((category) => category.id !== previewCategory.id), previewCategory];
+  const canonicalPath = getCategoryPath(previewCategory, previewCategories);
 
   return (
     <div className="admin-page space-y-6">
@@ -243,6 +280,7 @@ export default function AdminCategoriesPage() {
                         {category.parentId ? <Layers3 className="size-3" aria-hidden="true" /> : <FolderTree className="size-3" aria-hidden="true" />}
                         {getCategoryDepth(category.id, categories) === 2 ? 'подкатегория' : category.parentId ? 'категория' : 'группа'} · /{category.slug}
                       </span>
+                      <span className="mt-1 block text-[10px] text-[var(--sp-ink-tertiary)]">Товаров в разделе: {productCountsByCategory.get(category.id) || 0}</span>
                     </button>
                     <button type="button" onClick={() => selectCategory(category)} aria-label={`Редактировать ${category.titleRu}`} className="admin-icon-button size-9">
                       <Edit3 className="size-4" aria-hidden="true" />
@@ -315,6 +353,8 @@ export default function AdminCategoriesPage() {
             <label className="admin-field-label">
               URL категории *
               <input value={editingCategory.slug || ''} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="odnorazovaya-upakovka" onChange={(event) => setEditingCategory((current) => ({ ...current, slug: event.target.value }))} className="admin-control mt-1.5 font-mono text-sm font-normal" />
+              {editingCategory.id && editingCategory.slug !== categories.find((category) => category.id === editingCategory.id)?.slug ? <p className="mt-1 text-[10px] leading-4 text-amber-700">Изменение slug меняет публичный URL. Автоматическая история редиректов не создаётся.</p> : null}
+              {persistedCategory && persistedCategory.slug !== editingCategory.slug ? <span className="mt-1 block text-[11px] font-normal text-amber-700">Изменение URL повлияет на canonical и внешние ссылки. История redirects пока не создаётся автоматически.</span> : null}
               <span className="mt-1 block font-normal text-[var(--sp-ink-tertiary)]">Только латиница, цифры и дефисы.</span>
             </label>
             <CustomSelect label="Родительская категория" value={editingCategory.parentId || ''} onChange={(value) => setEditingCategory((current) => ({ ...current, parentId: value || null }))} options={[
@@ -381,20 +421,13 @@ export default function AdminCategoriesPage() {
           <section className="admin-section">
             <h3 className="admin-section-heading">SEO категории</h3>
             <p className="admin-section-description">Необязательные заголовки и описания для поисковых систем. Если оставить пустыми, используются обычные название и описание.</p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => (
-                <label key={`seo-title-${suffix}`} className="admin-field-label">SEO title {suffix.toUpperCase()}
-                  <input value={editingCategory.seo?.[`title${suffix}`] || ''} onChange={(event) => setEditingCategory((current) => ({ ...current, seo: { ...current.seo, [`title${suffix}`]: event.target.value } }))} className="admin-control mt-1.5 text-sm font-normal" />
-                </label>
-              ))}
-            </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => (
-                <label key={`seo-description-${suffix}`} className="admin-field-label">SEO description {suffix.toUpperCase()}
-                  <textarea rows={3} value={editingCategory.seo?.[`description${suffix}`] || ''} onChange={(event) => setEditingCategory((current) => ({ ...current, seo: { ...current.seo, [`description${suffix}`]: event.target.value } }))} className="admin-control mt-1.5 text-sm font-normal" />
-                </label>
-              ))}
-            </div>
+            <div className="mt-4"><SeoFieldsEditor
+              value={editingCategory.seo}
+              fallbackTitles={{ ru: editingCategory.titleRu, uz: editingCategory.titleUz || editingCategory.titleRu, en: editingCategory.titleEn || editingCategory.titleRu, zh: editingCategory.titleZh || editingCategory.titleEn || editingCategory.titleRu }}
+              fallbackDescriptions={{ ru: editingCategory.descriptionRu, uz: editingCategory.descriptionUz || editingCategory.descriptionRu, en: editingCategory.descriptionEn || editingCategory.descriptionRu, zh: editingCategory.descriptionZh || editingCategory.descriptionEn || editingCategory.descriptionRu }}
+              canonicalPath={canonicalPath}
+              onChange={(seo) => setEditingCategory((current) => ({ ...current, seo }))}
+            /></div>
           </section>
           </div>
 

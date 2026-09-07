@@ -12,6 +12,10 @@ import {
 import { createProduct, createVariant } from '@/tests/fixtures/products';
 
 describe('product offer resolution', () => {
+  it('does not expose stale numeric prices for request/informational catalog previews', () => {
+    expect(getMinimumSalePrice(createProduct({ priceMode: 'request', price: 123 }))).toBeUndefined();
+    expect(getMinimumSalePrice(createProduct({ priceMode: 'informational', price: 123 }))).toBeUndefined();
+  });
   it('never charges a stale stored price for request/informational modes', () => {
     for (const priceMode of ['request', 'informational'] as const) {
       expect(getProductOrderUnitPrice(createProduct({ priceMode, price: 123 }), undefined, 1)).toBeUndefined();

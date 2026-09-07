@@ -12,7 +12,7 @@ import {
   initialProducts,
   initialSiteSettings,
 } from '@/lib/seedData';
-import type { Attribute, Category, Product, UserRole } from '@/types';
+import type { Attribute, Category, Product } from '@/types';
 import { validateAdminResourceData } from '@/lib/validation/adminContent';
 import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
 import { firebaseAdminUnavailableMessage } from '@/lib/firebase/adminErrors';
@@ -21,6 +21,7 @@ import { createCatalogSlug } from '@/lib/catalog/catalogSlugs';
 import { getPublishedProductStructuralIssues } from '@/lib/catalog/publicProducts';
 import { hasRequiredProductOrVariantAttribute } from '@/lib/catalog/productAttributeRequirements';
 import { isProductCategory, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
+import { canMutateAdminResource } from '@/lib/auth/adminCapabilities';
 
 export const runtime = 'nodejs';
 
@@ -42,19 +43,16 @@ const mutationSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional(),
 }).strict();
 
-function canMutate(role: UserRole, resource?: Resource, _action?: string) {
-  // Orders are append-only business records. All allowed changes go through the
-  // dedicated order endpoint, which validates the payload and writes an audit trail.
-  if (resource === 'requests') return false;
-  if (role === 'super_admin') return true;
-  return false;
-}
-
 async function validateAttributeMutation(
   database: ReturnType<typeof getAdminDb>,
   id: string,
   attribute: Partial<Attribute>,
 ) {
+  const existing = await database.collection('attributes').doc(id).get();
+  const existingKey = (existing.data() as Partial<Attribute> | undefined)?.key;
+  if (existing.exists && existingKey && attribute.key && existingKey !== attribute.key) {
+    return 'Внутреннее имя существующей характеристики нельзя менять: оно связано со значениями товаров и вариантов.';
+  }
   if (attribute.key) {
     const duplicate = await database.collection('attributes').where('key', '==', attribute.key).limit(2).get();
     if (duplicate.docs.some((document) => document.id !== id)) return 'Характеристика с таким внутренним именем уже существует.';
@@ -173,7 +171,7 @@ export async function POST(request: Request) {
       );
     }
     const mutation = parsedMutation.data;
-    if (!canMutate(authorization.admin.role, mutation.resource, mutation.action)) {
+    if (!canMutateAdminResource(authorization.admin.role, mutation.resource)) {
       return NextResponse.json(
         { error: 'У вашей роли нет прав на эту операцию.' },
         { status: 403 }

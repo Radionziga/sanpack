@@ -90,3 +90,21 @@ describe('admin Product assignment / inherited requirements', () => {
     expect((await save('products', 'new', product)).status).toBe(200);
   });
 });
+
+describe('admin Attribute key stability', () => {
+  it('rejects changing an existing key before writing', async () => {
+    store.set('attributes/brand', createAttribute('brand', ['food']) as unknown as Record<string, unknown>);
+    const { id: _id, ...attribute } = createAttribute('brand', ['food']);
+    const response = await save('attributes', 'brand', { ...attribute, key: 'manufacturer' });
+    expect(response.status).toBe(409);
+    expect(writes).not.toHaveBeenCalled();
+  });
+
+  it('allows editing labels while retaining the same key', async () => {
+    store.set('attributes/brand', createAttribute('brand', ['food']) as unknown as Record<string, unknown>);
+    const { id: _id, ...attribute } = createAttribute('brand', ['food']);
+    const response = await save('attributes', 'brand', { ...attribute, titleRu: 'Производитель' });
+    expect(response.status).toBe(200);
+    expect(writes).toHaveBeenCalledOnce();
+  });
+});

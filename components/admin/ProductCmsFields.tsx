@@ -1,18 +1,26 @@
 'use client';
 
-import { FilePlus2, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { FilePlus2, Plus, Search, Trash2 } from 'lucide-react';
 import type { Product, ProductDocument, WholesaleTier } from '@/types';
+import { SeoFieldsEditor } from '@/components/admin/SeoFieldsEditor';
 
 interface ProductCmsFieldsProps {
   product: Partial<Product>;
   products: Product[];
+  canonicalPath: string;
   onChange: (patch: Partial<Product>) => void;
 }
 
-export function ProductCmsFields({ product, products, onChange }: ProductCmsFieldsProps) {
+export function ProductCmsFields({ product, products, canonicalPath, onChange }: ProductCmsFieldsProps) {
+  const [relationQuery, setRelationQuery] = useState('');
   const tiers = product.wholesaleTiers || [];
   const documents = product.documents || [];
-  const availableRelations = products.filter((candidate) => candidate.id !== product.id);
+  const normalizedRelationQuery = relationQuery.trim().toLocaleLowerCase('ru-RU');
+  const availableRelations = products.filter((candidate) => candidate.id !== product.id && (
+    !normalizedRelationQuery
+    || `${candidate.titleRu} ${candidate.sku} ${candidate.brandName || ''}`.toLocaleLowerCase('ru-RU').includes(normalizedRelationQuery)
+  ));
 
   const updateTier = (index: number, patch: Partial<WholesaleTier>) => {
     onChange({ wholesaleTiers: tiers.map((tier, tierIndex) => tierIndex === index ? { ...tier, ...patch } : tier) });
@@ -67,8 +75,13 @@ export function ProductCmsFields({ product, products, onChange }: ProductCmsFiel
       {documents.length === 0 ? <p className="admin-panel-muted p-4 text-xs text-[var(--sp-ink-tertiary)]">Документы не добавлены.</p> : null}
     </section>
 
-    <section className="admin-panel space-y-5 p-5 md:p-6">
+    <section id="product-relations" className="admin-panel scroll-mt-20 space-y-5 p-5 md:p-6">
       <div><h4 className="admin-section-heading">Связанные и сопутствующие товары</h4><p className="admin-section-description">Явный список имеет приоритет над автоматической подборкой из той же категории.</p></div>
+      <label className="relative block max-w-md">
+        <span className="sr-only">Поиск связанных товаров</span>
+        <Search className="absolute left-3 top-3 size-4 text-[var(--sp-ink-muted)]" aria-hidden="true" />
+        <input value={relationQuery} onChange={(event) => setRelationQuery(event.target.value)} placeholder="Название, SKU или бренд…" className="admin-control pl-9" />
+      </label>
       <div className="grid gap-5 lg:grid-cols-2">{([
         ['relatedProductIds', 'Похожие товары'],
         ['accessoryProductIds', 'Сопутствующие товары'],
@@ -81,10 +94,15 @@ export function ProductCmsFields({ product, products, onChange }: ProductCmsFiel
       </fieldset>)}</div>
     </section>
 
-    <section className="admin-panel space-y-5 p-5 md:p-6">
+    <section id="product-seo" className="admin-panel scroll-mt-20 space-y-5 p-5 md:p-6">
       <div><h4 className="admin-section-heading">SEO товара</h4><p className="admin-section-description">Необязательные метаданные. При пустом значении storefront использует название и краткое описание товара.</p></div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => <label key={`seo-title-${suffix}`} className="admin-field-label">SEO title {suffix.toUpperCase()}<input value={product.seo?.[`title${suffix}`] || ''} onChange={(event) => onChange({ seo: { ...product.seo, [`title${suffix}`]: event.target.value } })} className="admin-control mt-1.5 font-normal" /></label>)}</div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{(['Ru', 'Uz', 'En', 'Zh'] as const).map((suffix) => <label key={`seo-description-${suffix}`} className="admin-field-label">SEO description {suffix.toUpperCase()}<textarea rows={3} value={product.seo?.[`description${suffix}`] || ''} onChange={(event) => onChange({ seo: { ...product.seo, [`description${suffix}`]: event.target.value } })} className="admin-control mt-1.5 font-normal" /></label>)}</div>
+      <SeoFieldsEditor
+        value={product.seo}
+        fallbackTitles={{ ru: product.titleRu, uz: product.titleUz || product.titleRu, en: product.titleEn || product.titleRu, zh: product.titleZh || product.titleEn || product.titleRu }}
+        fallbackDescriptions={{ ru: product.shortDescriptionRu, uz: product.shortDescriptionUz || product.shortDescriptionRu, en: product.shortDescriptionEn || product.shortDescriptionRu, zh: product.shortDescriptionZh || product.shortDescriptionEn || product.shortDescriptionRu }}
+        canonicalPath={canonicalPath}
+        onChange={(seo) => onChange({ seo })}
+      />
     </section>
   </>;
 }

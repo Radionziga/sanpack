@@ -43,11 +43,12 @@ export const PublicRepository = {
     notes?: string;
     items: Array<Pick<RequestOrder['items'][number], 'productId' | 'variantId' | 'quantity' | 'comment'>>;
     telegramInitData?: string;
-  }): Promise<RequestOrder> {
+  }, idempotencyKey: string): Promise<RequestOrder> {
     const response = await fetch('/api/requests', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
+        'idempotency-key': idempotencyKey,
       },
       body: JSON.stringify(data),
     });

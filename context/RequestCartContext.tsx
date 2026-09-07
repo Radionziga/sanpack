@@ -17,6 +17,7 @@ interface RequestCartContextType {
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
   updateComment: (productId: string, comment: string, variantId?: string) => void;
   clearCart: () => void;
+  replaceItems: (items: RequestItem[]) => void;
   isHydrated: boolean;
   itemCount: number;
   totalAmount: number;
@@ -100,13 +101,16 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
           existing.quantity + quantity,
           existing.variant || variant,
         );
-        existing.quantity = nextQuantity;
-        existing.price = getProductOrderUnitPrice(
-          existing.product || product,
-          existing.variant || variant,
-          nextQuantity,
-        );
-        if (comment) updated[existingIdx].comment = comment;
+        updated[existingIdx] = {
+          ...existing,
+          quantity: nextQuantity,
+          price: getProductOrderUnitPrice(
+            existing.product || product,
+            existing.variant || variant,
+            nextQuantity,
+          ),
+          ...(comment ? { comment } : {}),
+        };
         return updated;
       }
 
@@ -182,6 +186,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
   const clearCart = () => {
     setItems([]);
   };
+  const replaceItems = (nextItems: RequestItem[]) => setItems(nextItems);
 
   const itemCount = items.reduce((acc, curr) => acc + curr.quantity, 0);
   const totalAmount = items.reduce((acc, curr) => acc + (curr.price || 0) * curr.quantity, 0);
@@ -199,6 +204,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         updateQuantity,
         updateComment,
         clearCart,
+        replaceItems,
         isHydrated,
         itemCount,
         totalAmount,

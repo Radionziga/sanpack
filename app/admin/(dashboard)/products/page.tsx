@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { Product, Category, Attribute } from '@/types';
@@ -11,13 +11,23 @@ import { ProductVariantsEditor } from '@/components/admin/ProductVariantsEditor'
 import { ProductAttributeField } from '@/components/admin/ProductAttributeField';
 import { ProductCmsFields } from '@/components/admin/ProductCmsFields';
 import { deleteUploadedMedia, MediaUploadField } from '@/components/admin/MediaUploadField';
-import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star, FileText, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star, FileText, Download, RotateCcw } from 'lucide-react';
 import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
 import { getCategoryLabel, getOrderedCategories, isProductCategory } from '@/lib/catalog/categoryHierarchy';
 import { createCatalogSlug } from '@/lib/catalog/catalogSlugs';
 import { hasRequiredProductOrVariantAttribute } from '@/lib/catalog/productAttributeRequirements';
 import { attributeValueAsText, parseEditedAttributeValue } from '@/lib/catalog/attributeValues';
+import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
+import { filterAndSortAdminProducts, type AdminProductSort } from '@/lib/admin/productList';
+import { trapDialogFocus } from '@/lib/admin/dialogLifecycle';
+import { useUnsavedNavigationGuard } from '@/lib/admin/useUnsavedNavigationGuard';
+
+const PRODUCTS_PER_PAGE = 50;
+
+function serializeProductDraft(product: Partial<Product> | null) {
+  return product ? JSON.stringify(product) : '';
+}
 
 const attributeLabels: Record<string, string> = {
   material: 'Материал',
@@ -93,14 +103,28 @@ export default function AdminProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [stockFilter, setStockFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<AdminProductSort>('catalog');
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState('');
 
   // Edit/Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [editorBaseline, setEditorBaseline] = useState('');
+  const hasUnsavedChanges = Boolean(editingProduct && serializeProductDraft(editingProduct) !== editorBaseline);
+  useUnsavedNavigationGuard(isModalOpen && hasUnsavedChanges, 'Перейти на другую страницу и потерять несохранённые изменения товара?');
+
+  const showSaveError = (message: string) => {
+    setSaveError(message);
+    window.requestAnimationFrame(() => document.getElementById('product-save-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  };
 
   useEffect(() => {
     loadData();
@@ -109,8 +133,10 @@ export default function AdminProductsPage() {
   useEffect(() => {
     if (!isModalOpen) return;
     const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || saving) return;
+      if (hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
       const persistedProduct = editingProduct?.id
         ? products.find((product) => product.id === editingProduct.id)
         : undefined;
@@ -124,15 +150,29 @@ export default function AdminProductsPage() {
       }
       setIsModalOpen(false);
       setEditingProduct(null);
+      setEditorBaseline('');
       setSaveError('');
     };
     document.body.style.overflow = 'hidden';
+    const focusFrame = window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-product-dialog-close]')?.focus());
     window.addEventListener('keydown', closeOnEscape);
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.cancelAnimationFrame(focusFrame);
       window.removeEventListener('keydown', closeOnEscape);
+      previousFocus?.focus();
     };
-  }, [isModalOpen, saving, editingProduct, products]);
+  }, [isModalOpen, saving, editingProduct, products, hasUnsavedChanges]);
+
+  useEffect(() => {
+    if (!isModalOpen || !hasUnsavedChanges) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [hasUnsavedChanges, isModalOpen]);
 
   async function loadData() {
     setLoading(true);
@@ -155,7 +195,7 @@ export default function AdminProductsPage() {
 
   const handleOpenCreate = () => {
     const firstLeaf = getOrderedCategories(categories).find((category) => isProductCategory(category.id, categories) && category.status === 'active');
-    setEditingProduct({
+    const draft: Partial<Product> = {
       titleRu: '',
       titleUz: '',
       titleEn: '',
@@ -202,13 +242,16 @@ export default function AdminProductsPage() {
       ownProduction: false,
       newProduct: false,
       sortOrder: 10,
-    });
+    };
+    setEditingProduct(draft);
+    setEditorBaseline(serializeProductDraft(draft));
     setSaveError('');
+    setNotice('');
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (p: Product) => {
-    setEditingProduct({
+    const draft: Partial<Product> = {
       ...p,
       orderPackaging: p.orderPackaging || {
         enabled: false,
@@ -219,8 +262,11 @@ export default function AdminProductsPage() {
         minimumPackages: 1,
         packageStep: 1,
       },
-    });
+    };
+    setEditingProduct(draft);
+    setEditorBaseline(serializeProductDraft(draft));
     setSaveError('');
+    setNotice('');
     setIsModalOpen(true);
   };
 
@@ -241,9 +287,11 @@ export default function AdminProductsPage() {
 
   const closeEditor = () => {
     if (saving) return;
+    if (hasUnsavedChanges && !window.confirm('Закрыть редактор и потерять несохранённые изменения?')) return;
     cleanupStagedImage();
     setIsModalOpen(false);
     setEditingProduct(null);
+    setEditorBaseline('');
     setSaveError('');
   };
 
@@ -273,7 +321,7 @@ export default function AdminProductsPage() {
 
     const selectedCategory = categories.find((category) => category.id === editingProduct.categoryId);
     if (!selectedCategory || !isProductCategory(selectedCategory.id, categories)) {
-      setSaveError('Выберите категорию или подкатегорию внутри группы.');
+      showSaveError('Выберите категорию или подкатегорию внутри группы.');
       setSaving(false);
       return;
     }
@@ -283,7 +331,7 @@ export default function AdminProductsPage() {
         return !hasRequiredProductOrVariantAttribute(editingProduct, attribute.key);
       });
     if (editingProduct.status === 'published' && requiredMissing.length > 0) {
-      setSaveError(`Для публикации заполните обязательные характеристики: ${requiredMissing.map((attribute) => attribute.titleRu).join(', ')}.`);
+      showSaveError(`Для публикации заполните обязательные характеристики: ${requiredMissing.map((attribute) => attribute.titleRu).join(', ')}.`);
       setSaving(false);
       return;
     }
@@ -317,19 +365,26 @@ export default function AdminProductsPage() {
       }
       setIsModalOpen(false);
       setEditingProduct(null);
+      setEditorBaseline('');
       await loadData();
+      setNotice(draft.id ? 'Товар сохранён.' : 'Новый товар создан.');
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Товар не сохранён. Попробуйте ещё раз.');
+      showSaveError(error instanceof Error ? error.message : 'Товар не сохранён. Попробуйте ещё раз.');
     } finally {
       setSaving(false);
     }
   };
 
-  const filteredProducts = products.filter(
-    (p) =>
-      p.titleRu.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = useMemo(() => filterAndSortAdminProducts(products, categories, {
+    query: searchTerm,
+    categoryId: categoryFilter || undefined,
+    status: statusFilter === 'all' ? '' : statusFilter as Product['status'],
+    stockStatus: stockFilter === 'all' ? '' : stockFilter as Product['stockStatus'],
+    sort: sortBy,
+  }), [categoryFilter, categories, products, searchTerm, sortBy, statusFilter, stockFilter]);
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const visibleProducts = filteredProducts.slice((currentPage - 1) * PRODUCTS_PER_PAGE, currentPage * PRODUCTS_PER_PAGE);
   const editingOrderRule = editingProduct
     ? getProductOrderRule(editingProduct as Product)
     : null;
@@ -388,22 +443,47 @@ export default function AdminProductsPage() {
         </div>
       ) : null}
 
+      {notice ? <p role="status" className="sp-alert sp-alert-success text-sm">{notice}</p> : null}
+
       {/* Search & Stats */}
-      <div className="admin-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full max-w-md flex-1">
+      <div className="admin-panel space-y-3 p-4">
+        <div className="grid gap-3 lg:grid-cols-[minmax(16rem,1.5fr)_repeat(4,minmax(10rem,1fr))_auto]">
+        <div className="relative min-w-0">
           <Search className="absolute left-3 top-3.5 size-4 text-[var(--sp-ink-muted)]" aria-hidden="true" />
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Поиск по названию или артикулу (SKU)..."
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+            placeholder="Название, SKU, SKU варианта или бренд…"
             className="admin-control pl-9 pr-3 text-xs"
           />
         </div>
-
-        <span className="shrink-0 text-xs font-bold text-[var(--sp-brand)]">
-          Всего товаров: {filteredProducts.length}
-        </span>
+        <CustomSelect ariaLabel="Фильтр по категории" value={categoryFilter} onChange={(value) => { setCategoryFilter(value); setPage(1); }} options={[
+          { value: '', label: 'Все категории' },
+          ...getOrderedCategories(categories).map((category) => ({ value: category.id, label: getCategoryLabel(category.id, categories) })),
+        ]} />
+        <CustomSelect ariaLabel="Фильтр по публикации" value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} options={[
+          { value: 'all', label: 'Все публикации' }, { value: 'published', label: 'Опубликованные' },
+          { value: 'draft', label: 'Черновики' }, { value: 'hidden', label: 'Скрытые' }, { value: 'archived', label: 'Архив' },
+        ]} />
+        <CustomSelect ariaLabel="Фильтр по наличию" value={stockFilter} onChange={(value) => { setStockFilter(value); setPage(1); }} options={[
+          { value: 'all', label: 'Любое наличие' }, { value: 'in_stock', label: 'В наличии' },
+          { value: 'out_of_stock', label: 'Нет в наличии' }, { value: 'on_order', label: 'Под заказ' },
+          { value: 'temporarily_unavailable', label: 'Временно недоступны' }, { value: 'discontinued', label: 'Сняты с ассортимента' },
+        ]} />
+        <CustomSelect ariaLabel="Сортировка товаров" value={sortBy} onChange={(value) => { setSortBy(value as AdminProductSort); setPage(1); }} options={[
+          { value: 'catalog', label: 'Порядок каталога' }, { value: 'updated', label: 'Недавно изменённые' },
+          { value: 'name', label: 'По названию' }, { value: 'sku', label: 'По SKU' },
+          { value: 'price_asc', label: 'Цена: сначала ниже' }, { value: 'price_desc', label: 'Цена: сначала выше' },
+        ]} />
+        <button type="button" onClick={() => { setSearchTerm(''); setCategoryFilter(''); setStatusFilter('all'); setStockFilter('all'); setSortBy('catalog'); setPage(1); }} className="admin-button-secondary justify-center" title="Сбросить поиск и фильтры">
+          <RotateCcw className="size-4" aria-hidden="true" /> Сбросить
+        </button>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="text-[var(--sp-ink-secondary)]">Показано <strong className="text-[var(--sp-ink)]">{filteredProducts.length}</strong> из {products.length}</span>
+          {filteredProducts.length > PRODUCTS_PER_PAGE ? <span className="font-semibold text-[var(--sp-brand)]">Страница {currentPage} из {totalPages}</span> : null}
+        </div>
       </div>
 
       {/* Products Table */}
@@ -425,7 +505,7 @@ export default function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--sp-line-soft)]">
-                {filteredProducts.map((p) => {
+                {visibleProducts.map((p) => {
                   const cat = categories.find((c) => c.id === p.categoryId);
                   const orderSummary = getMinimumOrderLabel(p);
                   return (
@@ -442,12 +522,13 @@ export default function AdminProductsPage() {
                       <td className="p-3.5">
                         <span className="block font-bold text-[var(--sp-ink)]">{p.titleRu}</span>
                         <span className="font-mono text-[10px] text-[var(--sp-ink-tertiary)]">Арт: {p.sku}</span>
+                        {p.variants?.length ? <span className="mt-1 block text-[10px] font-semibold text-[var(--sp-brand)]">Вариантов: {p.variants.length}</span> : null}
                       </td>
                       <td className="p-3.5 font-semibold text-[var(--sp-ink-secondary)]">
-                        {cat ? cat.titleRu : '—'}
+                        {cat ? getCategoryLabel(cat.id, categories) : '—'}
                       </td>
                       <td className="p-3.5 font-bold text-[var(--sp-brand)]">
-                        {p.showPrice && p.price ? `${p.price.toLocaleString()} сум` : 'По запросу'}
+                        {getProductCatalogPriceText(p, 'ru')}
                         <span className="block text-[10px] font-normal text-[var(--sp-ink-tertiary)]">
                           {orderSummary}
                         </span>
@@ -462,6 +543,9 @@ export default function AdminProductsPage() {
                         )}
                       </td>
                       <td className="p-3.5">
+                        <span className={`mb-1 block w-fit rounded px-2 py-1 text-[10px] font-bold ${p.status === 'published' ? 'bg-emerald-100 text-emerald-800' : p.status === 'draft' ? 'bg-slate-100 text-slate-700' : 'bg-rose-100 text-rose-800'}`}>
+                          {p.status === 'published' ? 'Опубликован' : p.status === 'draft' ? 'Черновик' : p.status === 'hidden' ? 'Скрыт' : 'В архиве'}
+                        </span>
                         <span
                           className={`px-2 py-1 rounded text-[10px] font-bold ${
                             p.stockStatus === 'in_stock'
@@ -493,13 +577,22 @@ export default function AdminProductsPage() {
                 })}
               </tbody>
             </table>
+            {visibleProducts.length === 0 ? <div className="border-t border-[var(--sp-line-soft)] p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">По заданным условиям товары не найдены.</div> : null}
           </div>
         )}
       </div>
 
+      {filteredProducts.length > PRODUCTS_PER_PAGE ? (
+        <nav aria-label="Пагинация товаров" className="admin-panel flex items-center justify-between gap-3 p-3">
+          <button type="button" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="admin-button-secondary disabled:opacity-40">Назад</button>
+          <span className="text-xs font-semibold text-[var(--sp-ink-secondary)]">{(currentPage - 1) * PRODUCTS_PER_PAGE + 1}–{Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length)} из {filteredProducts.length}</span>
+          <button type="button" disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} className="admin-button-secondary disabled:opacity-40">Дальше</button>
+        </nav>
+      ) : null}
+
       {/* Product Edit / Create Modal */}
       {isModalOpen && editingProduct && (
-        <div className="admin-modal-backdrop p-0 md:p-4" role="dialog" aria-modal="true" aria-label={editingProduct.id ? 'Редактирование товара' : 'Новый товар'}>
+        <div className="admin-modal-backdrop p-0 md:p-4" role="dialog" aria-modal="true" aria-label={editingProduct.id ? 'Редактирование товара' : 'Новый товар'} onKeyDown={trapDialogFocus}>
           <form
             onSubmit={handleSave}
             className="admin-modal-card mx-auto md:my-0 md:max-w-6xl text-xs"
@@ -511,8 +604,10 @@ export default function AdminProductsPage() {
                   {editingProduct.id ? 'Редактирование товара' : 'Новый товар'}
                 </h3>
                 <p className="mt-1 text-[11px] text-[var(--sp-ink-tertiary)]">Заполните обязательные данные, затем настройте продажу, описание и характеристики.</p>
+                {hasUnsavedChanges ? <p className="mt-1 text-[11px] font-semibold text-amber-700">Есть несохранённые изменения</p> : null}
               </div>
               <button
+                data-product-dialog-close
                 type="button"
                 onClick={closeEditor}
                 className="admin-icon-button shrink-0"
@@ -523,7 +618,13 @@ export default function AdminProductsPage() {
             </div>
 
             <div className="admin-modal-body space-y-7 bg-[var(--sp-canvas)] px-5 py-6 md:px-7">
-            <section className="admin-panel p-5 md:p-6">
+            <nav aria-label="Разделы товара" className="sticky top-0 z-20 -mx-1 flex gap-2 overflow-x-auto rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_96%,transparent)] p-2 shadow-sm backdrop-blur">
+              {[
+                ['product-main', 'Основное'], ['product-order', 'Цена и заказ'], ['product-variants', 'Варианты'],
+                ['product-relations', 'Связи'], ['product-seo', 'SEO'], ['product-description', 'Описание'], ['product-attributes', 'Характеристики'],
+              ].map(([href, label]) => <a key={href} href={`#${href}`} className="shrink-0 rounded-[var(--sp-radius-control-inner)] px-3 py-2 text-[11px] font-semibold text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]">{label}</a>)}
+            </nav>
+            <section id="product-main" className="admin-panel scroll-mt-20 p-5 md:p-6">
               <h4 className="admin-section-heading">Основная информация</h4>
               <p className="admin-section-description">Название, артикул, категория, цена и изображение, которые определяют товар в каталоге.</p>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -531,6 +632,7 @@ export default function AdminProductsPage() {
                 <label className="font-bold block mb-1">Название (RU) *</label>
                 <input
                   type="text"
+                  aria-label="Название (RU) *"
                   required
                   value={editingProduct.titleRu || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleRu: e.target.value })}
@@ -542,6 +644,7 @@ export default function AdminProductsPage() {
                 <label className="font-bold block mb-1">Название (UZ) *</label>
                 <input
                   type="text"
+                  aria-label="Название (UZ) *"
                   required
                   value={editingProduct.titleUz || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleUz: e.target.value })}
@@ -553,6 +656,7 @@ export default function AdminProductsPage() {
                 <label className="font-bold block mb-1">Название (EN)</label>
                 <input
                   type="text"
+                  aria-label="Название (EN)"
                   value={editingProduct.titleEn || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleEn: e.target.value })}
                   className="admin-control text-sm"
@@ -563,6 +667,7 @@ export default function AdminProductsPage() {
                 <label className="font-bold block mb-1">Название (ZH)</label>
                 <input
                   type="text"
+                  aria-label="Название (ZH)"
                   value={editingProduct.titleZh || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, titleZh: e.target.value })}
                   className="admin-control text-sm"
@@ -592,6 +697,7 @@ export default function AdminProductsPage() {
                   }}
                   className="admin-control font-mono text-sm"
                 />
+                {getPersistedProduct() && getPersistedProduct()?.slug !== editingProduct.slug ? <span className="mt-1 block text-[11px] font-normal text-amber-700">Изменение URL повлияет на canonical и внешние ссылки. Redirect автоматически не создаётся.</span> : null}
               </div>
 
               <div>
@@ -736,7 +842,7 @@ export default function AdminProductsPage() {
             </div>
             </section>
 
-            <section className="admin-panel space-y-4 p-5 md:p-6">
+            <section id="product-order" className="admin-panel scroll-mt-20 space-y-4 p-5 md:p-6">
               <div className="flex flex-col gap-1 border-b border-[var(--sp-line)] pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
                 <div>
                   <h4 className="text-sm font-bold text-[var(--sp-ink)]">Продажа и упаковка</h4>
@@ -984,21 +1090,22 @@ export default function AdminProductsPage() {
               ) : null}
             </section>
 
-            <ProductVariantsEditor
+            <div id="product-variants" className="scroll-mt-20"><ProductVariantsEditor
               key={editingProduct.id || 'new-product'}
               initialVariants={editingProduct.variants || []}
               attributes={applicableAttributes}
               currency={editingProduct.currency || 'UZS'}
               onChange={(variants) => setEditingProduct((current) => current ? { ...current, variants } : current)}
-            />
+            /></div>
 
             <ProductCmsFields
               product={editingProduct}
               products={products}
+              canonicalPath={`/product/${editingProduct.slug || createCatalogSlug(editingProduct.titleRu || '', editingProduct.sku || '')}`}
               onChange={(patch) => setEditingProduct({ ...editingProduct, ...patch })}
             />
 
-            <section className="admin-panel space-y-5 p-5 md:p-6">
+            <section id="product-description" className="admin-panel scroll-mt-20 space-y-5 p-5 md:p-6">
             <div>
               <h4 className="admin-section-heading">Описание и размещение</h4>
               <p className="admin-section-description">Отметьте нужные витрины и заполните тексты. Переводы можно подготовить автоматически.</p>
@@ -1073,7 +1180,7 @@ export default function AdminProductsPage() {
             </section>
 
             {/* Dynamic Attributes Section */}
-            <section className="admin-panel space-y-5 p-5 md:p-6">
+            <section id="product-attributes" className="admin-panel scroll-mt-20 space-y-5 p-5 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="admin-section-heading">Характеристики и фильтры</h4>
@@ -1209,7 +1316,7 @@ export default function AdminProductsPage() {
             </section>
 
             {saveError ? (
-              <div role="alert" className="sp-alert sp-alert-danger flex items-start gap-2 text-xs">
+              <div id="product-save-error" role="alert" className="sp-alert sp-alert-danger flex scroll-mt-24 items-start gap-2 text-xs">
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <span>{saveError}</span>
               </div>

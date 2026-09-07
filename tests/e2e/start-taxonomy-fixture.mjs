@@ -1,6 +1,6 @@
 // Runs the real application in an isolated disposable source copy. Never loads .env.local.
 // Authentication and admin reads are fixtures; all cloud access/admin writes are disabled.
-import { cpSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,7 @@ const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..
 const fixture = mkdtempSync(path.join(tmpdir(), 'sanpack-taxonomy-'));
 const port = process.env.TAXONOMY_PORT || '3101';
 for (const directory of ['app', 'components', 'context', 'hooks', 'i18n', 'lib', 'messages', 'types', 'tests/fixtures']) {
+  if (!existsSync(path.join(source, directory))) continue;
   cpSync(path.join(source, directory), path.join(fixture, directory), { recursive: true });
 }
 for (const name of readdirSync(source)) {
@@ -29,7 +30,11 @@ ${seed}`
     id: 'fixture-' + id, slug: 'fixture-' + id, sku: 'FIXTURE-' + id, categoryId: id, categorySlug: id,
     titleRu: 'Fixture ' + id, titleEn: 'Fixture ' + id, titleUz: 'Fixture ' + id, titleZh: 'Fixture ' + id,
     attributes: { 'group-fixture-attribute': 'common', 'category-fixture-attribute': 'grocery', 'sub-fixture-attribute': 'grains' }
-  }))]`));
+  })), createProduct({
+    id: 'fixture-wholesale', slug: 'fixture-wholesale', sku: 'FIXTURE-WHOLESALE', categoryId: 'grocery', categorySlug: 'grocery',
+    titleRu: 'Оптовый fixture', titleUz: 'Ulgurji fixture', titleEn: 'Wholesale fixture', titleZh: '批发测试商品',
+    price: 100, wholesaleTiers: [{ minQuantity: 10, price: 80 }]
+  })]`));
 // These replacements exist ONLY in the temporary fixture directory, never in the working tree.
 writeFileSync(path.join(fixture, 'lib/auth/server.ts'), `
 export const SESSION_COOKIE_NAME = '__session';
@@ -62,7 +67,7 @@ writeFileSync(configPath, readFileSync(configPath, 'utf8')
   // Standalone copying is unnecessary: dependencies are intentionally symlinked.
   .replace("output: 'standalone',", ''));
 console.log(`Isolated taxonomy fixture: ${fixture}`);
-const options = {
+const runtimeOptions = {
   cwd: fixture, stdio: 'inherit',
   env: {
     PATH: process.env.PATH, TMPDIR: tmpdir(), NODE_ENV: 'production', NEXT_TELEMETRY_DISABLED: '1',
@@ -71,11 +76,15 @@ const options = {
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'demo-taxonomy.invalid', NEXT_PUBLIC_FIREBASE_APP_ID: 'fixture',
   },
 };
+const buildOptions = {
+  ...runtimeOptions,
+  env: { ...runtimeOptions.env, SANPACK_USE_SEED_DATA: 'false' },
+};
 const next = path.join(source, 'node_modules/next/dist/bin/next');
 // Webpack supports the read-only node_modules symlink outside this temporary root.
-let child = spawn(process.execPath, [next, 'build', '--webpack'], options);
+let child = spawn(process.execPath, [next, 'build', '--webpack'], buildOptions);
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));
 const buildCode = await new Promise((resolve) => child.on('exit', resolve));
 if (buildCode !== 0) process.exit(buildCode || 1);
-child = spawn(process.execPath, [next, 'start', '--hostname', '127.0.0.1', '--port', port], options);
+child = spawn(process.execPath, [next, 'start', '--hostname', '127.0.0.1', '--port', port], runtimeOptions);
 child.on('exit', (code) => process.exit(code || 0));

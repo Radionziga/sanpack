@@ -11,12 +11,19 @@ import Script from 'next/script';
 import { TelegramMiniAppBridge } from '@/components/telegram/TelegramMiniAppBridge';
 import '../globals.css';
 import { storefrontFontVariables } from '../fonts';
+import { buildSeoMetadata, buildSiteStructuredData } from '@/lib/seo/metadata';
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
 } as const;
+
+// Storefront data is intentionally unavailable to the credentialless build
+// process. Render locale routes at request time while keeping repository-level
+// `unstable_cache` caching, otherwise a caught build-time error shell can be
+// persisted as a successful page.
+export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -69,29 +76,11 @@ export async function generateMetadata({
         ? settings.seo?.defaultDescriptionZh || settings.seo?.defaultDescriptionEn || settings.seo?.defaultDescriptionRu || fallbackDescription
         : settings.seo?.defaultDescriptionRu || fallbackDescription;
   return {
+    ...buildSeoMetadata({ locale, path: '', title, description, settings, titleIsExplicit: true }),
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-    title,
-    description,
     icons: settings.company?.favicon
       ? { icon: settings.company.favicon }
       : undefined,
-    alternates: {
-      canonical: `/${locale}`,
-      languages: {
-        ru: '/ru',
-        uz: '/uz',
-        en: '/en',
-        zh: '/zh',
-        'x-default': '/ru',
-      },
-    },
-    openGraph: {
-      type: 'website',
-      locale,
-      title,
-      description,
-      siteName: settings.company?.name || 'Storefront',
-    },
   };
 }
 
@@ -150,6 +139,10 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={storefrontFontVariables}>
       <body suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildSiteStructuredData(settings)).replace(/</g, '\\u003c') }}
+        />
         <NextIntlClientProvider messages={messages}>
           <StorefrontTheme design={settings.design}>
             <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />

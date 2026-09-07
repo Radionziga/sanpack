@@ -8,6 +8,14 @@ import type {
   SiteSettings,
 } from '@/types';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
+import {
+  toAttributeMutationInput,
+  toBannerMutationInput,
+  toCategoryMutationInput,
+  toClientMutationInput,
+  toProductMutationInput,
+  toSettingsMutationInput,
+} from '@/lib/admin/mutationInputs';
 
 type Resource =
   | 'products'
@@ -56,16 +64,11 @@ export const AdminRepository = {
   },
   saveProduct(product: Partial<Product>) {
     const id = product.id || createId('prod');
-    const timestamp = new Date().toISOString();
     return mutate<Product>({
       action: 'save',
       resource: 'products',
       id,
-      data: {
-        ...product,
-        createdAt: product.createdAt || timestamp,
-        updatedAt: timestamp,
-      },
+      data: toProductMutationInput(product),
     });
   },
   createProduct(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) {
@@ -82,12 +85,11 @@ export const AdminRepository = {
   getCategories: () => read<Category[]>('categories'),
   saveCategory(category: Partial<Category>) {
     const id = category.id || createId('cat');
-    const { id: _ignoredId, ...data } = category;
     return mutate<Category>({
       action: 'save',
       resource: 'categories',
       id,
-      data,
+      data: toCategoryMutationInput(category),
     });
   },
   createCategory(category: Omit<Category, 'id'>) {
@@ -104,12 +106,11 @@ export const AdminRepository = {
   getAttributes: () => read<Attribute[]>('attributes'),
   saveAttribute(attribute: Partial<Attribute>) {
     const id = attribute.id || createId('attr');
-    const { id: _ignoredId, ...data } = attribute;
     return mutate<Attribute>({
       action: 'save',
       resource: 'attributes',
       id,
-      data,
+      data: toAttributeMutationInput(attribute),
     });
   },
   async deleteAttribute(id: string) {
@@ -134,14 +135,15 @@ export const AdminRepository = {
   async updateRequestStatus(
     id: string,
     status: RequestOrder['status'],
+    expectedRevision: number,
   ) {
     return parseJsonResponse<RequestOrder>(await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'status', status }),
+      body: JSON.stringify({ action: 'status', status, expectedRevision }),
     }), 'Статус заявки не изменён.');
   },
-  async updateRequest(id: string, order: {
+  async updateRequest(id: string, expectedRevision: number, order: {
     contactName: string;
     phone: string;
     status: RequestOrder['status'];
@@ -162,18 +164,17 @@ export const AdminRepository = {
     return parseJsonResponse<RequestOrder>(await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'edit', order }),
+      body: JSON.stringify({ action: 'edit', order, expectedRevision }),
     }), 'Изменения заявки не сохранены.');
   },
   getClients: () => read<ClientPartner[]>('clients'),
   saveClient(client: Partial<ClientPartner>) {
     const id = client.id || createId('client');
-    const { id: _ignoredId, ...data } = client;
     return mutate<ClientPartner>({
       action: 'save',
       resource: 'clients',
       id,
-      data,
+      data: toClientMutationInput(client),
     });
   },
   createClient(client: Omit<ClientPartner, 'id'>) {
@@ -199,12 +200,11 @@ export const AdminRepository = {
   },
   saveBanner(banner: Partial<Banner>) {
     const id = banner.id || createId('banner');
-    const { id: _ignoredId, ...data } = banner;
     return mutate<Banner>({
       action: 'save',
       resource: 'banners',
       id,
-      data,
+      data: toBannerMutationInput(banner),
     });
   },
   updateBanner(id: string, banner: Partial<Banner>) {
@@ -220,7 +220,7 @@ export const AdminRepository = {
       action: 'save',
       resource: 'settings',
       id: 'global',
-      data: settings,
+      data: toSettingsMutationInput(settings),
     });
   },
 };

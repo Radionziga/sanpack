@@ -1,12 +1,13 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Language } from '@/types';
 import { translations, TranslationKeys } from '@/lib/i18n/translations';
 import { fixPrepositions } from '@/lib/utils/formatText';
 import { getPathLanguage } from '@/lib/i18n/pathLocale';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
+import { buildLocalizedPath } from '@/lib/i18n/localeNavigation';
 
 interface LanguageContextType {
   language: Language;
@@ -27,12 +28,13 @@ export function LanguageProvider({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const language = getPathLanguage(pathname, initialLanguage);
 
   const setLanguage = (lang: Language) => {
-    const segments = pathname.split('/');
-    segments[1] = lang;
-    router.push(segments.join('/') || `/${lang}`);
+    const query = searchParams.toString();
+    const hash = typeof window === 'undefined' ? '' : window.location.hash;
+    router.push(buildLocalizedPath(pathname, lang, query, hash));
   };
 
   const t = (key: TranslationKeys): string => {

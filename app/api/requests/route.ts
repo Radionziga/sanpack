@@ -16,8 +16,12 @@ import { decryptSecret } from '@/lib/telegram/secrets';
 import { verifyTelegramInitData } from '@/lib/telegram/miniApp';
 import { notifyAboutNewOrder } from '@/lib/telegram/notifications';
 import { logError } from '@/lib/observability/logger';
+import { projectCustomerOrder } from '@/lib/orders/customerOrderProjection';
+import { createHash } from 'node:crypto';
 
 export const runtime = 'nodejs';
+
+class IdempotencyConflictError extends Error {}
 
 export async function GET() {
   const customer = await getCustomerSession();
@@ -29,11 +33,12 @@ export async function GET() {
     const snapshot = await getAdminDb()
       .collection('requests')
       .where('customerUid', '==', customer.sub)
+      .orderBy('createdAt', 'desc')
       .limit(100)
       .get();
     const orders = snapshot.docs
       .map((document) => ({ id: document.id, ...document.data() }) as RequestOrder)
-      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+      .map(projectCustomerOrder);
     return NextResponse.json(orders);
   } catch (error) {
     logError('order.history_failed', error);
@@ -42,6 +47,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const idempotencyKey = request.headers.get('idempotency-key')?.trim() || '';
+  if (!/^[A-Za-z0-9_-]{16,160}$/.test(idempotencyKey)) {
+    return NextResponse.json({ error: 'Некорректный ключ повторной отправки.' }, { status: 400 });
+  }
   const parsed = checkoutRequestSchema.safeParse(await readJsonBody(request));
   if (!parsed.success) {
     return NextResponse.json(
@@ -120,10 +129,30 @@ export async function POST(request: Request) {
       updatedAt: now,
     };
 
-    await document.create({
-      ...order,
-      serverCreatedAt: FieldValue.serverTimestamp(),
+    const keyHash = createHash('sha256').update(idempotencyKey).digest('hex');
+    const payloadHash = createHash('sha256').update(JSON.stringify({
+      customer: customer?.sub || telegramUser?.id || phoneNormalized,
+      input: parsed.data,
+    })).digest('hex');
+    const idempotencyReference = getAdminDb().collection('requestIdempotency').doc(keyHash);
+    const persisted = await getAdminDb().runTransaction(async (transaction) => {
+      const prior = await transaction.get(idempotencyReference);
+      if (prior.exists) {
+        const priorData = prior.data() as { payloadHash?: string; requestId?: string };
+        if (priorData.payloadHash !== payloadHash || !priorData.requestId) throw new IdempotencyConflictError();
+        const priorOrder = await transaction.get(getAdminDb().collection('requests').doc(priorData.requestId));
+        if (!priorOrder.exists) throw new IdempotencyConflictError();
+        return { order: { id: priorOrder.id, ...priorOrder.data() } as RequestOrder, created: false };
+      }
+      transaction.create(document, { ...order, serverCreatedAt: FieldValue.serverTimestamp() });
+      transaction.create(idempotencyReference, {
+        payloadHash,
+        requestId: document.id,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      return { order, created: true };
     });
+    if (!persisted.created) return NextResponse.json(persisted.order);
     try {
       const notification = await notifyAboutNewOrder(order);
       await document.update({
@@ -141,6 +170,9 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
+    if (error instanceof IdempotencyConflictError) {
+      return NextResponse.json({ error: 'Эта попытка отправки уже использована для другой заявки.' }, { status: 409 });
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Проверьте заполненные поля.' }, { status: 400 });
     }

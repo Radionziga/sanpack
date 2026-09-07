@@ -98,6 +98,12 @@ URLs: Group/Category сохраняют `/[locale]/catalog/slug`, Subcategory п
 
 Путь сохранения: **form → AdminRepository (HTTP wrapper) → `/api/admin/data` → auth + validation → Admin SDK/Firestore → cache invalidation**. Не считать AdminRepository отдельным server persistence layer.
 
+Admin/SEO foundation audit **2026-09-05** добавил только operational P1 без изменения domain model: список товаров ищет name/SKU/brand/variant SKU, фильтрует taxonomy/status/availability, сортирует включая effective catalog price и показывает 50 строк на страницу; Category tree показывает scope counts. Product Editor предупреждает о несохранённых изменениях, slug-impact и даёт компактную навигацию по секциям. Новый Attribute key генерируется из RU title, допускает override только до первого save и затем неизменяем также на API boundary. SEO editor Product/Category показывает локализованный fallback, длину, canonical и приблизительный SERP preview.
+
+Release-candidate stabilization **2026-09-07** закрыла adversarial findings F01–F17 поверх этого слоя без изменения catalog/commerce model. Storefront routes выполняются dynamic SSR; Product server route отдаёт crawler-visible H1, основной контент, sale-price preview, breadcrumbs и JSON-LD, а в client boundary передаётся только текущий Product, definitions и до четырёх related Products. Каталог синхронизирует sort/view/stock/own/typed filters с query string; locale switch сохраняет query/hash. Order mutations защищены optimistic revision и idempotency, checkout повторно сверяет cart с актуальным каталогом, customer order API использует явную projection, Admin UI применяет capability matrix и полноценный dialog/dirty-state lifecycle. Подробный фактический handoff: [STABILIZATION_HANDOFF_2026-09-07.md](STABILIZATION_HANDOFF_2026-09-07.md).
+
+SEO metadata теперь централизует canonical/hreflang/OG/Twitter fallback для Home, Catalog, Product, Group/Category/Subcategory и основных content routes. Product и taxonomy pages отдают BreadcrumbList, locale layout — Organization/WebSite; sitemap продолжает включать только public canonical entities, utility routes получают noindex headers и robots disallow. Новые SEO поля не добавлялись: existing optional `seo` и `SiteSettings.seo` остаются source of truth, publication/status — indexability contract.
+
 После Production Security Audit Firebase user с email **не получает роль автоматически**: требуется `admins/{uid}` с `active: true` и известной `role`, проверяемый сервером на каждом запросе. При отсутствии grant/ошибке доступа login закрыт. Перед production rollout существующий owner grant был проверен: одна активная запись `super_admin`, UID/email согласованы с enabled Firebase Auth user; новый grant не создавался. Покупатели используют отдельную Telegram identity.
 
 ## White-label boundaries
@@ -121,7 +127,7 @@ Controlled rollout preflight **2026-09-04** сначала был останов
 
 ## Validation baseline
 
-Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, `git diff --check`; для UI — соответствующий browser smoke / `npm run test:e2e`.
+Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, `git diff --check`; для UI — соответствующий browser smoke / `npm run test:e2e`. Обычный Playwright suite и taxonomy suite используют production build/start fixture, а не Next dev/HMR; cloud/admin writes отключены.
 
 `npm run typecheck` сначала выполняет `next typegen`, затем `tsc --noEmit`. `next-env.d.ts` генерируется Next.js, исключён из Git и остаётся в `tsconfig.json`; dev/build imports не нужно вручную править или коммитить. `.env.example` содержит placeholders собственного Firebase project; SANPACK-specific operational/deployment scripts требуют отдельной настройки при копировании магазина.
 
@@ -129,11 +135,12 @@ Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, 
 
 ## Known limitations
 
-- Facet counts не contextual; attribute filters не синхронизированы с URL и показываются в category/group scope, не в общем `/catalog`.
+- Facet counts не contextual; attribute filters показываются в category/group scope, не в общем `/catalog`. Активное состояние sort/view/stock/own/typed filters синхронизировано с URL query и восстанавливается при Back/Forward.
 - Search не индексирует attributes/variant SKU; после фильтра не выбирает автоматически совпавший вариант на detail page.
 - Boolean filter сейчас true-only; brand facet использует `brandName` лишь при отсутствии `attributes.brand` — legacy расхождения ещё возможны.
 - Checkout — request workflow: нет payment gateway, inventory reservation/decrement. `inStockOnly` не обещает наличие при последующем оформлении.
 - JSON-LD — один sale Offer с product stockStatus, не полный variant inventory feed; нет currency conversion.
+- Product route server-rendered: raw initial HTML содержит Product H1, основное описание/изображение, sale-price preview, breadcrumbs и structured data. Интерактивный выбор варианта/quantity/cart остаётся client-side; сервер передаёт bounded payload, а не весь каталог.
 - Missing ZH content ещё маскируется fallback/legacy seed localization adapters; SEO и некоторые страницы остаются SANPACK-oriented.
 - Нет Brand pages, collections/tags engine; это отложенный scope, не основание переписывать Product.
 - Firestore public boundary работает в production как Admin-SDK server read → explicit allowlist projection → SSR/`/api/catalog`; deployed rules deny all direct client reads/writes. Products published-only, Category lineage/Banners active-only, unknown fields stripped. Schema migration не потребовалась.
@@ -158,4 +165,4 @@ Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, 
 
 После независимого review пользователь отдельно разрешил финальную уборку и один checkpoint commit. Неиспользуемые `1.png` и `public/catalog/categories/raw_1.png`–`raw_22.png` исключены из source: raw PNG побайтно дублировали сохранённые изображения с смысловыми названиями. Runtime assets и WebP не удалялись. Исторический Subcategory handoff описывает состояние **до** checkpoint.
 
-Production readiness/security audit, launch-blocker remediation и controlled production rollout завершены. Security/catalog foundation работает в production; следующий отдельный этап — **Admin Panel Operational UX Audit + SEO Architecture/CMS**, без нового infrastructure/catalog refactor. Deferred limitations не исправлять автоматически. Production taxonomy mapping и physical cleanup неиспользуемого `vetclinics` остаются отдельными явно разрешаемыми операциями.
+Production readiness/security audit, launch-blocker remediation и controlled production rollout завершены. Security/catalog foundation работает в production. Admin/SEO foundation и последующая stabilization F01–F17 подготовлены локально как release candidate; production всё ещё находится на ранее зафиксированной revision, пока новый checkpoint не будет отдельно reviewed/deployed. Deferred limitations не исправлять автоматически. Production taxonomy mapping и physical cleanup неиспользуемого `vetclinics` остаются отдельными явно разрешаемыми операциями.

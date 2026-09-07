@@ -13,9 +13,11 @@ import type { RequestItem, RequestOrder } from '@/types';
 export const runtime = 'nodejs';
 
 const mutationSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('status'), status: orderStatusSchema }).strict(),
-  z.object({ action: z.literal('edit'), order: adminOrderUpdateSchema }).strict(),
+  z.object({ action: z.literal('status'), status: orderStatusSchema, expectedRevision: z.number().int().positive() }).strict(),
+  z.object({ action: z.literal('edit'), order: adminOrderUpdateSchema, expectedRevision: z.number().int().positive() }).strict(),
 ]);
+
+class RevisionConflictError extends Error {}
 
 export async function PATCH(
   request: Request,
@@ -42,6 +44,7 @@ export async function PATCH(
   try {
     if (parsed.data.action === 'status') {
       if (initial.status === parsed.data.status) return NextResponse.json(initial);
+      const { status, expectedRevision } = parsed.data;
       const revision = (initial.revision || 1) + 1;
       const auditEntry = {
         id: crypto.randomUUID(),
@@ -49,14 +52,19 @@ export async function PATCH(
         actorUid: admin.uid,
         actorLabel: admin.email,
         createdAt: now,
-        summary: `Статус изменён: ${initial.status} → ${parsed.data.status}.`,
+        summary: `Статус изменён: ${initial.status} → ${status}.`,
         revision,
       };
-      await reference.update({
-        status: parsed.data.status,
-        revision,
-        updatedAt: now,
-        auditTrail: [...(initial.auditTrail || []), auditEntry],
+      await getAdminDb().runTransaction(async (transaction) => {
+        const currentSnapshot = await transaction.get(reference);
+        const current = { id: currentSnapshot.id, ...currentSnapshot.data() } as RequestOrder;
+        if ((current.revision || 1) !== expectedRevision) throw new RevisionConflictError();
+        transaction.update(reference, {
+          status,
+          revision,
+          updatedAt: now,
+          auditTrail: [...(current.auditTrail || []), auditEntry],
+        });
       });
     } else {
       const input = parsed.data.order;
@@ -95,27 +103,35 @@ export async function PATCH(
         summary: 'Администратор обновил состав или данные заказа.',
         revision,
       };
-      await reference.update({
-        contactName: input.contactName,
-        phone: formatUzbekPhone(phoneNormalized),
-        phoneNormalized,
-        deliveryType: 'delivery',
-        deliveryAddress: input.deliveryAddress,
-        deliveryDate: input.deliveryDate,
-        deliveryWindow: input.deliveryWindow,
-        status: input.status,
-        notes: input.notes,
-        items,
-        ...totals,
-        revision,
-        updatedAt: now,
-        auditTrail: [...(initial.auditTrail || []), auditEntry],
+      await getAdminDb().runTransaction(async (transaction) => {
+        const currentSnapshot = await transaction.get(reference);
+        const current = { id: currentSnapshot.id, ...currentSnapshot.data() } as RequestOrder;
+        if ((current.revision || 1) !== parsed.data.expectedRevision) throw new RevisionConflictError();
+        transaction.update(reference, {
+          contactName: input.contactName,
+          phone: formatUzbekPhone(phoneNormalized),
+          phoneNormalized,
+          deliveryType: 'delivery',
+          deliveryAddress: input.deliveryAddress,
+          deliveryDate: input.deliveryDate,
+          deliveryWindow: input.deliveryWindow,
+          status: input.status,
+          notes: input.notes,
+          items,
+          ...totals,
+          revision,
+          updatedAt: now,
+          auditTrail: [...(current.auditTrail || []), auditEntry],
+        });
       });
     }
 
     const updated = await reference.get();
     return NextResponse.json({ id: updated.id, ...updated.data() });
   } catch (error) {
+    if (error instanceof RevisionConflictError) {
+      return NextResponse.json({ error: 'Заказ уже изменён другим сотрудником. Обновите данные и повторите действие.' }, { status: 409 });
+    }
     const inputError = getOrderInputErrorMessage(error);
     if (inputError) {
       return NextResponse.json({ error: inputError }, { status: 400 });

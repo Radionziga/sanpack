@@ -6,6 +6,13 @@ import {
   getPublicCategories,
   getPublicProducts,
 } from '@/lib/repositories/serverCatalogRepository';
+import type { Language } from '@/types';
+import { getStaticRouteMetadata } from '@/lib/seo/serverMetadata';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  return getStaticRouteMetadata('catalog', locale as Language);
+}
 
 export default async function CatalogPage() {
   const initialCatalog = await Promise.all([

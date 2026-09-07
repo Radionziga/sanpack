@@ -85,8 +85,8 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
       const productTitle = p.titleRu || p.titleUz || p.titleEn || `Товар (${doc.id})`;
       const editUrl = `/admin/products`;
 
-      if (p.image) {
-        registerUsage(index, p.image, {
+      if (p.mainImage) {
+        registerUsage(index, p.mainImage, {
           type: 'product',
           id: doc.id,
           title: productTitle,
@@ -95,8 +95,8 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
           editUrl,
         });
       }
-      if (p.imagePath) {
-        registerUsage(index, p.imagePath, {
+      if (p.mainImagePath) {
+        registerUsage(index, p.mainImagePath, {
           type: 'product',
           id: doc.id,
           title: productTitle,
@@ -114,6 +114,22 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
             field: `Галерея (фото ${idx + 1})`,
             sku: p.sku,
             editUrl,
+          });
+        });
+      }
+      if (Array.isArray(p.imagePaths)) {
+        p.imagePaths.forEach((path: string, idx: number) => {
+          registerUsage(index, path, {
+            type: 'product', id: doc.id, title: productTitle,
+            field: `Путь галереи (фото ${idx + 1})`, sku: p.sku, editUrl,
+          });
+        });
+      }
+      if (Array.isArray(p.documents)) {
+        p.documents.forEach((document: { title?: string; url?: string }, idx: number) => {
+          registerUsage(index, document.url, {
+            type: 'product', id: doc.id, title: productTitle,
+            field: `Документ ${document.title || idx + 1}`, sku: p.sku, editUrl,
           });
         });
       }
@@ -300,6 +316,12 @@ export async function buildSiteMediaUsageIndex(db: Firestore): Promise<UsageInde
             title: 'Логотип магазина',
             field: 'Настройки внешнего вида',
             editUrl: '/admin/settings',
+          });
+        }
+        if (s?.company?.logoDark) {
+          registerUsage(index, s.company.logoDark, {
+            type: 'settings', id: 'global-settings', title: 'Тёмный логотип магазина',
+            field: 'Настройки внешнего вида', editUrl: '/admin/settings',
           });
         }
         if (s?.company?.favicon) {
