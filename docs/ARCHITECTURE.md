@@ -308,7 +308,7 @@ Image optimization/Storage/WebP и tagged server caching решают други
 - Secrets/private integration settings не должны оказаться в SiteSettings/public JSON, git, logs или документах. Не использовать production migrations для проверки гипотез.
 - Production data, migration apply, media deletion, deployment — отдельные явно разрешённые действия. Подробные эксплуатационные шаги: [PRODUCTION_OPERATIONS.md](PRODUCTION_OPERATIONS.md).
 
-Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md) зафиксировал NOT READY, а [Launch Blockers Remediation](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md) — последующую готовность code/config plan. Controlled rollout завершён 2026-09-04: live revision `sanpack-build-2026-09-04-002`, Storage и Firestore security rules применены, runtime IAM/secret bindings и owner access проверены, TTL `rateLimits.expiresAt` активен. Эти current-state факты не переписывают исторические отчёты.
+Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY_AUDIT_2026-08-31.md) зафиксировал NOT READY, а [Launch Blockers Remediation](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md) — последующую готовность code/config plan. Foundation rollout завершён 2026-09-04, а принятый stabilization checkpoint `46cb7bfec55b1ccb033a8380fdb3ba81b1eccf14` развернут 2026-09-08 как `build-2026-09-08-001` со 100% traffic. Storage/Firestore rules не менялись при этом application rollout; runtime IAM/secret bindings и owner access повторно проверены, TTL `rateLimits.expiresAt` активен, customer-history composite index `READY`. Rollback target — `build-2026-09-04-002`. Эти current-state факты не переписывают исторические отчёты; operational evidence — [production rollout report](PRODUCTION_RELEASE_ROLLOUT_2026-09-08.md).
 
 Владелец подтвердил 2026-09-04, что экспериментальный backend `vetclinics` прекращён. Default bucket `stamply-4df8a.firebasestorage.app` является SANPACK production Storage boundary; отдельный bucket/multi-bucket abstraction не нужны. SANPACK rules сохраняют публичный get для `media/**`, запрещают direct list/write/delete, полностью закрывают `bag-design-requests/**` и прочие prefixes; trusted server/Admin SDK использует IAM. Старый vetclinics ruleset не является поддерживаемым application contract.
 
@@ -339,6 +339,7 @@ Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY
 - Locale settings не dynamic locale registry; static icons и page-specific metadata требуют rebrand smoke.
 - Большие client boundaries/full-collection trusted-server reads остаются scalability limitation; production IAM/secrets/rules/grant проверены в controlled rollout, но их нужно повторно валидировать при смене project, runtime principal или deployment platform.
 - Tags/collections/richer badges/brand pages — отложенный P2, не недостающий фундамент текущего этапа.
+- F12 non-blocking: denied screen в сохраняемом Admin layout может остаться после перехода `content_manager` с запрещённого route в разрешённый до Reload. Server/API authorization корректна; исправление — отдельный route-boundary UX patch.
 
 `inStockOnly` по подходящему варианту **больше не limitation**. Не исправлять остальные пункты автоматически под видом документации или checkpoint.
 

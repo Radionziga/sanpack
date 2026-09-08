@@ -19,22 +19,27 @@ Anonymous bag designer дополнительно использует глоб�
 
 ## Production foundation status
 
-Status as of **2026-09-04**: **PRODUCTION FOUNDATION LIVE**. Historical rationale and the pre-deploy
-plan remain in [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md).
+Status as of **2026-09-08**: **PRODUCTION RELEASE LIVE**. Historical rationale and the foundation
+pre-deploy plan remain in [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md); the current rollout evidence is in [PRODUCTION_RELEASE_ROLLOUT_2026-09-08.md](PRODUCTION_RELEASE_ROLLOUT_2026-09-08.md).
 
-- Deployed source: `39c1ceaec4e9d2e9a7a27e6e080e1dd9be1373b9`.
-- App Hosting revision: `sanpack-build-2026-09-04-002` (100% traffic after smoke).
+- Deployed source: `46cb7bfec55b1ccb033a8380fdb3ba81b1eccf14`.
+- App Hosting build/rollout: `build-2026-09-08-001` / `rollout-2026-09-08-001` (100% traffic, build `READY`, rollout `SUCCEEDED`).
+- Rollback target: `build-2026-09-04-002`, source `39c1ceaec4e9d2e9a7a27e6e080e1dd9be1373b9`; it remains compatible with the unchanged trusted-server security boundary.
 - Production domains: `https://sanpack.uz` and
   `https://sanpack--stamply-4df8a.asia-southeast1.hosted.app`.
 - Storage ruleset: `c1c6f62a-1377-4c2a-8833-b9c02ee58a08`.
 - Firestore ruleset: `404a711f-2e4f-46a6-b0be-0cea21c8ca74`.
 - `rateLimits.expiresAt` TTL state: active.
+- Customer-history composite index `requests(customerUid ASC, createdAt DESC, __name__ DESC)`: `READY` (ID `CICAgOjXh4EK`).
 - Owner grant, runtime IAM and required secret bindings were verified without exposing values.
 - Direct Firestore catalog/private reads return 403; trusted SSR/API/admin reads remain operational.
 - Public `media/**` remained available; direct list/write/delete and private/legacy paths are denied.
 - Authenticated owner admin and private asset proxy were smoke-tested. A live order was deliberately
   not created because the current workflow would send a real Telegram notification and has no safe
   test/suppress marker; canonical order price/quantity remains covered by the release tests.
+- Post-release hard-route, SSR/SEO, navigation/mobile and authenticated Admin smoke passed. The soak
+  snapshot contained no severity `ERROR` entries and no critical order/notification/bag-designer
+  failure events; observed 404s were external WordPress/CMS probes.
 
 The first attempted App Hosting build (`build-2026-09-04-001`) failed before deployment because an
 empty `TRUSTED_CLIENT_IP_HEADER` manifest value is invalid. The binding was removed (unset is the
@@ -44,26 +49,22 @@ The sections below remain the authoritative repeatable preflight, rollout and ro
 future releases; completed checks must be repeated when project, runtime identity or infrastructure
 changes.
 
-### Stabilization verification deploy preflight (2026-09-08)
+### Stabilization verification deploy record (2026-09-08)
 
-The local release candidate after the Astra verification contains no Firestore/Storage schema
-migration, rules change, IAM change or new secret binding. Before moving traffic:
+The accepted Astra-verified release contained no Firestore/Storage schema migration, rules change,
+IAM change or new secret binding. The following preflight was completed before traffic moved:
 
-1. Restore operator CLI authentication and confirm the current production revision and rollback
-   target. The last read-only verification still reported `sanpack-build-2026-09-04-002`; do not
-   assume it is current without checking App Hosting again.
-2. Verify the customer-history composite index from `firestore.indexes.json` is actually `READY` in
-   project `stamply-4df8a`. A tracked index declaration is not evidence of deployed state. If absent,
-   apply only the separately approved scoped index workflow and wait for `READY` before traffic.
-3. Reconfirm the existing owner grant, runtime IAM, public/server environment, secret bindings,
-   Storage rules and deny-all direct-client Firestore rules. This release does not require widening
-   any of them.
-4. After deploying the single reviewed checkpoint, smoke: published Product save; draft edit with
-   unchanged creation metadata; direct-page denial for a role without mutation capability; exact
-   checkout replay without a duplicate request/notification; order PDF plus a concurrent manager
-   update; mobile cart dock/contact action geometry.
-5. On failure, move traffic back to the previously recorded healthy App Hosting revision. Do not
-   weaken rules or run migrations as a workaround.
+1. Operator identity, backend/branch, rollback revision and 100% pre-release traffic were read back.
+2. The missing customer-history index was created by the single-index API workflow, waited to
+   `READY`, and exercised with the real query shape before application deployment. No existing index
+   was deleted and no rules were deployed.
+3. Existing owner grant, runtime IAM, public/server environment, secret bindings, Storage rules and
+   deny-all direct-client Firestore rules were reconfirmed without widening permissions.
+4. Exact checkpoint `46cb7bfec55b1ccb033a8380fdb3ba81b1eccf14` was pushed without force and App Hosting moved 100%
+   traffic only after its build became `READY`; production smoke then covered storefront/SSR/SEO,
+   owner Admin, mobile fixed actions and read-only security boundaries.
+5. No live order/PDF/Telegram mutation was made because production has no suppress/test marker;
+   accepted integration/emulator regressions remain the evidence for those mutation paths.
 
 > **Storage ownership decision 2026-09-04.** The owner confirmed that the
 > experimental `vetclinics` backend is discontinued. The default bucket
