@@ -71,6 +71,10 @@ const navigation = [
 
 export default function AdminShell({ children, adminEmail, adminRole }: { children: ReactNode; adminEmail: string; adminRole: UserRole }) {
   const pathname = usePathname();
+  // The shell persists between routes. Read the live pathname here so a denied
+  // screen cannot stick after navigation. Data/mutation APIs enforce permissions
+  // independently; denied page components never mount or initiate their reads.
+  const allowed = canAccessAdminPath(adminRole, pathname);
   const router = useRouter();
   const { logout } = useAuth();
   const signOut = async () => {
@@ -143,7 +147,14 @@ export default function AdminShell({ children, adminEmail, adminRole }: { childr
         </div>
       </aside>
 
-      <main id="admin-content" className="min-w-0 p-4 sm:p-6 md:p-8 lg:p-10">{children}</main>
+      <main id="admin-content" className="min-w-0 p-4 sm:p-6 md:p-8 lg:p-10">
+        {allowed ? children : (
+          <section role="alert" className="sp-alert sp-alert-danger max-w-2xl text-sm">
+            <h1 className="font-extended text-lg font-bold">Раздел недоступен</h1>
+            <p className="mt-2">У вашей роли нет прав на просмотр или изменение этого раздела. Выберите доступный раздел в меню либо обратитесь к владельцу магазина.</p>
+          </section>
+        )}
+      </main>
     </div>
   );
 }

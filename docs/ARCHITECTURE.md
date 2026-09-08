@@ -356,3 +356,7 @@ Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY
 | [PRODUCTION_OPERATIONS](PRODUCTION_OPERATIONS.md), [bag-designer operations](operations/bag-designer-cost-control.md) | Эксплуатационный checklist; не утверждение, что cloud TTL/alerts или автоматический cleanup уже provisioned |
 
 Старые документы не удалены и не переписаны в этой задаче. При расхождении сначала проверить implementation; эти уточнения описывают снимок рабочего дерева, а не вечную гарантию.
+
+## Admin route UI boundary — stabilization patch 2026-09-08
+
+The authenticated layout retains the Admin shell and landing redirect. `AdminShell` evaluates the shared capability matrix against live `usePathname()` for every navigation, including Back/Forward; denied page components do not mount or issue reads. This is the UI boundary, not data authorization: existing server handlers continue to verify Admin sessions and capabilities. Do not move pathname-dependent content selection back into the persistent server layout. Browser regressions cover denied → allowed → Back/Forward and ordinary owner navigation.

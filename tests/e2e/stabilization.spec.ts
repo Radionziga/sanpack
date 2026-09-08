@@ -228,4 +228,48 @@ test.describe('production-like hard entries', () => {
     await expect(page.getByRole('heading', { name: 'Раздел недоступен' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Добавить товар', exact: true })).toHaveCount(0);
   });
+
+  test('denied Admin route recovers through allowed navigation and browser history', async ({ context, page }) => {
+    await context.addCookies([{
+      name: 'fixture_admin_role', value: 'content_manager',
+      domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax',
+    }]);
+    const resourceReads: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/api/admin/data')) resourceReads.push(request.url());
+    });
+    await page.goto('/admin/settings');
+    const denied = page.getByRole('heading', { name: 'Раздел недоступен' });
+    const addProduct = page.getByRole('button', { name: 'Добавить товар', exact: true });
+    await expect(denied).toBeVisible();
+    await expect(page.locator('#admin-content input, #admin-content button')).toHaveCount(0);
+    expect(resourceReads).toEqual([]);
+
+    await page.getByRole('link', { name: 'Товары', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/products$/);
+    await expect(addProduct).toBeVisible();
+    await expect(denied).toHaveCount(0);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/admin\/settings$/);
+    await expect(denied).toBeVisible();
+    await expect(addProduct).toHaveCount(0);
+    await expect(page.locator('#admin-content input, #admin-content button')).toHaveCount(0);
+    expect(resourceReads.some((url) => url.includes('resource=settings'))).toBe(false);
+
+    await page.goForward();
+    await expect(page).toHaveURL(/\/admin\/products$/);
+    await expect(addProduct).toBeVisible();
+    await expect(denied).toHaveCount(0);
+  });
+
+  test('owner navigation remains available across Admin routes and Back', async ({ page }) => {
+    await page.goto('/admin/products');
+    await page.getByRole('link', { name: 'Категории', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/categories$/);
+    await expect(page.getByRole('heading', { name: 'Категории каталога', exact: true })).toBeVisible();
+    await page.goBack();
+    await expect(page.getByRole('button', { name: 'Добавить товар', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Раздел недоступен' })).toHaveCount(0);
+  });
 });

@@ -171,3 +171,7 @@ Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, 
 После независимого review пользователь отдельно разрешил финальную уборку и один checkpoint commit. Неиспользуемые `1.png` и `public/catalog/categories/raw_1.png`–`raw_22.png` исключены из source: raw PNG побайтно дублировали сохранённые изображения с смысловыми названиями. Runtime assets и WebP не удалялись. Исторический Subcategory handoff описывает состояние **до** checkpoint.
 
 Production readiness/security audit, launch-blocker remediation, Admin/SEO foundation и stabilization verification завершены. Принятый stabilization checkpoint работает в production на `build-2026-09-08-001` со 100% traffic; предыдущий `build-2026-09-04-002` сохранён как rollback target. F12 остаётся отдельным non-blocking UX patch. Deferred limitations не исправлять автоматически. Production taxonomy mapping и physical cleanup неиспользуемого `vetclinics` остаются отдельными явно разрешаемыми операциями.
+
+## Final stabilization patch — 2026-09-08
+
+F12 denied-route recovery is corrected in the existing AdminShell using the current pathname. API authorization, commerce, data schemas and infrastructure remain unchanged. The patch is pending its controlled rollout; see [STABILIZATION_RELEASE_2026-09-08.md](STABILIZATION_RELEASE_2026-09-08.md) for the release record and next Customer Identity/Telegram scope.

@@ -199,3 +199,7 @@ GitHub Actions выполняет тот же quality gate и отдельный
   separate owner-approved operation. No legacy Storage objects were found.
 - Production taxonomy mapping, content migration and deferred product features were not part of the
   rollout.
+
+## Final F12 patch rollout
+
+Release record: [STABILIZATION_RELEASE_2026-09-08.md](STABILIZATION_RELEASE_2026-09-08.md). The application-only patch requires no rules/index/schema/IAM/secret changes. Preflight reconfirmed `build-2026-09-08-001` at 100% as the compatible rollback target. `main` is the configured rollout branch: complete all gates and rollback preparation before push, inspect any automatically created build/rollout, and avoid dispatching a duplicate. Use the exact checkpoint hash if an explicit App Hosting rollout is needed. Roll back through App Hosting to build 001 without changing the current Firestore/Storage rules. Post-rollout documentation can remain a local docs-only diff until a subsequent application release to avoid an extra deployment.
