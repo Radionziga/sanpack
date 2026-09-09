@@ -51,15 +51,18 @@ export async function GET(request: Request) {
     return finish(request, returnTo, 'error');
   }
 
+  let stage: 'rate_limit' | 'settings' | 'token_exchange' | 'id_token_verification' | 'identity_resolution' | 'session_issue' = 'rate_limit';
   try {
     const limit = await checkDistributedRateLimit(request, 'telegram-login-callback', 10, 10 * 60 * 1000);
     if (!limit.allowed) return finish(request, returnTo, 'error');
+    stage = 'settings';
     const settings = await getTelegramPrivateSettings();
     const login = settings.login;
     const encryptedClientSecret = login.clientSecretEncrypted;
     if (!login.enabled || !login.clientId || !encryptedClientSecret || !canDecryptSecret(encryptedClientSecret) || !login.redirectUri) {
       return finish(request, returnTo, 'error');
     }
+    stage = 'token_exchange';
     const tokens = await exchangeTelegramCode({
       code,
       clientId: login.clientId,
@@ -67,8 +70,11 @@ export async function GET(request: Request) {
       redirectUri: login.redirectUri,
       codeVerifier: flow.codeVerifier,
     });
+    stage = 'id_token_verification';
     const profile = await verifyTelegramIdToken(tokens.id_token, login.clientId, flow.nonce);
+    stage = 'identity_resolution';
     const customer = await upsertTelegramCustomer(getTelegramOidcIdentity(profile));
+    stage = 'session_issue';
     const sessionToken = await issueCustomerSessionToken({
       sub: customer.uid,
       telegramId: customer.telegramId,
@@ -89,7 +95,9 @@ export async function GET(request: Request) {
     });
     return response;
   } catch (error) {
-    logError('Telegram login callback failed.', error);
+    // Keep auth codes, tokens, upstream responses and customer data out of
+    // logs while retaining the non-sensitive stage needed for operations.
+    logError('Telegram login callback failed.', error, { stage });
     return finish(request, returnTo, 'error');
   }
 }

@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   rateLimit: vi.fn(), settings: vi.fn(), verifyFlow: vi.fn(), exchange: vi.fn(),
   verifyIdToken: vi.fn(), upsert: vi.fn(), issue: vi.fn(), verifyInitData: vi.fn(),
+  logError: vi.fn(),
 }));
+vi.mock('@/lib/observability/logger', () => ({ logError: (...args: unknown[]) => mocks.logError(...args) }));
 vi.mock('@/lib/security/distributedRateLimit', () => ({ checkDistributedRateLimit: (...args: unknown[]) => mocks.rateLimit(...args) }));
 vi.mock('@/lib/telegram/settings', () => ({ getTelegramPrivateSettings: () => mocks.settings() }));
 vi.mock('@/lib/telegram/secrets', () => ({ canDecryptSecret: () => true, decryptSecret: () => 'decrypted' }));
@@ -55,6 +57,20 @@ describe('customer Telegram auth handlers', () => {
       sub: 'telegram:777', telegramId: '777', identityUids: ['telegram:777', 'telegram:pairwise'], name: 'Saved User',
     }));
     expect(response.headers.get('set-cookie')).toContain('__sanpack_customer=customer-session-token');
+  });
+
+  it('logs only the safe callback stage when Telegram token exchange fails', async () => {
+    mocks.exchange.mockRejectedValueOnce(new Error('sensitive upstream response'));
+    const response = await callback(new Request('https://shop.example/api/auth/telegram/callback?state=state&code=code', {
+      headers: { cookie: '__telegram_login_flow=flow-token' },
+    }));
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toContain('telegramAuth=error');
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Telegram login callback failed.',
+      expect.any(Error),
+      { stage: 'token_exchange' },
+    );
   });
 
   it('creates Mini App session through the same resolved customer identity', async () => {
