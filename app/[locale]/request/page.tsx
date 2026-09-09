@@ -78,6 +78,8 @@ const checkoutCopy = {
     telegramHint: 'Вход необязателен. Корзина и введённые данные сохранятся.',
     telegramLogin: 'Войти через Telegram',
     telegramError: 'Не удалось войти через Telegram. Можно оформить заявку без входа или повторить попытку.',
+    miniAppAuthError: 'Не удалось подтвердить аккаунт Telegram Mini App. Заявка заблокирована, чтобы не использовать данные другой сессии.',
+    retryMiniAppAuth: 'Повторить проверку',
     name: 'Имя',
     namePlaceholder: 'Как к вам обращаться',
     phone: 'Телефон',
@@ -139,6 +141,8 @@ const checkoutCopy = {
     telegramHint: 'Kirish ixtiyoriy. Savat va kiritilgan ma’lumotlar saqlanadi.',
     telegramLogin: 'Telegram orqali kirish',
     telegramError: 'Telegram orqali kirib bo‘lmadi. Arizani kirishsiz yuborishingiz yoki qayta urinishingiz mumkin.',
+    miniAppAuthError: 'Telegram Mini App akkauntini tasdiqlab bo‘lmadi. Boshqa sessiya ma’lumotlari ishlatilmasligi uchun yuborish bloklandi.',
+    retryMiniAppAuth: 'Qayta tekshirish',
     name: 'Ism',
     namePlaceholder: 'Sizga qanday murojaat qilaylik',
     phone: 'Telefon',
@@ -200,6 +204,8 @@ const checkoutCopy = {
     telegramHint: 'Signing in is optional. Your cart and entered details will be preserved.',
     telegramLogin: 'Sign in with Telegram',
     telegramError: 'Telegram sign-in did not complete. You can submit without signing in or try again.',
+    miniAppAuthError: 'The Telegram Mini App account could not be verified. Submission is blocked so another session cannot be used.',
+    retryMiniAppAuth: 'Retry verification',
     name: 'Name',
     namePlaceholder: 'How should we address you?',
     phone: 'Phone',
@@ -261,6 +267,8 @@ const checkoutCopy = {
     telegramHint: '登录并非必需。购物车和已填写的信息都会保留。',
     telegramLogin: '使用 Telegram 登录',
     telegramError: 'Telegram 登录未完成。您可以直接提交申请，也可以重试。',
+    miniAppAuthError: '无法验证 Telegram Mini App 账号。为避免使用其他会话的数据，提交已被阻止。',
+    retryMiniAppAuth: '重试验证',
     name: '姓名',
     namePlaceholder: '我们该如何称呼您？',
     phone: '电话',
@@ -335,6 +343,7 @@ export default function RequestPage() {
   const [customer, setCustomer] = useState<CustomerStatus>({ authenticated: false, customer: null });
   const [customerChecked, setCustomerChecked] = useState(false);
   const [isMiniApp, setIsMiniApp] = useState(false);
+  const [miniAppAuthRejected, setMiniAppAuthRejected] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTextEntryFocused, setIsTextEntryFocused] = useState(false);
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
@@ -404,19 +413,38 @@ export default function RequestPage() {
       if (draftNotes) setNotes(draftNotes);
     });
 
+    let miniAppAuthenticated = false;
     ensureTelegramMiniAppSession()
-      .then(() => fetch('/api/auth/customer', { cache: 'no-store' }))
-      .then((response) => response.ok ? response.json() as Promise<CustomerStatus> : null)
+      .then((miniAppResult) => {
+        if (miniAppResult === 'rejected') {
+          setMiniAppAuthRejected(true);
+          setCustomer({ authenticated: false, customer: null });
+          setContactName('');
+          setPhone('+998 ');
+          setDeliveryAddress('');
+          setLoginError(copy.miniAppAuthError);
+          return null;
+        }
+        miniAppAuthenticated = miniAppResult === 'authenticated';
+        return fetch('/api/auth/customer', { cache: 'no-store' });
+      })
+      .then((response) => response?.ok ? response.json() as Promise<CustomerStatus> : null)
       .then((status) => {
         if (!status) return;
         setCustomer(status);
-        if (status.customer?.name) setContactName((current) => current || status.customer?.name || '');
-        if (status.customer?.phone) setPhone((current) => current === '+998 ' ? status.customer?.phone || current : current);
-        if (status.customer?.address) setDeliveryAddress((current) => current || status.customer?.address || '');
+        if (miniAppAuthenticated && status.authenticated && status.customer) {
+          setContactName(status.customer.name || '');
+          setPhone(status.customer.phone || '+998 ');
+          setDeliveryAddress(status.customer.address || '');
+        } else {
+          if (status.customer?.name) setContactName((current) => current || status.customer?.name || '');
+          if (status.customer?.phone) setPhone((current) => current === '+998 ' ? status.customer?.phone || current : current);
+          if (status.customer?.address) setDeliveryAddress((current) => current || status.customer?.address || '');
+        }
       })
       .catch(() => undefined)
       .finally(() => setCustomerChecked(true));
-  }, [copy.telegramError]);
+  }, [copy.miniAppAuthError, copy.telegramError]);
 
   useEffect(() => {
     if (submittedRequestNumber) successHeadingRef.current?.focus();
@@ -456,6 +484,10 @@ export default function RequestPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (miniAppAuthRejected || (isMiniApp && !customerChecked)) {
+      setSubmitError(copy.miniAppAuthError);
+      return;
+    }
     if (items.length === 0 || isSubmitting || !validateFields()) return;
 
     setIsSubmitting(true);
@@ -638,7 +670,7 @@ export default function RequestPage() {
                       <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
                       <span>{copy.signedIn} <strong>{customer.customer.name}</strong></span>
                     </p>
-                  ) : isMiniApp ? (
+                  ) : isMiniApp && !miniAppAuthRejected ? (
                     <div className="mt-4 rounded-[var(--sp-radius-control-inner)] bg-[color-mix(in_srgb,var(--sp-brand)_8%,var(--sp-surface))] px-3 py-3">
                       <p className="flex items-center gap-2 text-xs font-semibold text-[var(--sp-brand)]"><Send className="size-4 shrink-0" aria-hidden="true" />{copy.miniAppTitle}</p>
                       <p className="mt-1 text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">{copy.miniAppHint}</p>
@@ -656,9 +688,7 @@ export default function RequestPage() {
                   {loginError ? (
                     <div className="sp-alert sp-alert-danger mt-4 flex items-start gap-2 text-xs" role="alert">
                       <span className="min-w-0 flex-1">{loginError}</span>
-                      <button type="button" onClick={() => setLoginError(null)} aria-label={copy.cancel} className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control-inner)]">
-                        <X className="size-4" aria-hidden="true" />
-                      </button>
+                      {miniAppAuthRejected ? <button type="button" onClick={() => window.location.reload()} className="min-h-9 shrink-0 rounded-[var(--sp-radius-control-inner)] border border-current px-3 font-semibold">{copy.retryMiniAppAuth}</button> : <button type="button" onClick={() => setLoginError(null)} aria-label={copy.cancel} className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control-inner)]"><X className="size-4" aria-hidden="true" /></button>}
                     </div>
                   ) : null}
 
@@ -736,7 +766,7 @@ export default function RequestPage() {
                     <p className="mt-2 text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">{copy.estimateHint}</p>
                   </div>
 
-                  <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="mt-5 hidden min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-semibold text-[var(--sp-on-brand)] disabled:cursor-wait disabled:opacity-60 md:inline-flex">
+                  <button type="submit" disabled={isSubmitting || miniAppAuthRejected || (isMiniApp && !customerChecked)} aria-busy={isSubmitting} className="mt-5 hidden min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-semibold text-[var(--sp-on-brand)] disabled:cursor-wait disabled:opacity-60 md:inline-flex">
                     {isSubmitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Send className="size-4" aria-hidden="true" />}
                     {copy.submit}
                   </button>
@@ -904,7 +934,7 @@ export default function RequestPage() {
               <span className="block truncate text-[10px] font-medium text-[var(--sp-ink-tertiary)]">{copy.estimated}</span>
               <strong className="block truncate text-base font-bold tabular-nums text-[var(--sp-brand)]">{formattedTotal}</strong>
             </div>
-            <button type="submit" form="request-checkout-form" disabled={isSubmitting} aria-busy={isSubmitting} className="flex min-h-12 min-w-[9.75rem] cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-raised)] disabled:cursor-wait disabled:opacity-60">
+            <button type="submit" form="request-checkout-form" disabled={isSubmitting || miniAppAuthRejected || (isMiniApp && !customerChecked)} aria-busy={isSubmitting} className="flex min-h-12 min-w-[9.75rem] cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-raised)] disabled:cursor-wait disabled:opacity-60">
               {isSubmitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Send className="size-4" aria-hidden="true" />}
               {copy.submit}
             </button>

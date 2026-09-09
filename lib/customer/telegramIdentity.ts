@@ -89,6 +89,11 @@ export async function upsertTelegramCustomer(
     const picture = identity.picture || nonEmptyString(existing.picture);
     const identityUids = unique([
       primaryUid,
+      // This deterministic UID is a trusted alias even when a legacy profile
+      // remains primary and no separate canonical document exists. It keeps
+      // proof-only historical requests reachable without physical merging.
+      canonicalUid,
+      ...(legacyUid ? [legacyUid] : []),
       ...candidateUids.filter((uid) => existingByUid.has(uid)),
       ...(Array.isArray(existing.identityUids)
         ? existing.identityUids.filter((uid): uid is string => typeof uid === 'string')

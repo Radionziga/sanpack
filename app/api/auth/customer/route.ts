@@ -5,8 +5,9 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import {
   CUSTOMER_SESSION_COOKIE_NAME,
   CUSTOMER_SESSION_MAX_AGE_SECONDS,
-  issueCustomerSessionToken,
   getCustomerSession,
+  InactiveCustomerSessionError,
+  refreshActiveCustomerSessionToken,
   revokeCustomerSession,
 } from '@/lib/auth/customerSession';
 import { readJsonBody } from '@/lib/security/readJsonBody';
@@ -21,10 +22,10 @@ const customerProfileSchema = z.object({
   inn: z.string().trim().max(32).optional().default(''),
 });
 
-export async function GET() {
+export async function GET(request?: Request) {
   let customer;
   try {
-    customer = await getCustomerSession();
+    customer = await getCustomerSession(request);
   } catch (error) {
     logError('Customer session could not be verified.', error);
     return NextResponse.json({ error: 'Сервис профиля временно недоступен.' }, { status: 503 });
@@ -55,7 +56,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   let customer;
   try {
-    customer = await getCustomerSession();
+    customer = await getCustomerSession(request);
   } catch (error) {
     logError('Customer session could not be verified.', error);
     return NextResponse.json({ error: 'Сервис профиля временно недоступен.' }, { status: 503 });
@@ -71,51 +72,75 @@ export async function PUT(request: Request) {
 
   try {
     const updatedAt = new Date().toISOString();
-    await getAdminDb().collection('customers').doc(customer.sub).set({
-      ...parsed.data,
-      updatedAt,
-    }, { merge: true });
-
-    const sessionToken = await issueCustomerSessionToken({
-      sub: customer.sub,
-      telegramId: customer.telegramId,
-      name: parsed.data.name,
-      identityUids: customer.identityUids,
-      ...(customer.username ? { username: customer.username } : {}),
-      ...(customer.picture ? { picture: customer.picture } : {}),
-      phone: parsed.data.phone,
-    }, customer.sessionId);
+    const customerReference = getAdminDb().collection('customers').doc(customer.sub);
+    let sessionToken: string | null = null;
+    if (customer.sessionId) {
+      sessionToken = await refreshActiveCustomerSessionToken(
+        customer,
+        { name: parsed.data.name, phone: parsed.data.phone },
+        (transaction) => {
+          transaction.set(customerReference, {
+            ...parsed.data,
+            updatedAt,
+          }, { merge: true });
+        },
+      );
+    } else {
+      // Legacy bridge sessions may update the profile while their original
+      // signed token is valid, but are never extended or silently upgraded.
+      await customerReference.set({ ...parsed.data, updatedAt }, { merge: true });
+    }
     const response = NextResponse.json({
       authenticated: true,
       customer: { ...parsed.data, username: customer.username || '', picture: customer.picture || '' },
     }, { headers: { 'Cache-Control': 'no-store' } });
-    response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, sessionToken, {
-      maxAge: CUSTOMER_SESSION_MAX_AGE_SECONDS,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' || new URL(request.url).protocol === 'https:',
-      sameSite: 'lax',
-      path: '/',
-    });
+    if (sessionToken) {
+      response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, sessionToken, {
+        maxAge: CUSTOMER_SESSION_MAX_AGE_SECONDS,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production' || new URL(request.url).protocol === 'https:',
+        sameSite: 'lax',
+        path: '/',
+      });
+    }
     return response;
   } catch (error) {
+    if (error instanceof InactiveCustomerSessionError) {
+      const response = NextResponse.json({ error: 'Сессия завершена. Войдите снова.' }, { status: 401 });
+      response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, '', {
+        expires: new Date(0), httpOnly: true,
+        secure: process.env.NODE_ENV === 'production' || new URL(request.url).protocol === 'https:',
+        sameSite: 'lax', path: '/',
+      });
+      return response;
+    }
     logError('Customer profile update failed.', error);
     return NextResponse.json({ error: 'Не удалось сохранить профиль.' }, { status: 503 });
   }
 }
 
-export async function DELETE() {
-  const customer = await getCustomerSession().catch((error) => {
+export async function DELETE(request?: Request) {
+  let customer;
+  try {
+    customer = await getCustomerSession(request);
+  } catch (error) {
     logError('Customer session could not be verified during logout.', error);
-    return null;
-  });
-  await revokeCustomerSession(customer).catch((error) => {
+    return NextResponse.json({ error: 'Не удалось подтвердить отзыв сессии.' }, { status: 503 });
+  }
+  try {
+    await revokeCustomerSession(customer);
+  } catch (error) {
     logError('Customer session revocation failed.', error);
-  });
-  const response = NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ error: 'Не удалось завершить выход. Повторите попытку.' }, { status: 503 });
+  }
+  const response = NextResponse.json({
+    success: true,
+    revocation: customer?.sessionId ? 'server' : customer ? 'legacy_local_only' : 'not_applicable',
+  }, { headers: { 'Cache-Control': 'no-store' } });
   response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, '', {
     expires: new Date(0),
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production' || (request ? new URL(request.url).protocol === 'https:' : false),
     sameSite: 'lax',
     path: '/',
   });

@@ -11,7 +11,7 @@
     "test:e2e": "playwright test",
     "test:e2e:taxonomy": "playwright test --config=playwright.taxonomy.config.ts",
     "test:e2e:stabilization": "playwright test tests/e2e/stabilization.spec.ts",
-    "test:security:emulator": "firebase emulators:exec --only firestore,storage --project demo-sanpack-audit --config firebase.security-test.json \"node tests/security/firestore-rules-smoke.mjs && node tests/security/storage-rules-smoke.mjs && npm exec vitest run tests/integration/customerIdentity.emulator.test.ts tests/integration/requestPipeline.emulator.test.ts\"",
+    "test:security:emulator": "firebase emulators:exec --only firestore,storage --project demo-sanpack-audit --config firebase.security-test.json \"node tests/security/firestore-rules-smoke.mjs && node tests/security/storage-rules-smoke.mjs && npm exec -- vitest run --no-file-parallelism tests/integration/customerIdentity.emulator.test.ts tests/integration/customerSessionConcurrency.emulator.test.ts tests/integration/requestPipeline.emulator.test.ts tests/integration/telegramCheckoutIdentity.emulator.test.ts\"",
     "test:a11y": "playwright test --grep @a11y",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",

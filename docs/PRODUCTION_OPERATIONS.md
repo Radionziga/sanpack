@@ -88,8 +88,18 @@ Before deploying the customer identity candidate:
 7. Do not use public query/body flags to suppress notifications: `/api/requests` rejects them. A real
    order remains live and always selects notification configuration on the server.
 
+Session bridge rollout invariant:
+
+- Record when the final pre-candidate revision stops serving customer-auth traffic.
+- Legacy cookies have no `sessionId`, cannot be server-revoked and remain valid only until their already-signed 30-day JWT expiry. Profile PUT must not replace them; logout reports `legacy_local_only` and clears only that browser copy.
+- Remove legacy verification no earlier than **last-old-revision traffic stop + 30 full days**, after confirming no rollback/canary still issues the old format. A rollback resets this clock from the next final traffic cutover.
+- New tokens always contain `sessionId`; missing/deleted/expired/mismatched records fail closed. Profile refresh is update-only in the same transaction as profile mutation. A 503 logout means revocation was not confirmed and intentionally does not clear the cookie.
+- Smoke a rejected Mini App proof while a browser cookie exists and verify Profile/History/Checkout do not load that cookie identity. Then verify Browser/Mini proof for one Telegram ID shares profile/history and proof-only checkout replay.
+
 Rollback is application-only to `0776239`/build 002. New `customerSessions` and isolated test records
-are additive and ignored by the rollback revision; no rules rollback or data deletion is needed.
+are additive and ignored by the rollback revision; no rules rollback or data deletion is needed. The old
+revision can issue stateless customer cookies, so rollback extends bridge retirement to 30 days after
+old-revision traffic is stopped again.
 
 > **Storage ownership decision 2026-09-04.** The owner confirmed that the
 > experimental `vetclinics` backend is discontinued. The default bucket

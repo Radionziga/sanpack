@@ -1,10 +1,28 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('customer identity and isolated order operations', () => {
+  test('ordinary browser keeps its valid cookie-backed customer session', async ({ page }) => {
+    let miniAppCalls = 0;
+    await page.route('**/api/auth/telegram/mini-app', (route) => { miniAppCalls += 1; return route.abort(); });
+    await page.route('**/api/auth/customer', (route) => route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify({
+        authenticated: true,
+        customer: { name: 'Browser Account A', phone: '+998901234567', company: '', address: '', inn: '' },
+      }),
+    }));
+    await page.goto('/ru/profile');
+    await expect(page.getByRole('heading', { name: 'Профиль Telegram' })).toBeVisible();
+    await expect(page.getByLabel('Контактное лицо')).toHaveValue('Browser Account A');
+    expect(miniAppCalls).toBe(0);
+  });
+
   test('Mini App establishes one customer session before profile state is loaded', async ({ page }) => {
     const sequence: string[] = [];
     await page.addInitScript(() => {
       window.Telegram = { WebApp: { initData: 'signed-fixture', ready() {}, expand() {} } } as never;
+      localStorage.setItem('sanpack_customer_profile_v1', JSON.stringify({
+        name: 'Previous Account A', phone: '+998909999999', address: 'Previous address',
+      }));
     });
     await page.route('**/api/auth/telegram/mini-app', async (route) => {
       sequence.push('mini-app');
@@ -20,6 +38,8 @@ test.describe('customer identity and isolated order operations', () => {
     });
     await page.goto('/ru/profile');
     await expect(page.getByRole('heading', { name: 'Профиль Telegram' })).toBeVisible();
+    await expect(page.getByLabel('Контактное лицо')).toHaveValue('Mini Fixture');
+    await expect(page.getByText('Previous Account A')).toHaveCount(0);
     expect(sequence.indexOf('mini-app')).toBeLessThan(sequence.indexOf('customer'));
   });
 
@@ -69,7 +89,53 @@ test.describe('customer identity and isolated order operations', () => {
     await page.goto('/ru/profile');
     await page.getByRole('button', { name: 'Выйти' }).click();
     await expect(page.getByRole('heading', { name: 'Профиль Telegram' })).toBeVisible();
-    await expect(page.locator('p[role="alert"]')).toContainText('Не удалось завершить выход');
+    await expect(page.getByRole('alert').filter({ hasText: 'Не удалось завершить выход' })).toBeVisible();
+  });
+
+  test('rejected Mini App proof never exposes a previous browser customer in profile, history or checkout', async ({ page }) => {
+    let customerReads = 0;
+    let orderReads = 0;
+    await page.addInitScript(() => {
+      window.Telegram = { WebApp: { initData: 'rejected-account-b', ready() {}, expand() {} } } as never;
+      localStorage.setItem('sanpack_request_cart_v1', JSON.stringify([{
+        productId: 'fixture-grocery', productTitleRu: 'Fixture grocery', productTitleUz: 'Fixture grocery',
+        productSlug: 'fixture-grocery', sku: 'FIXTURE-grocery', quantity: 1, unit: 'шт', price: 100,
+      }]));
+      localStorage.setItem('sanpack_customer_profile_v1', JSON.stringify({
+        name: 'Stale Browser Account A', phone: '+998901234567', address: 'Stale address',
+      }));
+    });
+    await page.route('**/api/auth/telegram/mini-app', (route) => route.fulfill({
+      status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'invalid proof' }),
+    }));
+    await page.route('**/api/auth/customer', (route) => {
+      customerReads += 1;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        authenticated: true,
+        customer: { name: 'Cookie Account A', phone: '+998901234567', company: '', address: 'A', inn: '' },
+      }) });
+    });
+    await page.route('**/api/requests', (route) => {
+      orderReads += 1;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+
+    await page.goto('/ru/profile');
+    await expect(page.getByRole('heading', { name: 'Требуется проверка Telegram' })).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: 'Данные другой сессии скрыты' })).toBeVisible();
+    await expect(page.getByText('Cookie Account A')).toHaveCount(0);
+    await expect(page.getByLabel('Контактное лицо')).not.toHaveValue('Stale Browser Account A');
+
+    await page.goto('/ru/orders');
+    await expect(page.getByRole('alert').filter({ hasText: 'Данные другой сессии не показаны' })).toBeVisible();
+    await expect(page.getByText('Cookie Account A')).toHaveCount(0);
+
+    await page.goto('/ru/request');
+    await expect(page.getByRole('alert').filter({ hasText: 'Заявка заблокирована' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Отправить заявку' }).first()).toBeDisabled();
+    await expect(page.getByLabel('Имя')).not.toHaveValue('Stale Browser Account A');
+    expect(customerReads).toBe(0);
+    expect(orderReads).toBe(0);
   });
 
   test('order operator can run a server-authorized isolated smoke without public checkout', async ({ page }) => {

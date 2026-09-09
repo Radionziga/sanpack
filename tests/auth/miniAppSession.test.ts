@@ -20,19 +20,19 @@ describe('Mini App customer session bootstrap', () => {
     const second = ensureTelegramMiniAppSession();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     resolve?.({ ok: true });
-    await expect(first).resolves.toBe(true);
-    await expect(second).resolves.toBe(true);
-    await expect(ensureTelegramMiniAppSession()).resolves.toBe(true);
+    await expect(first).resolves.toBe('authenticated');
+    await expect(second).resolves.toBe('authenticated');
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('retries a failed bootstrap and never reuses success for changed initData', async () => {
     fetchMock.mockResolvedValueOnce({ ok: false }).mockResolvedValue({ ok: true });
-    await expect(ensureTelegramMiniAppSession()).resolves.toBe(false);
-    await expect(ensureTelegramMiniAppSession()).resolves.toBe(true);
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('rejected');
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
     expect(fetchMock).toHaveBeenCalledTimes(2);
     window.Telegram!.WebApp!.initData = 'signed-b';
-    await expect(ensureTelegramMiniAppSession()).resolves.toBe(true);
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
@@ -45,10 +45,30 @@ describe('Mini App customer session bootstrap', () => {
     const newIdentity = ensureTelegramMiniAppSession();
     expect(oldSignal.aborted).toBe(true);
     resolvers[1]({ ok: true });
-    await expect(newIdentity).resolves.toBe(true);
+    await expect(newIdentity).resolves.toBe('authenticated');
     resolvers[0]({ ok: true });
-    await expect(oldIdentity).resolves.toBe(false);
-    await expect(ensureTelegramMiniAppSession()).resolves.toBe(true);
+    await expect(oldIdentity).resolves.toBe('rejected');
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('distinguishes an ordinary browser from a rejected Mini App proof', async () => {
+    window.Telegram!.WebApp!.initData = '';
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('browser');
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    window.Telegram!.WebApp!.initData = 'invalid-proof';
+    fetchMock.mockResolvedValueOnce({ ok: false });
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('rejected');
+  });
+
+  it('switches A to B to A without reusing another account cache entry', async () => {
+    fetchMock.mockResolvedValue({ ok: true });
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
+    window.Telegram!.WebApp!.initData = 'signed-b';
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
+    window.Telegram!.WebApp!.initData = 'signed-a';
+    await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });

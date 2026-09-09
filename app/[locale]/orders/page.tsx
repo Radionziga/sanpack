@@ -8,7 +8,7 @@ import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { formatMoney } from '@/lib/catalog/productPresentation';
-import { ensureTelegramMiniAppSession } from '@/lib/telegram/miniAppSession';
+import { ensureTelegramMiniAppSession, resetTelegramMiniAppSessionCache } from '@/lib/telegram/miniAppSession';
 import type { Language, RequestOrder } from '@/types';
 
 const localeCodes: Record<Language, string> = { ru: 'ru-RU', uz: 'uz-UZ', en: 'en-US', zh: 'zh-CN' };
@@ -36,7 +36,7 @@ export default function OrdersPage() {
   const copy = {
     ru: {
       catalog: 'Каталог', title: 'Мои заявки', intro: 'Здесь сохраняются заявки, оформленные через ваш Telegram-аккаунт.',
-      logout: 'Выйти', logoutError: 'Не удалось завершить выход. Проверьте соединение и повторите.', loading: 'Загружаем историю…', loginError: 'Не удалось войти через Telegram. Попробуйте ещё раз.',
+      logout: 'Выйти', logoutError: 'Не удалось завершить выход. Проверьте соединение и повторите.', loading: 'Загружаем историю…', loginError: 'Не удалось войти через Telegram. Попробуйте ещё раз.', miniAppError: 'Аккаунт Telegram Mini App не подтверждён. Данные другой сессии не показаны.',
       loadError: 'Не удалось загрузить заявки.', loginTitle: 'Войдите через Telegram', loginText: 'После входа вы увидите заявки, связанные с этим Telegram-аккаунтом.',
       retry: 'Повторить',
       login: 'Войти через Telegram', empty: 'Заявок пока нет', openCatalog: 'Открыть каталог', request: 'Заявка', accepted: 'Заявка принята. Менеджер свяжется с вами.', total: 'Предварительная сумма',
@@ -44,7 +44,7 @@ export default function OrdersPage() {
     },
     uz: {
       catalog: 'Katalog', title: 'Mening arizalarim', intro: 'Telegram akkauntingiz orqali yuborilgan arizalar shu yerda saqlanadi.',
-      logout: 'Chiqish', logoutError: 'Chiqishni yakunlab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.', loading: 'Tarix yuklanmoqda…', loginError: 'Telegram orqali kirib bo‘lmadi. Qayta urinib ko‘ring.',
+      logout: 'Chiqish', logoutError: 'Chiqishni yakunlab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.', loading: 'Tarix yuklanmoqda…', loginError: 'Telegram orqali kirib bo‘lmadi. Qayta urinib ko‘ring.', miniAppError: 'Telegram Mini App akkaunti tasdiqlanmadi. Boshqa sessiya ma’lumotlari ko‘rsatilmadi.',
       loadError: 'Arizalarni yuklab bo‘lmadi.', loginTitle: 'Telegram orqali kiring', loginText: 'Kirgandan so‘ng Telegram akkauntingizga bog‘langan arizalarni ko‘rasiz.',
       retry: 'Qayta urinish',
       login: 'Telegram orqali kirish', empty: 'Hozircha arizalar yo‘q', openCatalog: 'Katalogni ochish', request: 'Ariza', accepted: 'Ariza qabul qilindi. Menejer siz bilan bog‘lanadi.', total: 'Dastlabki summa',
@@ -52,7 +52,7 @@ export default function OrdersPage() {
     },
     en: {
       catalog: 'Catalog', title: 'My requests', intro: 'Requests placed with your Telegram account are saved here.',
-      logout: 'Sign out', logoutError: 'Could not complete sign-out. Check your connection and try again.', loading: 'Loading history…', loginError: 'Telegram sign-in failed. Please try again.',
+      logout: 'Sign out', logoutError: 'Could not complete sign-out. Check your connection and try again.', loading: 'Loading history…', loginError: 'Telegram sign-in failed. Please try again.', miniAppError: 'The Telegram Mini App account was not verified. Data from another session is not shown.',
       loadError: 'We could not load your requests.', loginTitle: 'Sign in with Telegram', loginText: 'After signing in, you will see requests linked to this Telegram account.',
       retry: 'Try again',
       login: 'Sign in with Telegram', empty: 'No requests yet', openCatalog: 'Open catalog', request: 'Request', accepted: 'Your request has been received. A manager will contact you.', total: 'Preliminary total',
@@ -60,7 +60,7 @@ export default function OrdersPage() {
     },
     zh: {
       catalog: '商品目录', title: '我的申请', intro: '通过您的 Telegram 账号提交的申请会保存在这里。',
-      logout: '退出登录', logoutError: '无法完成退出登录。请检查网络连接后重试。', loading: '正在加载记录…', loginError: 'Telegram 登录失败，请重试。',
+      logout: '退出登录', logoutError: '无法完成退出登录。请检查网络连接后重试。', loading: '正在加载记录…', loginError: 'Telegram 登录失败，请重试。', miniAppError: 'Telegram Mini App 账号未通过验证。不会显示其他会话的数据。',
       loadError: '申请记录加载失败。', loginTitle: '使用 Telegram 登录', loginText: '登录后即可查看与此 Telegram 账号关联的申请。',
       retry: '重试',
       login: '使用 Telegram 登录', empty: '暂无申请', openCatalog: '打开商品目录', request: '申请', accepted: '申请已收到，经理将与您联系。', total: '预估金额',
@@ -83,7 +83,15 @@ export default function OrdersPage() {
         window.history.replaceState(null, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
       }
       try {
-        await ensureTelegramMiniAppSession();
+        const miniAppResult = await ensureTelegramMiniAppSession();
+        if (miniAppResult === 'rejected') {
+          if (cancelled) return;
+          setAuthenticated(false);
+          setCustomerName('');
+          setOrders([]);
+          setError(copy.miniAppError);
+          return;
+        }
         const response = await fetch('/api/auth/customer', { cache: 'no-store' });
         if (!response.ok) throw new Error(copy.loadError);
         const status = await response.json() as { authenticated: boolean; customer: { name?: string } | null };
@@ -98,7 +106,7 @@ export default function OrdersPage() {
     }
     void loadOrders();
     return () => { cancelled = true; };
-  }, [copy.loadError, copy.loginError]);
+  }, [copy.loadError, copy.loginError, copy.miniAppError]);
 
   function login() {
     const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
@@ -110,6 +118,7 @@ export default function OrdersPage() {
     try {
       const response = await fetch('/api/auth/customer', { method: 'DELETE' });
       if (!response.ok) throw new Error(copy.logoutError);
+      resetTelegramMiniAppSessionCache();
       setAuthenticated(false);
       setOrders([]);
     } catch (reason) {

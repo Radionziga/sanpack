@@ -26,6 +26,8 @@ export interface RequestSubmissionInput {
   input: BusinessInput;
   idempotencyKey: string;
   customerIdentity: string;
+  /** Server-derived identities that belong to the same verified customer. */
+  customerIdentityAliases?: string[];
   source: NonNullable<RequestOrder['source']>;
   telegramUser?: RequestOrder['telegramUser'];
   legacyTransportInput?: CheckoutRequestInput;
@@ -60,6 +62,10 @@ export async function submitRequest(input: RequestSubmissionInput): Promise<Requ
   }) : undefined;
   const keyHash = createHash('sha256').update(input.idempotencyKey).digest('hex');
   const idempotencyReference = db.collection(idempotencyCollection).doc(keyHash);
+  const acceptedCustomerIdentities = new Set([
+    input.customerIdentity,
+    ...(input.customerIdentityAliases || []),
+  ]);
 
   const resolveStoredIntent = async (
     priorData: StoredIntent,
@@ -71,7 +77,7 @@ export async function submitRequest(input: RequestSubmissionInput): Promise<Requ
     const order = { id: priorOrder.id, ...(priorOrder.data() as Record<string, unknown>) } as RequestOrder;
     const storedIdentity = priorData.customerIdentity || order.customerUid;
     const storedHash = priorData.intentHash || priorData.payloadHash;
-    if (storedIdentity !== input.customerIdentity
+    if (!storedIdentity || !acceptedCustomerIdentities.has(storedIdentity)
       || !storedHash
       || (storedHash !== intentHash && storedHash !== legacyPayloadHash)) {
       throw new IdempotencyConflictError();

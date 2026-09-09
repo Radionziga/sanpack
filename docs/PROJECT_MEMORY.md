@@ -27,7 +27,7 @@ SANPACK — действующий мультиязычный storefront/B2B-к�
 
 ## Current stack
 
-Точные resolved versions из `package-lock.json`: Next.js **16.3.0** / App Router, React **19.2.8**, TypeScript **5.9.3** strict, Firebase client **12.17.0**, Admin SDK **14.2.0**, next-intl **4.13.4**, Tailwind **4.1.11**, Zod **4.4.3**, React Hook Form **7.83.0**. Tests: Vitest **4.1.11**, Playwright **1.62.1**, axe **4.13.0**. Media: Sharp **0.35.3**; backoffice PDF: pdfmake **0.3.11**.
+Точные resolved versions из `package-lock.json`: Next.js **16.3.4** / App Router, React **19.2.8**, TypeScript **5.9.3** strict, Firebase client **12.17.0**, Admin SDK **14.3.0**, next-intl **4.13.4**, Tailwind **4.1.11**, Zod **4.4.3**, React Hook Form **7.83.0**. Tests: Vitest **4.1.11**, Playwright **1.62.1**, axe **4.13.0**. Media: Sharp **0.35.4**; backoffice PDF: pdfmake **0.3.11**.
 
 Package manager — **npm**, lockfile v3. CI — Node 24; README указывает Node ≥20.9, `package.json` не закрепляет `engines`. Next standalone output; production hosting — Firebase App Hosting. Запуск/credentials: [README](../README.md), безопасный шаблон [.env.example](../.env.example). Секретные значения не переносить в документацию.
 
@@ -178,7 +178,9 @@ F12 denied-route recovery is corrected in the existing AdminShell using the curr
 
 ## Customer identity / Telegram release candidate — 2026-09-09
 
-Local candidate after `0776239` closes the customer identity split between Telegram OIDC (`sub`) and Mini App (`id`) without rewriting auth: verified Telegram user ID is the cross-flow key, existing UIDs remain aliases, and customer history queries only signed aliases. Re-login preserves edited profile contact fields. New customer sessions have per-session Firestore records and logout revokes only the current session; legacy cookies remain valid until their existing expiry.
+Local customer-identity candidate after `0776239` closes the split between Telegram OIDC (`sub`) and Mini App (`id`) without rewriting auth: verified Telegram user ID is the cross-flow key, an existing UID remains primary, and deterministic `telegram:<id>` is always a trusted signed alias even without a separate canonical customer document. Proof-only checkout uses the same resolver; history/idempotency accept only server-derived aliases. Re-login preserves edited contact fields.
+
+New customer sessions have per-session Firestore records. Profile refresh rechecks the active record and mutates profile + update-only refresh atomically, so it cannot resurrect logout. Logout succeeds only after confirmed deletion. Mini App bootstrap is tri-state (`browser` / `authenticated` / `rejected`); rejected proof prevents Profile, History and Checkout from using a prior browser cookie. Pre-release stateless cookies are never refreshed: they remain locally clearable but not server-revocable until their original JWT expiry. Remove this bridge only after the last old revision stopped issuing cookies for 30 full days; rollback to that revision restarts the clock. Details: [CUSTOMER_IDENTITY_VERIFICATION_FIXES_2026-09-09.md](CUSTOMER_IDENTITY_VERIFICATION_FIXES_2026-09-09.md).
 
 Order creation orchestration is shared by live checkout and a new `orders.write` operational smoke. The smoke is isolated in `testRequests`/`testRequestIdempotency`, uses canonical Product pricing/quantity/idempotency, and always selects a network-free notification sink. Public request schema rejects suppress/test controls. Live notification state is now explicit and visible in Admin, while a delivery failure does not duplicate or undo the request.
 

@@ -72,4 +72,19 @@ describe.runIf(emulatorEnabled)('customer identity with the Firestore emulator',
 
     await expect(verifyActiveCustomerSessionToken(token)).resolves.toBeNull();
   });
+
+  it('concurrently resolves one new Telegram account to one canonical profile', async () => {
+    const [browser, miniApp] = await Promise.all([
+      upsertTelegramCustomer(getTelegramOidcIdentity({
+        sub: 'pairwise-999', id: 999, name: 'Browser identity',
+      })),
+      upsertTelegramCustomer({ telegramId: '999', displayName: 'Mini identity' }),
+    ]);
+    expect(browser.uid).toBe('telegram:999');
+    expect(miniApp.uid).toBe('telegram:999');
+    expect(browser.identityUids).toContain('telegram:999');
+    expect(miniApp.identityUids).toContain('telegram:999');
+    const matches = await getAdminDb().collection('customers').where('telegramId', '==', '999').get();
+    expect(matches.docs.map((document) => document.id)).toEqual(['telegram:999']);
+  });
 });

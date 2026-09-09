@@ -20,7 +20,7 @@ import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { readCustomerProfileDraft, writeCustomerProfileDraft } from '@/lib/customer/profileDraft';
-import { ensureTelegramMiniAppSession } from '@/lib/telegram/miniAppSession';
+import { ensureTelegramMiniAppSession, resetTelegramMiniAppSessionCache } from '@/lib/telegram/miniAppSession';
 
 interface CustomerProfile {
   name: string;
@@ -41,9 +41,9 @@ const emptyProfile: CustomerProfile = { name: '', phone: '+998 ', company: '', a
 const copyByLanguage = {
   ru: {
     back: 'Назад', title: 'Профиль и настройки', intro: 'Контактные данные, история заявок и настройки магазина — в одном месте.',
-    guest: 'Гостевой профиль', signedIn: 'Профиль Telegram', guestHint: 'Данные сохранятся только на этом устройстве.', signedHint: 'Данные синхронизируются с вашим Telegram-профилем.',
+    guest: 'Гостевой профиль', signedIn: 'Профиль Telegram', miniAppBlocked: 'Требуется проверка Telegram', guestHint: 'Данные сохранятся только на этом устройстве.', signedHint: 'Данные синхронизируются с вашим Telegram-профилем.', miniAppBlockedHint: 'Профиль скрыт до успешной повторной проверки аккаунта Mini App.',
     login: 'Войти через Telegram', logout: 'Выйти', logoutError: 'Не удалось завершить выход. Проверьте соединение и повторите.', contactTitle: 'Контактные данные', contactHint: 'Имя и телефон будут подставляться при оформлении заявки.',
-    loginError: 'Вход через Telegram не завершён. Повторите попытку или продолжите как гость.',
+    loginError: 'Вход через Telegram не завершён. Повторите попытку или продолжите как гость.', miniAppError: 'Не удалось подтвердить аккаунт Telegram Mini App. Данные другой сессии скрыты.', retry: 'Повторить',
     loadError: 'Профиль временно недоступен. Локальные данные показаны без входа.',
     name: 'Контактное лицо', phone: 'Телефон', company: 'Компания', address: 'Адрес доставки', inn: 'ИНН', optional: 'необязательно',
     namePlaceholder: 'Как к вам обращаться', companyPlaceholder: 'Название организации', addressPlaceholder: 'Город, улица, дом', innPlaceholder: 'ИНН организации',
@@ -52,9 +52,9 @@ const copyByLanguage = {
   },
   uz: {
     back: 'Orqaga', title: 'Profil va sozlamalar', intro: 'Aloqa ma’lumotlari, arizalar tarixi va do‘kon sozlamalari bir joyda.',
-    guest: 'Mehmon profili', signedIn: 'Telegram profili', guestHint: 'Ma’lumotlar faqat ushbu qurilmada saqlanadi.', signedHint: 'Ma’lumotlar Telegram profilingiz bilan sinxronlanadi.',
+    guest: 'Mehmon profili', signedIn: 'Telegram profili', miniAppBlocked: 'Telegram tekshiruvi talab qilinadi', guestHint: 'Ma’lumotlar faqat ushbu qurilmada saqlanadi.', signedHint: 'Ma’lumotlar Telegram profilingiz bilan sinxronlanadi.', miniAppBlockedHint: 'Mini App akkaunti qayta tasdiqlanmaguncha profil yashiriladi.',
     login: 'Telegram orqali kirish', logout: 'Chiqish', logoutError: 'Chiqishni yakunlab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.', contactTitle: 'Aloqa ma’lumotlari', contactHint: 'Ism va telefon ariza rasmiylashtirishda avtomatik to‘ldiriladi.',
-    loginError: 'Telegram orqali kirish yakunlanmadi. Qayta urinib ko‘ring yoki mehmon sifatida davom eting.',
+    loginError: 'Telegram orqali kirish yakunlanmadi. Qayta urinib ko‘ring yoki mehmon sifatida davom eting.', miniAppError: 'Telegram Mini App akkauntini tasdiqlab bo‘lmadi. Boshqa sessiya ma’lumotlari yashirildi.', retry: 'Qayta urinish',
     loadError: 'Profil vaqtincha ishlamayapti. Mahalliy ma’lumotlar kirishsiz ko‘rsatildi.',
     name: 'Aloqa uchun shaxs', phone: 'Telefon', company: 'Kompaniya', address: 'Yetkazib berish manzili', inn: 'STIR', optional: 'ixtiyoriy',
     namePlaceholder: 'Sizga qanday murojaat qilaylik', companyPlaceholder: 'Tashkilot nomi', addressPlaceholder: 'Shahar, ko‘cha, uy', innPlaceholder: 'Tashkilot STIRi',
@@ -63,9 +63,9 @@ const copyByLanguage = {
   },
   en: {
     back: 'Back', title: 'Profile and settings', intro: 'Contact details, request history, and store preferences in one place.',
-    guest: 'Guest profile', signedIn: 'Telegram profile', guestHint: 'Your details are stored only on this device.', signedHint: 'Your details are synced with your Telegram profile.',
+    guest: 'Guest profile', signedIn: 'Telegram profile', miniAppBlocked: 'Telegram verification required', guestHint: 'Your details are stored only on this device.', signedHint: 'Your details are synced with your Telegram profile.', miniAppBlockedHint: 'Profile data is hidden until the Mini App account is verified again.',
     login: 'Sign in with Telegram', logout: 'Sign out', logoutError: 'Could not complete sign-out. Check your connection and try again.', contactTitle: 'Contact details', contactHint: 'Your name and phone will be prefilled at checkout.',
-    loginError: 'Telegram sign-in was not completed. Try again or continue as a guest.',
+    loginError: 'Telegram sign-in was not completed. Try again or continue as a guest.', miniAppError: 'The Telegram Mini App account could not be verified. Data from another session is hidden.', retry: 'Try again',
     loadError: 'The profile service is temporarily unavailable. Local details are shown signed out.',
     name: 'Contact person', phone: 'Phone', company: 'Company', address: 'Delivery address', inn: 'Tax ID', optional: 'optional',
     namePlaceholder: 'How should we address you?', companyPlaceholder: 'Organization name', addressPlaceholder: 'City, street, building', innPlaceholder: 'Organization tax ID',
@@ -74,9 +74,9 @@ const copyByLanguage = {
   },
   zh: {
     back: '返回', title: '个人资料与设置', intro: '集中管理联系信息、申请记录和商店设置。',
-    guest: '访客资料', signedIn: 'Telegram 资料', guestHint: '信息仅保存在此设备上。', signedHint: '信息将与您的 Telegram 账号同步。',
+    guest: '访客资料', signedIn: 'Telegram 资料', miniAppBlocked: '需要验证 Telegram', guestHint: '信息仅保存在此设备上。', signedHint: '信息将与您的 Telegram 账号同步。', miniAppBlockedHint: '重新验证 Mini App 账号前，个人资料将保持隐藏。',
     login: '使用 Telegram 登录', logout: '退出登录', logoutError: '无法完成退出登录。请检查网络连接后重试。', contactTitle: '联系信息', contactHint: '提交申请时将自动填写姓名和电话。',
-    loginError: 'Telegram 登录未完成。请重试或以访客身份继续。',
+    loginError: 'Telegram 登录未完成。请重试或以访客身份继续。', miniAppError: '无法验证 Telegram Mini App 账号。其他会话的数据已隐藏。', retry: '重试',
     loadError: '个人资料服务暂时不可用。当前显示本地访客信息。',
     name: '联系人', phone: '电话', company: '公司', address: '配送地址', inn: '税号', optional: '选填',
     namePlaceholder: '我们该如何称呼您？', companyPlaceholder: '公司名称', addressPlaceholder: '城市、街道、门牌号', innPlaceholder: '公司税号',
@@ -92,6 +92,7 @@ export function CustomerProfilePage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [miniAppRejected, setMiniAppRejected] = useState(false);
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -104,13 +105,25 @@ export function CustomerProfilePage() {
       window.history.replaceState(null, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
     }
     ensureTelegramMiniAppSession()
-      .then(() => fetch('/api/auth/customer', { cache: 'no-store' }))
+      .then((miniAppResult) => {
+        if (miniAppResult === 'rejected') {
+          if (!cancelled) {
+            setAuthenticated(false);
+            setMiniAppRejected(true);
+            setProfile(emptyProfile);
+            setMessage({ kind: 'error', text: copy.miniAppError });
+          }
+          return null;
+        }
+        return fetch('/api/auth/customer', { cache: 'no-store' });
+      })
       .then((response) => {
+        if (!response) return null;
         if (!response.ok) throw new Error('customer-status-unavailable');
         return response.json() as Promise<CustomerStatus>;
       })
       .then((status) => {
-        if (cancelled) return;
+        if (cancelled || !status) return;
         if (telegramAuthFailed) setMessage({ kind: 'error', text: copy.loginError });
         setAuthenticated(status.authenticated);
         const local = readCustomerProfileDraft();
@@ -124,7 +137,7 @@ export function CustomerProfilePage() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [copy.loadError, copy.loginError]);
+  }, [copy.loadError, copy.loginError, copy.miniAppError]);
 
   function updateField(field: keyof CustomerProfile, value: string) {
     setProfile((current) => ({ ...current, [field]: value }));
@@ -172,6 +185,7 @@ export function CustomerProfilePage() {
     try {
       const response = await fetch('/api/auth/customer', { method: 'DELETE' });
       if (!response.ok) throw new Error('customer-logout-failed');
+      resetTelegramMiniAppSessionCache();
       setAuthenticated(false);
     } catch {
       setMessage({ kind: 'error', text: copy.logoutError });
@@ -193,7 +207,7 @@ export function CustomerProfilePage() {
         <form onSubmit={save} className="rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] p-4 ring-1 ring-inset ring-[var(--sp-line)] sm:p-6">
           <div className="flex items-center gap-4 border-b border-[var(--sp-line-soft)] pb-5">
             <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[var(--sp-brand)] text-lg font-bold text-[var(--sp-on-brand)]">{initials}</span>
-            <div className="min-w-0 flex-1"><h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">{authenticated ? copy.signedIn : copy.guest}</h2><p className="mt-1 text-xs leading-5 text-[var(--sp-ink-secondary)]">{authenticated ? copy.signedHint : copy.guestHint}</p></div>
+            <div className="min-w-0 flex-1"><h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">{miniAppRejected ? copy.miniAppBlocked : authenticated ? copy.signedIn : copy.guest}</h2><p className="mt-1 text-xs leading-5 text-[var(--sp-ink-secondary)]">{miniAppRejected ? copy.miniAppBlockedHint : authenticated ? copy.signedHint : copy.guestHint}</p></div>
           </div>
 
           <div className="mt-5"><h2 className="font-extended text-lg font-bold text-[var(--sp-ink)]">{copy.contactTitle}</h2><p className="mt-1 text-xs leading-5 text-[var(--sp-ink-secondary)]">{copy.contactHint}</p></div>
@@ -205,15 +219,15 @@ export function CustomerProfilePage() {
             <div className="sm:col-span-2"><ProfileField icon={Building2} label={`${copy.inn} · ${copy.optional}`} value={profile.inn} onChange={(value) => updateField('inn', value)} placeholder={copy.innPlaceholder} /></div>
           </div>
 
-          {message ? <p className={`mt-4 flex items-center gap-2 rounded-[var(--sp-radius-control-inner)] px-3 py-2.5 text-xs ${message.kind === 'success' ? 'bg-[color-mix(in_srgb,var(--sp-success)_10%,var(--sp-surface))] text-[var(--sp-success)]' : 'bg-[color-mix(in_srgb,var(--sp-danger)_8%,var(--sp-surface))] text-[var(--sp-danger)]'}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.kind === 'success' ? <CheckCircle2 className="size-4" aria-hidden="true" /> : null}{message.text}</p> : null}
+          {message ? <div className={`mt-4 flex items-center gap-2 rounded-[var(--sp-radius-control-inner)] px-3 py-2.5 text-xs ${message.kind === 'success' ? 'bg-[color-mix(in_srgb,var(--sp-success)_10%,var(--sp-surface))] text-[var(--sp-success)]' : 'bg-[color-mix(in_srgb,var(--sp-danger)_8%,var(--sp-surface))] text-[var(--sp-danger)]'}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.kind === 'success' ? <CheckCircle2 className="size-4" aria-hidden="true" /> : null}<span className="min-w-0 flex-1">{message.text}</span>{miniAppRejected && message.kind === 'error' ? <button type="button" onClick={() => window.location.reload()} className="min-h-9 shrink-0 rounded-[var(--sp-radius-control-inner)] border border-current px-3 font-semibold">{copy.retry}</button> : null}</div> : null}
 
-          <button type="submit" disabled={saving || loading} className="mt-5 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)] disabled:cursor-wait disabled:opacity-60 sm:w-auto">
+          <button type="submit" disabled={saving || loading || miniAppRejected} className="mt-5 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)] disabled:cursor-wait disabled:opacity-60 sm:w-auto">
             {saving ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Save className="size-4" aria-hidden="true" />}{saving ? copy.saving : copy.save}
           </button>
         </form>
 
         <aside className="space-y-4">
-          {!authenticated ? <button type="button" onClick={login} className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)]"><Send className="size-4" aria-hidden="true" />{copy.login}</button> : null}
+          {!authenticated && !miniAppRejected ? <button type="button" onClick={login} className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)]"><Send className="size-4" aria-hidden="true" />{copy.login}</button> : null}
           <section className="rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] p-4 ring-1 ring-inset ring-[var(--sp-line)]"><h2 className="font-extended text-base font-bold text-[var(--sp-ink)]">{copy.sections}</h2><nav className="mt-3 divide-y divide-[var(--sp-line-soft)]">{quickLinks.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className="flex min-h-12 items-center gap-3 text-sm font-semibold text-[var(--sp-ink)]"><Icon className="size-5 text-[var(--sp-brand)]" aria-hidden="true" /><span className="min-w-0 flex-1">{label}</span><ChevronRight className="size-4 text-[var(--sp-ink-muted)]" aria-hidden="true" /></Link>)}</nav></section>
           <section className="flex min-h-14 items-center justify-between gap-4 rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] px-4 ring-1 ring-inset ring-[var(--sp-line)]"><span className="text-sm font-semibold text-[var(--sp-ink)]">{copy.language}</span><LanguageSwitcher /></section>
           {authenticated ? <button type="button" onClick={() => void logout()} className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-4 text-sm font-semibold text-[var(--sp-danger)]"><LogOut className="size-4" aria-hidden="true" />{copy.logout}</button> : null}

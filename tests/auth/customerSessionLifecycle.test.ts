@@ -3,9 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { db } = vi.hoisted(() => ({ db: vi.fn() }));
 vi.mock('@/lib/firebase/admin', () => ({ getAdminDb: db }));
 import {
+  createCustomerSessionToken,
   issueCustomerSessionToken,
+  refreshActiveCustomerSessionToken,
   revokeCustomerSession,
   verifyActiveCustomerSessionToken,
+  verifyCustomerSessionToken,
 } from '@/lib/auth/customerSession';
 
 const sessions = new Map<string, Record<string, unknown>>();
@@ -16,10 +19,22 @@ beforeEach(() => {
   db.mockReturnValue({
     collection: () => ({
       doc: (id: string) => ({
+        id,
         get: async () => ({ exists: sessions.has(id), data: () => sessions.get(id) }),
         set: async (data: Record<string, unknown>) => sessions.set(id, { ...(sessions.get(id) || {}), ...data }),
+        update: async (data: Record<string, unknown>) => {
+          if (!sessions.has(id)) throw new Error('missing');
+          sessions.set(id, { ...sessions.get(id), ...data });
+        },
         delete: async () => { sessions.delete(id); },
       }),
+    }),
+    runTransaction: async (callback: (transaction: {
+      get: (reference: { get: () => Promise<unknown> }) => Promise<unknown>;
+      update: (reference: { update: (data: Record<string, unknown>) => Promise<void> }, data: Record<string, unknown>) => void;
+    }) => Promise<unknown>) => callback({
+      get: (reference) => reference.get(),
+      update: (reference, data) => { void reference.update(data); },
     }),
   });
 });
@@ -44,5 +59,20 @@ describe('customer session lifecycle', () => {
     record.customerUid = 'telegram:attacker';
     await expect(verifyActiveCustomerSessionToken(token)).resolves.toBeNull();
     expect(active).not.toBeNull();
+  });
+
+  it('never refreshes a deleted record with an upsert', async () => {
+    const token = await issueCustomerSessionToken({ sub: 'telegram:123', telegramId: '123', name: 'Fixture' });
+    const active = (await verifyActiveCustomerSessionToken(token))!;
+    await revokeCustomerSession(active);
+    await expect(refreshActiveCustomerSessionToken(active, { name: 'Changed' })).rejects.toThrow(/no longer active/);
+    expect(sessions.size).toBe(0);
+  });
+
+  it('does not treat a newly issued session as a legacy bridge token', async () => {
+    const issued = await issueCustomerSessionToken({ sub: 'telegram:123', telegramId: '123', name: 'Fixture' });
+    expect((await verifyCustomerSessionToken(issued))?.sessionId).toBeTruthy();
+    const legacy = await createCustomerSessionToken({ sub: 'telegram:legacy', telegramId: '123', name: 'Legacy' });
+    expect((await verifyCustomerSessionToken(legacy))?.sessionId).toBeUndefined();
   });
 });

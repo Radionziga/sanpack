@@ -13,12 +13,12 @@ Both paths resolve through `lib/customer/telegramIdentity.ts`, create or find on
 
 The first verified login is registration: it creates the profile automatically. The customer may then edit contact/company fields. A later Telegram login refreshes provider metadata but transactionally preserves edited `name` and `phone`. Phone number is profile/contact data only; it never proves ownership and an OIDC phone claim is accepted only when Telegram marks it verified.
 
-New cookies include a random per-session identifier backed by `customerSessions/{sha256(sessionId)}`. Each request verifies the signed token and the server record. Logout revokes exactly that record and clears the browser cookie. The JWT/session duration remains 30 days. Cookies issued before this release have no session record and remain accepted until their existing signed expiry as a deliberate rollout bridge.
+New cookies include a random per-session identifier backed by `customerSessions/{sha256(sessionId)}`. Each request verifies the signed token and active/unexpired server record. Logout succeeds only after that record is deleted; profile mutation and update-only refresh share one transaction. The JWT/session duration remains 30 days. Cookies issued before this release have no session record, are never refreshed, and remain accepted only until their original signed expiry as a deliberate rollout bridge.
 
 ## Trust boundaries
 
 - Browser OIDC: signed flow cookie + exact state + PKCE verifier + ID-token issuer/audience/signature/expiry + nonce. Redirects are limited to RU/UZ/EN/ZH relative paths, preserving safe query/hash values.
-- Mini App: client-supplied `initData` is never identity until server HMAC and freshness validation succeeds. Invalid data is rejected, not downgraded to a guest request.
+- Mini App: client-supplied `initData` is never identity until server HMAC and freshness validation succeeds. Invalid data is rejected, not downgraded to a guest request. UI bootstrap distinguishes ordinary browser from rejected proof; rejected proof prevents Profile/History/Checkout from falling back to a previous browser cookie.
 - Customer profile/history: only the signed, active session determines customer UID/aliases. Phone, cart and favorites are not identity.
 - Orders: the public request schema rejects notification/test controls and all client prices/totals. The trusted server reads current Products, applies quantity/variant/price rules and persists a canonical snapshot.
 - Notifications: recipient/token/config are selected only on the server. Customer receipts and history omit customer UID, audit actors, notification internals and operational metadata.
@@ -45,6 +45,8 @@ New cookies include a random per-session identifier backed by `customerSessions/
 
 No confirmed customer IDOR, Telegram signature bypass, public notification suppression or duplicate-order notification side effect remains in the tested contracts.
 
+The subsequent independent acceptance review confirmed three P1 gaps. R1–R3 are fixed in the follow-up candidate: honest/atomic revocation-refresh, fail-closed Mini App callers, and shared resolver/alias semantics for proof-only checkout. Evidence: [CUSTOMER_IDENTITY_VERIFICATION_FIXES_2026-09-09.md](CUSTOMER_IDENTITY_VERIFICATION_FIXES_2026-09-09.md).
+
 ## User journeys
 
 ### Browser
@@ -57,11 +59,11 @@ The resolver finds the existing Telegram ID and retains its primary UID. An edit
 
 ### Expired/revoked session
 
-Expired JWTs, missing session records and records rebound to another customer are rejected. Profile/history return unauthenticated state; after login the full intended path is restored. Browser Back cannot restore authenticated API data because customer endpoints are `no-store`.
+Expired JWTs, missing/deleted session records and records rebound to another customer are rejected. Profile refresh cannot recreate a deleted record, including when logout races after initial PUT authorization. Profile/history return unauthenticated state; after login the full intended path is restored. Browser Back cannot restore authenticated API data because customer endpoints are `no-store`.
 
 ### Mini App
 
-Profile and checkout await Mini App session bootstrap before loading customer state. Valid fresh `initData` resolves through the same Telegram ID as OIDC. Invalid, old, future-skewed or mismatched proofs fail. A changed account aborts the older bootstrap and cannot populate the client success cache.
+Profile, History and Checkout await Mini App session bootstrap before loading customer state. Valid fresh `initData` resolves through the same Telegram ID as OIDC. Invalid, old, future-skewed or mismatched proofs fail closed and never expose a previous cookie identity. A changed account aborts the older bootstrap and cannot populate the client success cache; Checkout replaces contact state from the newly verified profile.
 
 ### Ownership/history
 
@@ -137,7 +139,7 @@ Rollback is application-only to the currently working build. Additive session/te
 
 ## Remaining limitations
 
-- Existing pre-release cookies are intentionally stateless until their signed 30-day expiry; revocation is exact for newly issued sessions.
+- Existing pre-release cookies are intentionally stateless until their original signed 30-day expiry; they are not refreshed, and logout is explicitly local-only. Remove the bridge 30 full days after the last old revision stops issuing them; rollback restarts that clock.
 - Legacy customer duplicates are only aliased for history. Physical merge/backfill requires a separately reviewed deterministic data operation after the aggregate inventory.
 - Guest orders identified only by contact phone are not retroactively claimed after Telegram login; phone is intentionally not accepted as proof of ownership.
 - Customer history currently has a bounded latest-100 response, not cursor pagination.

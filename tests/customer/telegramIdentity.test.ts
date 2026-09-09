@@ -56,6 +56,11 @@ describe('Telegram customer identity resolution', () => {
     const miniApp = await upsertTelegramCustomer({ telegramId: '777', displayName: 'Telegram Name' });
     expect(browser.uid).toBe('telegram:pairwise-subject');
     expect(miniApp.uid).toBe(browser.uid);
+    expect(miniApp.identityUids).toEqual(expect.arrayContaining([
+      'telegram:pairwise-subject',
+      'telegram:777',
+    ]));
+    expect(store.has('telegram:777')).toBe(false);
     expect(browser.name).toBe('Edited customer');
     expect(browser.phone).toBe('+998901112233');
     expect(store.get(browser.uid)).toMatchObject({ telegramDisplayName: 'Telegram Name', telegramPhone: '+998909999999' });

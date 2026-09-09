@@ -1,4 +1,6 @@
-let pendingSession: Promise<boolean> | null = null;
+export type TelegramMiniAppSessionResult = 'browser' | 'authenticated' | 'rejected';
+
+let pendingSession: Promise<TelegramMiniAppSessionResult> | null = null;
 let pendingInitData = '';
 let pendingAbortController: AbortController | null = null;
 let authenticatedInitData = '';
@@ -17,11 +19,11 @@ export function resetTelegramMiniAppSessionCache() {
 }
 
 export function ensureTelegramMiniAppSession() {
-  if (typeof window === 'undefined') return Promise.resolve(false);
+  if (typeof window === 'undefined') return Promise.resolve<TelegramMiniAppSessionResult>('browser');
   const initData = window.Telegram?.WebApp?.initData;
-  if (!initData) return Promise.resolve(false);
+  if (!initData) return Promise.resolve<TelegramMiniAppSessionResult>('browser');
   if (authenticatedInitData === initData && Date.now() - authenticatedAt < SESSION_CACHE_MS) {
-    return Promise.resolve(true);
+    return Promise.resolve<TelegramMiniAppSessionResult>('authenticated');
   }
   if (pendingSession && pendingInitData === initData) return pendingSession;
   if (pendingSession && pendingInitData !== initData) {
@@ -47,9 +49,9 @@ export function ensureTelegramMiniAppSession() {
         authenticatedInitData = initData;
         authenticatedAt = Date.now();
       }
-      return response.ok && isCurrentIdentity;
+      return response.ok && isCurrentIdentity ? 'authenticated' : 'rejected';
     })
-    .catch(() => false)
+    .catch(() => 'rejected' as const)
     .finally(() => {
       if (generation === sessionGeneration && pendingInitData === initData) {
         pendingSession = null;

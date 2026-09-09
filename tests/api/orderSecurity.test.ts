@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { createProduct, createVariant } from '@/tests/fixtures/products';
 import type { Product } from '@/types';
-const { db, customer, created, notified, verifyMiniApp } = vi.hoisted(() => ({ db: vi.fn(), customer: vi.fn(), created: vi.fn(), notified: vi.fn(), verifyMiniApp: vi.fn() }));
+const { db, customer, created, notified, verifyMiniApp, resolveTelegram } = vi.hoisted(() => ({ db: vi.fn(), customer: vi.fn(), created: vi.fn(), notified: vi.fn(), verifyMiniApp: vi.fn(), resolveTelegram: vi.fn() }));
 const idempotencyStore = new Map<string, Record<string, unknown>>();
 const orderStore = new Map<string, Record<string, unknown>>();
 let transactionQueue = Promise.resolve();
@@ -16,6 +16,7 @@ vi.mock('@/lib/telegram/notifications', () => ({
 vi.mock('@/lib/telegram/settings', () => ({ getTelegramPrivateSettings: async () => ({ storefront: { enabled: true, tokenEncrypted: 'encrypted' } }) }));
 vi.mock('@/lib/telegram/secrets', () => ({ decryptSecret: () => 'token' }));
 vi.mock('@/lib/telegram/miniApp', () => ({ verifyTelegramInitData: (...args: unknown[]) => verifyMiniApp(...args) }));
+vi.mock('@/lib/customer/telegramIdentity', () => ({ upsertTelegramCustomer: (...args: unknown[]) => resolveTelegram(...args) }));
 import { POST, GET } from '@/app/api/requests/route';
 
 const base = { contactName: 'Test customer', phone: '+998901234567', deliveryAddress: 'Tashkent fixture address', deliveryDate: '2026-09-01', deliveryWindow: '09:00-13:00' };
@@ -56,6 +57,7 @@ beforeEach(() => {
   customer.mockResolvedValue(null);
   notified.mockResolvedValue({ delivered: false, reason: 'not_configured' });
   verifyMiniApp.mockReturnValue({ id: '123', firstName: 'Fixture' });
+  resolveTelegram.mockResolvedValue({ uid: 'telegram:123', telegramId: '123', name: 'Fixture', identityUids: ['telegram:123'] });
   supply(createProduct());
 });
 describe('public checkout adversarial HTTP contract', () => {
@@ -201,6 +203,54 @@ describe('public checkout adversarial HTTP contract', () => {
     const response = await POST(request([{ productId: 'product-1', quantity: 1 }], { telegramInitData: 'signed-for-b' }));
     expect(response.status).toBe(409);
     expect(created).not.toHaveBeenCalled();
+  });
+  it('uses the shared resolver for proof-only Mini App checkout', async () => {
+    resolveTelegram.mockResolvedValue({
+      uid: 'telegram:legacy-primary', telegramId: '123', name: 'Legacy',
+      identityUids: ['telegram:legacy-primary', 'telegram:123'],
+    });
+    const response = await POST(request([{ productId: 'product-1', quantity: 1 }], {
+      telegramInitData: 'signed-for-123',
+    }));
+    expect(response.status).toBe(201);
+    expect(resolveTelegram).toHaveBeenCalledWith(expect.objectContaining({ telegramId: '123' }));
+    expect(created.mock.calls[0][0]).toMatchObject({ customerUid: 'telegram:legacy-primary' });
+  });
+  it('replays an intent through another trusted alias of the same Telegram account', async () => {
+    resolveTelegram.mockResolvedValue({
+      uid: 'telegram:legacy-primary', telegramId: '123', name: 'Legacy',
+      identityUids: ['telegram:legacy-primary', 'telegram:123'],
+    });
+    const first = await POST(request([{ productId: 'product-1', quantity: 1 }], {
+      telegramInitData: 'signed-for-123',
+    }));
+    expect(first.status).toBe(201);
+    customer.mockResolvedValue({
+      sub: 'telegram:123', telegramId: '123', name: 'Canonical',
+      identityUids: ['telegram:123', 'telegram:legacy-primary'],
+    });
+    const replay = await POST(request([{ productId: 'product-1', quantity: 1 }]));
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toEqual(await first.json());
+    expect(created).toHaveBeenCalledTimes(1);
+    expect(notified).toHaveBeenCalledTimes(1);
+  });
+  it('replays a canonical-UID order after login selects a legacy primary with no canonical profile document', async () => {
+    customer.mockResolvedValue({
+      sub: 'telegram:123', telegramId: '123', name: 'Canonical',
+      identityUids: ['telegram:123'],
+    });
+    const first = await POST(request([{ productId: 'product-1', quantity: 1 }]));
+    expect(first.status).toBe(201);
+    customer.mockResolvedValue({
+      sub: 'telegram:legacy-primary', telegramId: '123', name: 'Legacy',
+      identityUids: ['telegram:legacy-primary', 'telegram:123'],
+    });
+    const replay = await POST(request([{ productId: 'product-1', quantity: 1 }]));
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toEqual(await first.json());
+    expect(created).toHaveBeenCalledTimes(1);
+    expect(notified).toHaveBeenCalledTimes(1);
   });
   it('rejects invalid Mini App identity instead of silently downgrading to guest checkout', async () => {
     verifyMiniApp.mockImplementation(() => { throw new Error('bad signature'); });

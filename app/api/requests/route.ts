@@ -15,6 +15,7 @@ import { decryptSecret } from '@/lib/telegram/secrets';
 import { verifyTelegramInitData } from '@/lib/telegram/miniApp';
 import { logError } from '@/lib/observability/logger';
 import { projectCustomerOrder } from '@/lib/orders/customerOrderProjection';
+import { upsertTelegramCustomer, type ResolvedTelegramCustomer } from '@/lib/customer/telegramIdentity';
 
 export const runtime = 'nodejs';
 
@@ -24,10 +25,10 @@ class RequestRateLimitError extends Error {
   }
 }
 
-export async function GET() {
+export async function GET(request?: Request) {
   let customer;
   try {
-    customer = await getCustomerSession();
+    customer = await getCustomerSession(request);
   } catch (error) {
     logError('order.customer_session_failed', error);
     return NextResponse.json({ error: 'Сервис авторизации временно недоступен.' }, { status: 503 });
@@ -76,13 +77,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const customer = await getCustomerSession();
+    const customer = await getCustomerSession(request);
     let telegramUser: RequestOrder['telegramUser'] = customer ? omitUndefinedFields({
       id: customer.telegramId,
       username: customer.username,
       firstName: customer.name,
     }) : undefined;
     let verifiedMiniAppUser: RequestOrder['telegramUser'];
+    let resolvedMiniAppCustomer: ResolvedTelegramCustomer | undefined;
 
     if (parsed.data.telegramInitData) {
       try {
@@ -100,17 +102,34 @@ export async function POST(request: Request) {
       if (customer && verifiedMiniAppUser.id !== customer.telegramId) {
         return NextResponse.json({ error: 'Telegram-аккаунт не совпадает с активной сессией.' }, { status: 409 });
       }
+      if (!customer) {
+        resolvedMiniAppCustomer = await upsertTelegramCustomer({
+          telegramId: verifiedMiniAppUser.id,
+          displayName: [verifiedMiniAppUser.firstName, verifiedMiniAppUser.lastName].filter(Boolean).join(' ')
+            || verifiedMiniAppUser.username
+            || 'Покупатель',
+          username: verifiedMiniAppUser.username,
+          languageCode: verifiedMiniAppUser.languageCode,
+        });
+      }
       telegramUser = verifiedMiniAppUser;
     }
 
     const phoneNormalized = normalizeUzbekPhone(parsed.data.phone);
     const customerIdentity = customer?.sub
-      || (telegramUser ? `telegram:${telegramUser.id}` : `phone:${phoneNormalized}`);
+      || resolvedMiniAppCustomer?.uid
+      || `phone:${phoneNormalized}`;
+    const customerIdentityAliases = customer?.identityUids?.length
+      ? customer.identityUids
+      : resolvedMiniAppCustomer?.identityUids?.length
+        ? resolvedMiniAppCustomer.identityUids
+        : [customerIdentity];
     const { telegramInitData: _transportIdentity, ...businessInput } = parsed.data;
     const result = await submitRequest({
       input: businessInput,
       idempotencyKey,
       customerIdentity,
+      customerIdentityAliases,
       source: verifiedMiniAppUser ? 'telegram_mini_app' : 'web',
       telegramUser,
       legacyTransportInput: parsed.data,
