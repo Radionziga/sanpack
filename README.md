@@ -67,6 +67,12 @@ Bot tokens are encrypted before Firestore storage. Production must provide a
 strong `TELEGRAM_CONFIG_ENCRYPTION_KEY` through the App Hosting secret named
 `sanpack-telegram-config-encryption-key`. Telegram Mini App identity is verified
 server-side, but Telegram does not provide the user's phone number automatically.
+Browser OIDC and Mini App identities converge on the verified Telegram user ID;
+an initial verified login creates the SANPACK customer profile automatically.
+New customer cookies are backed by independently revocable `customerSessions`
+records. `/admin/requests` also provides an isolated order smoke: it uses the
+real canonical pricing/idempotency service, stores only under `testRequests`,
+and sends notifications to a network-free test sink rather than Telegram.
 
 ## Production deployment
 
@@ -88,7 +94,8 @@ npm run test:a11y
 
 Public mutations, sessions and bag-designer generation use the shared
 Firestore transaction rate limiter. Enable the production TTL policy for
-`rateLimits.expiresAt`; see `docs/PRODUCTION_OPERATIONS.md`. Bag-designer
+`rateLimits.expiresAt` and `customerSessions.expiresAt`; see
+`docs/PRODUCTION_OPERATIONS.md`. Bag-designer
 generation also uses idempotent Firestore drafts. Destructive cleanup of stale
 draft assets is deliberately not automated yet; the repository provides a
 read-only inspection command documented in

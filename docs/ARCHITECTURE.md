@@ -197,7 +197,7 @@ Product JSON-LD использует minimum **sale** Offer, не normalized amo
 3. Для нового intent читают текущие Product из Firestore через Admin SDK, проверяют publication/variant selection, informational mode и quantity rules.
 4. Считают sale/wholesale по серверным данным; comparison configuration не участвует.
 5. Атомарно сохраняют `requests` snapshot и private intent. Первый ответ и replay проходят через одну customer projection без audit, actor и notification internals.
-6. Отправляют Telegram notification только для реально созданной заявки; сбой notification не отменяет уже принятую заявку.
+6. Создают notification state `pending`, отправляют Telegram notification только для реально созданной заявки и затем фиксируют `delivered`/`skipped`/`failed`; сбой notification не отменяет уже принятую заявку.
 
 Админский order PATCH — отдельный workflow статуса/редактирования с optimistic revision и audit, не переиспользование недоверенного public total. PDF строится по зафиксированной revision вне транзакции, затем его audit entry атомарно дописывается к актуальному audit trail без перезаписи конкурентных изменений. Customer history требует customer session; номер телефона сам по себе не авторизация.
 
@@ -232,11 +232,15 @@ Admin Gemini endpoints поддерживают product-image generation и tran
 
 Bag designer — отдельный модуль, `app/api/bag-designer/route.ts` с actions generate/submit, собственные types/settings. Сохраняет `bagDesignRequests` и Storage assets, использует Gemini, draft/idempotency lifecycle и distributed limits. Ready draft переходит в заявку при submit; cleanup tool только инспектирует stale drafts, не является работающим автоматическим scheduler. См. [cost control](operations/bag-designer-cost-control.md).
 
-Telegram: отдельные login/start/callback/mini-app/customer session endpoints; серверная проверка identity, уведомления заказов/обращений. Private integration settings находятся вне SiteSettings. Backoffice documents используют `backofficeSettings/documents` и отдельный order document API.
+Telegram: отдельные login/start/callback/mini-app/customer session endpoints; серверная проверка identity, уведомления заказов/обращений. OIDC использует authorization-code + PKCE + state + nonce; Mini App проверяет HMAC и ограниченный `auth_date`. OIDC `sub` не считается тем же значением, что Telegram user `id`: общий cross-flow ключ — подтверждённый Telegram `id`. Существующий legacy customer UID сохраняется primary, а найденные записи того же `telegramId` попадают в подписанные session aliases для backward-compatible history без автоматического merge.
+
+Первый подтверждённый вход автоматически создаёт `customers` profile. Повторный вход обновляет provider metadata, но сохраняет отредактированные покупателем `name`/`phone`. Новые HttpOnly customer cookies имеют случайный `sessionId` и server-side запись `customerSessions`; logout удаляет только текущую запись. Cookies, выданные до этого механизма, переходно принимаются до собственного JWT expiry. Private integration settings находятся вне SiteSettings. Backoffice documents используют `backofficeSettings/documents` и отдельный order document API.
+
+Operational order smoke — отдельный admin-only (`orders.write`) endpoint. Он вызывает тот же `requestSubmission` (current Product snapshots, canonical price/quantity, idempotency), но физически использует `testRequests` + `testRequestIdempotency` и `test_sink`; публичный checkout не принимает test/suppress flags. Записи не входят в customer history, обычный Admin order list или business metrics и удаляются только по exact id + number confirmation.
 
 ## 12. Persistence / cache / compatibility
 
-Основные коллекции: `products`, `categories`, `attributes`, `clients`, `banners`, `settings/global`, `requests`, `bagDesignRequests`; private settings Telegram/Gemini и backoffice document settings отделены от public config.
+Основные коллекции: `products`, `categories`, `attributes`, `clients`, `banners`, `settings/global`, `requests`, `customers`, `customerSessions`, `bagDesignRequests`; изолированные operational records используют `testRequests`/`testRequestIdempotency`. Private settings Telegram/Gemini и backoffice document settings отделены от public config.
 
 Trusted server reader получает коллекции Admin SDK. `publicProjection.ts` пропускает только published structurally valid Products, active Category lineage, active Banners и явные allowlists полей Product/Category/Attribute/Client/SiteSettings. Неизвестные top-level/nested Firestore fields не сериализуются. Это не server-side faceted index и не требует новых полей или migration.
 

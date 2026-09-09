@@ -17,8 +17,9 @@ const telegramJwks = createRemoteJWKSet(
 
 const flowSchema = z.object({
   state: z.string().min(32),
+  nonce: z.string().min(32),
   codeVerifier: z.string().min(43).max(128),
-  returnTo: z.string().startsWith('/'),
+  returnTo: z.string().startsWith('/').max(2_000),
 }).passthrough();
 
 const tokenResponseSchema = z.object({
@@ -48,9 +49,10 @@ function base64Url(bytes: Buffer) {
 
 export function createTelegramLoginAttempt(returnTo: string) {
   const state = base64Url(randomBytes(32));
+  const nonce = base64Url(randomBytes(32));
   const codeVerifier = base64Url(randomBytes(64));
   const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
-  return { state, codeVerifier, codeChallenge, returnTo };
+  return { state, nonce, codeVerifier, codeChallenge, returnTo };
 }
 
 export async function createTelegramLoginFlowToken(flow: z.infer<typeof flowSchema>) {
@@ -77,6 +79,7 @@ export function buildTelegramAuthorizationUrl(input: {
   clientId: string;
   redirectUri: string;
   state: string;
+  nonce: string;
   codeChallenge: string;
   requestPhone: boolean;
   allowBotMessages: boolean;
@@ -91,6 +94,7 @@ export function buildTelegramAuthorizationUrl(input: {
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('scope', scopes.join(' '));
   url.searchParams.set('state', input.state);
+  url.searchParams.set('nonce', input.nonce);
   url.searchParams.set('code_challenge', input.codeChallenge);
   url.searchParams.set('code_challenge_method', 'S256');
   return url;
@@ -135,12 +139,13 @@ export async function exchangeTelegramCode(input: {
   return parsed.data;
 }
 
-export async function verifyTelegramIdToken(idToken: string, clientId: string) {
+export async function verifyTelegramIdToken(idToken: string, clientId: string, expectedNonce: string) {
   const { payload } = await jwtVerify(idToken, telegramJwks, {
     issuer: TELEGRAM_ISSUER,
     audience: clientId,
     algorithms: ['RS256'],
   });
+  if (payload.nonce !== expectedNonce) throw new Error('Telegram login nonce does not match.');
   const parsed = profileSchema.safeParse(payload);
   if (!parsed.success) throw new Error('Telegram profile is incomplete.');
   return parsed.data;

@@ -19,12 +19,12 @@ Anonymous bag designer дополнительно использует глоб�
 
 ## Production foundation status
 
-Status as of **2026-09-08**: **PRODUCTION RELEASE LIVE**. Historical rationale and the foundation
-pre-deploy plan remain in [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md); the current rollout evidence is in [PRODUCTION_RELEASE_ROLLOUT_2026-09-08.md](PRODUCTION_RELEASE_ROLLOUT_2026-09-08.md).
+Status as of **2026-09-08**: **PRODUCTION STABILIZATION LIVE**. Historical rationale and the foundation
+pre-deploy plan remain in [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md); the latest rollout evidence is in [STABILIZATION_RELEASE_2026-09-08.md](STABILIZATION_RELEASE_2026-09-08.md); the preceding rollout remains documented in [PRODUCTION_RELEASE_ROLLOUT_2026-09-08.md](PRODUCTION_RELEASE_ROLLOUT_2026-09-08.md).
 
-- Deployed source: `46cb7bfec55b1ccb033a8380fdb3ba81b1eccf14`.
-- App Hosting build/rollout: `build-2026-09-08-001` / `rollout-2026-09-08-001` (100% traffic, build `READY`, rollout `SUCCEEDED`).
-- Rollback target: `build-2026-09-04-002`, source `39c1ceaec4e9d2e9a7a27e6e080e1dd9be1373b9`; it remains compatible with the unchanged trusted-server security boundary.
+- Deployed source: `077623902f5a5da6ead798d16cdb4d14b9c5d34e`.
+- App Hosting build/rollout: `build-2026-09-08-002` / `rollout-2026-09-08-002` (100% traffic, build `READY`, rollout `SUCCEEDED`).
+- Rollback target: `build-2026-09-08-001`, source `46cb7bfec55b1ccb033a8380fdb3ba81b1eccf14`; it remains compatible with the unchanged trusted-server security boundary.
 - Production domains: `https://sanpack.uz` and
   `https://sanpack--stamply-4df8a.asia-southeast1.hosted.app`.
 - Storage ruleset: `c1c6f62a-1377-4c2a-8833-b9c02ee58a08`.
@@ -34,9 +34,9 @@ pre-deploy plan remain in [LAUNCH_BLOCKERS_REMEDIATION_2026-09-01.md](LAUNCH_BLO
 - Owner grant, runtime IAM and required secret bindings were verified without exposing values.
 - Direct Firestore catalog/private reads return 403; trusted SSR/API/admin reads remain operational.
 - Public `media/**` remained available; direct list/write/delete and private/legacy paths are denied.
-- Authenticated owner admin and private asset proxy were smoke-tested. A live order was deliberately
-  not created because the current workflow would send a real Telegram notification and has no safe
-  test/suppress marker; canonical order price/quantity remains covered by the release tests.
+- Authenticated owner admin and private asset proxy were smoke-tested. The currently deployed revision
+  still predates the isolated order smoke, so no live order was created during that historical rollout;
+  canonical order price/quantity remained covered by the release tests.
 - Post-release hard-route, SSR/SEO, navigation/mobile and authenticated Admin smoke passed. The soak
   snapshot contained no severity `ERROR` entries and no critical order/notification/bag-designer
   failure events; observed 404s were external WordPress/CMS probes.
@@ -65,6 +65,31 @@ IAM change or new secret binding. The following preflight was completed before t
    owner Admin, mobile fixed actions and read-only security boundaries.
 5. No live order/PDF/Telegram mutation was made because production has no suppress/test marker;
    accepted integration/emulator regressions remain the evidence for those mutation paths.
+
+### Customer identity / isolated order smoke preflight (candidate 2026-09-09)
+
+Before deploying the customer identity candidate:
+
+1. Reauthenticate the operator CLI/ADC, then run the read-only, PII-free inventory:
+   `npm run identity:audit -- --project stamply-4df8a`. Record only aggregate legacy/duplicate counts;
+   do not merge or delete customers automatically.
+2. Reconfirm live source `0776239`, rollback build `sanpack-build-2026-09-08-002`, owner grant,
+   encryption secret binding, deny-all Firestore rules and current Storage boundary.
+3. Deploy the exact reviewed application checkpoint. No Firestore/Storage rules, IAM, secret or catalog
+   migration is required. The new collections are server/Admin-SDK only.
+4. Apply/verify TTL for `customerSessions.expiresAt` through the scoped Firestore indexes workflow.
+   TTL is cleanup, not session correctness; JWT expiry and session-record validation remain authoritative.
+5. Smoke browser OIDC and Mini App with one controlled Telegram account. Verify both resolve the same
+   profile/history, re-login keeps an edited contact field, logout revokes the current cookie, and an
+   invalid/mismatched Mini App proof is rejected.
+6. In `/admin/requests`, run **Безопасный smoke test** with a published product. Confirm `TEST-*`,
+   canonical price, `notification.status=suppressed`, no document in `requests`, and no Telegram message.
+   Delete that one test through its exact UI/API confirmation after evidence is recorded.
+7. Do not use public query/body flags to suppress notifications: `/api/requests` rejects them. A real
+   order remains live and always selects notification configuration on the server.
+
+Rollback is application-only to `0776239`/build 002. New `customerSessions` and isolated test records
+are additive and ignored by the rollback revision; no rules rollback or data deletion is needed.
 
 > **Storage ownership decision 2026-09-04.** The owner confirmed that the
 > experimental `vetclinics` backend is discontinued. The default bucket
@@ -190,9 +215,9 @@ GitHub Actions выполняет тот же quality gate и отдельный
 
 ## Осознанно отложено
 
-- Production alerts/cost dashboards and a live order/Telegram smoke remain operational follow-up;
-  they do not weaken the deployed auth, Firestore or Storage boundary. Do not create a real order
-  only to satisfy a checklist without an agreed test-notification workflow.
+- Production alerts/cost dashboards remain an operational follow-up. After the candidate is deployed,
+  use the isolated admin smoke above; do not create a real order or real Telegram notification merely
+  to satisfy a checklist.
 - Historical public `media/**` download tokens remain intentionally valid because these are public
   SANPACK assets. No `bag-design-requests/**` objects or private tokens existed during rollout.
 - Physical cleanup of the discontinued `vetclinics` backend and any non-Storage cloud resources is a
@@ -203,3 +228,5 @@ GitHub Actions выполняет тот же quality gate и отдельный
 ## Final F12 patch rollout
 
 Release record: [STABILIZATION_RELEASE_2026-09-08.md](STABILIZATION_RELEASE_2026-09-08.md). The application-only patch requires no rules/index/schema/IAM/secret changes. Preflight reconfirmed `build-2026-09-08-001` at 100% as the compatible rollback target. `main` is the configured rollout branch: complete all gates and rollback preparation before push, inspect any automatically created build/rollout, and avoid dispatching a duplicate. Use the exact checkpoint hash if an explicit App Hosting rollout is needed. Roll back through App Hosting to build 001 without changing the current Firestore/Storage rules. Post-rollout documentation can remain a local docs-only diff until a subsequent application release to avoid an extra deployment.
+
+Completed: checkpoint `0776239` was pushed normally to main, triggering build/rollout 002 automatically. It is READY/SUCCEEDED at 100%; health revision is `sanpack-build-2026-09-08-002`. F12, gates, live smoke and verification limits are recorded in the linked release record. No migration or infrastructure/data mutation occurred.

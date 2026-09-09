@@ -15,7 +15,7 @@ describe('cookie mutation origin boundary', () => {
     }));
     expect(response.headers.get('x-middleware-request-x-sanpack-admin-path')).toBe('/admin/settings');
   });
-  it.each(['/api/auth/session', '/api/admin/data', '/api/admin/media', '/api/auth/customer', '/api/auth/telegram/mini-app'])('rejects cross-site POST before %s handler', (path) => {
+  it.each(['/api/auth/session', '/api/admin/data', '/api/admin/media', '/api/admin/order-tests', '/api/auth/customer', '/api/auth/telegram/mini-app'])('rejects cross-site POST before %s handler', (path) => {
     const r = proxy(new NextRequest(`https://shop.example${path}`, { method: 'POST', headers: { origin: 'https://evil.example' } }));
     expect(r.status).toBe(403);
   });

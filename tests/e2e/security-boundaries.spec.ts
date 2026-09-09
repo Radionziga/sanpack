@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 // This suite runs only against the isolated taxonomy fixture: cloud access disabled.
 // Admin identity itself is mocked there; real session/role checks live in Vitest.
 test('@security actual Next proxy blocks foreign-origin cookie mutations', async ({ request }) => {
-  for (const path of ['/api/auth/session', '/api/admin/media', '/api/auth/customer', '/api/auth/telegram/mini-app']) {
+  for (const path of ['/api/auth/session', '/api/admin/media', '/api/admin/order-tests', '/api/auth/customer', '/api/auth/telegram/mini-app']) {
     const response = await request.post(path, { headers: { origin: 'https://evil.example' }, data: {} });
     expect(response.status()).toBe(403);
   }

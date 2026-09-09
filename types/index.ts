@@ -322,8 +322,24 @@ export interface RequestOrder {
   documentGeneratedAt?: string;
   /** Revision whose snapshot was rendered into the most recent internal PDF. */
   documentGeneratedRevision?: number;
+  notification?: OrderNotificationState;
+  test?: {
+    isolated: true;
+    runId: string;
+    createdBy: string;
+    idempotencyReferenceId: string;
+  };
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface OrderNotificationState {
+  /** Optional for requests created before notification state normalization. */
+  status?: 'pending' | 'delivered' | 'skipped' | 'failed' | 'suppressed';
+  delivered: boolean;
+  reason?: 'not_configured' | 'delivery_failed' | 'suppressed_test';
+  channel?: 'telegram' | 'test_sink';
+  attemptedAt?: string;
 }
 
 export interface OrderAuditEntry {

@@ -5,9 +5,11 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import {
   CUSTOMER_SESSION_COOKIE_NAME,
   CUSTOMER_SESSION_MAX_AGE_SECONDS,
-  createCustomerSessionToken,
+  issueCustomerSessionToken,
   getCustomerSession,
+  revokeCustomerSession,
 } from '@/lib/auth/customerSession';
+import { readJsonBody } from '@/lib/security/readJsonBody';
 
 export const runtime = 'nodejs';
 
@@ -20,7 +22,13 @@ const customerProfileSchema = z.object({
 });
 
 export async function GET() {
-  const customer = await getCustomerSession();
+  let customer;
+  try {
+    customer = await getCustomerSession();
+  } catch (error) {
+    logError('Customer session could not be verified.', error);
+    return NextResponse.json({ error: 'Сервис профиля временно недоступен.' }, { status: 503 });
+  }
   let storedProfile: Record<string, unknown> = {};
   if (customer) {
     try {
@@ -45,12 +53,18 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const customer = await getCustomerSession();
+  let customer;
+  try {
+    customer = await getCustomerSession();
+  } catch (error) {
+    logError('Customer session could not be verified.', error);
+    return NextResponse.json({ error: 'Сервис профиля временно недоступен.' }, { status: 503 });
+  }
   if (!customer) {
     return NextResponse.json({ error: 'Войдите через Telegram, чтобы сохранить профиль.' }, { status: 401 });
   }
 
-  const parsed = customerProfileSchema.safeParse(await request.json().catch(() => null));
+  const parsed = customerProfileSchema.safeParse(await readJsonBody(request, 16_000));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Проверьте имя и номер телефона.' }, { status: 400 });
   }
@@ -62,18 +76,19 @@ export async function PUT(request: Request) {
       updatedAt,
     }, { merge: true });
 
-    const sessionToken = await createCustomerSessionToken({
+    const sessionToken = await issueCustomerSessionToken({
       sub: customer.sub,
       telegramId: customer.telegramId,
       name: parsed.data.name,
+      identityUids: customer.identityUids,
       ...(customer.username ? { username: customer.username } : {}),
       ...(customer.picture ? { picture: customer.picture } : {}),
       phone: parsed.data.phone,
-    });
+    }, customer.sessionId);
     const response = NextResponse.json({
       authenticated: true,
       customer: { ...parsed.data, username: customer.username || '', picture: customer.picture || '' },
-    });
+    }, { headers: { 'Cache-Control': 'no-store' } });
     response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, sessionToken, {
       maxAge: CUSTOMER_SESSION_MAX_AGE_SECONDS,
       httpOnly: true,
@@ -89,7 +104,14 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE() {
-  const response = NextResponse.json({ success: true });
+  const customer = await getCustomerSession().catch((error) => {
+    logError('Customer session could not be verified during logout.', error);
+    return null;
+  });
+  await revokeCustomerSession(customer).catch((error) => {
+    logError('Customer session revocation failed.', error);
+  });
+  const response = NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store' } });
   response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, '', {
     expires: new Date(0),
     httpOnly: true,

@@ -3,15 +3,15 @@ import { readJsonBody } from '@/lib/security/readJsonBody';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
-  createCustomerSessionToken,
+  issueCustomerSessionToken,
   CUSTOMER_SESSION_COOKIE_NAME,
   CUSTOMER_SESSION_MAX_AGE_SECONDS,
 } from '@/lib/auth/customerSession';
-import { getAdminDb } from '@/lib/firebase/admin';
 import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 import { verifyTelegramInitData } from '@/lib/telegram/miniApp';
 import { canDecryptSecret, decryptSecret } from '@/lib/telegram/secrets';
 import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
+import { upsertTelegramCustomer } from '@/lib/customer/telegramIdentity';
 
 export const runtime = 'nodejs';
 
@@ -40,26 +40,24 @@ export async function POST(request: Request) {
     }
 
     const user = verifyTelegramInitData(parsed.data.initData, decryptSecret(encryptedToken));
-    const uid = `telegram:${user.id}`;
     const name = [user.firstName, user.lastName].filter(Boolean).join(' ')
       || user.username
       || 'Покупатель';
-    const sessionToken = await createCustomerSessionToken({
-      sub: uid,
+    const customer = await upsertTelegramCustomer({
       telegramId: user.id,
-      name,
-      ...(user.username ? { username: user.username } : {}),
+      displayName: name,
+      username: user.username,
+      languageCode: user.languageCode,
     });
-
-    await getAdminDb().collection('customers').doc(uid).set({
-      uid,
-      provider: 'telegram',
-      telegramId: user.id,
-      name,
-      username: user.username || '',
-      languageCode: user.languageCode || '',
-      lastLoginAt: new Date().toISOString(),
-    }, { merge: true });
+    const sessionToken = await issueCustomerSessionToken({
+      sub: customer.uid,
+      telegramId: customer.telegramId,
+      name: customer.name,
+      identityUids: customer.identityUids,
+      ...(customer.username ? { username: customer.username } : {}),
+      ...(customer.picture ? { picture: customer.picture } : {}),
+      ...(customer.phone ? { phone: customer.phone } : {}),
+    });
 
     const response = NextResponse.json({ authenticated: true });
     response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, sessionToken, {

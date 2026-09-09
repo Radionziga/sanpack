@@ -14,11 +14,11 @@ describe('URL locale source', () => {
 });
 
 describe('localized return paths', () => {
-  it.each(['/ru/request', '/uz/catalog', '/en/profile', '/zh/request'])('keeps %s', (pathname) => {
+  it.each(['/ru/request', '/uz/catalog', '/en/profile?tab=history#latest', '/zh/request'])('keeps %s', (pathname) => {
     expect(sanitizeLocalizedReturnPath(pathname)).toBe(pathname);
   });
 
-  it.each([null, '', '//evil.example', '/admin', 'https://evil.example/ru'])('rejects %s', (pathname) => {
+  it.each([null, '', '//evil.example', '/admin', 'https://evil.example/ru', '/ru\\evil', `/ru/${'a'.repeat(2100)}`])('rejects %s', (pathname) => {
     expect(sanitizeLocalizedReturnPath(pathname)).toBe('/ru/request');
   });
 });

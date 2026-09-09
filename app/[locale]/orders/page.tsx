@@ -36,29 +36,33 @@ export default function OrdersPage() {
   const copy = {
     ru: {
       catalog: 'Каталог', title: 'Мои заявки', intro: 'Здесь сохраняются заявки, оформленные через ваш Telegram-аккаунт.',
-      logout: 'Выйти', loading: 'Загружаем историю…', loginError: 'Не удалось войти через Telegram. Попробуйте ещё раз.',
+      logout: 'Выйти', logoutError: 'Не удалось завершить выход. Проверьте соединение и повторите.', loading: 'Загружаем историю…', loginError: 'Не удалось войти через Telegram. Попробуйте ещё раз.',
       loadError: 'Не удалось загрузить заявки.', loginTitle: 'Войдите через Telegram', loginText: 'После входа вы увидите заявки, связанные с этим Telegram-аккаунтом.',
+      retry: 'Повторить',
       login: 'Войти через Telegram', empty: 'Заявок пока нет', openCatalog: 'Открыть каталог', request: 'Заявка', accepted: 'Заявка принята. Менеджер свяжется с вами.', total: 'Предварительная сумма',
       delivery: 'Доставка', address: 'Адрес',
     },
     uz: {
       catalog: 'Katalog', title: 'Mening arizalarim', intro: 'Telegram akkauntingiz orqali yuborilgan arizalar shu yerda saqlanadi.',
-      logout: 'Chiqish', loading: 'Tarix yuklanmoqda…', loginError: 'Telegram orqali kirib bo‘lmadi. Qayta urinib ko‘ring.',
+      logout: 'Chiqish', logoutError: 'Chiqishni yakunlab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.', loading: 'Tarix yuklanmoqda…', loginError: 'Telegram orqali kirib bo‘lmadi. Qayta urinib ko‘ring.',
       loadError: 'Arizalarni yuklab bo‘lmadi.', loginTitle: 'Telegram orqali kiring', loginText: 'Kirgandan so‘ng Telegram akkauntingizga bog‘langan arizalarni ko‘rasiz.',
+      retry: 'Qayta urinish',
       login: 'Telegram orqali kirish', empty: 'Hozircha arizalar yo‘q', openCatalog: 'Katalogni ochish', request: 'Ariza', accepted: 'Ariza qabul qilindi. Menejer siz bilan bog‘lanadi.', total: 'Dastlabki summa',
       delivery: 'Yetkazib berish', address: 'Manzil',
     },
     en: {
       catalog: 'Catalog', title: 'My requests', intro: 'Requests placed with your Telegram account are saved here.',
-      logout: 'Sign out', loading: 'Loading history…', loginError: 'Telegram sign-in failed. Please try again.',
+      logout: 'Sign out', logoutError: 'Could not complete sign-out. Check your connection and try again.', loading: 'Loading history…', loginError: 'Telegram sign-in failed. Please try again.',
       loadError: 'We could not load your requests.', loginTitle: 'Sign in with Telegram', loginText: 'After signing in, you will see requests linked to this Telegram account.',
+      retry: 'Try again',
       login: 'Sign in with Telegram', empty: 'No requests yet', openCatalog: 'Open catalog', request: 'Request', accepted: 'Your request has been received. A manager will contact you.', total: 'Preliminary total',
       delivery: 'Delivery', address: 'Address',
     },
     zh: {
       catalog: '商品目录', title: '我的申请', intro: '通过您的 Telegram 账号提交的申请会保存在这里。',
-      logout: '退出登录', loading: '正在加载记录…', loginError: 'Telegram 登录失败，请重试。',
+      logout: '退出登录', logoutError: '无法完成退出登录。请检查网络连接后重试。', loading: '正在加载记录…', loginError: 'Telegram 登录失败，请重试。',
       loadError: '申请记录加载失败。', loginTitle: '使用 Telegram 登录', loginText: '登录后即可查看与此 Telegram 账号关联的申请。',
+      retry: '重试',
       login: '使用 Telegram 登录', empty: '暂无申请', openCatalog: '打开商品目录', request: '申请', accepted: '申请已收到，经理将与您联系。', total: '预估金额',
       delivery: '配送', address: '地址',
     },
@@ -81,6 +85,7 @@ export default function OrdersPage() {
       try {
         await ensureTelegramMiniAppSession();
         const response = await fetch('/api/auth/customer', { cache: 'no-store' });
+        if (!response.ok) throw new Error(copy.loadError);
         const status = await response.json() as { authenticated: boolean; customer: { name?: string } | null };
         if (cancelled) return;
         if (telegramAuthFailed) setError(copy.loginError);
@@ -96,13 +101,20 @@ export default function OrdersPage() {
   }, [copy.loadError, copy.loginError]);
 
   function login() {
-    window.location.replace(new URL(`/api/auth/telegram/start?returnTo=${encodeURIComponent(window.location.pathname)}`, window.location.origin).toString());
+    const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.location.replace(new URL(`/api/auth/telegram/start?returnTo=${encodeURIComponent(returnTo)}`, window.location.origin).toString());
   }
 
   async function logout() {
-    await fetch('/api/auth/customer', { method: 'DELETE' });
-    setAuthenticated(false);
-    setOrders([]);
+    setError(null);
+    try {
+      const response = await fetch('/api/auth/customer', { method: 'DELETE' });
+      if (!response.ok) throw new Error(copy.logoutError);
+      setAuthenticated(false);
+      setOrders([]);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : copy.logoutError);
+    }
   }
 
   return (
@@ -113,7 +125,7 @@ export default function OrdersPage() {
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4"><div><h1 className="font-extended text-2xl font-bold tracking-[-0.025em] sm:text-3xl">{copy.title}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sp-ink-secondary)]">{copy.intro}</p></div>{authenticated ? <button type="button" onClick={() => void logout()} className="inline-flex min-h-10 items-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] px-4 text-xs font-semibold"><LogOut className="size-4" />{copy.logout}{customerName ? ` · ${customerName}` : ''}</button> : null}</div>
 
         {authenticated === null && !error ? <p className="mt-10 text-sm text-[var(--sp-ink-tertiary)]">{copy.loading}</p> : null}
-        {error ? <p className="sp-alert sp-alert-danger mt-8 text-sm" role="alert">{error}</p> : null}
+        {error ? <div className="sp-alert sp-alert-danger mt-8 flex items-center justify-between gap-3 text-sm" role="alert"><span>{error}</span><button type="button" onClick={() => window.location.reload()} className="min-h-9 shrink-0 rounded-[var(--sp-radius-control)] border border-current px-3 text-xs font-semibold">{copy.retry}</button></div> : null}
         {authenticated === false ? <section className="mt-8 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-8 text-center"><Send className="mx-auto size-9 text-[var(--sp-brand)]" /><h2 className="mt-4 font-extended text-lg font-bold">{copy.loginTitle}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--sp-ink-secondary)]">{copy.loginText}</p><button type="button" onClick={login} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-semibold text-[var(--sp-on-brand)]"><Send className="size-4" />{copy.login}</button></section> : null}
         {authenticated && orders.length === 0 ? <section className="mt-8 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-8 text-center"><Clock3 className="mx-auto size-9 text-[var(--sp-ink-muted)]" /><h2 className="mt-4 font-extended text-lg font-bold">{copy.empty}</h2><Link href="/catalog" className="mt-5 inline-flex min-h-11 items-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-semibold text-[var(--sp-on-brand)]">{copy.openCatalog}</Link></section> : null}
 

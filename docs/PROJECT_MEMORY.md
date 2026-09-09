@@ -150,7 +150,7 @@ Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, 
 - Firestore public boundary работает в production как Admin-SDK server read → explicit allowlist projection → SSR/`/api/catalog`; deployed rules deny all direct client reads/writes. Products published-only, Category lineage/Banners active-only, unknown fields stripped. Schema migration не потребовалась.
 - Public read получает коллекции целиком; client filtering/search — не индекс для огромного каталога. Runtime IAM/secrets и TTL проверены при rollout; alerts и cost dashboards остаются эксплуатационной задачей, а не свойством codebase.
 - Slugs категорий остаются глобально уникальными. Flat legacy URL перенаправляется по текущему lineage; старый nested URL после будущего изменения parent/slug не хранится в истории (нужен согласованный redirect plan). Существующие статические marketing links не переписываются автоматически.
-- F12 non-blocking: у `content_manager` после прямого перехода на запрещённый admin route переход в разрешённый раздел может сохранять denied screen до Reload. Это не authorization bypass; будущий маленький UX patch должен обновлять route boundary, не ослаблять capability checks.
+- F12 закрыт в `0776239`: route boundary обновляется в AdminShell по текущему pathname; denied → allowed и browser history покрыты desktop/mobile regression, server capability checks сохранены.
 
 ## DO NOT DO
 
@@ -170,8 +170,16 @@ Quality gate: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, 
 
 После независимого review пользователь отдельно разрешил финальную уборку и один checkpoint commit. Неиспользуемые `1.png` и `public/catalog/categories/raw_1.png`–`raw_22.png` исключены из source: raw PNG побайтно дублировали сохранённые изображения с смысловыми названиями. Runtime assets и WebP не удалялись. Исторический Subcategory handoff описывает состояние **до** checkpoint.
 
-Production readiness/security audit, launch-blocker remediation, Admin/SEO foundation и stabilization verification завершены. Принятый stabilization checkpoint работает в production на `build-2026-09-08-001` со 100% traffic; предыдущий `build-2026-09-04-002` сохранён как rollback target. F12 остаётся отдельным non-blocking UX patch. Deferred limitations не исправлять автоматически. Production taxonomy mapping и physical cleanup неиспользуемого `vetclinics` остаются отдельными явно разрешаемыми операциями.
+Production readiness/security audit, launch-blocker remediation, Admin/SEO foundation и stabilization verification завершены. Финальный stabilization checkpoint `077623902f5a5da6ead798d16cdb4d14b9c5d34e` работает в production на `build-2026-09-08-002` со 100% traffic; `build-2026-09-08-001` сохранён как rollback target. F12 закрыт. Deferred limitations не исправлять автоматически. Production taxonomy mapping и physical cleanup неиспользуемого `vetclinics` остаются отдельными явно разрешаемыми операциями.
 
 ## Final stabilization patch — 2026-09-08
 
-F12 denied-route recovery is corrected in the existing AdminShell using the current pathname. API authorization, commerce, data schemas and infrastructure remain unchanged. The patch is pending its controlled rollout; see [STABILIZATION_RELEASE_2026-09-08.md](STABILIZATION_RELEASE_2026-09-08.md) for the release record and next Customer Identity/Telegram scope.
+F12 denied-route recovery is corrected in the existing AdminShell using the current pathname. API authorization, commerce, data schemas and infrastructure remain unchanged. The patch is live as `build-2026-09-08-002` (100% traffic, rollout SUCCEEDED); rollback is build 001. Post-rollout docs remain local to avoid a documentation-only rollout. See [STABILIZATION_RELEASE_2026-09-08.md](STABILIZATION_RELEASE_2026-09-08.md) for the release record and next Customer Identity/Telegram scope.
+
+## Customer identity / Telegram release candidate — 2026-09-09
+
+Local candidate after `0776239` closes the customer identity split between Telegram OIDC (`sub`) and Mini App (`id`) without rewriting auth: verified Telegram user ID is the cross-flow key, existing UIDs remain aliases, and customer history queries only signed aliases. Re-login preserves edited profile contact fields. New customer sessions have per-session Firestore records and logout revokes only the current session; legacy cookies remain valid until their existing expiry.
+
+Order creation orchestration is shared by live checkout and a new `orders.write` operational smoke. The smoke is isolated in `testRequests`/`testRequestIdempotency`, uses canonical Product pricing/quantity/idempotency, and always selects a network-free notification sink. Public request schema rejects suppress/test controls. Live notification state is now explicit and visible in Admin, while a delivery failure does not duplicate or undo the request.
+
+No production writes, notifications, deploy, push, customer merge or migration were performed. Production read-only customer inventory could not run because operator Firebase/ADC credentials require reauthentication; run `npm run identity:audit -- --project stamply-4df8a` before controlled deployment. Detailed evidence and remaining limitations: [CUSTOMER_IDENTITY_TELEGRAM_HANDOFF_2026-09-09.md](CUSTOMER_IDENTITY_TELEGRAM_HANDOFF_2026-09-09.md).

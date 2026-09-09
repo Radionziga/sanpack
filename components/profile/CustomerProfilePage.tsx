@@ -20,6 +20,7 @@ import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { readCustomerProfileDraft, writeCustomerProfileDraft } from '@/lib/customer/profileDraft';
+import { ensureTelegramMiniAppSession } from '@/lib/telegram/miniAppSession';
 
 interface CustomerProfile {
   name: string;
@@ -41,7 +42,9 @@ const copyByLanguage = {
   ru: {
     back: 'Назад', title: 'Профиль и настройки', intro: 'Контактные данные, история заявок и настройки магазина — в одном месте.',
     guest: 'Гостевой профиль', signedIn: 'Профиль Telegram', guestHint: 'Данные сохранятся только на этом устройстве.', signedHint: 'Данные синхронизируются с вашим Telegram-профилем.',
-    login: 'Войти через Telegram', logout: 'Выйти', contactTitle: 'Контактные данные', contactHint: 'Имя и телефон будут подставляться при оформлении заявки.',
+    login: 'Войти через Telegram', logout: 'Выйти', logoutError: 'Не удалось завершить выход. Проверьте соединение и повторите.', contactTitle: 'Контактные данные', contactHint: 'Имя и телефон будут подставляться при оформлении заявки.',
+    loginError: 'Вход через Telegram не завершён. Повторите попытку или продолжите как гость.',
+    loadError: 'Профиль временно недоступен. Локальные данные показаны без входа.',
     name: 'Контактное лицо', phone: 'Телефон', company: 'Компания', address: 'Адрес доставки', inn: 'ИНН', optional: 'необязательно',
     namePlaceholder: 'Как к вам обращаться', companyPlaceholder: 'Название организации', addressPlaceholder: 'Город, улица, дом', innPlaceholder: 'ИНН организации',
     save: 'Сохранить данные', saving: 'Сохраняем…', saved: 'Данные профиля сохранены', error: 'Не удалось сохранить данные. Попробуйте ещё раз.', validation: 'Укажите имя и корректный номер телефона.',
@@ -50,7 +53,9 @@ const copyByLanguage = {
   uz: {
     back: 'Orqaga', title: 'Profil va sozlamalar', intro: 'Aloqa ma’lumotlari, arizalar tarixi va do‘kon sozlamalari bir joyda.',
     guest: 'Mehmon profili', signedIn: 'Telegram profili', guestHint: 'Ma’lumotlar faqat ushbu qurilmada saqlanadi.', signedHint: 'Ma’lumotlar Telegram profilingiz bilan sinxronlanadi.',
-    login: 'Telegram orqali kirish', logout: 'Chiqish', contactTitle: 'Aloqa ma’lumotlari', contactHint: 'Ism va telefon ariza rasmiylashtirishda avtomatik to‘ldiriladi.',
+    login: 'Telegram orqali kirish', logout: 'Chiqish', logoutError: 'Chiqishni yakunlab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.', contactTitle: 'Aloqa ma’lumotlari', contactHint: 'Ism va telefon ariza rasmiylashtirishda avtomatik to‘ldiriladi.',
+    loginError: 'Telegram orqali kirish yakunlanmadi. Qayta urinib ko‘ring yoki mehmon sifatida davom eting.',
+    loadError: 'Profil vaqtincha ishlamayapti. Mahalliy ma’lumotlar kirishsiz ko‘rsatildi.',
     name: 'Aloqa uchun shaxs', phone: 'Telefon', company: 'Kompaniya', address: 'Yetkazib berish manzili', inn: 'STIR', optional: 'ixtiyoriy',
     namePlaceholder: 'Sizga qanday murojaat qilaylik', companyPlaceholder: 'Tashkilot nomi', addressPlaceholder: 'Shahar, ko‘cha, uy', innPlaceholder: 'Tashkilot STIRi',
     save: 'Ma’lumotlarni saqlash', saving: 'Saqlanmoqda…', saved: 'Profil ma’lumotlari saqlandi', error: 'Ma’lumotlarni saqlab bo‘lmadi. Qayta urinib ko‘ring.', validation: 'Ism va to‘g‘ri telefon raqamini kiriting.',
@@ -59,7 +64,9 @@ const copyByLanguage = {
   en: {
     back: 'Back', title: 'Profile and settings', intro: 'Contact details, request history, and store preferences in one place.',
     guest: 'Guest profile', signedIn: 'Telegram profile', guestHint: 'Your details are stored only on this device.', signedHint: 'Your details are synced with your Telegram profile.',
-    login: 'Sign in with Telegram', logout: 'Sign out', contactTitle: 'Contact details', contactHint: 'Your name and phone will be prefilled at checkout.',
+    login: 'Sign in with Telegram', logout: 'Sign out', logoutError: 'Could not complete sign-out. Check your connection and try again.', contactTitle: 'Contact details', contactHint: 'Your name and phone will be prefilled at checkout.',
+    loginError: 'Telegram sign-in was not completed. Try again or continue as a guest.',
+    loadError: 'The profile service is temporarily unavailable. Local details are shown signed out.',
     name: 'Contact person', phone: 'Phone', company: 'Company', address: 'Delivery address', inn: 'Tax ID', optional: 'optional',
     namePlaceholder: 'How should we address you?', companyPlaceholder: 'Organization name', addressPlaceholder: 'City, street, building', innPlaceholder: 'Organization tax ID',
     save: 'Save details', saving: 'Saving…', saved: 'Profile details saved', error: 'Could not save your details. Please try again.', validation: 'Enter your name and a valid phone number.',
@@ -68,7 +75,9 @@ const copyByLanguage = {
   zh: {
     back: '返回', title: '个人资料与设置', intro: '集中管理联系信息、申请记录和商店设置。',
     guest: '访客资料', signedIn: 'Telegram 资料', guestHint: '信息仅保存在此设备上。', signedHint: '信息将与您的 Telegram 账号同步。',
-    login: '使用 Telegram 登录', logout: '退出登录', contactTitle: '联系信息', contactHint: '提交申请时将自动填写姓名和电话。',
+    login: '使用 Telegram 登录', logout: '退出登录', logoutError: '无法完成退出登录。请检查网络连接后重试。', contactTitle: '联系信息', contactHint: '提交申请时将自动填写姓名和电话。',
+    loginError: 'Telegram 登录未完成。请重试或以访客身份继续。',
+    loadError: '个人资料服务暂时不可用。当前显示本地访客信息。',
     name: '联系人', phone: '电话', company: '公司', address: '配送地址', inn: '税号', optional: '选填',
     namePlaceholder: '我们该如何称呼您？', companyPlaceholder: '公司名称', addressPlaceholder: '城市、街道、门牌号', innPlaceholder: '公司税号',
     save: '保存信息', saving: '正在保存…', saved: '个人资料已保存', error: '保存失败，请重试。', validation: '请输入姓名和有效的电话号码。',
@@ -87,20 +96,35 @@ export function CustomerProfilePage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/auth/customer', { cache: 'no-store' })
-      .then((response) => response.json() as Promise<CustomerStatus>)
+    const currentUrl = new URL(window.location.href);
+    const telegramAuthFailed = currentUrl.searchParams.get('telegramAuth') === 'error';
+    if (currentUrl.searchParams.has('telegramAuth') || currentUrl.searchParams.has('reason')) {
+      currentUrl.searchParams.delete('telegramAuth');
+      currentUrl.searchParams.delete('reason');
+      window.history.replaceState(null, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+    }
+    ensureTelegramMiniAppSession()
+      .then(() => fetch('/api/auth/customer', { cache: 'no-store' }))
+      .then((response) => {
+        if (!response.ok) throw new Error('customer-status-unavailable');
+        return response.json() as Promise<CustomerStatus>;
+      })
       .then((status) => {
         if (cancelled) return;
+        if (telegramAuthFailed) setMessage({ kind: 'error', text: copy.loginError });
         setAuthenticated(status.authenticated);
         const local = readCustomerProfileDraft();
         setProfile({ ...emptyProfile, ...(local || {}), ...(status.customer || {}) });
       })
       .catch(() => {
-        if (!cancelled) setProfile({ ...emptyProfile, ...(readCustomerProfileDraft() || {}) });
+        if (!cancelled) {
+          setProfile({ ...emptyProfile, ...(readCustomerProfileDraft() || {}) });
+          setMessage({ kind: 'error', text: copy.loadError });
+        }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [copy.loadError, copy.loginError]);
 
   function updateField(field: keyof CustomerProfile, value: string) {
     setProfile((current) => ({ ...current, [field]: value }));
@@ -139,12 +163,19 @@ export function CustomerProfilePage() {
   }
 
   function login() {
-    window.location.replace(new URL(`/api/auth/telegram/start?returnTo=${encodeURIComponent(window.location.pathname)}`, window.location.origin).toString());
+    const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.location.replace(new URL(`/api/auth/telegram/start?returnTo=${encodeURIComponent(returnTo)}`, window.location.origin).toString());
   }
 
   async function logout() {
-    await fetch('/api/auth/customer', { method: 'DELETE' });
-    setAuthenticated(false);
+    setMessage(null);
+    try {
+      const response = await fetch('/api/auth/customer', { method: 'DELETE' });
+      if (!response.ok) throw new Error('customer-logout-failed');
+      setAuthenticated(false);
+    } catch {
+      setMessage({ kind: 'error', text: copy.logoutError });
+    }
   }
 
   const initials = profile.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'SP';

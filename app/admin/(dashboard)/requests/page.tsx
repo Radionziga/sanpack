@@ -1,13 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { FileDown, History, PackagePlus, Pencil, Phone, Save, X } from 'lucide-react';
+import { FileDown, History, PackagePlus, Pencil, Phone, Save, ShieldCheck, TestTube2, Trash2, X } from 'lucide-react';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import type { Product, RequestItem, RequestOrder } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { getProductPriceMode, getProductUnitPrice } from '@/lib/commerce/productOffer';
 import { formatOrderAmount, getOrderAmountOrZero } from '@/lib/orders/orderAmounts';
+import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
+import type { CustomerRequestOrder } from '@/lib/orders/customerOrderProjection';
+
+type IsolatedTestOrder = CustomerRequestOrder & Pick<RequestOrder, 'notification' | 'test'>;
 
 const statuses: Array<{ value: RequestOrder['status']; label: string }> = [
   { value: 'new', label: 'Новый' },
@@ -20,6 +24,16 @@ function statusLabel(value: RequestOrder['status']) {
   return statuses.find((status) => status.value === value)?.label || value;
 }
 
+function notificationPresentation(notification: NonNullable<RequestOrder['notification']>) {
+  const status = notification.status
+    || (notification.delivered ? 'delivered' : notification.reason === 'delivery_failed' ? 'failed' : notification.reason === 'not_configured' ? 'skipped' : 'pending');
+  if (status === 'delivered') return { label: 'Доставлено в Telegram', tone: 'text-[var(--sp-success)]' };
+  if (status === 'failed') return { label: 'Ошибка доставки — заявка сохранена', tone: 'text-[var(--sp-danger)]' };
+  if (status === 'skipped') return { label: 'Интеграция не настроена', tone: 'text-[var(--sp-ink-secondary)]' };
+  if (status === 'suppressed') return { label: 'Подавлено тестовым контуром', tone: 'text-[var(--sp-ink-secondary)]' };
+  return { label: 'Ожидает результата', tone: 'text-[var(--sp-ink-secondary)]' };
+}
+
 export default function AdminRequestsPage() {
   const [orders, setOrders] = useState<RequestOrder[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -29,6 +43,13 @@ export default function AdminRequestsPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [testPanelOpen, setTestPanelOpen] = useState(false);
+  const [testOrders, setTestOrders] = useState<IsolatedTestOrder[]>([]);
+  const [testProductId, setTestProductId] = useState('');
+  const [testVariantId, setTestVariantId] = useState('');
+  const [testQuantity, setTestQuantity] = useState(1);
+  const [testIntentKey, setTestIntentKey] = useState<string | null>(null);
+  const [testBusy, setTestBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -51,6 +72,68 @@ export default function AdminRequestsPage() {
   const calculatedSubtotal = useMemo(() => selected?.items.reduce(
     (sum, item) => sum + (item.price === undefined ? 0 : item.price * item.quantity), 0
   ) ?? 0, [selected]);
+  const testProduct = products.find((product) => product.id === testProductId);
+
+  async function loadTestOrders() {
+    const response = await fetch('/api/admin/order-tests', { cache: 'no-store' });
+    setTestOrders(await parseJsonResponse<IsolatedTestOrder[]>(response, 'Тестовые заявки не загружены.'));
+  }
+
+  async function openTestPanel() {
+    setTestPanelOpen((current) => !current);
+    if (!testPanelOpen) {
+      setError(null);
+      try { await loadTestOrders(); }
+      catch (reason) { setError(reason instanceof Error ? reason.message : 'Тестовые заявки не загружены.'); }
+    }
+  }
+
+  async function createTestOrder() {
+    if (!testProduct || (testProduct.variants?.length && !testVariantId)) {
+      setError('Выберите товар и обязательный вариант для тестовой заявки.');
+      return;
+    }
+    const key = testIntentKey || crypto.randomUUID();
+    setTestIntentKey(key);
+    setTestBusy(true); setError(null); setNotice(null);
+    try {
+      const response = await fetch('/api/admin/order-tests', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          confirmation: 'CREATE_ISOLATED_TEST_REQUEST',
+          idempotencyKey: key,
+          items: [{ productId: testProduct.id, variantId: testVariantId || undefined, quantity: testQuantity }],
+        }),
+      });
+      const created = await parseJsonResponse<IsolatedTestOrder>(response, 'Тестовая заявка не создана.');
+      setTestIntentKey(null);
+      setNotice(`${created.requestNumber}: canonical pricing проверен, Telegram подавлен test sink.`);
+      await loadTestOrders();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Тестовая заявка не создана. Повтор использует тот же test key.');
+    } finally { setTestBusy(false); }
+  }
+
+  async function deleteTestOrder(order: IsolatedTestOrder) {
+    if (!window.confirm(`Удалить только изолированную заявку ${order.requestNumber}?`)) return;
+    setTestBusy(true); setError(null);
+    try {
+      const response = await fetch('/api/admin/order-tests', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          confirmation: 'DELETE_ISOLATED_TEST_REQUEST',
+          requestId: order.id,
+          requestNumber: order.requestNumber,
+        }),
+      });
+      await parseJsonResponse<{ success: true }>(response, 'Тестовая заявка не удалена.');
+      setTestOrders((current) => current.filter((candidate) => candidate.id !== order.id));
+      setNotice(`${order.requestNumber} удалена из изолированного контура.`);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Тестовая заявка не удалена.'); }
+    finally { setTestBusy(false); }
+  }
 
   function patchSelected(patch: Partial<RequestOrder>) {
     setSelected((current) => current ? { ...current, ...patch } : current);
@@ -134,12 +217,28 @@ export default function AdminRequestsPage() {
       <header className="flex flex-col justify-between gap-4 border-b border-[var(--sp-line)] pb-5 lg:flex-row lg:items-end">
         <div><h1 className="font-extended text-2xl font-bold tracking-[-0.025em]">Заказы</h1><p className="mt-1.5 text-sm text-[var(--sp-ink-secondary)]">Заявки покупателей, ручная корректировка и внутренние документы.</p></div>
         <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => void openTestPanel()} className="admin-button-secondary min-h-9"><TestTube2 className="size-3.5" /> Безопасный smoke test</button>
           {(['all', 'new', 'processing', 'fulfilled', 'cancelled'] as const).map((value) => (
             <button key={value} type="button" onClick={() => setFilter(value)} className={`min-h-9 rounded-lg border px-3 text-[10px] font-bold ${filter === value ? 'border-[var(--sp-brand)] bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'border-[var(--sp-line)] bg-[var(--sp-surface)] text-[var(--sp-ink-secondary)]'}`}>{value === 'all' ? `Все · ${orders.length}` : `${statusLabel(value)} · ${orders.filter((order) => order.status === value).length}`}</button>
           ))}
         </div>
       </header>
       {error || notice ? <p role={error ? 'alert' : 'status'} className={`sp-alert text-sm ${error ? 'sp-alert-danger' : 'sp-alert-success'}`}>{error || notice}</p> : null}
+
+      {testPanelOpen ? <section className="rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5" aria-label="Изолированный тест заявок">
+        <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 size-5 shrink-0 text-[var(--sp-success)]" /><div><h2 className="font-extended text-base font-bold">Изолированный operational smoke</h2><p className="mt-1 text-xs leading-5 text-[var(--sp-ink-secondary)]">Использует текущие товары, canonical pricing и idempotency, но пишет только в <code>testRequests</code>. Telegram не вызывается: уведомление фиксируется server-side test sink.</p></div></div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px_auto] lg:items-end">
+          <CustomSelect label="Товар" value={testProductId} onChange={(value) => {
+            setTestProductId(value); setTestVariantId(''); setTestIntentKey(null);
+            const product = products.find((candidate) => candidate.id === value);
+            setTestQuantity(product ? getProductOrderRule(product, 'ru', product.variants?.[0]).minimumQuantity : 1);
+          }} options={products.map((product) => ({ value: product.id, label: `${product.titleRu} · ${product.sku}` }))} placeholder="Выберите товар" ariaLabel="Товар для smoke test" />
+          <CustomSelect label="Вариант" value={testVariantId} onChange={(value) => { setTestVariantId(value); setTestIntentKey(null); const variant = testProduct?.variants?.find((candidate) => candidate.id === value); if (testProduct) setTestQuantity(getProductOrderRule(testProduct, 'ru', variant).minimumQuantity); }} options={(testProduct?.variants || []).map((variant) => ({ value: variant.id, label: `${variant.titleRu} · ${variant.sku}` }))} placeholder={testProduct?.variants?.length ? 'Выберите вариант' : 'Без вариантов'} ariaLabel="Вариант для smoke test" />
+          <label className="text-xs font-bold">Количество<input type="number" min="0.001" step="any" value={testQuantity} onChange={(event) => { setTestQuantity(Number(event.target.value)); setTestIntentKey(null); }} className="admin-control mt-2 text-sm" /></label>
+          <button type="button" disabled={testBusy || !testProductId || Boolean(testProduct?.variants?.length && !testVariantId)} onClick={() => void createTestOrder()} className="admin-button-primary min-h-11 disabled:opacity-40">{testBusy ? 'Проверяем…' : testIntentKey ? 'Повторить безопасно' : 'Запустить test'}</button>
+        </div>
+        <div className="mt-5 border-t border-[var(--sp-line)] pt-4"><h3 className="text-xs font-bold">Последние изолированные заявки</h3>{testOrders.length === 0 ? <p className="mt-2 text-xs text-[var(--sp-ink-tertiary)]">Тестовых записей нет.</p> : <div className="mt-2 space-y-2">{testOrders.map((order) => <div key={order.id} className="admin-panel-muted flex flex-wrap items-center gap-3 p-3 text-xs"><strong className="font-mono text-[var(--sp-brand)]">{order.requestNumber}</strong><span>{formatOrderAmount(order.total)}</span><span className="text-[var(--sp-success)]">{order.notification?.status === 'suppressed' ? 'Telegram suppressed' : order.notification?.status || 'pending'}</span><time className="ml-auto text-[var(--sp-ink-tertiary)]">{new Date(order.createdAt).toLocaleString('ru-RU')}</time><button type="button" disabled={testBusy} onClick={() => void deleteTestOrder(order)} className="admin-icon-button text-[var(--sp-danger)]" aria-label={`Удалить ${order.requestNumber}`}><Trash2 className="size-4" /></button></div>)}</div>}</div>
+      </section> : null}
 
       <section className="overflow-hidden rounded-xl border border-[var(--sp-line)] bg-[var(--sp-surface)]">
         {loading ? <p className="p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Загрузка заказов…</p> : filtered.length === 0 ? <p className="p-10 text-center text-sm text-[var(--sp-ink-tertiary)]">Заказов в этом разделе нет.</p> : (
@@ -165,7 +264,7 @@ export default function AdminRequestsPage() {
             <label className="block text-xs font-bold">Комментарий к доставке / заказу<textarea value={selected.notes || ''} onChange={(event) => patchSelected({ notes: event.target.value })} rows={3} className="admin-control mt-2 p-3 text-sm" /></label>
             <section className="admin-panel p-4"><h3 className="flex items-center gap-2 text-xs font-bold"><History className="size-4 text-[var(--sp-brand)]" /> История изменений</h3><div className="mt-3 space-y-2">{(selected.auditTrail || []).slice().reverse().map((entry) => <div key={entry.id} className="admin-panel-muted p-3 text-[10px]"><p className="font-bold text-[var(--sp-ink)]">{entry.summary}</p><p className="mt-0.5 text-[var(--sp-ink-tertiary)]">{entry.actorLabel} · {new Date(entry.createdAt).toLocaleString('ru-RU')}</p></div>)}</div></section>
           </div>
-          <aside className="border-t border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 lg:border-l lg:border-t-0"><CustomSelect label="Статус" value={selected.status} onChange={(value) => patchSelected({ status: value as RequestOrder['status'] })} options={statuses} /><label className="mt-4 block text-xs font-bold">Корректировка суммы<input type="number" step="1" value={getOrderAmountOrZero(selected.adjustment)} onChange={(event) => patchSelected({ adjustment: Number(event.target.value) })} className="admin-control mt-2 text-sm" /><span className="mt-1 block text-[10px] font-normal text-[var(--sp-ink-tertiary)]">Скидка вводится отрицательным числом.</span></label><div className="mt-5 space-y-2 border-t border-[var(--sp-line)] pt-4 text-xs"><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Товары</span><span>{formatOrderAmount(calculatedSubtotal)}</span></div><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Корректировка</span><span>{formatOrderAmount(getOrderAmountOrZero(selected.adjustment))}</span></div><div className="flex justify-between border-t border-[var(--sp-line)] pt-3 text-base font-bold"><span>Итого</span><span>{formatOrderAmount(Math.max(0, calculatedSubtotal + getOrderAmountOrZero(selected.adjustment)))}</span></div></div><a href={`/api/admin/orders/${encodeURIComponent(selected.id)}/document`} target="_blank" className="admin-button-secondary mt-5 w-full"><FileDown className="size-4" /> Внутренняя накладная</a><button type="button" disabled={saving} onClick={() => void saveOrder()} className="admin-button-primary mt-3 w-full disabled:opacity-50"><Save className="size-4" /> {saving ? 'Сохраняем…' : 'Сохранить изменения'}</button><p className="mt-4 text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">Первоначальный состав заявки сохранён отдельно и не изменяется.</p></aside>
+          <aside className="border-t border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 lg:border-l lg:border-t-0"><CustomSelect label="Статус" value={selected.status} onChange={(value) => patchSelected({ status: value as RequestOrder['status'] })} options={statuses} />{selected.notification ? <div className="admin-panel-muted mt-4 p-3 text-xs"><span className="block font-bold">Уведомление</span><span className={notificationPresentation(selected.notification).tone}>{notificationPresentation(selected.notification).label}</span></div> : null}<label className="mt-4 block text-xs font-bold">Корректировка суммы<input type="number" step="1" value={getOrderAmountOrZero(selected.adjustment)} onChange={(event) => patchSelected({ adjustment: Number(event.target.value) })} className="admin-control mt-2 text-sm" /><span className="mt-1 block text-[10px] font-normal text-[var(--sp-ink-tertiary)]">Скидка вводится отрицательным числом.</span></label><div className="mt-5 space-y-2 border-t border-[var(--sp-line)] pt-4 text-xs"><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Товары</span><span>{formatOrderAmount(calculatedSubtotal)}</span></div><div className="flex justify-between text-[var(--sp-ink-secondary)]"><span>Корректировка</span><span>{formatOrderAmount(getOrderAmountOrZero(selected.adjustment))}</span></div><div className="flex justify-between border-t border-[var(--sp-line)] pt-3 text-base font-bold"><span>Итого</span><span>{formatOrderAmount(Math.max(0, calculatedSubtotal + getOrderAmountOrZero(selected.adjustment)))}</span></div></div><a href={`/api/admin/orders/${encodeURIComponent(selected.id)}/document`} target="_blank" className="admin-button-secondary mt-5 w-full"><FileDown className="size-4" /> Внутренняя накладная</a><button type="button" disabled={saving} onClick={() => void saveOrder()} className="admin-button-primary mt-3 w-full disabled:opacity-50"><Save className="size-4" /> {saving ? 'Сохраняем…' : 'Сохранить изменения'}</button><p className="mt-4 text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">Первоначальный состав заявки сохранён отдельно и не изменяется.</p></aside>
         </div>
       </div></div> : null}
     </div>

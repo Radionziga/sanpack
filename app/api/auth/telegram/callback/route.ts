@@ -1,10 +1,9 @@
 import { logError } from '@/lib/observability/logger';
 import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
 import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase/admin';
 import { createPublicSiteUrl } from '@/lib/http/publicSiteUrl';
 import {
-  createCustomerSessionToken,
+  issueCustomerSessionToken,
   CUSTOMER_SESSION_COOKIE_NAME,
   CUSTOMER_SESSION_MAX_AGE_SECONDS,
 } from '@/lib/auth/customerSession';
@@ -16,6 +15,7 @@ import {
   verifyTelegramIdToken,
   verifyTelegramLoginFlowToken,
 } from '@/lib/telegram/login';
+import { getTelegramOidcIdentity, upsertTelegramCustomer } from '@/lib/customer/telegramIdentity';
 
 export const runtime = 'nodejs';
 
@@ -67,32 +67,17 @@ export async function GET(request: Request) {
       redirectUri: login.redirectUri,
       codeVerifier: flow.codeVerifier,
     });
-    const profile = await verifyTelegramIdToken(tokens.id_token, login.clientId);
-    const telegramId = String(profile.id ?? profile.sub);
-    const uid = `telegram:${profile.sub}`;
-    const name = profile.name
-      || [profile.given_name, profile.family_name].filter(Boolean).join(' ')
-      || profile.preferred_username
-      || 'Покупатель';
-    const sessionToken = await createCustomerSessionToken({
-      sub: uid,
-      telegramId,
-      name,
-      ...(profile.preferred_username ? { username: profile.preferred_username } : {}),
-      ...(profile.picture ? { picture: profile.picture } : {}),
-      ...(profile.phone_number ? { phone: profile.phone_number } : {}),
+    const profile = await verifyTelegramIdToken(tokens.id_token, login.clientId, flow.nonce);
+    const customer = await upsertTelegramCustomer(getTelegramOidcIdentity(profile));
+    const sessionToken = await issueCustomerSessionToken({
+      sub: customer.uid,
+      telegramId: customer.telegramId,
+      name: customer.name,
+      identityUids: customer.identityUids,
+      ...(customer.username ? { username: customer.username } : {}),
+      ...(customer.picture ? { picture: customer.picture } : {}),
+      ...(customer.phone ? { phone: customer.phone } : {}),
     });
-
-    await getAdminDb().collection('customers').doc(uid).set({
-      uid,
-      provider: 'telegram',
-      telegramId,
-      name,
-      username: profile.preferred_username || '',
-      picture: profile.picture || '',
-      phone: profile.phone_number || '',
-      lastLoginAt: new Date().toISOString(),
-    }, { merge: true });
 
     const response = finish(request, returnTo, 'success');
     response.cookies.set(CUSTOMER_SESSION_COOKIE_NAME, sessionToken, {

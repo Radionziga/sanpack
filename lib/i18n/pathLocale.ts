@@ -13,6 +13,13 @@ export function sanitizeLocalizedReturnPath(
   pathname: string | null,
   fallback = '/ru/request',
 ) {
-  if (!pathname || !/^\/(ru|uz|en|zh)(\/|$)/.test(pathname)) return fallback;
-  return pathname;
+  if (!pathname || pathname.length > 2_000 || pathname.includes('\\')) return fallback;
+  try {
+    const url = new URL(pathname, 'https://sanpack.invalid');
+    if (url.origin !== 'https://sanpack.invalid'
+      || !/^\/(ru|uz|en|zh)(\/|$)/.test(url.pathname)) return fallback;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return fallback;
+  }
 }

@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "test:e2e:taxonomy": "playwright test --config=playwright.taxonomy.config.ts",
     "test:e2e:stabilization": "playwright test tests/e2e/stabilization.spec.ts",
+    "test:security:emulator": "firebase emulators:exec --only firestore,storage --project demo-sanpack-audit --config firebase.security-test.json \"node tests/security/firestore-rules-smoke.mjs && node tests/security/storage-rules-smoke.mjs && npm exec vitest run tests/integration/customerIdentity.emulator.test.ts tests/integration/requestPipeline.emulator.test.ts\"",
     "test:a11y": "playwright test --grep @a11y",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
@@ -19,6 +20,7 @@
     "bag-designer:cleanup:dry-run": "node --env-file=.env.local scripts/inspect-stale-bag-designer-drafts.mjs",
     "security:owner-grant": "node --env-file-if-exists=.env.local scripts/provision-owner-admin.mjs",
     "security:private-storage-audit": "node --env-file-if-exists=.env.local scripts/audit-private-storage-tokens.mjs",
+    "identity:audit": "node --env-file-if-exists=.env.local scripts/audit-customer-identities.mjs",
     "clean": "next clean"
   },
   "dependencies": {
@@ -28,18 +30,18 @@
     "@types/pdfmake": "^0.3.3",
     "autoprefixer": "^10.4.21",
     "firebase": "^12.17.0",
-    "firebase-admin": "^14.2.0",
+    "firebase-admin": "^14.3.0",
     "jose": "^6.2.8",
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
-    "next": "^16.3.0",
+    "next": "^16.3.4",
     "next-intl": "^4.13.4",
     "pdfmake": "^0.3.11",
     "postcss": "^8.5.6",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-hook-form": "^7.83.0",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {

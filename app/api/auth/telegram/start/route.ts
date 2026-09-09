@@ -35,6 +35,7 @@ export async function GET(request: Request) {
     const attempt = createTelegramLoginAttempt(returnTo);
     const flowToken = await createTelegramLoginFlowToken({
       state: attempt.state,
+      nonce: attempt.nonce,
       codeVerifier: attempt.codeVerifier,
       returnTo,
     });
@@ -42,6 +43,7 @@ export async function GET(request: Request) {
       clientId: login.clientId,
       redirectUri: login.redirectUri,
       state: attempt.state,
+      nonce: attempt.nonce,
       codeChallenge: attempt.codeChallenge,
       requestPhone: Boolean(login.requestPhone),
       allowBotMessages: Boolean(login.allowBotMessages),

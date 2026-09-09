@@ -38,6 +38,11 @@ export async function notifyAboutNewOrder(order: RequestOrder) {
   return { delivered: true as const };
 }
 
+/** A deterministic, network-free sink for explicitly authorized order smoke tests. */
+export async function suppressTestOrderNotification(_order: RequestOrder) {
+  return { delivered: false as const, reason: 'suppressed_test' as const };
+}
+
 export async function notifyAboutBagDesignRequest(request: Partial<BagDesignRequestRecord>) {
   const settings = await getTelegramPrivateSettings();
   const { notifications } = settings;

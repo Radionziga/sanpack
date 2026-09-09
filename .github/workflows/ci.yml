@@ -21,6 +21,7 @@ jobs:
       - run: npm ci
       - run: npm ls --depth=0
       - run: npm test
+      - run: npm run test:security:emulator
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build

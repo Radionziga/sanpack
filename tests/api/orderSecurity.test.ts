@@ -2,14 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { createProduct, createVariant } from '@/tests/fixtures/products';
 import type { Product } from '@/types';
-const { db, customer, created, notified } = vi.hoisted(() => ({ db: vi.fn(), customer: vi.fn(), created: vi.fn(), notified: vi.fn() }));
+const { db, customer, created, notified, verifyMiniApp } = vi.hoisted(() => ({ db: vi.fn(), customer: vi.fn(), created: vi.fn(), notified: vi.fn(), verifyMiniApp: vi.fn() }));
 const idempotencyStore = new Map<string, Record<string, unknown>>();
 const orderStore = new Map<string, Record<string, unknown>>();
 let transactionQueue = Promise.resolve();
 vi.mock('@/lib/firebase/admin', () => ({ getAdminDb: db }));
 vi.mock('@/lib/auth/customerSession', () => ({ getCustomerSession: customer }));
 vi.mock('@/lib/security/distributedRateLimit', () => ({ checkDistributedRateLimit: async () => ({ allowed: true }) }));
-vi.mock('@/lib/telegram/notifications', () => ({ notifyAboutNewOrder: async (order: unknown) => { notified(order); return { delivered: false }; } }));
+vi.mock('@/lib/telegram/notifications', () => ({
+  notifyAboutNewOrder: (order: unknown) => notified(order),
+  suppressTestOrderNotification: async () => ({ delivered: false, reason: 'suppressed_test' }),
+}));
+vi.mock('@/lib/telegram/settings', () => ({ getTelegramPrivateSettings: async () => ({ storefront: { enabled: true, tokenEncrypted: 'encrypted' } }) }));
+vi.mock('@/lib/telegram/secrets', () => ({ decryptSecret: () => 'token' }));
+vi.mock('@/lib/telegram/miniApp', () => ({ verifyTelegramInitData: (...args: unknown[]) => verifyMiniApp(...args) }));
 import { POST, GET } from '@/app/api/requests/route';
 
 const base = { contactName: 'Test customer', phone: '+998901234567', deliveryAddress: 'Tashkent fixture address', deliveryDate: '2026-09-01', deliveryWindow: '09:00-13:00' };
@@ -23,7 +29,7 @@ function supply(product: Product) {
         ? { id, kind: name, get: async () => ({ id, exists: id === product.id, data: () => product }) }
         : name === 'requestIdempotency'
           ? { id, kind: name, get: async () => ({ id, exists: idempotencyStore.has(id!), data: () => idempotencyStore.get(id!) }) }
-          : { id: id || 'new-order', kind: name, get: async () => ({ id, exists: orderStore.has(id || 'new-order'), data: () => orderStore.get(id || 'new-order') }), update: async () => undefined },
+          : { id: id || 'new-order', kind: name, get: async () => ({ id, exists: orderStore.has(id || 'new-order'), data: () => orderStore.get(id || 'new-order') }), update: async (patch: Record<string, unknown>) => orderStore.set(id || 'new-order', { ...(orderStore.get(id || 'new-order') || {}), ...patch }) },
     }),
     runTransaction: async (callback: (transaction: { get: (reference: { get: () => Promise<unknown> }) => Promise<unknown>; create: (reference: { id?: string }, data: unknown) => void }) => Promise<unknown>) => {
       const previous = transactionQueue;
@@ -45,7 +51,13 @@ function supply(product: Product) {
   };
   db.mockReturnValue(database);
 }
-beforeEach(() => { vi.clearAllMocks(); idempotencyStore.clear(); orderStore.clear(); transactionQueue = Promise.resolve(); customer.mockResolvedValue(null); supply(createProduct()); });
+beforeEach(() => {
+  vi.clearAllMocks(); idempotencyStore.clear(); orderStore.clear(); transactionQueue = Promise.resolve();
+  customer.mockResolvedValue(null);
+  notified.mockResolvedValue({ delivered: false, reason: 'not_configured' });
+  verifyMiniApp.mockReturnValue({ id: '123', firstName: 'Fixture' });
+  supply(createProduct());
+});
 describe('public checkout adversarial HTTP contract', () => {
   it('cannot evade maximum quantity by duplicating the same configuration', async () => {
     supply(createProduct({ maximumOrder: 10 }));
@@ -59,9 +71,26 @@ describe('public checkout adversarial HTTP contract', () => {
     expect((await GET()).status).toBe(200);
     expect(where).toHaveBeenCalledWith('customerUid', '==', 'telegram:123');
   });
+  it('reads legacy identity aliases without exposing another customer history', async () => {
+    customer.mockResolvedValue({ sub: 'telegram:canonical', identityUids: ['telegram:canonical', 'telegram:legacy'] });
+    const queried: string[] = [];
+    const where = vi.fn((_field: string, _operator: string, uid: string) => {
+      queried.push(uid);
+      return { orderBy: () => ({ limit: () => ({ get: async () => ({ docs: [] }) }) }) };
+    });
+    db.mockReturnValue({ collection: () => ({ where }) });
+    expect((await GET()).status).toBe(200);
+    expect(queried).toEqual(['telegram:canonical', 'telegram:legacy']);
+    expect(queried).not.toContain('telegram:other-customer');
+  });
   it.each(['unitPrice', 'price', 'lineTotal', 'wholesaleTiers'])('rejects client %s on a line before writes', async (field) => {
     expect((await POST(request([{ productId: 'product-1', quantity: 1, [field]: 1 }]))).status).toBe(400);
     expect(created).not.toHaveBeenCalled();
+  });
+  it.each(['testMode', 'suppressNotification', 'notificationDestination'])('rejects public notification control field %s', async (field) => {
+    expect((await POST(request([{ productId: 'product-1', quantity: 1 }], { [field]: true }))).status).toBe(400);
+    expect(created).not.toHaveBeenCalled();
+    expect(notified).not.toHaveBeenCalled();
   });
   it('rejects client total, path injection and unknown products', async () => {
     expect((await POST(request([{ productId: 'product-1', quantity: 1 }], { total: 1 }))).status).toBe(400);
@@ -165,6 +194,32 @@ describe('public checkout adversarial HTTP contract', () => {
     expect([first.status, second.status].sort()).toEqual([200, 201]);
     expect(created).toHaveBeenCalledTimes(1);
     expect(notified).toHaveBeenCalledTimes(1);
+  });
+  it('does not mix a signed browser customer with another Mini App identity', async () => {
+    customer.mockResolvedValue({ sub: 'telegram:123', telegramId: '123', name: 'A' });
+    verifyMiniApp.mockReturnValue({ id: '456', firstName: 'B' });
+    const response = await POST(request([{ productId: 'product-1', quantity: 1 }], { telegramInitData: 'signed-for-b' }));
+    expect(response.status).toBe(409);
+    expect(created).not.toHaveBeenCalled();
+  });
+  it('rejects invalid Mini App identity instead of silently downgrading to guest checkout', async () => {
+    verifyMiniApp.mockImplementation(() => { throw new Error('bad signature'); });
+    const response = await POST(request([{ productId: 'product-1', quantity: 1 }], { telegramInitData: 'tampered' }));
+    expect(response.status).toBe(401);
+    expect(created).not.toHaveBeenCalled();
+  });
+  it('keeps a browser Telegram session source distinct from Mini App source', async () => {
+    customer.mockResolvedValue({ sub: 'telegram:123', telegramId: '123', name: 'A' });
+    expect((await POST(request([{ productId: 'product-1', quantity: 1 }]))).status).toBe(201);
+    expect(created.mock.calls[0][0]).toMatchObject({ source: 'web', customerUid: 'telegram:123' });
+  });
+  it('keeps an accepted request when Telegram delivery fails and records failure state', async () => {
+    notified.mockRejectedValueOnce(new Error('Telegram unavailable'));
+    const response = await POST(request([{ productId: 'product-1', quantity: 1 }]));
+    expect(response.status).toBe(201);
+    expect(created).toHaveBeenCalledTimes(1);
+    expect(notified).toHaveBeenCalledTimes(1);
+    expect(orderStore.get('new-order')?.notification).toMatchObject({ status: 'failed', reason: 'delivery_failed' });
   });
   it('uses current variant tiers and enforces variant maximum', async () => {
     supply(createProduct({ variants: [createVariant({ price: 250, wholesaleTiers: [{ minQuantity: 2, price: 200 }], maxQuantity: 3 })] }));

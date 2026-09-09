@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { z } from 'zod';
 
 export interface TelegramMiniAppUser {
   id: string;
@@ -10,12 +11,26 @@ export interface TelegramMiniAppUser {
   languageCode?: string;
 }
 
+const miniAppUserSchema = z.object({
+  id: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]),
+  username: z.string().min(1).max(64).optional(),
+  first_name: z.string().min(1).max(100).optional(),
+  last_name: z.string().min(1).max(100).optional(),
+  language_code: z.string().min(2).max(16).optional(),
+}).passthrough();
+
+const MAX_INIT_DATA_AGE_SECONDS = 60 * 60;
+const MAX_CLOCK_SKEW_SECONDS = 60;
+
 export function verifyTelegramInitData(initData: string, botToken: string): TelegramMiniAppUser {
   const params = new URLSearchParams(initData);
   const receivedHash = params.get('hash');
   const authDate = Number(params.get('auth_date'));
-  if (!receivedHash || !Number.isFinite(authDate)) throw new Error('Некорректные данные Telegram.');
-  if (Math.abs(Date.now() / 1000 - authDate) > 60 * 60) throw new Error('Сессия Telegram устарела.');
+  if (!receivedHash || !Number.isInteger(authDate) || authDate <= 0) throw new Error('Некорректные данные Telegram.');
+  const now = Math.floor(Date.now() / 1000);
+  if (authDate < now - MAX_INIT_DATA_AGE_SECONDS || authDate > now + MAX_CLOCK_SKEW_SECONDS) {
+    throw new Error('Сессия Telegram устарела.');
+  }
 
   const dataCheckString = [...params.entries()]
     .filter(([key]) => key !== 'hash')
@@ -32,13 +47,7 @@ export function verifyTelegramInitData(initData: string, botToken: string): Tele
 
   const rawUser = params.get('user');
   if (!rawUser) throw new Error('Telegram не передал профиль пользователя.');
-  const user = JSON.parse(rawUser) as {
-    id: number;
-    username?: string;
-    first_name?: string;
-    last_name?: string;
-    language_code?: string;
-  };
+  const user = miniAppUserSchema.parse(JSON.parse(rawUser));
   return {
     id: String(user.id),
     username: user.username,
@@ -47,4 +56,3 @@ export function verifyTelegramInitData(initData: string, botToken: string): Tele
     languageCode: user.language_code,
   };
 }
-

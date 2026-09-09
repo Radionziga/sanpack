@@ -36,6 +36,7 @@ import {
   readPendingCheckoutIntent,
   type PendingCheckoutIntent,
 } from '@/lib/orders/checkoutIntent';
+import { ensureTelegramMiniAppSession } from '@/lib/telegram/miniAppSession';
 
 interface CustomerStatus {
   authenticated: boolean;
@@ -403,7 +404,8 @@ export default function RequestPage() {
       if (draftNotes) setNotes(draftNotes);
     });
 
-    fetch('/api/auth/customer', { cache: 'no-store' })
+    ensureTelegramMiniAppSession()
+      .then(() => fetch('/api/auth/customer', { cache: 'no-store' }))
       .then((response) => response.ok ? response.json() as Promise<CustomerStatus> : null)
       .then((status) => {
         if (!status) return;
@@ -429,7 +431,7 @@ export default function RequestPage() {
       deliveryWindow,
       notes,
     }));
-    const returnTo = window.location.pathname;
+    const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     window.location.replace(
       new URL(`/api/auth/telegram/start?returnTo=${encodeURIComponent(returnTo)}`, window.location.origin).toString(),
     );
