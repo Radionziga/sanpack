@@ -71,6 +71,18 @@ describe('Telegram identity boundary', () => {
     params.set('hash', createHmac('sha256', secret).update(data).digest('hex'));
     expect(() => verifyTelegramInitData(params.toString(), bot)).toThrow();
   });
+  it('does not reject a signed Telegram identity for unusable optional presentation fields', () => {
+    const params = new URLSearchParams({
+      auth_date: String(Math.floor(Date.now() / 1000)),
+      user: JSON.stringify({ id: 123, first_name: null, username: 42, language_code: '' }),
+    });
+    const data = [...params].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join('\n');
+    const secret = createHmac('sha256', 'WebAppData').update(bot).digest();
+    params.set('hash', createHmac('sha256', secret).update(data).digest('hex'));
+    expect(verifyTelegramInitData(params.toString(), bot)).toEqual({
+      id: '123', username: undefined, firstName: undefined, lastName: undefined, languageCode: undefined,
+    });
+  });
   it('does not accept arbitrary phone/plain JSON as a customer session', async () => {
     vi.stubEnv('TELEGRAM_CONFIG_ENCRYPTION_KEY', 'test-only-key-not-a-production-secret');
     const token = await createCustomerSessionToken({ sub: 'telegram:123', telegramId: '123', name: 'Fixture', phone: '+998901234567' });

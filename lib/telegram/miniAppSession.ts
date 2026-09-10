@@ -4,6 +4,7 @@ export type TelegramMiniAppSessionFailureReason =
   | 'expired'
   | 'future'
   | 'signature_mismatch'
+  | 'missing_user'
   | 'invalid_user'
   | 'service_unavailable'
   | null;
@@ -18,7 +19,7 @@ let lastFailureReason: TelegramMiniAppSessionFailureReason = null;
 const SESSION_CACHE_MS = 5 * 60 * 1000;
 
 const failureReasons = new Set<Exclude<TelegramMiniAppSessionFailureReason, null>>([
-  'invalid_shape', 'expired', 'future', 'signature_mismatch', 'invalid_user', 'service_unavailable',
+  'invalid_shape', 'expired', 'future', 'signature_mismatch', 'missing_user', 'invalid_user', 'service_unavailable',
 ]);
 
 export function getLastTelegramMiniAppSessionFailureReason() {

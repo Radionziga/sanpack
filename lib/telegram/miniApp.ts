@@ -16,6 +16,7 @@ export type TelegramMiniAppVerificationCode =
   | 'expired'
   | 'future'
   | 'signature_mismatch'
+  | 'missing_user'
   | 'invalid_user';
 
 export class TelegramMiniAppVerificationError extends Error {
@@ -27,10 +28,6 @@ export class TelegramMiniAppVerificationError extends Error {
 
 const miniAppUserSchema = z.object({
   id: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]),
-  username: z.string().min(1).max(64).optional(),
-  first_name: z.string().min(1).max(100).optional(),
-  last_name: z.string().min(1).max(100).optional(),
-  language_code: z.string().min(2).max(16).optional(),
 }).passthrough();
 
 const MAX_INIT_DATA_AGE_SECONDS = 60 * 60;
@@ -61,7 +58,7 @@ export function verifyTelegramInitData(initData: string, botToken: string): Tele
   }
 
   const rawUser = params.get('user');
-  if (!rawUser) throw new TelegramMiniAppVerificationError('invalid_user');
+  if (!rawUser) throw new TelegramMiniAppVerificationError('missing_user');
   let user: z.infer<typeof miniAppUserSchema>;
   try {
     user = miniAppUserSchema.parse(JSON.parse(rawUser));
@@ -70,9 +67,15 @@ export function verifyTelegramInitData(initData: string, botToken: string): Tele
   }
   return {
     id: String(user.id),
-    username: user.username,
-    firstName: user.first_name,
-    lastName: user.last_name,
-    languageCode: user.language_code,
+    username: readOptionalTelegramString(user.username, 64),
+    firstName: readOptionalTelegramString(user.first_name, 100),
+    lastName: readOptionalTelegramString(user.last_name, 100),
+    languageCode: readOptionalTelegramString(user.language_code, 16),
   };
+}
+
+function readOptionalTelegramString(value: unknown, maximumLength: number) {
+  return typeof value === 'string' && value.length > 0 && value.length <= maximumLength
+    ? value
+    : undefined;
 }
