@@ -8,7 +8,7 @@ import {
   CUSTOMER_SESSION_MAX_AGE_SECONDS,
 } from '@/lib/auth/customerSession';
 import { checkDistributedRateLimit } from '@/lib/security/distributedRateLimit';
-import { verifyTelegramInitData } from '@/lib/telegram/miniApp';
+import { TelegramMiniAppVerificationError, verifyTelegramInitData } from '@/lib/telegram/miniApp';
 import { canDecryptSecret, decryptSecret } from '@/lib/telegram/secrets';
 import { getTelegramPrivateSettings } from '@/lib/telegram/settings';
 import { upsertTelegramCustomer } from '@/lib/customer/telegramIdentity';
@@ -32,6 +32,7 @@ export async function POST(request: Request) {
     );
   }
 
+  let stage: 'configuration' | 'verification' | 'identity' | 'session' = 'configuration';
   try {
     const settings = await getTelegramPrivateSettings();
     const encryptedToken = settings.storefront.tokenEncrypted;
@@ -39,16 +40,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Telegram Mini App не настроен.' }, { status: 503 });
     }
 
+    stage = 'verification';
     const user = verifyTelegramInitData(parsed.data.initData, decryptSecret(encryptedToken));
     const name = [user.firstName, user.lastName].filter(Boolean).join(' ')
       || user.username
       || 'Покупатель';
+    stage = 'identity';
     const customer = await upsertTelegramCustomer({
       telegramId: user.id,
       displayName: name,
       username: user.username,
       languageCode: user.languageCode,
     });
+    stage = 'session';
     const sessionToken = await issueCustomerSessionToken({
       sub: customer.uid,
       telegramId: customer.telegramId,
@@ -69,7 +73,20 @@ export async function POST(request: Request) {
     });
     return response;
   } catch (error) {
-    logError('Telegram Mini App session verification failed.', error);
-    return NextResponse.json({ error: 'Не удалось подтвердить Telegram-сессию.' }, { status: 401 });
+    const verificationCode = error instanceof TelegramMiniAppVerificationError ? error.code : undefined;
+    logError('Telegram Mini App session verification failed.', error, {
+      stage,
+      ...(verificationCode ? { verificationCode } : {}),
+    });
+    if (verificationCode) {
+      return NextResponse.json(
+        { error: 'Не удалось подтвердить Telegram-сессию.', reason: verificationCode },
+        { status: 401 },
+      );
+    }
+    return NextResponse.json(
+      { error: 'Сервис Telegram временно недоступен.', reason: 'service_unavailable' },
+      { status: 503 },
+    );
   }
 }

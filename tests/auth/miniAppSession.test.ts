@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ensureTelegramMiniAppSession, resetTelegramMiniAppSessionCache } from '@/lib/telegram/miniAppSession';
+import {
+  ensureTelegramMiniAppSession,
+  getLastTelegramMiniAppSessionFailureReason,
+  resetTelegramMiniAppSessionCache,
+} from '@/lib/telegram/miniAppSession';
 
 const fetchMock = vi.fn();
 
@@ -27,9 +31,11 @@ describe('Mini App customer session bootstrap', () => {
   });
 
   it('retries a failed bootstrap and never reuses success for changed initData', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false }).mockResolvedValue({ ok: true });
+    fetchMock.mockResolvedValueOnce({ ok: false, json: async () => ({ reason: 'expired' }) }).mockResolvedValue({ ok: true });
     await expect(ensureTelegramMiniAppSession()).resolves.toBe('rejected');
+    expect(getLastTelegramMiniAppSessionFailureReason()).toBe('expired');
     await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
+    expect(getLastTelegramMiniAppSessionFailureReason()).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     window.Telegram!.WebApp!.initData = 'signed-b';
     await expect(ensureTelegramMiniAppSession()).resolves.toBe('authenticated');
@@ -58,8 +64,9 @@ describe('Mini App customer session bootstrap', () => {
     expect(fetchMock).not.toHaveBeenCalled();
 
     window.Telegram!.WebApp!.initData = 'invalid-proof';
-    fetchMock.mockResolvedValueOnce({ ok: false });
+    fetchMock.mockResolvedValueOnce({ ok: false, json: async () => ({ reason: 'signature_mismatch' }) });
     await expect(ensureTelegramMiniAppSession()).resolves.toBe('rejected');
+    expect(getLastTelegramMiniAppSessionFailureReason()).toBe('signature_mismatch');
   });
 
   it('switches A to B to A without reusing another account cache entry', async () => {

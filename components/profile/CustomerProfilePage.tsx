@@ -20,7 +20,11 @@ import { Link } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { readCustomerProfileDraft, writeCustomerProfileDraft } from '@/lib/customer/profileDraft';
-import { ensureTelegramMiniAppSession, resetTelegramMiniAppSessionCache } from '@/lib/telegram/miniAppSession';
+import {
+  ensureTelegramMiniAppSession,
+  getLastTelegramMiniAppSessionFailureReason,
+  resetTelegramMiniAppSessionCache,
+} from '@/lib/telegram/miniAppSession';
 
 interface CustomerProfile {
   name: string;
@@ -43,7 +47,7 @@ const copyByLanguage = {
     back: 'Назад', title: 'Профиль и настройки', intro: 'Контактные данные, история заявок и настройки магазина — в одном месте.',
     guest: 'Гостевой профиль', signedIn: 'Профиль Telegram', miniAppBlocked: 'Требуется проверка Telegram', guestHint: 'Данные сохранятся только на этом устройстве.', signedHint: 'Данные синхронизируются с вашим Telegram-профилем.', miniAppBlockedHint: 'Профиль скрыт до успешной повторной проверки аккаунта Mini App.',
     login: 'Войти через Telegram', logout: 'Выйти', logoutError: 'Не удалось завершить выход. Проверьте соединение и повторите.', contactTitle: 'Контактные данные', contactHint: 'Имя и телефон будут подставляться при оформлении заявки.',
-    loginError: 'Вход через Telegram не завершён. Повторите попытку или продолжите как гость.', miniAppError: 'Не удалось подтвердить аккаунт Telegram Mini App. Данные другой сессии скрыты.', retry: 'Повторить',
+    loginError: 'Вход через Telegram не завершён. Повторите попытку или продолжите как гость.', miniAppError: 'Не удалось подтвердить аккаунт Telegram Mini App. Данные другой сессии скрыты.', miniAppExpired: 'Сессия Mini App устарела. Закройте Mini App и откройте его заново из чата с ботом.', miniAppSignature: 'Подпись Mini App не совпала. Откройте магазин заново из чата с ботом.', miniAppService: 'Сервис Telegram временно недоступен. Повторите позже.', retry: 'Повторить',
     loadError: 'Профиль временно недоступен. Локальные данные показаны без входа.',
     name: 'Контактное лицо', phone: 'Телефон', company: 'Компания', address: 'Адрес доставки', inn: 'ИНН', optional: 'необязательно',
     namePlaceholder: 'Как к вам обращаться', companyPlaceholder: 'Название организации', addressPlaceholder: 'Город, улица, дом', innPlaceholder: 'ИНН организации',
@@ -54,7 +58,7 @@ const copyByLanguage = {
     back: 'Orqaga', title: 'Profil va sozlamalar', intro: 'Aloqa ma’lumotlari, arizalar tarixi va do‘kon sozlamalari bir joyda.',
     guest: 'Mehmon profili', signedIn: 'Telegram profili', miniAppBlocked: 'Telegram tekshiruvi talab qilinadi', guestHint: 'Ma’lumotlar faqat ushbu qurilmada saqlanadi.', signedHint: 'Ma’lumotlar Telegram profilingiz bilan sinxronlanadi.', miniAppBlockedHint: 'Mini App akkaunti qayta tasdiqlanmaguncha profil yashiriladi.',
     login: 'Telegram orqali kirish', logout: 'Chiqish', logoutError: 'Chiqishni yakunlab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.', contactTitle: 'Aloqa ma’lumotlari', contactHint: 'Ism va telefon ariza rasmiylashtirishda avtomatik to‘ldiriladi.',
-    loginError: 'Telegram orqali kirish yakunlanmadi. Qayta urinib ko‘ring yoki mehmon sifatida davom eting.', miniAppError: 'Telegram Mini App akkauntini tasdiqlab bo‘lmadi. Boshqa sessiya ma’lumotlari yashirildi.', retry: 'Qayta urinish',
+    loginError: 'Telegram orqali kirish yakunlanmadi. Qayta urinib ko‘ring yoki mehmon sifatida davom eting.', miniAppError: 'Telegram Mini App akkauntini tasdiqlab bo‘lmadi. Boshqa sessiya ma’lumotlari yashirildi.', miniAppExpired: 'Mini App sessiyasi eskirgan. Uni yoping va bot chatidan qayta oching.', miniAppSignature: 'Mini App imzosi mos kelmadi. Do‘konni bot chatidan qayta oching.', miniAppService: 'Telegram xizmati vaqtincha ishlamayapti. Keyinroq qayta urinib ko‘ring.', retry: 'Qayta urinish',
     loadError: 'Profil vaqtincha ishlamayapti. Mahalliy ma’lumotlar kirishsiz ko‘rsatildi.',
     name: 'Aloqa uchun shaxs', phone: 'Telefon', company: 'Kompaniya', address: 'Yetkazib berish manzili', inn: 'STIR', optional: 'ixtiyoriy',
     namePlaceholder: 'Sizga qanday murojaat qilaylik', companyPlaceholder: 'Tashkilot nomi', addressPlaceholder: 'Shahar, ko‘cha, uy', innPlaceholder: 'Tashkilot STIRi',
@@ -65,7 +69,7 @@ const copyByLanguage = {
     back: 'Back', title: 'Profile and settings', intro: 'Contact details, request history, and store preferences in one place.',
     guest: 'Guest profile', signedIn: 'Telegram profile', miniAppBlocked: 'Telegram verification required', guestHint: 'Your details are stored only on this device.', signedHint: 'Your details are synced with your Telegram profile.', miniAppBlockedHint: 'Profile data is hidden until the Mini App account is verified again.',
     login: 'Sign in with Telegram', logout: 'Sign out', logoutError: 'Could not complete sign-out. Check your connection and try again.', contactTitle: 'Contact details', contactHint: 'Your name and phone will be prefilled at checkout.',
-    loginError: 'Telegram sign-in was not completed. Try again or continue as a guest.', miniAppError: 'The Telegram Mini App account could not be verified. Data from another session is hidden.', retry: 'Try again',
+    loginError: 'Telegram sign-in was not completed. Try again or continue as a guest.', miniAppError: 'The Telegram Mini App account could not be verified. Data from another session is hidden.', miniAppExpired: 'The Mini App session has expired. Close it and reopen it from the bot chat.', miniAppSignature: 'The Mini App signature did not match. Reopen the store from the bot chat.', miniAppService: 'The Telegram service is temporarily unavailable. Try again later.', retry: 'Try again',
     loadError: 'The profile service is temporarily unavailable. Local details are shown signed out.',
     name: 'Contact person', phone: 'Phone', company: 'Company', address: 'Delivery address', inn: 'Tax ID', optional: 'optional',
     namePlaceholder: 'How should we address you?', companyPlaceholder: 'Organization name', addressPlaceholder: 'City, street, building', innPlaceholder: 'Organization tax ID',
@@ -76,7 +80,7 @@ const copyByLanguage = {
     back: '返回', title: '个人资料与设置', intro: '集中管理联系信息、申请记录和商店设置。',
     guest: '访客资料', signedIn: 'Telegram 资料', miniAppBlocked: '需要验证 Telegram', guestHint: '信息仅保存在此设备上。', signedHint: '信息将与您的 Telegram 账号同步。', miniAppBlockedHint: '重新验证 Mini App 账号前，个人资料将保持隐藏。',
     login: '使用 Telegram 登录', logout: '退出登录', logoutError: '无法完成退出登录。请检查网络连接后重试。', contactTitle: '联系信息', contactHint: '提交申请时将自动填写姓名和电话。',
-    loginError: 'Telegram 登录未完成。请重试或以访客身份继续。', miniAppError: '无法验证 Telegram Mini App 账号。其他会话的数据已隐藏。', retry: '重试',
+    loginError: 'Telegram 登录未完成。请重试或以访客身份继续。', miniAppError: '无法验证 Telegram Mini App 账号。其他会话的数据已隐藏。', miniAppExpired: 'Mini App 会话已过期。请关闭后从机器人聊天中重新打开。', miniAppSignature: 'Mini App 签名不匹配。请从机器人聊天中重新打开商店。', miniAppService: 'Telegram 服务暂时不可用。请稍后重试。', retry: '重试',
     loadError: '个人资料服务暂时不可用。当前显示本地访客信息。',
     name: '联系人', phone: '电话', company: '公司', address: '配送地址', inn: '税号', optional: '选填',
     namePlaceholder: '我们该如何称呼您？', companyPlaceholder: '公司名称', addressPlaceholder: '城市、街道、门牌号', innPlaceholder: '公司税号',
@@ -108,10 +112,18 @@ export function CustomerProfilePage() {
       .then((miniAppResult) => {
         if (miniAppResult === 'rejected') {
           if (!cancelled) {
+            const reason = getLastTelegramMiniAppSessionFailureReason();
+            const errorText = reason === 'expired' || reason === 'future'
+              ? copy.miniAppExpired
+              : reason === 'signature_mismatch'
+                ? copy.miniAppSignature
+                : reason === 'service_unavailable'
+                  ? copy.miniAppService
+                  : copy.miniAppError;
             setAuthenticated(false);
             setMiniAppRejected(true);
             setProfile(emptyProfile);
-            setMessage({ kind: 'error', text: copy.miniAppError });
+            setMessage({ kind: 'error', text: errorText });
           }
           return null;
         }
@@ -137,7 +149,7 @@ export function CustomerProfilePage() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [copy.loadError, copy.loginError, copy.miniAppError]);
+  }, [copy.loadError, copy.loginError, copy.miniAppError, copy.miniAppExpired, copy.miniAppService, copy.miniAppSignature]);
 
   function updateField(field: keyof CustomerProfile, value: string) {
     setProfile((current) => ({ ...current, [field]: value }));

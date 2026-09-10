@@ -11,6 +11,20 @@ export interface TelegramMiniAppUser {
   languageCode?: string;
 }
 
+export type TelegramMiniAppVerificationCode =
+  | 'invalid_shape'
+  | 'expired'
+  | 'future'
+  | 'signature_mismatch'
+  | 'invalid_user';
+
+export class TelegramMiniAppVerificationError extends Error {
+  constructor(public readonly code: TelegramMiniAppVerificationCode) {
+    super('Telegram Mini App proof verification failed.');
+    this.name = 'TelegramMiniAppVerificationError';
+  }
+}
+
 const miniAppUserSchema = z.object({
   id: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]),
   username: z.string().min(1).max(64).optional(),
@@ -26,11 +40,12 @@ export function verifyTelegramInitData(initData: string, botToken: string): Tele
   const params = new URLSearchParams(initData);
   const receivedHash = params.get('hash');
   const authDate = Number(params.get('auth_date'));
-  if (!receivedHash || !Number.isInteger(authDate) || authDate <= 0) throw new Error('Некорректные данные Telegram.');
-  const now = Math.floor(Date.now() / 1000);
-  if (authDate < now - MAX_INIT_DATA_AGE_SECONDS || authDate > now + MAX_CLOCK_SKEW_SECONDS) {
-    throw new Error('Сессия Telegram устарела.');
+  if (!receivedHash || !/^[a-f\d]{64}$/i.test(receivedHash) || !Number.isInteger(authDate) || authDate <= 0) {
+    throw new TelegramMiniAppVerificationError('invalid_shape');
   }
+  const now = Math.floor(Date.now() / 1000);
+  if (authDate < now - MAX_INIT_DATA_AGE_SECONDS) throw new TelegramMiniAppVerificationError('expired');
+  if (authDate > now + MAX_CLOCK_SKEW_SECONDS) throw new TelegramMiniAppVerificationError('future');
 
   const dataCheckString = [...params.entries()]
     .filter(([key]) => key !== 'hash')
@@ -42,12 +57,17 @@ export function verifyTelegramInitData(initData: string, botToken: string): Tele
   const left = Buffer.from(calculatedHash, 'hex');
   const right = Buffer.from(receivedHash, 'hex');
   if (left.length !== right.length || !timingSafeEqual(left, right)) {
-    throw new Error('Подпись Telegram не прошла проверку.');
+    throw new TelegramMiniAppVerificationError('signature_mismatch');
   }
 
   const rawUser = params.get('user');
-  if (!rawUser) throw new Error('Telegram не передал профиль пользователя.');
-  const user = miniAppUserSchema.parse(JSON.parse(rawUser));
+  if (!rawUser) throw new TelegramMiniAppVerificationError('invalid_user');
+  let user: z.infer<typeof miniAppUserSchema>;
+  try {
+    user = miniAppUserSchema.parse(JSON.parse(rawUser));
+  } catch {
+    throw new TelegramMiniAppVerificationError('invalid_user');
+  }
   return {
     id: String(user.id),
     username: user.username,

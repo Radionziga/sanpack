@@ -26,9 +26,17 @@ vi.mock('@/lib/auth/customerSession', async (original) => {
   const actual = await original<typeof import('@/lib/auth/customerSession')>();
   return { ...actual, issueCustomerSessionToken: (...args: unknown[]) => mocks.issue(...args) };
 });
-vi.mock('@/lib/telegram/miniApp', () => ({ verifyTelegramInitData: (...args: unknown[]) => mocks.verifyInitData(...args) }));
+vi.mock('@/lib/telegram/miniApp', () => ({
+  TelegramMiniAppVerificationError: class TelegramMiniAppVerificationError extends Error {
+    constructor(public readonly code: string) {
+      super('Telegram Mini App proof verification failed.');
+    }
+  },
+  verifyTelegramInitData: (...args: unknown[]) => mocks.verifyInitData(...args),
+}));
 import { GET as callback } from '@/app/api/auth/telegram/callback/route';
 import { POST as miniApp } from '@/app/api/auth/telegram/mini-app/route';
+import { TelegramMiniAppVerificationError } from '@/lib/telegram/miniApp';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -84,12 +92,38 @@ describe('customer Telegram auth handlers', () => {
   });
 
   it('does not mint a Mini App session from an invalid proof', async () => {
-    mocks.verifyInitData.mockImplementation(() => { throw new Error('bad signature'); });
+    mocks.verifyInitData.mockImplementation(() => { throw new TelegramMiniAppVerificationError('signature_mismatch'); });
     const response = await miniApp(new Request('https://shop.example/api/auth/telegram/mini-app', {
       method: 'POST', body: JSON.stringify({ initData: 'tampered-init-data' }),
     }));
     expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      error: 'Не удалось подтвердить Telegram-сессию.',
+      reason: 'signature_mismatch',
+    });
     expect(mocks.upsert).not.toHaveBeenCalled();
     expect(mocks.issue).not.toHaveBeenCalled();
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Telegram Mini App session verification failed.',
+      expect.any(Error),
+      { stage: 'verification', verificationCode: 'signature_mismatch' },
+    );
+  });
+
+  it('reports an identity/session service failure without exposing its details as an auth failure', async () => {
+    mocks.upsert.mockRejectedValueOnce(new Error('sensitive Firestore details'));
+    const response = await miniApp(new Request('https://shop.example/api/auth/telegram/mini-app', {
+      method: 'POST', body: JSON.stringify({ initData: 'signed-init-data' }),
+    }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: 'Сервис Telegram временно недоступен.',
+      reason: 'service_unavailable',
+    });
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Telegram Mini App session verification failed.',
+      expect.any(Error),
+      { stage: 'identity' },
+    );
   });
 });

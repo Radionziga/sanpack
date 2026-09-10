@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { verifyTelegramInitData } from '@/lib/telegram/miniApp';
+import { TelegramMiniAppVerificationError, verifyTelegramInitData } from '@/lib/telegram/miniApp';
 import { createCustomerSessionToken, verifyCustomerSessionToken } from '@/lib/auth/customerSession';
 import {
   buildTelegramAuthorizationUrl,
@@ -41,6 +41,27 @@ describe('Telegram identity boundary', () => {
     expect(() => verifyTelegramInitData(signed().replace('123', '456'), bot)).toThrow();
     expect(() => verifyTelegramInitData(signed(), 'other-bot')).toThrow();
     expect(() => verifyTelegramInitData(signed(3601), bot)).toThrow();
+  });
+  it('includes Telegram\'s modern signature field in the bot-token HMAC input', () => {
+    const params = new URLSearchParams({
+      auth_date: String(Math.floor(Date.now() / 1000)),
+      signature: 'public-key-signature-fixture',
+      user: JSON.stringify({ id: 123, first_name: 'Fixture' }),
+    });
+    const data = [...params].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join('\n');
+    const secret = createHmac('sha256', 'WebAppData').update(bot).digest();
+    params.set('hash', createHmac('sha256', secret).update(data).digest('hex'));
+    expect(verifyTelegramInitData(params.toString(), bot).id).toBe('123');
+  });
+  it('classifies proof failures without embedding proof or identity data in the error', () => {
+    try {
+      verifyTelegramInitData(signed(), 'wrong-bot-token');
+      throw new Error('expected verification failure');
+    } catch (error) {
+      expect(error).toBeInstanceOf(TelegramMiniAppVerificationError);
+      expect((error as TelegramMiniAppVerificationError).code).toBe('signature_mismatch');
+      expect((error as Error).message).not.toContain('123');
+    }
   });
   it('rejects initData too far in the future and malformed signed user shapes', () => {
     expect(() => verifyTelegramInitData(signed(-61), bot)).toThrow();
