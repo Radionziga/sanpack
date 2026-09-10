@@ -145,7 +145,7 @@ export default async function LocaleLayout({
         />
         <NextIntlClientProvider messages={messages}>
           <StorefrontTheme design={settings.design}>
-            <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
+            <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
             <TelegramMiniAppBridge />
             <PublicProviders
               locale={locale}
