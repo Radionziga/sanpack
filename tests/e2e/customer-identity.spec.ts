@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
 
+async function installTelegramMiniApp(page: import('@playwright/test').Page, initData: string) {
+  await page.route('https://telegram.org/js/telegram-web-app.js', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/javascript',
+    body: `window.Telegram={WebApp:{initData:${JSON.stringify(initData)},ready(){},expand(){},BackButton:{show(){},hide(){},onClick(){},offClick(){}}}};`,
+  }));
+}
+
 test.describe('customer identity and isolated order operations', () => {
   test('ordinary browser keeps its valid cookie-backed customer session', async ({ page }) => {
     let miniAppCalls = 0;
@@ -18,6 +26,7 @@ test.describe('customer identity and isolated order operations', () => {
 
   test('Mini App establishes one customer session before profile state is loaded', async ({ page }) => {
     const sequence: string[] = [];
+    await installTelegramMiniApp(page, 'signed-fixture');
     await page.addInitScript(() => {
       window.Telegram = { WebApp: { initData: 'signed-fixture', ready() {}, expand() {} } } as never;
       localStorage.setItem('sanpack_customer_profile_v1', JSON.stringify({
@@ -95,6 +104,7 @@ test.describe('customer identity and isolated order operations', () => {
   test('rejected Mini App proof never exposes a previous browser customer in profile, history or checkout', async ({ page }) => {
     let customerReads = 0;
     let orderReads = 0;
+    await installTelegramMiniApp(page, 'rejected-account-b');
     await page.addInitScript(() => {
       window.Telegram = { WebApp: { initData: 'rejected-account-b', ready() {}, expand() {} } } as never;
       localStorage.setItem('sanpack_request_cart_v1', JSON.stringify([{

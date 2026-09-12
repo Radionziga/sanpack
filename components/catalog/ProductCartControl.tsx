@@ -1,11 +1,12 @@
 'use client';
 
-import { Minus, Plus, ShoppingCart } from 'lucide-react';
+import { Plus, ShoppingCart } from 'lucide-react';
 import type { Product, ProductVariant } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
 import { useToast } from '@/context/ToastContext';
-import { getProductOrderRule } from '@/lib/commerce/orderQuantities';
+import { getProductOrderRule, normalizeOrderQuantity } from '@/lib/commerce/orderQuantities';
+import { QuantityControl } from '@/components/commerce/QuantityControl';
 
 interface ProductCartControlProps {
   product: Product;
@@ -54,10 +55,10 @@ export function ProductCartControl({
   );
   const controlHeight = size === 'detail' ? 'min-h-12' : 'min-h-11';
   const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn, product.titleZh);
-  const quantityText = new Intl.NumberFormat(
-    language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-US' : 'ru-RU',
-    { maximumFractionDigits: 3 },
-  ).format(item?.quantity ?? 0);
+  const variantTitle = variant
+    ? getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn, variant.titleZh)
+    : '';
+  const quantityAriaLabel = `${language === 'ru' ? 'Количество' : language === 'uz' ? 'Miqdor' : language === 'zh' ? '数量' : 'Quantity'}: ${title}${variantTitle ? ` — ${variantTitle}` : ''}`;
 
   if (size === 'market') {
     if (!item) {
@@ -80,40 +81,19 @@ export function ProductCartControl({
     }
 
     return (
-      <div
-        className={`grid min-h-11 w-[7rem] grid-cols-[2.6rem_minmax(0,1fr)_2.6rem] overflow-hidden rounded-[var(--sp-radius-control)] bg-[var(--sp-surface)] text-[var(--sp-ink)] shadow-[0_5px_18px_rgb(21_27_24/16%)] ring-1 ring-inset ring-[var(--sp-line)] ${className}`}
-        role="group"
-        aria-label={title}
-      >
-        <button
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (item.quantity <= orderRule.minimumQuantity) removeItem(product.id, variant?.id);
-            else updateQuantity(product.id, item.quantity - orderRule.quantityStep, variant?.id);
-          }}
-          aria-label={copy.decrease}
-          className="grid min-h-11 place-items-center transition-colors hover:bg-[var(--sp-surface-inset)] active:bg-[var(--sp-line)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
-        >
-          <Minus className="size-4" aria-hidden="true" />
-        </button>
-        <span className="grid min-w-0 place-items-center px-0.5 text-center text-sm font-bold tabular-nums" aria-live="polite">
-          <span>{quantityText}</span>
-        </span>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            updateQuantity(product.id, item.quantity + orderRule.quantityStep, variant?.id);
-          }}
-          aria-label={copy.increase}
-          className="grid min-h-11 place-items-center transition-colors hover:bg-[var(--sp-surface-inset)] active:bg-[var(--sp-line)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
-        >
-          <Plus className="size-4" aria-hidden="true" />
-        </button>
-      </div>
+      <QuantityControl
+        value={item.quantity}
+        minimum={orderRule.minimumQuantity}
+        step={orderRule.quantityStep}
+        maximum={orderRule.maximumQuantity}
+        normalize={(value) => normalizeOrderQuantity(product, value, variant)}
+        onChange={(value) => updateQuantity(product.id, value, variant?.id)}
+        onDecreaseAtMinimum={() => removeItem(product.id, variant?.id)}
+        ariaLabel={quantityAriaLabel}
+        decreaseLabel={copy.decrease}
+        increaseLabel={copy.increase}
+        className={`w-[8rem] bg-[var(--sp-surface)] shadow-[0_5px_18px_rgb(21_27_24/16%)] ${className}`}
+      />
     );
   }
 
@@ -136,42 +116,18 @@ export function ProductCartControl({
   }
 
   return (
-    <div
-      className={`${controlHeight} grid w-full grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-stretch overflow-hidden rounded-[var(--sp-radius-control)] bg-[var(--sp-control)] text-[var(--sp-ink)] ring-1 ring-inset ring-[var(--sp-line-strong)] ${className}`}
-      role="group"
-      aria-label={title}
-    >
-      <button
-        type="button"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          if (item.quantity <= orderRule.minimumQuantity) {
-            removeItem(product.id, variant?.id);
-            return;
-          }
-          updateQuantity(product.id, item.quantity - orderRule.quantityStep, variant?.id);
-        }}
-        aria-label={copy.decrease}
-        className="flex min-h-11 cursor-pointer items-center justify-center transition-colors hover:bg-[var(--sp-surface-inset)] active:bg-[var(--sp-line)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
-      >
-        <Minus className="size-4" aria-hidden="true" />
-      </button>
-      <span className="flex min-w-0 items-center justify-center px-1 text-center text-xs font-bold tabular-nums sm:text-sm" aria-live="polite">
-        <span className="truncate">{quantityText}</span>
-      </span>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          updateQuantity(product.id, item.quantity + orderRule.quantityStep, variant?.id);
-        }}
-        aria-label={copy.increase}
-        className="flex min-h-11 cursor-pointer items-center justify-center transition-colors hover:bg-[var(--sp-surface-inset)] active:bg-[var(--sp-line)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
-      >
-        <Plus className="size-4" aria-hidden="true" />
-      </button>
-    </div>
+    <QuantityControl
+      value={item.quantity}
+      minimum={orderRule.minimumQuantity}
+      step={orderRule.quantityStep}
+      maximum={orderRule.maximumQuantity}
+      normalize={(value) => normalizeOrderQuantity(product, value, variant)}
+      onChange={(value) => updateQuantity(product.id, value, variant?.id)}
+      onDecreaseAtMinimum={() => removeItem(product.id, variant?.id)}
+      ariaLabel={quantityAriaLabel}
+      decreaseLabel={copy.decrease}
+      increaseLabel={copy.increase}
+      className={`${controlHeight} ${className}`}
+    />
   );
 }

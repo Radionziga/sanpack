@@ -26,13 +26,10 @@ import {
   TrendingDown,
   AlertCircle,
   RefreshCw,
-  Minus,
-  Plus,
   ChevronDown,
 } from 'lucide-react';
 import {
   getProductOrderRule,
-  getOrderRuleSummary,
   normalizeOrderQuantity,
 } from '@/lib/commerce/orderQuantities';
 import {
@@ -55,6 +52,8 @@ import { getProductGalleryImages } from '@/lib/catalog/productGallery';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
 import { getCategoryPath, resolveProductCategory } from '@/lib/catalog/categoryHierarchy';
 import { CatalogBreadcrumbs } from '@/components/catalog/CategoryNavigation';
+import { QuantityControl } from '@/components/commerce/QuantityControl';
+import { getProductCommercialDetails } from '@/lib/commerce/productCommercial';
 
 function MobileProductDescription({
   text,
@@ -365,7 +364,6 @@ export function ProductDetailClient({
   );
   const inCart = Boolean(cartItem);
   const orderRule = getProductOrderRule(product, language, selectedVariant || undefined);
-  const orderRuleSummary = getOrderRuleSummary(product, language, selectedVariant || undefined);
   const orderable = isProductOrderable(product, selectedVariant || undefined);
   const effectiveQuantity = cartItem?.quantity ?? quantity;
 
@@ -399,6 +397,8 @@ export function ProductDetailClient({
     selectedVariant?.image,
   );
   const quantityLabel = t('quantity').replace(/:\s*$/, '');
+  const commercialDetails = getProductCommercialDetails(product, language, selectedVariant || undefined);
+  const quantityAriaLabel = `${quantityLabel}: ${title}${selectedVariant ? ` — ${getLocalizedText(selectedVariant.titleRu, selectedVariant.titleUz, selectedVariant.titleEn, selectedVariant.titleZh)}` : ''}`;
 
   const handleSelectVariant = (variant: ProductVariant) => {
     setSelectedVariant(variant);
@@ -409,7 +409,7 @@ export function ProductDetailClient({
     <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)]">
       <Header />
 
-      <main className="flex-1 pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+5.5rem)] md:py-8">
+      <main className="flex-1 pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+10rem)] md:py-8">
         <div className="mx-auto max-w-7xl md:px-4">
           <div className="px-4 pt-4 md:px-0 md:pt-0"><CatalogBreadcrumbs category={resolveProductCategory(product, categories)} categories={categories} productTitle={title} /></div>
 
@@ -543,7 +543,11 @@ export function ProductDetailClient({
                         ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(unitPrice, language, product.currency)}`
                         : t('priceOnRequest')}
                     </span>
-                    <p className="mt-1.5 text-xs leading-5 text-[var(--sp-ink-secondary)]">{orderRuleSummary}</p>
+                    <div className="mt-2 space-y-1 text-sm leading-5 text-[var(--sp-ink-secondary)]">
+                      {commercialDetails.packaging ? <p>{commercialDetails.packaging}</p> : null}
+                      <p className="font-semibold text-[var(--sp-ink)]">{commercialDetails.minimum}</p>
+                      {commercialDetails.wholesale.slice(0, 2).map((line) => <p key={line} className="text-[var(--sp-brand-deep)]">{line}</p>)}
+                    </div>
                     {comparisonPrice && !variantRequired ? (
                       <p className="mt-1 text-xs font-semibold text-[var(--sp-ink-secondary)]">
                         {formatComparisonUnitPrice(comparisonPrice.amount, comparisonPrice.unit, language, product.currency)}
@@ -553,9 +557,9 @@ export function ProductDetailClient({
 
                   <div className="mt-4 grid grid-cols-[minmax(180px,0.85fr)_minmax(0,1.15fr)] items-end gap-5 border-t border-[var(--sp-line-soft)] pt-4">
                     <div className="min-w-0">
-                    <label htmlFor="product-quantity" className="mb-1 block text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
+                    <span className="mb-1 block text-[11px] font-medium text-[var(--sp-ink-tertiary)]">
                       {quantityLabel}
-                    </label>
+                    </span>
                     {inCart && !variantRequired ? (
                       <ProductCartControl
                         product={product}
@@ -563,44 +567,18 @@ export function ProductDetailClient({
                         size="card"
                       />
                     ) : (
-                      <div className="flex min-h-11 items-center overflow-hidden rounded-[var(--sp-radius-control)] border border-[var(--sp-control-border)] bg-[var(--sp-control)]">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity((q) => Math.max(orderRule.minimumQuantity, q - orderRule.quantityStep))}
-                          aria-label={copy.decrease}
-                          className="flex size-10 shrink-0 items-center justify-center text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface)] hover:text-[var(--sp-ink)]"
-                        >
-                          <Minus className="size-4" aria-hidden="true" />
-                        </button>
-                        <input
-                          id="product-quantity"
-                          type="number"
-                          min={orderRule.minimumQuantity}
-                          max={orderRule.maximumQuantity}
-                          step={orderRule.quantityStep}
-                          value={quantity}
-                          onChange={(e) => setQuantity(Number(e.target.value) || orderRule.minimumQuantity)}
-                          onFocus={() => setIsQuantityEditing(true)}
-                          onBlur={() => {
-                            setQuantity((current) => normalizeOrderQuantity(product, current, selectedVariant || undefined));
-                            setIsQuantityEditing(false);
-                          }}
-                          aria-label={quantityLabel}
-                          className="min-w-0 flex-1 bg-transparent px-1 text-center text-sm font-semibold tabular-nums text-[var(--sp-ink)] outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setQuantity((q) => normalizeOrderQuantity(
-                            product,
-                            q + orderRule.quantityStep,
-                            selectedVariant || undefined,
-                          ))}
-                          aria-label={copy.increase}
-                          className="flex size-10 shrink-0 items-center justify-center text-[var(--sp-ink-secondary)] transition-colors hover:bg-[var(--sp-surface)] hover:text-[var(--sp-ink)]"
-                        >
-                          <Plus className="size-4" aria-hidden="true" />
-                        </button>
-                      </div>
+                      <QuantityControl
+                        value={quantity}
+                        minimum={orderRule.minimumQuantity}
+                        step={orderRule.quantityStep}
+                        maximum={orderRule.maximumQuantity}
+                        normalize={(value) => normalizeOrderQuantity(product, value, selectedVariant || undefined)}
+                        onChange={setQuantity}
+                        onFocusChange={setIsQuantityEditing}
+                        ariaLabel={quantityAriaLabel}
+                        decreaseLabel={copy.decrease}
+                        increaseLabel={copy.increase}
+                      />
                     )}
                     </div>
 
@@ -802,15 +780,18 @@ export function ProductDetailClient({
       </main>
 
       {!isQuantityEditing ? (
-        <div className="fixed inset-x-0 z-30 border-t border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_97%,transparent)] px-[max(0.75rem,env(safe-area-inset-left))] py-2 shadow-[0_-12px_28px_rgb(21_27_24/10%)] backdrop-blur-xl md:hidden" style={{ bottom: 'calc(var(--sp-mobile-nav-height) + env(safe-area-inset-bottom))' }}>
-          <div className="mx-auto flex max-w-lg items-center gap-3">
-            <div className="min-w-0 flex-1" aria-live="polite">
-              <span className="block truncate text-[10px] font-medium text-[var(--sp-ink-tertiary)]">{priceLabel}</span>
-              <span className="block truncate text-base font-bold tabular-nums text-[var(--sp-brand)]">
+        <div className="fixed inset-x-0 z-30 border-t border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_97%,transparent)] px-[max(0.75rem,env(safe-area-inset-left))] py-2.5 shadow-[0_-12px_28px_rgb(21_27_24/10%)] backdrop-blur-xl md:hidden" style={{ bottom: 'calc(var(--sp-mobile-nav-height) + env(safe-area-inset-bottom))' }}>
+          <div className="mx-auto flex max-w-lg flex-col gap-2.5">
+            <div className="min-w-0" aria-live="polite">
+              <span className="block text-xs font-bold tabular-nums text-[var(--sp-brand)]">
                 {product.showPrice && unitPrice > 0
-                  ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(unitPrice, language, product.currency)}`
+                  ? `${variantRequired ? `${copy.from} ` : ''}${formatMoney(unitPrice, language, product.currency)}${salesUnitLabel ? ` / ${salesUnitLabel}` : ''}`
                   : t('priceOnRequest')}
               </span>
+              {commercialDetails.packaging ? <span className="mt-0.5 block text-[11px] leading-4 text-[var(--sp-ink-secondary)]">{commercialDetails.packaging}</span> : null}
+              <span className="block text-[11px] font-semibold leading-4 text-[var(--sp-ink)]">{commercialDetails.minimum}</span>
+              {commercialDetails.wholesale[0] ? <span className="block text-[11px] leading-4 text-[var(--sp-brand-deep)]">{commercialDetails.wholesale[0]}</span> : null}
+              {product.showPrice && unitPrice > 0 && !variantRequired ? <span className="block text-[11px] font-bold leading-4 tabular-nums text-[var(--sp-brand)]">{copy.total}: {formatMoney(totalPrice, language, product.currency)}</span> : null}
             </div>
             {variantRequired ? (
               <button
@@ -820,7 +801,7 @@ export function ProductDetailClient({
                   picker?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   window.setTimeout(() => picker?.querySelector<HTMLButtonElement>('button')?.focus(), 350);
                 }}
-                className="flex min-h-12 min-w-[9.75rem] items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)]"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)]"
               >
                 <ShoppingCart className="size-4" aria-hidden="true" />
                 <span>{copy.selectVariant}</span>
@@ -829,13 +810,13 @@ export function ProductDetailClient({
               <button
                 type="button"
                 disabled
-                className="flex min-h-12 min-w-[9.75rem] cursor-not-allowed items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-control)] px-4 text-sm font-semibold text-[var(--sp-ink-tertiary)]"
+                className="flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-control)] px-4 text-sm font-semibold text-[var(--sp-ink-tertiary)]"
               >
                 <AlertCircle className="size-4" aria-hidden="true" />
                 <span>{copy.informational}</span>
               </button>
             ) : (
-              <div className="w-[10.5rem] shrink-0">
+              <div className="w-full">
                 <ProductCartControl
                   product={product}
                   variant={selectedVariant || undefined}

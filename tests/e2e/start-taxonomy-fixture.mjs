@@ -34,6 +34,19 @@ ${seed}`
     id: 'fixture-wholesale', slug: 'fixture-wholesale', sku: 'FIXTURE-WHOLESALE', categoryId: 'grocery', categorySlug: 'grocery',
     titleRu: 'Оптовый fixture', titleUz: 'Ulgurji fixture', titleEn: 'Wholesale fixture', titleZh: '批发测试商品',
     price: 100, wholesaleTiers: [{ minQuantity: 10, price: 80 }]
+  }), createProduct({
+    id: 'fixture-packaged', slug: 'fixture-packaged', sku: 'SP-FP-005', categoryId: 'grocery', categorySlug: 'grocery',
+    titleRu: 'Коробочный fixture', titleUz: 'Qutili fixture', titleEn: 'Packaged fixture', titleZh: '箱装测试商品',
+    price: 1100, salesUnit: 'шт', unitCode: 'piece', orderPackaging: {
+      enabled: true, nameRu: 'коробка', nameUz: 'quti', nameEn: 'box', nameZh: '箱', unitsPerPackage: 1000, minimumPackages: 1, packageStep: 1
+    }, wholesaleTiers: [{ minQuantity: 10000, price: 980 }], variants: [{
+      id: 'fixture-packaged-800', sku: 'SP-FP-005-800', titleRu: '800 мл', titleUz: '800 ml', titleEn: '800 ml', titleZh: '800 毫升',
+      price: 1100, stockStatus: 'in_stock', attributes: {}
+    }]
+  }), createProduct({
+    id: 'fixture-request-price', slug: 'fixture-request-price', sku: 'FIXTURE-REQUEST', categoryId: 'grocery', categorySlug: 'grocery',
+    titleRu: 'Цена по запросу fixture', titleUz: 'So‘rov narxi fixture', titleEn: 'Request price fixture', titleZh: '询价测试商品',
+    showPrice: false, price: undefined, priceMode: 'request'
   })]`));
 // These replacements exist ONLY in the temporary fixture directory, never in the working tree.
 writeFileSync(path.join(fixture, 'lib/auth/server.ts'), `

@@ -7,6 +7,7 @@ import {
   House,
   Info,
   LayoutGrid,
+  LoaderCircle,
   PackageSearch,
   Palette,
   Phone,
@@ -38,11 +39,12 @@ import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { CallbackModal } from '@/components/modals/CallbackModal';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { contactPhoneHref } from '@/lib/settings/contacts';
-import type { Product } from '@/types';
-import { formatMoney, getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
+import type { Category, Product } from '@/types';
+import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { ProductImage } from '@/components/catalog/ProductImage';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
-import { searchAndRankProducts } from '@/lib/catalog/productSearch';
+import { getSearchMatchLabel, searchAndRankProducts } from '@/lib/catalog/productSearch';
+import { presentCommercialSummary, summarizeCommercialLines } from '@/lib/commerce/commercialSummary';
 
 type MobilePanel = 'search' | 'more' | null;
 
@@ -72,6 +74,23 @@ function getFocusableElements(container: HTMLElement | null) {
   ).filter((element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
 }
 
+function PendingNavigationContent({ children, label, pending }: { children: ReactNode; label: string; pending: boolean }) {
+  return (
+    <>
+      {children}
+      <span hidden={!pending} data-testid="mobile-nav-pending" className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]" aria-live="polite">
+        <LoaderCircle className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+        <span className="max-w-full truncate px-1 text-[10px] leading-4">{label}</span>
+      </span>
+    </>
+  );
+}
+
+function revealPendingNavigation(target: HTMLElement) {
+  target.setAttribute('aria-busy', 'true');
+  target.querySelector<HTMLElement>('[data-testid="mobile-nav-pending"]')?.removeAttribute('hidden');
+}
+
 const popularSuggestions = {
   ru: ['Мешки для мусора', 'Салфетки', 'Контейнеры', 'Перчатки', 'Зелень', 'Пакеты Майка', 'Фольга', 'Стаканы'],
   uz: ['Chiqindi qoplari', 'Salfetkalar', 'Konteynerlar', 'Qo‘lqoplar', 'Ko‘katlar', 'Mayka paketlar', 'Folga', 'Stakanlar'],
@@ -95,11 +114,13 @@ export function MobileStorefrontChrome({
   const pathname = usePathname();
   const router = useRouter();
   const { language, t, getLocalizedText } = useLanguage();
-  const { items, totalAmount } = useRequestCart();
+  const { items } = useRequestCart();
   const { contacts, modules } = useSiteSettings();
   const [activePanel, setActivePanel] = useState<MobilePanel>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<{ destination: string; fromPathname: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isCallbackOpen, setIsCallbackOpen] = useState(false);
   const [isTextEntryFocused, setIsTextEntryFocused] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -108,6 +129,8 @@ export function MobileStorefrontChrome({
   const panelTriggerRef = useRef<HTMLElement | null>(null);
   const normalizedPathname = normalizePathname(pathname);
   const isDocumentMode = normalizedPathname.startsWith('/catalog/print');
+
+  const pendingDestination = pendingNavigation?.fromPathname === pathname ? pendingNavigation.destination : null;
 
   const copy = {
     ru: {
@@ -211,17 +234,20 @@ export function MobileStorefrontChrome({
   }, []);
 
   useEffect(() => {
-    if (activePanel !== 'search' || products.length > 0) return;
+    if (activePanel !== 'search' || (products.length > 0 && categories.length > 0)) return;
     let cancelled = false;
-    PublicRepository.getProducts()
-      .then((nextProducts) => {
-        if (!cancelled) setProducts(nextProducts);
+    Promise.all([PublicRepository.getProducts(), PublicRepository.getCategories()])
+      .then(([nextProducts, nextCategories]) => {
+        if (!cancelled) {
+          setProducts(nextProducts);
+          setCategories(nextCategories);
+        }
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [activePanel, products.length]);
+  }, [activePanel, categories.length, products.length]);
 
   useEffect(() => {
     const handleFocusIn = (event: FocusEvent) => setIsTextEntryFocused(isTextEntryElement(event.target));
@@ -334,15 +360,12 @@ export function MobileStorefrontChrome({
     },
   ];
 
-  const hasRequestOnlyPrices = items.some((item) => item.price === undefined);
+  const cartPresentation = presentCommercialSummary(summarizeCommercialLines(items), language, 'UZS');
   const shouldShowCartDock = items.length > 0
     && !normalizedPathname.startsWith('/request')
     && !normalizedPathname.startsWith('/product')
     && !isTextEntryFocused
     && activePanel === null;
-  const formattedCartAmount = totalAmount > 0
-    ? formatMoney(totalAmount, language, 'UZS')
-    : copy.priceOnRequest;
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -354,13 +377,22 @@ export function MobileStorefrontChrome({
     searchInputRef.current?.blur();
   }
 
+  function beginNavigationFeedback(target: EventTarget | null) {
+    if (!(target instanceof Element)) return;
+    const link = target.closest<HTMLAnchorElement>('[data-mobile-destination]');
+    const destination = link?.dataset.mobileDestination;
+    if (!link || !destination || link.dataset.mobileActive === 'true') return;
+    revealPendingNavigation(link);
+    setPendingNavigation({ destination, fromPathname: pathname });
+  }
+
   // Live filter matching
   const matchingProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
 
-    return searchAndRankProducts(products, q, language);
-  }, [searchQuery, products, language]);
+    return searchAndRankProducts(products, q, language, categories);
+  }, [categories, searchQuery, products, language]);
 
   const moreLinks = [
     { href: '/favorites' as const, label: t('favorites'), icon: Heart },
@@ -413,11 +445,11 @@ export function MobileStorefrontChrome({
                 </span>
               </span>
               <span className="min-w-0">
-                <strong className="block truncate font-compact text-xs font-bold">{copy.cart}</strong>
-                <span className="mt-0.5 block truncate text-[10px] text-[color-mix(in_srgb,var(--sp-on-brand)_78%,transparent)]">
-                  {totalAmount > 0 ? `${copy.preliminary}: ${formattedCartAmount}` : formattedCartAmount}
-                  {hasRequestOnlyPrices && totalAmount > 0 ? ` · ${copy.requestPrices}` : ''}
+                <strong className="block font-compact text-xs font-bold">{copy.cart}</strong>
+                <span className="mt-0.5 block text-[11px] leading-4 text-[color-mix(in_srgb,var(--sp-on-brand)_84%,transparent)]">
+                  {cartPresentation.label}: {cartPresentation.value}
                 </span>
+                {cartPresentation.secondary ? <span className="block text-[11px] leading-4 text-[color-mix(in_srgb,var(--sp-on-brand)_84%,transparent)]">{cartPresentation.secondary}</span> : null}
               </span>
               <ArrowRight className="size-5" aria-hidden="true" />
             </Link>
@@ -428,6 +460,8 @@ export function MobileStorefrontChrome({
       <nav
         aria-label={copy.navigation}
         aria-hidden={isTextEntryFocused || activePanel !== null ? true : undefined}
+        onPointerDownCapture={(event) => beginNavigationFeedback(event.target)}
+        onClickCapture={(event) => beginNavigationFeedback(event.target)}
         className={`mobile-bottom-navigation fixed inset-x-0 bottom-0 z-40 border-t border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_96%,transparent)] pb-[env(safe-area-inset-bottom)] pl-[max(0.375rem,env(safe-area-inset-left))] pr-[max(0.375rem,env(safe-area-inset-right))] shadow-[0_-10px_28px_rgb(21_27_24/8%)] backdrop-blur-xl transition-transform duration-200 md:hidden ${
           isTextEntryFocused || activePanel !== null ? 'pointer-events-none translate-y-full' : 'translate-y-0'
         }`}
@@ -469,8 +503,17 @@ export function MobileStorefrontChrome({
               );
             }
             return (
-              <Link key={item.key} href={item.href} aria-current={item.active ? 'page' : undefined} className={className}>
-                {content}
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-current={item.active ? 'page' : undefined}
+                aria-busy={pendingDestination === item.key || undefined}
+                data-mobile-destination={item.key}
+                data-mobile-active={item.active ? 'true' : undefined}
+                className={className}
+                prefetch
+              >
+                <PendingNavigationContent label={item.label} pending={pendingDestination === item.key}>{content}</PendingNavigationContent>
               </Link>
             );
           })}
@@ -595,8 +638,8 @@ export function MobileStorefrontChrome({
                                         <p className="truncate font-compact text-xs font-bold text-[var(--sp-ink)]">
                                           {title}
                                         </p>
-                                        <p className="mt-0.5 text-[11px] text-[var(--sp-ink-muted)]">
-                                          {copy.sku}: {product.sku}
+                                        <p className="mt-0.5 text-[11px] leading-4 text-[var(--sp-ink-muted)]">
+                                          {getSearchMatchLabel(product, searchQuery, language, categories) || `${copy.sku}: ${product.sku}`}
                                         </p>
                                       </div>
                                       <div className="shrink-0 text-right">

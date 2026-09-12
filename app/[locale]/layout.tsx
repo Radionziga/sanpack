@@ -123,7 +123,7 @@ export default async function LocaleLayout({
           };
 
     return (
-      <html lang={locale} className={storefrontFontVariables}>
+      <html lang={locale} className={storefrontFontVariables} suppressHydrationWarning>
         <body suppressHydrationWarning>
           <main className="grid min-h-screen place-items-center bg-slate-50 px-6 text-slate-950">
             <section className="max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -137,7 +137,7 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale} className={storefrontFontVariables}>
+    <html lang={locale} className={storefrontFontVariables} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <script
           type="application/ld+json"

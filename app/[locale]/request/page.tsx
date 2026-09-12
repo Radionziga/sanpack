@@ -9,9 +9,7 @@ import {
   LoaderCircle,
   MapPin,
   MessageSquareText,
-  Minus,
   Phone,
-  Plus,
   Send,
   ShoppingBag,
   Trash2,
@@ -23,7 +21,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRequestCart } from '@/context/RequestCartContext';
-import { getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
+import { getOrderRuleSummary, getProductOrderRule, normalizeOrderQuantity } from '@/lib/commerce/orderQuantities';
 import { formatMoney } from '@/lib/catalog/productPresentation';
 import { PublicRepository, type CheckoutBusinessInput } from '@/lib/repositories/publicRepository';
 import type { Language } from '@/types';
@@ -37,6 +35,9 @@ import {
   type PendingCheckoutIntent,
 } from '@/lib/orders/checkoutIntent';
 import { ensureTelegramMiniAppSession } from '@/lib/telegram/miniAppSession';
+import { QuantityControl } from '@/components/commerce/QuantityControl';
+import { presentCommercialSummary, summarizeCommercialLines } from '@/lib/commerce/commercialSummary';
+import { getProductCommercialDetails } from '@/lib/commerce/productCommercial';
 
 interface CustomerStatus {
   authenticated: boolean;
@@ -59,12 +60,12 @@ const checkoutCopy = {
   ru: {
     back: 'Продолжить покупки',
     title: 'Оформление заявки',
-    subtitle: 'Оставьте имя и телефон — регистрация для оформления не требуется.',
+    subtitle: 'Проверьте состав заявки, затем укажите контакты, адрес, дату и интервал доставки.',
     loading: 'Загружаем корзину…',
     emptyTitle: 'Корзина пуста',
     emptyText: 'Добавьте товары из каталога, чтобы отправить заявку менеджеру.',
     openCatalog: 'Перейти в каталог',
-    items: 'Товары',
+    items: 'Состав заявки',
     clear: 'Очистить',
     clearQuestion: 'Удалить все товары из корзины?',
     cancel: 'Отмена',
@@ -110,8 +111,8 @@ const checkoutCopy = {
     startNewIntent: 'Начать новую заявку',
     newIntentReady: 'Новая попытка подготовлена. Проверьте данные и снова нажмите «Отправить заявку».',
     intentServerConflict: 'Сервер не может безопасно сопоставить эту повторную отправку. Начните новую заявку либо восстановите прежний аккаунт и данные.',
-    successTitle: 'Заявка принята',
-    successText: 'Менеджер свяжется с вами по указанному номеру телефона.',
+    successTitle: 'Заявка отправлена',
+    successText: 'Менеджер подтвердит стоимость, наличие и доставку.',
     requestNumber: 'Номер заявки',
     myRequests: 'Мои заявки',
     returnCatalog: 'Вернуться в каталог',
@@ -122,12 +123,12 @@ const checkoutCopy = {
   uz: {
     back: 'Xaridni davom ettirish',
     title: 'Arizani rasmiylashtirish',
-    subtitle: 'Ism va telefon raqamingizni qoldiring — ro‘yxatdan o‘tish shart emas.',
+    subtitle: 'Ariza tarkibini tekshiring, so‘ng aloqa ma’lumotlari, manzil, sana va yetkazib berish vaqtini kiriting.',
     loading: 'Savat yuklanmoqda…',
     emptyTitle: 'Savat bo‘sh',
     emptyText: 'Menejerga ariza yuborish uchun katalogdan mahsulot qo‘shing.',
     openCatalog: 'Katalogga o‘tish',
-    items: 'Mahsulotlar',
+    items: 'Ariza tarkibi',
     clear: 'Tozalash',
     clearQuestion: 'Savatdagi barcha mahsulotlar o‘chirilsinmi?',
     cancel: 'Bekor qilish',
@@ -173,8 +174,8 @@ const checkoutCopy = {
     startNewIntent: 'Yangi ariza boshlash',
     newIntentReady: 'Yangi urinish tayyor. Ma’lumotlarni tekshirib, yana “Ariza yuborish” tugmasini bosing.',
     intentServerConflict: 'Server bu takroriy yuborishni xavfsiz aniqlay olmadi. Yangi ariza boshlang yoki oldingi akkaunt va ma’lumotlarni tiklang.',
-    successTitle: 'Ariza qabul qilindi',
-    successText: 'Menejer ko‘rsatilgan telefon raqami orqali siz bilan bog‘lanadi.',
+    successTitle: 'Ariza yuborildi',
+    successText: 'Menejer narx, mavjudlik va yetkazib berishni tasdiqlaydi.',
     requestNumber: 'Ariza raqami',
     myRequests: 'Mening arizalarim',
     returnCatalog: 'Katalogga qaytish',
@@ -185,12 +186,12 @@ const checkoutCopy = {
   en: {
     back: 'Continue shopping',
     title: 'Submit a request',
-    subtitle: 'Leave your name and phone number — registration is not required.',
+    subtitle: 'Review the request contents, then enter your contact details, address, date, and delivery window.',
     loading: 'Loading your cart…',
     emptyTitle: 'Your cart is empty',
     emptyText: 'Add products from the catalog to send a request to the manager.',
     openCatalog: 'Open catalog',
-    items: 'Products',
+    items: 'Request contents',
     clear: 'Clear',
     clearQuestion: 'Remove all products from the cart?',
     cancel: 'Cancel',
@@ -236,8 +237,8 @@ const checkoutCopy = {
     startNewIntent: 'Start a new request',
     newIntentReady: 'A new attempt is ready. Review the details and press “Submit request” again.',
     intentServerConflict: 'The server cannot safely match this retry. Start a new request or restore the previous account and details.',
-    successTitle: 'Request received',
-    successText: 'A manager will contact you using the phone number provided.',
+    successTitle: 'Request sent',
+    successText: 'The manager will confirm price, availability, and delivery.',
     requestNumber: 'Request number',
     myRequests: 'My requests',
     returnCatalog: 'Return to catalog',
@@ -248,12 +249,12 @@ const checkoutCopy = {
   zh: {
     back: '继续选购',
     title: '提交采购申请',
-    subtitle: '请留下姓名和电话，无需注册即可提交。',
+    subtitle: '请先核对申请商品，再填写联系方式、地址、日期和配送时间段。',
     loading: '正在加载购物车…',
     emptyTitle: '购物车为空',
     emptyText: '请从目录中添加商品，然后向经理提交申请。',
     openCatalog: '打开商品目录',
-    items: '商品',
+    items: '申请商品清单',
     clear: '清空',
     clearQuestion: '确定要删除购物车中的全部商品吗？',
     cancel: '取消',
@@ -299,8 +300,8 @@ const checkoutCopy = {
     startNewIntent: '开始新申请',
     newIntentReady: '新的提交已准备好。请检查信息并再次点击“提交申请”。',
     intentServerConflict: '服务器无法安全匹配此次重试。请开始新申请，或恢复原账号和原数据。',
-    successTitle: '申请已收到',
-    successText: '经理将通过您提供的电话号码与您联系。',
+    successTitle: '申请已提交',
+    successText: '经理将确认价格、库存和配送。',
     requestNumber: '申请编号',
     myRequests: '我的申请',
     returnCatalog: '返回商品目录',
@@ -333,7 +334,7 @@ function CheckoutSkeleton({ label }: { label: string }) {
 export default function RequestPage() {
   const { language, getLocalizedText } = useLanguage();
   const copy = checkoutCopy[language];
-  const { items, updateQuantity, removeItem, clearCart, replaceItems, totalAmount, isHydrated } = useRequestCart();
+  const { items, updateQuantity, removeItem, clearCart, replaceItems, isHydrated } = useRequestCart();
   const [contactName, setContactName] = useState('');
   const [phone, setPhone] = useState('+998 ');
   const [deliveryAddress, setDeliveryAddress] = useState('');
@@ -595,20 +596,28 @@ export default function RequestPage() {
     setSubmitError(copy.newIntentReady);
   }
 
-  const formattedTotal = totalAmount > 0
-    ? formatMoney(totalAmount, language, 'UZS')
-    : copy.priceOnRequest;
+  const commercialSummary = summarizeCommercialLines(items);
+  const commercialPresentation = presentCommercialSummary(commercialSummary, language, 'UZS');
+  const successHeading = submittedRequestNumber
+    ? language === 'ru'
+      ? `Заявка №${submittedRequestNumber} отправлена`
+      : language === 'uz'
+        ? `${submittedRequestNumber}-sonli ariza yuborildi`
+        : language === 'zh'
+          ? `申请 ${submittedRequestNumber} 已提交`
+          : `Request ${submittedRequestNumber} sent`
+    : copy.successTitle;
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--sp-canvas)] text-[var(--sp-ink)]">
       <Header />
-      <main className={`mx-auto w-full max-w-6xl flex-1 px-4 pt-5 sm:px-6 md:pt-8 lg:pt-12 ${isHydrated && items.length > 0 && !submittedRequestNumber ? 'pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+6rem)] md:pb-12' : 'pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+2rem)] md:pb-12'}`}>
+      <main className={`mx-auto w-full max-w-6xl flex-1 px-4 pt-5 sm:px-6 md:pt-8 lg:pt-12 ${isHydrated && items.length > 0 && !submittedRequestNumber ? 'pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+8rem)] md:pb-12' : 'pb-[calc(var(--sp-mobile-nav-height)+env(safe-area-inset-bottom)+2rem)] md:pb-12'}`}>
         {submittedRequestNumber ? (
           <section className="mx-auto max-w-xl rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-6 text-center shadow-[var(--sp-shadow-raised)] sm:p-10" aria-live="polite">
             <span className="mx-auto flex size-14 items-center justify-center rounded-[var(--sp-radius-control)] bg-[color-mix(in_srgb,var(--sp-brand)_12%,transparent)] text-[var(--sp-brand)]">
               <CheckCircle2 className="size-7" aria-hidden="true" />
             </span>
-            <h1 ref={successHeadingRef} tabIndex={-1} className="mt-5 font-extended text-2xl font-bold focus-visible:outline-none">{copy.successTitle}</h1>
+            <h1 ref={successHeadingRef} tabIndex={-1} className="mt-5 font-extended text-2xl font-bold focus-visible:outline-none">{successHeading}</h1>
             <p className="mt-2 text-sm leading-6 text-[var(--sp-ink-secondary)]">{copy.successText}</p>
             <div className="mt-6 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)] px-4 py-3">
               <span className="block text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--sp-ink-tertiary)]">{copy.requestNumber}</span>
@@ -661,7 +670,7 @@ export default function RequestPage() {
               </section>
             ) : (
               <form id="request-checkout-form" onSubmit={submit} noValidate className="mt-7 grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6">
-                <aside className="order-1 min-w-0 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-raised)] sm:p-5 lg:order-2 lg:sticky lg:top-6">
+                <aside className="order-2 min-w-0 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-raised)] sm:p-5 lg:sticky lg:top-28">
                   <h2 className="font-extended text-lg font-bold">{copy.contactTitle}</h2>
                   <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-tertiary)]">{copy.contactHint}</p>
 
@@ -758,22 +767,14 @@ export default function RequestPage() {
                     </div>
                   ) : null}
 
-                  <div className="mt-5 bg-[var(--sp-surface-inset)] p-3 rounded-[var(--sp-radius-control-inner)]">
-                    <div className="flex items-center justify-between gap-4 text-xs text-[var(--sp-ink-secondary)]">
-                      <span>{copy.estimated}</span>
-                      <strong className="text-right text-sm tabular-nums text-[var(--sp-ink)]">{formattedTotal}</strong>
-                    </div>
-                    <p className="mt-2 text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">{copy.estimateHint}</p>
-                  </div>
-
                   <button type="submit" disabled={isSubmitting || miniAppAuthRejected || (isMiniApp && !customerChecked)} aria-busy={isSubmitting} className="mt-5 hidden min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-semibold text-[var(--sp-on-brand)] disabled:cursor-wait disabled:opacity-60 md:inline-flex">
                     {isSubmitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Send className="size-4" aria-hidden="true" />}
                     {copy.submit}
                   </button>
                 </aside>
 
-                <section className="order-2 min-w-0 overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-soft)] sm:p-6 lg:order-1">
-                  <div className="border-b border-[var(--sp-line-soft)] pb-6">
+                <section className="order-1 flex min-w-0 flex-col overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 shadow-[var(--sp-shadow-soft)] sm:p-6">
+                  <div className="order-3 mt-6 border-t border-[var(--sp-line-soft)] pt-6">
                     <div className="flex items-start gap-3">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--sp-radius-control-inner)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] text-[var(--sp-brand)]">
                         <MapPin className="size-5" aria-hidden="true" />
@@ -866,7 +867,7 @@ export default function RequestPage() {
                     </div>
                   </div>
 
-                  <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
+                  <div className="order-1 flex min-h-11 flex-wrap items-center justify-between gap-3">
                     <h2 className="font-extended text-lg font-bold">{copy.items} <span className="text-[var(--sp-ink-tertiary)]">{items.length}</span></h2>
                     {!isConfirmingClear ? (
                       <button type="button" onClick={() => setIsConfirmingClear(true)} className="min-h-11 cursor-pointer px-2 text-xs font-semibold text-[var(--sp-danger)]">{copy.clear}</button>
@@ -874,14 +875,14 @@ export default function RequestPage() {
                   </div>
 
                   {isConfirmingClear ? (
-                    <div className="mb-2 flex flex-wrap items-center gap-2 rounded-[var(--sp-radius-control-inner)] bg-[color-mix(in_srgb,var(--sp-danger)_7%,var(--sp-surface))] p-3 text-xs">
+                    <div className="order-1 mb-2 flex flex-wrap items-center gap-2 rounded-[var(--sp-radius-control-inner)] bg-[color-mix(in_srgb,var(--sp-danger)_7%,var(--sp-surface))] p-3 text-xs">
                       <span className="min-w-0 flex-1 text-[var(--sp-ink-secondary)]">{copy.clearQuestion}</span>
                       <button type="button" onClick={() => setIsConfirmingClear(false)} className="min-h-10 cursor-pointer rounded-[var(--sp-radius-control-inner)] px-3 font-semibold text-[var(--sp-ink-secondary)]">{copy.cancel}</button>
                       <button type="button" onClick={() => { clearCart(); setIsConfirmingClear(false); }} className="min-h-10 cursor-pointer rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-danger)] px-3 font-semibold text-white">{copy.confirmClear}</button>
                     </div>
                   ) : null}
 
-                  <div className="divide-y divide-[var(--sp-line-soft)]">
+                  <div className="order-1 divide-y divide-[var(--sp-line-soft)]">
                     {items.map((item) => {
                       const title = getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn, item.productTitleZh);
                       const variantTitle = getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn, item.variantTitleZh);
@@ -889,10 +890,9 @@ export default function RequestPage() {
                       const quantityStep = orderRule?.quantityStep || 1;
                       const minimumQuantity = orderRule?.minimumQuantity || quantityStep;
                       const orderSummary = item.product ? getOrderRuleSummary(item.product, language, item.variant) : '';
-                      const quantityText = new Intl.NumberFormat(
-                        language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-US' : 'ru-RU',
-                        { maximumFractionDigits: 3 },
-                      ).format(item.quantity);
+                      const details = item.product ? getProductCommercialDetails(item.product, language, item.variant) : null;
+                      const lineTotal = item.price === undefined ? undefined : item.price * item.quantity;
+                      const quantityAriaLabel = `${language === 'ru' ? 'Количество' : language === 'uz' ? 'Miqdor' : language === 'zh' ? '数量' : 'Quantity'}: ${title}${variantTitle ? ` — ${variantTitle}` : ''}`;
 
                       return (
                         <article key={`${item.productId}-${item.variantId || 'base'}`} className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-3 gap-y-3 py-4 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center">
@@ -900,17 +900,29 @@ export default function RequestPage() {
                           <div className="min-w-0">
                             <Link href={`/product/${item.productSlug}`} className="inline-block max-w-full"><h3 className="text-sm font-semibold leading-5 transition-colors hover:text-[var(--sp-brand)]">{title}</h3></Link>
                             {variantTitle ? <p className="mt-1 text-xs font-medium text-[var(--sp-brand)]">{variantTitle}</p> : null}
-                            {item.price !== undefined ? <p className="mt-2 text-xs font-semibold tabular-nums">{formatMoney(item.price, language, 'UZS')}</p> : <p className="mt-2 text-xs font-semibold text-[var(--sp-brand)]">{copy.priceOnRequest}</p>}
-                            {orderSummary ? <p className="mt-1 max-w-md text-[10px] leading-4 text-[var(--sp-ink-tertiary)]">{orderSummary}</p> : null}
+                            {item.price !== undefined ? (
+                              <div className="mt-2 space-y-1">
+                                <p className="text-xs font-medium tabular-nums text-[var(--sp-ink-secondary)]">{formatMoney(item.price, language, 'UZS')} / {item.unit}</p>
+                                <p className="text-base font-bold tabular-nums text-[var(--sp-brand)]">{formatMoney(lineTotal ?? 0, language, 'UZS')}</p>
+                              </div>
+                            ) : <p className="mt-2 text-sm font-semibold text-[var(--sp-brand)]">{copy.priceOnRequest}</p>}
+                            {details?.packaging ? <p className="mt-1 text-xs leading-5 text-[var(--sp-ink-secondary)]">{details.packaging}</p> : null}
+                            {!details?.packaging && orderSummary ? <p className="mt-1 max-w-md text-xs leading-5 text-[var(--sp-ink-tertiary)]">{orderSummary}</p> : null}
                           </div>
-                          <div className="col-start-2 flex min-w-0 items-center justify-between gap-2 sm:col-start-auto">
-                            <div className="flex min-h-11 min-w-0 items-center rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-control)]">
-                              <button type="button" onClick={() => {
-                                if (item.quantity <= minimumQuantity) removeItem(item.productId, item.variantId);
-                                else updateQuantity(item.productId, item.quantity - quantityStep, item.variantId);
-                              }} className="flex size-11 shrink-0 cursor-pointer items-center justify-center" aria-label={copy.decrease}><Minus className="size-3.5" aria-hidden="true" /></button>
-                              <span className="min-w-0 flex-1 px-1 text-center text-xs font-semibold tabular-nums">{quantityText}</span>
-                              <button type="button" onClick={() => updateQuantity(item.productId, item.quantity + quantityStep, item.variantId)} className="flex size-11 shrink-0 cursor-pointer items-center justify-center" aria-label={copy.increase}><Plus className="size-3.5" aria-hidden="true" /></button>
+                          <div className="col-span-2 flex min-w-0 items-center justify-end gap-2 sm:col-span-1 sm:col-start-auto">
+                            <div className="w-full max-w-[11rem]">
+                              <QuantityControl
+                                value={item.quantity}
+                                minimum={minimumQuantity}
+                                step={quantityStep}
+                                maximum={orderRule?.maximumQuantity}
+                                normalize={item.product ? (value) => normalizeOrderQuantity(item.product!, value, item.variant) : undefined}
+                                onChange={(value) => updateQuantity(item.productId, value, item.variantId)}
+                                onDecreaseAtMinimum={() => removeItem(item.productId, item.variantId)}
+                                ariaLabel={quantityAriaLabel}
+                                decreaseLabel={copy.decrease}
+                                increaseLabel={copy.increase}
+                              />
                             </div>
                             <button type="button" onClick={() => removeItem(item.productId, item.variantId)} className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[var(--sp-radius-control)] text-[var(--sp-danger)] transition-colors hover:bg-red-500/8" aria-label={`${copy.remove}: ${title}`}><Trash2 className="size-4" aria-hidden="true" /></button>
                           </div>
@@ -918,6 +930,14 @@ export default function RequestPage() {
                       );
                     })}
                   </div>
+                  <section className="order-2 mt-4 rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] p-4" aria-live="polite" aria-label={commercialPresentation.label}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                      <h2 className="text-sm font-semibold text-[var(--sp-ink-secondary)]">{commercialPresentation.label}</h2>
+                      <strong className="text-xl font-extrabold tabular-nums text-[var(--sp-brand)]">{commercialPresentation.value}</strong>
+                    </div>
+                    {commercialPresentation.secondary ? <p className="mt-1 text-sm font-semibold leading-5 text-[var(--sp-ink)]">{commercialPresentation.secondary}</p> : null}
+                    <p className="mt-3 text-xs leading-5 text-[var(--sp-ink-secondary)]">{commercialPresentation.note}</p>
+                  </section>
                 </section>
               </form>
             )}
@@ -931,8 +951,9 @@ export default function RequestPage() {
         <div className="fixed inset-x-0 z-30 border-t border-[var(--sp-line)] bg-[color-mix(in_srgb,var(--sp-surface)_97%,transparent)] px-[max(0.75rem,env(safe-area-inset-left))] py-2 shadow-[0_-12px_28px_rgb(21_27_24/10%)] backdrop-blur-xl md:hidden" style={{ bottom: 'calc(var(--sp-mobile-nav-height) + env(safe-area-inset-bottom))' }}>
           <div className="mx-auto flex max-w-lg items-center gap-3">
             <div className="min-w-0 flex-1">
-              <span className="block truncate text-[10px] font-medium text-[var(--sp-ink-tertiary)]">{copy.estimated}</span>
-              <strong className="block truncate text-base font-bold tabular-nums text-[var(--sp-brand)]">{formattedTotal}</strong>
+              <span className="block text-[11px] font-medium leading-4 text-[var(--sp-ink-tertiary)]">{commercialPresentation.label}</span>
+              <strong className="block text-sm font-bold leading-5 tabular-nums text-[var(--sp-brand)]">{commercialPresentation.value}</strong>
+              {commercialPresentation.secondary ? <span className="block text-[11px] font-medium leading-4 text-[var(--sp-ink-secondary)]">{commercialPresentation.secondary}</span> : null}
             </div>
             <button type="submit" form="request-checkout-form" disabled={isSubmitting || miniAppAuthRejected || (isMiniApp && !customerChecked)} aria-busy={isSubmitting} className="flex min-h-12 min-w-[9.75rem] cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-raised)] disabled:cursor-wait disabled:opacity-60">
               {isSubmitting ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Send className="size-4" aria-hidden="true" />}

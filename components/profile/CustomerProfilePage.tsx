@@ -52,7 +52,7 @@ const copyByLanguage = {
     name: 'Контактное лицо', phone: 'Телефон', company: 'Компания', address: 'Адрес доставки', inn: 'ИНН', optional: 'необязательно',
     namePlaceholder: 'Как к вам обращаться', companyPlaceholder: 'Название организации', addressPlaceholder: 'Город, улица, дом', innPlaceholder: 'ИНН организации',
     save: 'Сохранить данные', saving: 'Сохраняем…', saved: 'Данные профиля сохранены', error: 'Не удалось сохранить данные. Попробуйте ещё раз.', validation: 'Укажите имя и корректный номер телефона.',
-    sections: 'Разделы профиля', orders: 'Мои заявки', favorites: 'Избранное', language: 'Язык интерфейса',
+    sections: 'Разделы профиля', orders: 'Мои заявки', favorites: 'Избранное', language: 'Язык интерфейса', telegramManaged: 'В Mini App аккаунт определяется текущим профилем Telegram. Сменить его можно в самом Telegram.',
   },
   uz: {
     back: 'Orqaga', title: 'Profil va sozlamalar', intro: 'Aloqa ma’lumotlari, arizalar tarixi va do‘kon sozlamalari bir joyda.',
@@ -63,7 +63,7 @@ const copyByLanguage = {
     name: 'Aloqa uchun shaxs', phone: 'Telefon', company: 'Kompaniya', address: 'Yetkazib berish manzili', inn: 'STIR', optional: 'ixtiyoriy',
     namePlaceholder: 'Sizga qanday murojaat qilaylik', companyPlaceholder: 'Tashkilot nomi', addressPlaceholder: 'Shahar, ko‘cha, uy', innPlaceholder: 'Tashkilot STIRi',
     save: 'Ma’lumotlarni saqlash', saving: 'Saqlanmoqda…', saved: 'Profil ma’lumotlari saqlandi', error: 'Ma’lumotlarni saqlab bo‘lmadi. Qayta urinib ko‘ring.', validation: 'Ism va to‘g‘ri telefon raqamini kiriting.',
-    sections: 'Profil bo‘limlari', orders: 'Mening arizalarim', favorites: 'Tanlanganlar', language: 'Interfeys tili',
+    sections: 'Profil bo‘limlari', orders: 'Mening arizalarim', favorites: 'Tanlanganlar', language: 'Interfeys tili', telegramManaged: 'Mini App ichida akkaunt joriy Telegram profilingiz orqali aniqlanadi. Uni Telegram ichida almashtirish mumkin.',
   },
   en: {
     back: 'Back', title: 'Profile and settings', intro: 'Contact details, request history, and store preferences in one place.',
@@ -74,7 +74,7 @@ const copyByLanguage = {
     name: 'Contact person', phone: 'Phone', company: 'Company', address: 'Delivery address', inn: 'Tax ID', optional: 'optional',
     namePlaceholder: 'How should we address you?', companyPlaceholder: 'Organization name', addressPlaceholder: 'City, street, building', innPlaceholder: 'Organization tax ID',
     save: 'Save details', saving: 'Saving…', saved: 'Profile details saved', error: 'Could not save your details. Please try again.', validation: 'Enter your name and a valid phone number.',
-    sections: 'Profile sections', orders: 'My requests', favorites: 'Favorites', language: 'Interface language',
+    sections: 'Profile sections', orders: 'My requests', favorites: 'Favorites', language: 'Interface language', telegramManaged: 'In the Mini App, your account follows the current Telegram profile. Switch accounts in Telegram itself.',
   },
   zh: {
     back: '返回', title: '个人资料与设置', intro: '集中管理联系信息、申请记录和商店设置。',
@@ -85,7 +85,7 @@ const copyByLanguage = {
     name: '联系人', phone: '电话', company: '公司', address: '配送地址', inn: '税号', optional: '选填',
     namePlaceholder: '我们该如何称呼您？', companyPlaceholder: '公司名称', addressPlaceholder: '城市、街道、门牌号', innPlaceholder: '公司税号',
     save: '保存信息', saving: '正在保存…', saved: '个人资料已保存', error: '保存失败，请重试。', validation: '请输入姓名和有效的电话号码。',
-    sections: '个人中心', orders: '我的申请', favorites: '收藏夹', language: '界面语言',
+    sections: '个人中心', orders: '我的申请', favorites: '收藏夹', language: '界面语言', telegramManaged: 'Mini App 使用当前 Telegram 账号。需要切换账号时，请在 Telegram 中操作。',
   },
 } as const;
 
@@ -97,6 +97,7 @@ export function CustomerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [miniAppRejected, setMiniAppRejected] = useState(false);
+  const [isMiniApp, setIsMiniApp] = useState(false);
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -110,6 +111,7 @@ export function CustomerProfilePage() {
     }
     ensureTelegramMiniAppSession()
       .then((miniAppResult) => {
+        if (!cancelled) setIsMiniApp(miniAppResult !== 'browser');
         if (miniAppResult === 'rejected') {
           if (!cancelled) {
             const reason = getLastTelegramMiniAppSessionFailureReason();
@@ -242,7 +244,8 @@ export function CustomerProfilePage() {
           {!authenticated && !miniAppRejected ? <button type="button" onClick={login} className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)]"><Send className="size-4" aria-hidden="true" />{copy.login}</button> : null}
           <section className="rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] p-4 ring-1 ring-inset ring-[var(--sp-line)]"><h2 className="font-extended text-base font-bold text-[var(--sp-ink)]">{copy.sections}</h2><nav className="mt-3 divide-y divide-[var(--sp-line-soft)]">{quickLinks.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className="flex min-h-12 items-center gap-3 text-sm font-semibold text-[var(--sp-ink)]"><Icon className="size-5 text-[var(--sp-brand)]" aria-hidden="true" /><span className="min-w-0 flex-1">{label}</span><ChevronRight className="size-4 text-[var(--sp-ink-muted)]" aria-hidden="true" /></Link>)}</nav></section>
           <section className="flex min-h-14 items-center justify-between gap-4 rounded-[var(--sp-radius-card)] bg-[var(--sp-surface)] px-4 ring-1 ring-inset ring-[var(--sp-line)]"><span className="text-sm font-semibold text-[var(--sp-ink)]">{copy.language}</span><LanguageSwitcher /></section>
-          {authenticated ? <button type="button" onClick={() => void logout()} className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-4 text-sm font-semibold text-[var(--sp-danger)]"><LogOut className="size-4" aria-hidden="true" />{copy.logout}</button> : null}
+          {authenticated && isMiniApp ? <p className="rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] p-4 text-xs leading-5 text-[var(--sp-ink-secondary)]">{copy.telegramManaged}</p> : null}
+          {authenticated && !isMiniApp ? <button type="button" onClick={() => void logout()} className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-4 text-sm font-semibold text-[var(--sp-danger)]"><LogOut className="size-4" aria-hidden="true" />{copy.logout}</button> : null}
         </aside>
       </div>
     </main>

@@ -28,9 +28,10 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { useMobileStorefrontChrome } from '@/components/layout/MobileStorefrontChrome';
 import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { ProductImage } from '@/components/catalog/ProductImage';
-import { searchAndRankProducts } from '@/lib/catalog/productSearch';
+import { getSearchMatchLabel, searchAndRankProducts } from '@/lib/catalog/productSearch';
 
 export function Header({
+  initialCategories = [],
   initialProducts = [],
 }: {
   initialCategories?: Category[];
@@ -93,6 +94,7 @@ export function Header({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>(initialProducts);
+  const [catalogCategories, setCatalogCategories] = useState<Category[]>(initialCategories);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -100,15 +102,16 @@ export function Header({
     let active = true;
     const q = searchQuery.trim().toLowerCase();
     if (q.length >= 1) {
-      const loadProducts = catalogProducts.length > 0
-        ? Promise.resolve(catalogProducts)
-        : PublicRepository.getProducts().then((products) => {
+      const loadCatalog = catalogProducts.length > 0 && catalogCategories.length > 0
+        ? Promise.resolve([catalogProducts, catalogCategories] as const)
+        : Promise.all([PublicRepository.getProducts(), PublicRepository.getCategories()]).then(([products, categories]) => {
             setCatalogProducts(products);
-            return products;
+            setCatalogCategories(categories);
+            return [products, categories] as const;
           });
-      loadProducts.then((products) => {
+      loadCatalog.then(([products, categories]) => {
         if (!active) return;
-        const filtered = searchAndRankProducts(products, q, language);
+        const filtered = searchAndRankProducts(products, q, language, categories);
         setSearchResults(filtered.slice(0, 8));
         setIsSearchOpen(true);
       }).catch(() => {
@@ -126,7 +129,7 @@ export function Header({
     return () => {
       active = false;
     };
-  }, [catalogProducts, searchQuery, language]);
+  }, [catalogCategories, catalogProducts, searchQuery, language]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -219,15 +222,15 @@ export function Header({
 
         {/* Level 2: Main Header */}
         <div className="border-b border-[var(--sp-line)] py-2.5 md:py-3">
-          <div className="mx-auto flex max-w-[1536px] items-center justify-between gap-2 px-4 md:gap-4">
+          <div className="mx-auto flex max-w-[1536px] items-center justify-between gap-1.5 px-3 sm:px-4 md:gap-4">
             {/* Logo */}
-            <Link href="/" className="shrink-0 flex items-center py-0.5" aria-label={`${siteSettings.company.name} — ${copy.home}`}>
+            <Link href="/" className="flex min-w-0 shrink items-center py-0.5" aria-label={`${siteSettings.company.name} — ${copy.home}`}>
               <BrandLogo
                 src={siteSettings.company?.logo}
                 srcDark={siteSettings.company?.logoDark}
                 label={siteSettings.company.name}
                 variant="green"
-                className="h-8 sm:h-8.5 md:h-9"
+                className="h-7 max-w-[44vw] sm:h-8.5 sm:max-w-none md:h-9"
               />
             </Link>
 
@@ -288,6 +291,7 @@ export function Header({
                               {searchResults.map((product) => {
                                 const title = getLocalizedText(product.titleRu, product.titleUz, product.titleEn, product.titleZh);
                                 const priceText = getProductCatalogPriceText(product, language);
+                                const matchLabel = getSearchMatchLabel(product, searchQuery, language, catalogCategories);
                                 return (
                                   <li key={product.id}>
                                     <Link
@@ -309,7 +313,7 @@ export function Header({
                                           {title}
                                         </p>
                                         <div className="flex items-center gap-2 text-[10px] text-[var(--sp-ink-tertiary)]">
-                                          <span className="font-mono">{copy.sku}: {product.sku}</span>
+                                          <span className="font-mono">{matchLabel || `${copy.sku}: ${product.sku}`}</span>
                                           {product.salesUnit ? <span>· {product.salesUnit}</span> : null}
                                         </div>
                                       </div>
@@ -418,7 +422,7 @@ export function Header({
                 )}
               </Link>
 
-              <LanguageSwitcher />
+              <LanguageSwitcher className="shrink-0 max-[360px]:[&>button]:px-1.5" />
 
               <Link
                 href="/profile"

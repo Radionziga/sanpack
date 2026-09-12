@@ -28,9 +28,10 @@ interface ProductCardProps {
   eagerImage?: boolean;
   appearance?: 'default' | 'market';
   attributeDefinitions?: Attribute[];
+  searchMatchLabel?: string;
 }
 
-export function ProductCard({ product, viewMode = 'grid', eagerImage = false, appearance = 'default', attributeDefinitions = [] }: ProductCardProps) {
+export function ProductCard({ product, viewMode = 'grid', eagerImage = false, appearance = 'default', attributeDefinitions = [], searchMatchLabel }: ProductCardProps) {
   const { t, getLocalizedText, language } = useLanguage();
   const copy = {
     ru: ['Товар добавлен в заявку', 'Удалено из избранного', 'Добавлено в избранное'],
@@ -124,6 +125,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
               {title}
             </h3>
           </Link>
+          {searchMatchLabel ? <p className="mt-1 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] px-2 py-1 text-[11px] font-semibold leading-4 text-[var(--sp-brand-deep)]">{searchMatchLabel}</p> : null}
           <p className="mt-1 line-clamp-1 text-[11px] leading-4 text-[var(--sp-ink-muted)]">{minimumOrderLabel}</p>
           {cardAttributeText ? <p className="mt-0.5 line-clamp-1 text-[10px] text-[var(--sp-ink-muted)]">{cardAttributeText}</p> : null}
         </div>
@@ -171,6 +173,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
               {supportingText}
             </p>
           ) : null}
+          {searchMatchLabel ? <p className="mt-1.5 w-fit rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--sp-brand-deep)]">{searchMatchLabel}</p> : null}
           {cardAttributeText ? <p className="mt-1 line-clamp-1 text-xs text-[var(--sp-ink-muted)]">{cardAttributeText}</p> : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-medium text-[var(--sp-ink-muted)]">
@@ -240,6 +243,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
             {supportingText}
           </p>
         ) : null}
+        {searchMatchLabel ? <p className="mt-1 rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-brand-soft)] px-2 py-1 text-[11px] font-semibold leading-4 text-[var(--sp-brand-deep)]">{searchMatchLabel}</p> : null}
         {cardAttributeText ? <p className="mt-1 line-clamp-1 text-[11px] text-[var(--sp-ink-muted)]">{cardAttributeText}</p> : null}
 
 

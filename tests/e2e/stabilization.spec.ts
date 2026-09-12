@@ -64,14 +64,14 @@ test.describe('production-like hard entries', () => {
 
   test('mobile Product does not render the contact FAB over its CTA', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/ru/product/fixture-grocery', { waitUntil: 'domcontentloaded' });
+    await page.goto('/ru/product/fixture-grocery', { waitUntil: 'load' });
     await expect(page.getByRole('heading', { name: 'Fixture grocery', level: 1 }).last()).toBeVisible();
     await expect(page.getByRole('button', { name: /Связаться/ })).toHaveCount(0);
   });
 
   test('mobile cart dock owns the fixed-action area on Category and checkout', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/ru/product/fixture-grocery', { waitUntil: 'domcontentloaded' });
+    await page.goto('/ru/product/fixture-grocery', { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'В корзину', exact: true }).click();
     for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 430, height: 932 }]) {
       await page.setViewportSize(viewport);
@@ -102,7 +102,7 @@ test.describe('production-like hard entries', () => {
     });
     await page.goto('/ru/request', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Отправить заявку', exact: true }).first().click();
-    await expect(page.getByText('ORD-REPLAY')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Заявка №ORD-REPLAY отправлена' })).toBeVisible();
     expect(submittedKey).toBe('checkout-intent-reload-0001');
     expect(submittedBody).toMatchObject({ contactName: checkoutDraft.contactName, items: [{ productId: 'fixture-grocery', quantity: 1 }] });
   });
@@ -135,9 +135,9 @@ test.describe('production-like hard entries', () => {
   });
 
   test('locale switch preserves search query', async ({ page }) => {
-    await page.goto('/ru/search?q=Fixture&sort=name', { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: /Выбрать язык/ }).click();
-    await page.getByRole('menuitemradio', { name: /English/ }).click();
+    await page.goto('/ru/search?q=Fixture&sort=name', { waitUntil: 'load' });
+    await page.getByRole('button', { name: /Выбрать язык/ }).filter({ visible: true }).first().click();
+    await page.getByRole('menuitemradio', { name: /English/ }).filter({ visible: true }).click();
     await expect.poll(() => page.url()).toContain('/en/search');
     expect(new URL(page.url()).searchParams.get('q')).toBe('Fixture');
     expect(new URL(page.url()).searchParams.get('sort')).toBe('name');
@@ -152,14 +152,15 @@ test.describe('production-like hard entries', () => {
   });
 
   test('Product price follows the canonical wholesale tier at selected quantity', async ({ page, isMobile }) => {
-    await page.goto('/ru/product/fixture-wholesale', { waitUntil: 'domcontentloaded' });
+    await page.goto('/ru/product/fixture-wholesale', { waitUntil: 'load' });
     if (isMobile) {
       await page.getByRole('button', { name: 'В корзину', exact: true }).click();
-      const cartControl = page.getByRole('group', { name: 'Оптовый fixture' });
-      const increase = cartControl.getByRole('button', { name: 'Увеличить количество' });
-      for (let step = 1; step < 10; step += 1) await increase.click();
-      await expect(cartControl).toContainText('10');
-      await expect(page.locator('div.fixed').filter({ hasText: 'Цена за штуку' })).toContainText('80 сум');
+      const quantity = page.getByRole('spinbutton', { name: /Количество: Оптовый fixture/ }).first();
+      await quantity.fill('10');
+      await quantity.blur();
+      await expect(quantity).toHaveValue('10');
+      const commercialDock = page.locator('div.fixed').filter({ hasText: 'Итого: 800 сум' });
+      await expect(commercialDock).toContainText('80 сум / штука');
     } else {
       const quantity = page.getByRole('spinbutton', { name: /Количество/i }).first();
       await quantity.fill('10');

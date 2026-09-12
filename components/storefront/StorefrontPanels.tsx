@@ -7,9 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   LayoutGrid,
-  Minus,
   PackageOpen,
-  Plus,
   ShoppingBasket,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
@@ -18,7 +16,7 @@ import { useRequestCart } from '@/context/RequestCartContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { ProductImage } from '@/components/catalog/ProductImage';
 import { formatMoney } from '@/lib/catalog/productPresentation';
-import { getProductOrderRule } from '@/lib/commerce/orderQuantities';
+import { getProductOrderRule, normalizeOrderQuantity } from '@/lib/commerce/orderQuantities';
 import { getCategoryArtwork } from '@/lib/catalog/categoryArtwork';
 import {
   getPopularCategoryArtwork,
@@ -27,6 +25,8 @@ import {
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import type { Category } from '@/types';
 import { getCategoryDepth, getCategoryLineage, getCategoryPath, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
+import { QuantityControl } from '@/components/commerce/QuantityControl';
+import { presentCommercialSummary, summarizeCommercialLines } from '@/lib/commerce/commercialSummary';
 
 const panelCopy = {
   ru: {
@@ -439,9 +439,9 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
 
 export function StorefrontCartSidebar() {
   const { language, getLocalizedText } = useLanguage();
-  const { items, totalAmount, updateQuantity, removeItem } = useRequestCart();
+  const { items, updateQuantity, removeItem } = useRequestCart();
   const copy = panelCopy[language];
-  const hasRequestOnlyPrice = items.some((item) => item.price === undefined);
+  const summaryPresentation = presentCommercialSummary(summarizeCommercialLines(items), language, 'UZS');
 
   return (
     <aside aria-label={copy.cart} className="h-full min-w-0">
@@ -477,10 +477,7 @@ export function StorefrontCartSidebar() {
                 const orderRule = item.product ? getProductOrderRule(item.product, language, item.variant) : null;
                 const quantityStep = orderRule?.quantityStep ?? 1;
                 const minimumQuantity = orderRule?.minimumQuantity ?? quantityStep;
-                const quantityText = new Intl.NumberFormat(
-                  language === 'uz' ? 'uz-UZ' : language === 'en' ? 'en-US' : 'ru-RU',
-                  { maximumFractionDigits: 3 },
-                ).format(item.quantity);
+                const variantTitle = getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn, item.variantTitleZh);
                 return (
                   <li key={`${item.productId}:${item.variantId ?? ''}`} className="flex gap-3 py-3">
                     <Link href={`/product/${item.productSlug}`} className="relative size-14 shrink-0 overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-[var(--sp-surface-inset)]">
@@ -491,27 +488,20 @@ export function StorefrontCartSidebar() {
                       <p className="mt-1 text-xs font-bold tabular-nums text-[var(--sp-brand)]">
                         {item.price === undefined ? copy.priceOnRequest : formatMoney(item.price * item.quantity, language, 'UZS')}
                       </p>
-                      <div className="mt-1.5 ml-auto grid h-9 w-[6.25rem] grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] overflow-hidden rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line)] bg-[var(--sp-control)]" role="group" aria-label={title}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (item.quantity <= minimumQuantity) removeItem(item.productId, item.variantId);
-                            else updateQuantity(item.productId, item.quantity - quantityStep, item.variantId);
-                          }}
-                          className="grid size-9 place-items-center transition-colors hover:bg-[var(--sp-surface-inset)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
-                          aria-label={copy.decrease}
-                        >
-                          <Minus className="size-3" aria-hidden="true" />
-                        </button>
-                        <span className="grid min-w-0 place-items-center text-xs font-bold tabular-nums" aria-live="polite">{quantityText}</span>
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.productId, item.quantity + quantityStep, item.variantId)}
-                          className="grid size-9 place-items-center transition-colors hover:bg-[var(--sp-surface-inset)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]"
-                          aria-label={copy.increase}
-                        >
-                          <Plus className="size-3" aria-hidden="true" />
-                        </button>
+                      <div className="mt-1.5 ml-auto w-[7.75rem]">
+                        <QuantityControl
+                          value={item.quantity}
+                          minimum={minimumQuantity}
+                          step={quantityStep}
+                          maximum={orderRule?.maximumQuantity}
+                          normalize={item.product ? (value) => normalizeOrderQuantity(item.product!, value, item.variant) : undefined}
+                          onChange={(value) => updateQuantity(item.productId, value, item.variantId)}
+                          onDecreaseAtMinimum={() => removeItem(item.productId, item.variantId)}
+                          ariaLabel={`${copy.items}: ${title}${variantTitle ? ` — ${variantTitle}` : ''}`}
+                          decreaseLabel={copy.decrease}
+                          increaseLabel={copy.increase}
+                          compact
+                        />
                       </div>
                     </div>
                   </li>
@@ -520,12 +510,13 @@ export function StorefrontCartSidebar() {
             </ul>
             <div className="border-t border-[var(--sp-line)] p-4">
               <div className="flex items-end justify-between gap-3">
-                <span className="text-xs text-[var(--sp-ink-secondary)]">{copy.preliminary}</span>
+                <span className="text-xs text-[var(--sp-ink-secondary)]">{summaryPresentation.label}</span>
                 <strong className="text-lg tabular-nums text-[var(--sp-ink)]">
-                  {totalAmount > 0 ? formatMoney(totalAmount, language, 'UZS') : copy.priceOnRequest}
+                  {summaryPresentation.value}
                 </strong>
               </div>
-              {hasRequestOnlyPrice ? <p className="mt-1 text-[10px] text-[var(--sp-ink-muted)]">+ {copy.priceOnRequest.toLowerCase()}</p> : null}
+              {summaryPresentation.secondary ? <p className="mt-1 text-xs font-medium leading-5 text-[var(--sp-ink-secondary)]">{summaryPresentation.secondary}</p> : null}
+              <p className="mt-2 text-xs leading-5 text-[var(--sp-ink-muted)]">{summaryPresentation.note}</p>
               <Link href="/request" className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-bold text-[var(--sp-on-brand)] transition-[background-color,opacity] hover:bg-[var(--sp-brand-deep)] active:opacity-85">
                 {copy.checkout}
                 <ArrowRight className="size-4" aria-hidden="true" />

@@ -264,7 +264,9 @@ Routing `i18n/routing.ts`: RU/UZ/EN/ZH, locale prefix always. `SiteSettings.loca
 
 `localizedText.ts` возвращает resolved text и fallback metadata. Для missing ZH предпочтителен EN, затем RU/UZ; для остальных fallback RU/UZ/EN/ZH. Значение, совпадающее с RU в другом языке, может считаться fallback. Seed ZH adapters не означают полноту переводов. AI translation — явное admin действие и последующее сохранение, не runtime-перевод каждого просмотра.
 
-`productSearch.ts` индексирует в памяти SKU Product, brand, localized names/descriptions. Typed attrs и variant SKU/attrs не входят в search text. Это сознательная текущая граница, не отдельный search backend.
+`productSearch.ts` индексирует в памяти Product/Variant SKU, brand, localized Product/Variant names/descriptions и localized Category names. Exact Variant SKU получает наивысший приоритет и UI подписывает совпавшую configuration. Typed attribute values не входят в search text; matched Variant пока не выбирается автоматически на Product detail. Это сознательная граница текущего in-memory search, не отдельный backend.
+
+Commercial presentation не является вторым pricing engine. `commercialSummary.ts` агрегирует уже рассчитанные cart/request lines и одинаково представляет priced, mixed и request-only состав на cart dock, request page, sidebar и customer history. `productCommercial.ts` строит упаковку, minimum purchase amount и wholesale hints из `orderQuantities.ts` + `productOffer.ts`. Ручной quantity input всегда нормализуется теми же min/step/max/packaging/Variant rules; server canonical validation остаётся authority.
 
 Locale layout получает SiteSettings для default metadata/company identity/favicon. `lib/seo/metadata.ts` строит единые localized fallback, canonical, hreflang, OG/Twitter и company identity. Product/category layouts используют этот helper; основные content routes (`about`, `clients`, `delivery`, `branding`, `contacts`, `privacy`, `terms`) имеют собственную metadata вместо наследования Home. Product JSON-LD — sale Offer (см. pricing), locale layout добавляет Organization/WebSite, Product и taxonomy pages — BreadcrumbList. Dynamic sitemap сочетает static paths, active categories и published products для четырёх локалей; при backend failure dynamic lists пусты, static routes остаются, seed автоматически не включается.
 
@@ -337,7 +339,7 @@ Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY
 ## 18. Known limitations / deferred scope
 
 - Не contextual facet counts; attribute facets требуют category/group scope. Boolean filter true-only, generic CSS-color matching без словаря цветов. Sort/view/stock/own/typed filters уже имеют query-string contract и Back/Forward restore.
-- Search не индексирует attributes/variant SKU; matched variant не выбран автоматически после перехода из списка.
+- Search не индексирует attribute values; Product/Variant SKU и localized Variant/Category names поддерживаются. Matched Variant подписан, но не выбран автоматически после перехода из списка.
 - Brand fields/legacy brand attribute могут расходиться; нет Brand pages или централизованной Brand CMS.
 - Catalog preview не stock-filtered offer preview; JSON-LD product-level availability, не variant offer feed.
 - Product body и essential SEO content SSR. Интерактивные variant/cart controls остаются client boundary; related payload намеренно ограничен четырьмя товарами. Это текущая граница, а не crawlability blocker.

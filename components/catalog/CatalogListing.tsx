@@ -32,7 +32,7 @@ import { ProductCard } from '@/components/catalog/ProductCard';
 import { CatalogBreadcrumbs, SubcategoryNavigation } from '@/components/catalog/CategoryNavigation';
 import { getCategoryBreadcrumbs, getProductsInCategoryScope, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { filterProductsBySearch } from '@/lib/catalog/productSearch';
+import { filterProductsBySearch, getSearchMatchLabel } from '@/lib/catalog/productSearch';
 import {
   getProductAttributeValues,
   isAttributeFilterActive,
@@ -184,7 +184,7 @@ export function CatalogListing({
     }
     return searchQuery === undefined
       ? nextProducts
-      : filterProductsBySearch(nextProducts, searchQuery);
+      : filterProductsBySearch(nextProducts, searchQuery, categories);
   }, [categories, currentCategory, products, searchQuery]);
 
   const filterAttributes = useMemo(() => {
@@ -393,7 +393,7 @@ export function CatalogListing({
 
             {loadState === 'ready' && filteredProducts.length > 0 ? (
               <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4' : 'space-y-4'}>
-                {filteredProducts.map((product, index) => <ProductCard key={product.id} product={product} viewMode={viewMode} appearance={viewMode === 'grid' ? 'market' : 'default'} eagerImage={index < 3} attributeDefinitions={attributes} />)}
+                {filteredProducts.map((product, index) => <ProductCard key={product.id} product={product} viewMode={viewMode} appearance={viewMode === 'grid' ? 'market' : 'default'} eagerImage={index < 3} attributeDefinitions={attributes} searchMatchLabel={searchQuery ? getSearchMatchLabel(product, searchQuery, language, categories) : undefined} />)}
               </div>
             ) : null}
           </div>

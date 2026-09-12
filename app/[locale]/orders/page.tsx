@@ -10,6 +10,7 @@ import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { formatMoney } from '@/lib/catalog/productPresentation';
 import { ensureTelegramMiniAppSession, resetTelegramMiniAppSessionCache } from '@/lib/telegram/miniAppSession';
 import type { Language, RequestOrder } from '@/types';
+import { presentCommercialSummary, summarizeCommercialLines } from '@/lib/commerce/commercialSummary';
 
 const localeCodes: Record<Language, string> = { ru: 'ru-RU', uz: 'uz-UZ', en: 'en-US', zh: 'zh-CN' };
 
@@ -40,7 +41,7 @@ export default function OrdersPage() {
       loadError: 'Не удалось загрузить заявки.', loginTitle: 'Войдите через Telegram', loginText: 'После входа вы увидите заявки, связанные с этим Telegram-аккаунтом.',
       retry: 'Повторить',
       login: 'Войти через Telegram', empty: 'Заявок пока нет', openCatalog: 'Открыть каталог', request: 'Заявка', accepted: 'Заявка принята. Менеджер свяжется с вами.', total: 'Предварительная сумма',
-      delivery: 'Доставка', address: 'Адрес',
+      delivery: 'Доставка', address: 'Адрес', priceOnRequest: 'Цена по запросу', telegramManaged: 'Аккаунт Mini App определяется текущим профилем Telegram.',
     },
     uz: {
       catalog: 'Katalog', title: 'Mening arizalarim', intro: 'Telegram akkauntingiz orqali yuborilgan arizalar shu yerda saqlanadi.',
@@ -48,7 +49,7 @@ export default function OrdersPage() {
       loadError: 'Arizalarni yuklab bo‘lmadi.', loginTitle: 'Telegram orqali kiring', loginText: 'Kirgandan so‘ng Telegram akkauntingizga bog‘langan arizalarni ko‘rasiz.',
       retry: 'Qayta urinish',
       login: 'Telegram orqali kirish', empty: 'Hozircha arizalar yo‘q', openCatalog: 'Katalogni ochish', request: 'Ariza', accepted: 'Ariza qabul qilindi. Menejer siz bilan bog‘lanadi.', total: 'Dastlabki summa',
-      delivery: 'Yetkazib berish', address: 'Manzil',
+      delivery: 'Yetkazib berish', address: 'Manzil', priceOnRequest: 'Narx so‘rov bo‘yicha', telegramManaged: 'Mini App akkaunti joriy Telegram profilingiz orqali aniqlanadi.',
     },
     en: {
       catalog: 'Catalog', title: 'My requests', intro: 'Requests placed with your Telegram account are saved here.',
@@ -56,7 +57,7 @@ export default function OrdersPage() {
       loadError: 'We could not load your requests.', loginTitle: 'Sign in with Telegram', loginText: 'After signing in, you will see requests linked to this Telegram account.',
       retry: 'Try again',
       login: 'Sign in with Telegram', empty: 'No requests yet', openCatalog: 'Open catalog', request: 'Request', accepted: 'Your request has been received. A manager will contact you.', total: 'Preliminary total',
-      delivery: 'Delivery', address: 'Address',
+      delivery: 'Delivery', address: 'Address', priceOnRequest: 'Price on request', telegramManaged: 'The Mini App account follows your current Telegram profile.',
     },
     zh: {
       catalog: '商品目录', title: '我的申请', intro: '通过您的 Telegram 账号提交的申请会保存在这里。',
@@ -64,12 +65,13 @@ export default function OrdersPage() {
       loadError: '申请记录加载失败。', loginTitle: '使用 Telegram 登录', loginText: '登录后即可查看与此 Telegram 账号关联的申请。',
       retry: '重试',
       login: '使用 Telegram 登录', empty: '暂无申请', openCatalog: '打开商品目录', request: '申请', accepted: '申请已收到，经理将与您联系。', total: '预估金额',
-      delivery: '配送', address: '地址',
+      delivery: '配送', address: '地址', priceOnRequest: '价格需询价', telegramManaged: 'Mini App 使用当前 Telegram 账号。',
     },
   }[language];
   const [orders, setOrders] = useState<RequestOrder[]>([]);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [customerName, setCustomerName] = useState('');
+  const [isMiniApp, setIsMiniApp] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,6 +86,7 @@ export default function OrdersPage() {
       }
       try {
         const miniAppResult = await ensureTelegramMiniAppSession();
+        if (!cancelled) setIsMiniApp(miniAppResult !== 'browser');
         if (miniAppResult === 'rejected') {
           if (cancelled) return;
           setAuthenticated(false);
@@ -131,7 +134,7 @@ export default function OrdersPage() {
       <Header />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 lg:py-10">
         <Link href="/catalog" className="inline-flex min-h-10 items-center gap-1.5 text-sm font-medium text-[var(--sp-ink-secondary)] transition-colors hover:text-[var(--sp-brand)]"><ArrowLeft className="size-4" />{copy.catalog}</Link>
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-4"><div><h1 className="font-extended text-2xl font-bold tracking-[-0.025em] sm:text-3xl">{copy.title}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sp-ink-secondary)]">{copy.intro}</p></div>{authenticated ? <button type="button" onClick={() => void logout()} className="inline-flex min-h-10 items-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] px-4 text-xs font-semibold"><LogOut className="size-4" />{copy.logout}{customerName ? ` · ${customerName}` : ''}</button> : null}</div>
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-4"><div><h1 className="font-extended text-2xl font-bold tracking-[-0.025em] sm:text-3xl">{copy.title}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--sp-ink-secondary)]">{copy.intro}</p>{authenticated && isMiniApp ? <p className="mt-2 text-xs leading-5 text-[var(--sp-ink-tertiary)]">{copy.telegramManaged}</p> : null}</div>{authenticated && !isMiniApp ? <button type="button" onClick={() => void logout()} className="inline-flex min-h-10 items-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] px-4 text-xs font-semibold"><LogOut className="size-4" />{copy.logout}{customerName ? ` · ${customerName}` : ''}</button> : null}</div>
 
         {authenticated === null && !error ? <p className="mt-10 text-sm text-[var(--sp-ink-tertiary)]">{copy.loading}</p> : null}
         {error ? <div className="sp-alert sp-alert-danger mt-8 flex items-center justify-between gap-3 text-sm" role="alert"><span>{error}</span><button type="button" onClick={() => window.location.reload()} className="min-h-9 shrink-0 rounded-[var(--sp-radius-control)] border border-current px-3 text-xs font-semibold">{copy.retry}</button></div> : null}
@@ -139,15 +142,18 @@ export default function OrdersPage() {
         {authenticated && orders.length === 0 ? <section className="mt-8 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-8 text-center"><Clock3 className="mx-auto size-9 text-[var(--sp-ink-muted)]" /><h2 className="mt-4 font-extended text-lg font-bold">{copy.empty}</h2><Link href="/catalog" className="mt-5 inline-flex min-h-11 items-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-xs font-semibold text-[var(--sp-on-brand)]">{copy.openCatalog}</Link></section> : null}
 
         <div className="mt-8 space-y-4">
-          {orders.map((order) => (
+          {orders.map((order) => {
+            const orderItems = order.originalItems ?? order.items;
+            const summary = presentCommercialSummary(summarizeCommercialLines(orderItems), language, order.currency || 'UZS');
+            return (
             <article key={order.id} className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--sp-line)] pb-4"><div><span className="text-[10px] uppercase tracking-[0.08em] text-[var(--sp-ink-tertiary)]">{copy.request}</span><h2 className="mt-1 font-mono text-base font-bold text-[var(--sp-brand)]">{order.requestNumber}</h2></div><time className="text-xs text-[var(--sp-ink-tertiary)]">{formatDate(order.createdAt, language)}</time></div>
-              <div className="mt-4 space-y-3">{(order.originalItems ?? order.items).map((item) => <div key={item.lineId || `${item.productId}-${item.variantId || 'base'}`} className="flex items-start justify-between gap-4 text-sm"><div className="min-w-0"><p className="font-semibold">{getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn, item.productTitleZh)}</p>{item.variantTitleRu ? <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">{getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn, item.variantTitleZh)}</p> : null}</div><span className="shrink-0 text-xs font-semibold">{item.quantity} {localizeUnit(item.unit, language)}</span></div>)}</div>
+              <div className="mt-4 space-y-3">{orderItems.map((item) => <div key={item.lineId || `${item.productId}-${item.variantId || 'base'}`} className="flex items-start justify-between gap-4 text-sm"><div className="min-w-0"><p className="font-semibold">{getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn, item.productTitleZh)}</p>{item.variantTitleRu ? <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">{getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn, item.variantTitleZh)}</p> : null}{item.price === undefined ? <p className="mt-1 text-xs font-semibold text-[var(--sp-brand)]">{copy.priceOnRequest}</p> : <p className="mt-1 text-xs tabular-nums text-[var(--sp-ink-secondary)]">{formatMoney(item.lineTotal ?? item.price * item.quantity, language, order.currency || 'UZS')}</p>}</div><span className="shrink-0 text-xs font-semibold">{item.quantity} {localizeUnit(item.unit, language)}</span></div>)}</div>
               {order.deliveryAddress || order.deliveryDate || order.deliveryWindow ? <div className="mt-5 grid gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3 text-xs text-[var(--sp-ink-secondary)] sm:grid-cols-2"><p className="flex items-start gap-2"><MapPin className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.address}</strong>{order.deliveryAddress || '—'}</span></p><p className="flex items-start gap-2"><CalendarDays className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.delivery}</strong>{order.deliveryDate ? new Intl.DateTimeFormat(localeCodes[language], { dateStyle: 'medium' }).format(new Date(`${order.deliveryDate}T12:00:00`)) : '—'}{order.deliveryWindow ? ` · ${order.deliveryWindow.replace('-', '–')}` : ''}</span></p></div> : null}
-              {typeof order.total === 'number' && order.total > 0 ? <div className="mt-5 flex items-center justify-between border-t border-[var(--sp-line)] pt-4 text-sm"><span className="text-[var(--sp-ink-secondary)]">{copy.total}</span><strong className="text-base tabular-nums text-[var(--sp-brand)]">{formatMoney(order.total, language, order.currency || 'UZS')}</strong></div> : null}
+              <div className="mt-5 border-t border-[var(--sp-line)] pt-4 text-sm"><div className="flex items-center justify-between gap-4"><span className="text-[var(--sp-ink-secondary)]">{summary.label}</span><strong className="text-base tabular-nums text-[var(--sp-brand)]">{summary.value}</strong></div>{summary.secondary ? <p className="mt-1 text-xs font-medium text-[var(--sp-ink-secondary)]">{summary.secondary}</p> : null}</div>
               <p className="mt-4 flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 py-2.5 text-xs text-[var(--sp-ink-secondary)]"><PackageCheck className="size-4 text-[var(--sp-brand)]" />{copy.accepted}</p>
             </article>
-          ))}
+          );})}
         </div>
       </main>
       <Footer />
