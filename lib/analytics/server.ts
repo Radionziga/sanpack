@@ -50,6 +50,14 @@ function safeReferrerHost(value: string | undefined) {
   return host && /^[a-z0-9.-]{1,160}$/.test(host) ? host : undefined;
 }
 
+function publicRequestHost(request: Request) {
+  try {
+    return new URL(request.headers.get('origin') || request.url).hostname;
+  } catch {
+    return request.headers.get('x-forwarded-host')?.split(',')[0]?.trim() || request.headers.get('host') || undefined;
+  }
+}
+
 function localeFromRequest(request: Request) {
   try {
     const path = new URL(request.headers.get('referer') || request.url).pathname;
@@ -166,6 +174,7 @@ export async function writeAnalyticsEvent(request: Request, event: PublicAnalyti
         referrerHost: safeReferrerHost(event.attribution?.referrerHost),
         landingPathname: event.name === 'page_view' || event.name === 'catalog_view' ? event.pathname : '/',
         surface: event.surface,
+        currentHost: publicRequestHost(request),
       });
     const startedAt = continuesSession && requestedSessionData.startedAt instanceof Timestamp
       ? requestedSessionData.startedAt

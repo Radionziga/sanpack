@@ -7,9 +7,10 @@ export function syntheticAnalyticsReport(from: string, to: string): AnalyticsDas
     { id: 'fixture-packaged', name: 'Контейнер из алюминиевой фольги FP-005', sku: 'SP-FP-005', categoryId: 'grocery' },
     { id: 'fixture-wholesale', name: 'Пакеты для закупки', sku: 'FIXTURE-WHOLESALE', categoryId: 'grocery' },
   ];
-  const base = Math.max(filter.from.getTime() + 60_000, filter.to.getTime() - 8 * 60 * 60 * 1000);
+  const base = filter.from.getTime() + 60_000;
+  const step = Math.max(30 * 60_000, Math.floor((filter.to.getTime() - filter.from.getTime() - 2 * 60 * 60_000) / 12));
   const make = (offset: number, event: Partial<StoredAnalyticsEvent> & Pick<StoredAnalyticsEvent, 'name'>): StoredAnalyticsEvent => ({
-    occurredAt: new Date(base + offset * 60_000), visitorId: offset < 8 ? 'visitor-a' : 'visitor-b',
+    occurredAt: new Date(base + offset * step), visitorId: offset < 8 ? 'visitor-a' : 'visitor-b',
     visitorFirstSeenAt: new Date(base - 60_000), sessionId: offset < 8 ? 'session-a' : 'session-b',
     locale: offset % 2 ? 'uz' : 'ru', surface: offset % 3 ? 'web' : 'telegram_mini_app', deviceClass: offset % 3 ? 'desktop' : 'mobile',
     attribution: offset < 8

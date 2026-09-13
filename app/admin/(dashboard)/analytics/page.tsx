@@ -3,7 +3,7 @@ import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 
 export default function AdminAnalyticsPage() {
   return <div className="admin-page">
-    <AdminPageHeader title="Аналитика" description="Посещения, интерес к товарам, источники трафика и путь до успешно отправленной заявки. Без имён, телефонов и customer-профилей." />
+    <AdminPageHeader title="Аналитика" description="Что происходит на сайте: откуда приходят посетители, какие товары их интересуют и сколько людей доходят до заявки. Без имён, телефонов и профилей клиентов." />
     <AnalyticsDashboard />
   </div>;
 }

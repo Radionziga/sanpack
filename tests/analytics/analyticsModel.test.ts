@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { publicAnalyticsEventSchema } from '@/lib/analytics/contracts';
-import { analyticsRouteType, classifyDevice, normalizeAnalyticsPathname, normalizeAttribution, normalizeSearchQuery } from '@/lib/analytics/model';
+import { analyticsRouteType, classifyDevice, normalizeAcquisitionSource, normalizeAnalyticsPathname, normalizeAttribution, normalizeSearchQuery } from '@/lib/analytics/model';
 
 describe('privacy-conscious analytics contract', () => {
   it('accepts engagement and rejects forged conversions or extra PII', () => {
@@ -16,5 +16,21 @@ describe('privacy-conscious analytics contract', () => {
     expect(normalizeAttribution({ utmSource: 'Instagram', utmCampaign: 'horeca', landingPathname: '/ru/catalog?secret=1', surface: 'web' })).toEqual({ source: 'instagram', campaign: 'horeca', landingPathname: '/ru/catalog' });
     expect(classifyDevice('Mozilla/5.0 (iPhone; Mobile)')).toBe('mobile');
     expect(normalizeSearchQuery('телефон +998 90 123 45 67 test@example.com')).toBe('телефон [redacted] [redacted]');
+  });
+
+  it('keeps session acquisition external and never treats internal navigation as a source', () => {
+    expect(normalizeAttribution({
+      referrerHost: 'sanpack.uz', currentHost: 'sanpack.uz', landingPathname: '/ru/catalog', surface: 'web',
+    }).source).toBe('direct');
+    expect(normalizeAttribution({
+      referrerHost: 'instagram.com', currentHost: 'sanpack.uz', landingPathname: '/ru', surface: 'web',
+    }).source).toBe('social');
+    expect(normalizeAttribution({
+      utmSource: 'newsletter', referrerHost: 'sanpack.uz', currentHost: 'sanpack.uz', landingPathname: '/ru', surface: 'web',
+    }).source).toBe('newsletter');
+    expect(normalizeAttribution({
+      referrerHost: 'sanpack.uz', currentHost: 'sanpack.uz', landingPathname: '/ru', surface: 'telegram_mini_app',
+    }).source).toBe('telegram');
+    expect(normalizeAcquisitionSource('internal')).toBe('direct');
   });
 });

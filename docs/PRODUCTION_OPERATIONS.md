@@ -218,6 +218,10 @@ curl -fsS https://sanpack.uz/api/health
 
 Monitor App Hosting logs for `analytics.ingestion_failed`, `analytics.report_failed`, unexpected 5xx/429 spikes and Firestore permission/index errors. Never log cookie values, event documents or search text during operational checks.
 
+Dashboard acquisition is attached when a session starts. Same-site navigation must resolve to direct/session-continuation rather than a new acquisition source. Existing `internal` rows are grouped with direct traffic at report time; do not rewrite historical analytics documents merely to change a display label.
+
+Completed 2026-09-13: analytics source `2ec8a0ae989fff64d0dcfb95329b1d2d7b453f42` and category-curation follow-up `c149d361bf47b9a76152a3755d5b0cf2a66a53a5` are live as `sanpack-build-2026-09-13-004` with 100% traffic; rollout `rollout-2026-09-13-004` succeeded at 2026-09-13 17:16:38 UTC. First accepted analytics event: 2026-09-13 16:59:28 UTC / 21:59:28 Asia/Tashkent. All three analytics TTL policies and the existing customer-session/rate-limit policies are `ACTIVE`. Owner dashboard and safe engagement ingestion were smoked without creating a Request or Telegram notification. Immediate rollback is `sanpack-build-2026-09-13-003`; `sanpack-build-2026-09-13-002` remains the pre-analytics fallback. See [FIRST_PARTY_ANALYTICS_HANDOFF_2026-09-13.md](FIRST_PARTY_ANALYTICS_HANDOFF_2026-09-13.md).
+
 ## Release gate
 
 1. `npm ci`

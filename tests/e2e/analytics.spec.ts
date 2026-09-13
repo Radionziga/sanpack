@@ -14,13 +14,59 @@ test.describe('first-party analytics admin', () => {
     await page.goto('/admin/analytics', { waitUntil: 'networkidle' });
     await expect(page.getByRole('heading', { name: 'Аналитика', level: 1 })).toBeVisible();
     await expect(page.getByText('Посетители', { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Воронка' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Путь до заявки' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Самые интересные товары' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'autumn-horeca' })).toBeVisible();
-    await page.getByLabel('Поверхность').selectOption('telegram_mini_app');
-    await expect(page.getByLabel('Поверхность')).toHaveValue('telegram_mini_app');
+    await expect(page.getByRole('heading', { name: 'Активность по времени' })).toBeVisible();
+    const activityChart = page.locator('[data-chart="analytics"]');
+    await expect(activityChart).toBeVisible();
+    await activityChart.locator('.recharts-area-dot').first().hover();
+    await expect(page.locator('.recharts-tooltip-wrapper')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Источники трафика' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Источники трафика' }).getByText('Instagram', { exact: true })).toBeVisible();
+    await expect(page.getByText('internal', { exact: true })).toHaveCount(0);
+    await page.getByLabel('Платформа').selectOption('telegram_mini_app');
+    await expect(page.getByLabel('Платформа')).toHaveValue('telegram_mini_app');
     await page.getByLabel('Показатель графика').selectOption('requests');
+    await page.getByLabel('Показатель графика').selectOption('pageViews');
     await page.getByLabel('Сортировка товаров').selectOption('requests');
+  });
+
+  test('multi-point, low-data and zero-data chart states stay honest and responsive', async ({ page }) => {
+    await page.route('**/api/admin/analytics?**', async (route) => {
+      const response = await route.fetch();
+      const report = await response.json();
+      if (new URL(route.request().url()).searchParams.get('locale') === 'zh') {
+        for (const metric of Object.values(report.metrics) as Array<{ value: number; previous: number; changePercent: number | null }>) {
+          metric.value = 0;
+          metric.previous = 0;
+          metric.changePercent = 0;
+        }
+        report.trend = report.trend.map((point: Record<string, string | number>) => ({
+          ...point, visitors: 0, sessions: 0, pageViews: 0, productViews: 0, cartAdds: 0, requests: 0,
+        }));
+        report.funnel = report.funnel.map((step: Record<string, string | number | null>) => ({ ...step, count: 0, overallPercent: 0, fromPreviousPercent: null }));
+        report.breakdowns = { locale: [], surface: [], device: [], source: [] };
+      }
+      await route.fulfill({ status: response.status(), contentType: 'application/json', body: JSON.stringify(report) });
+    });
+    await page.goto('/admin/analytics', { waitUntil: 'networkidle' });
+    await expect(page.locator('[data-chart="analytics"] .recharts-area')).toBeVisible();
+    await expect(page.locator('[data-chart="analytics"]')).toContainText('08.09');
+    await page.getByRole('button', { name: 'Сегодня' }).click();
+    await expect(page.locator('[data-chart="analytics"]')).toContainText(/\d{2}:00/);
+    await page.getByLabel('Показатель графика').selectOption('requests');
+    await expect(page.getByText(/Пока мало данных для устойчивой динамики/)).toBeVisible();
+    await expect(page.locator('[data-chart="analytics"] .recharts-bar')).toBeVisible();
+    await page.getByLabel('Показатель графика').selectOption('cartAdds');
+    await expect(page.getByText(/Пока мало данных для устойчивой динамики/)).toBeVisible();
+
+    await page.getByLabel('Язык').selectOption('zh');
+    await expect(page.getByText('За выбранный период активности пока нет')).toBeVisible();
+    await expect(page.locator('[data-chart="analytics"]')).toHaveCount(0);
+    await page.setViewportSize({ width: 820, height: 900 });
+    await expect(page.getByRole('heading', { name: 'Путь до заявки' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Источники трафика' })).toBeVisible();
   });
 
   test('non-owner roles do not receive the analytics surface', async ({ page, context }) => {

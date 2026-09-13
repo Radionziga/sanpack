@@ -4,7 +4,7 @@ import type {
   AnalyticsMetric,
   StoredAnalyticsEvent,
 } from '@/lib/analytics/contracts';
-import { ANALYTICS_TIMEZONE } from '@/lib/analytics/model';
+import { ANALYTICS_TIMEZONE, normalizeAcquisitionSource } from '@/lib/analytics/model';
 
 type ProductLabel = { id: string; name: string; sku: string; categoryId?: string };
 
@@ -27,7 +27,7 @@ function within(event: StoredAnalyticsEvent, from: Date, to: Date) {
 function matches(event: StoredAnalyticsEvent, filter: AnalyticsFilter) {
   if (filter.locale && event.locale !== filter.locale) return false;
   if (filter.surface && event.surface !== filter.surface) return false;
-  if (filter.source && event.attribution.source !== filter.source) return false;
+  if (filter.source && normalizeAcquisitionSource(event.attribution.source) !== filter.source) return false;
   if (filter.campaign && event.attribution.campaign !== filter.campaign) return false;
   if (filter.categoryId && event.categoryId !== filter.categoryId) return false;
   return true;
@@ -68,16 +68,22 @@ function trendBucket(date: Date, granularity: 'hour' | 'day') {
   return granularity === 'hour' ? `${day}T${part.hour}:00` : day;
 }
 
-function buildTrend(events: StoredAnalyticsEvent[], granularity: 'hour' | 'day') {
+function buildTrend(events: StoredAnalyticsEvent[], granularity: 'hour' | 'day', from: Date, to: Date) {
   const buckets = new Map<string, StoredAnalyticsEvent[]>();
   events.forEach((event) => {
     const key = trendBucket(event.occurredAt, granularity);
     buckets.set(key, [...(buckets.get(key) || []), event]);
   });
+  const stepMs = granularity === 'hour' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  for (let cursor = from.getTime(); cursor < to.getTime(); cursor += stepMs) {
+    const key = trendBucket(new Date(cursor), granularity);
+    if (!buckets.has(key)) buckets.set(key, []);
+  }
   return [...buckets.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([bucket, bucketEvents]) => ({
     bucket,
     visitors: unique(bucketEvents, 'visitorId'),
     sessions: unique(bucketEvents, 'sessionId'),
+    pageViews: bucketEvents.filter((event) => event.name === 'page_view').length,
     productViews: bucketEvents.filter((event) => event.name === 'product_view').length,
     cartAdds: bucketEvents.filter((event) => event.name === 'add_to_cart').length,
     requests: bucketEvents.filter((event) => event.name === 'request_created').length,
@@ -128,7 +134,8 @@ function topProducts(events: StoredAnalyticsEvent[], products: ProductLabel[]) {
 function campaigns(events: StoredAnalyticsEvent[]) {
   const groups = new Map<string, StoredAnalyticsEvent[]>();
   events.forEach((event) => {
-    const { source, medium = '—', campaign = '—' } = event.attribution;
+    const { medium = '—', campaign = '—' } = event.attribution;
+    const source = normalizeAcquisitionSource(event.attribution.source);
     const key = `${source}\u0000${medium}\u0000${campaign}`;
     groups.set(key, [...(groups.get(key) || []), event]);
   });
@@ -186,7 +193,7 @@ export function buildAnalyticsReport(input: {
   const previousConversion = percent(previousSummary.requests, previousSummary.visitors);
   const spanMs = input.filter.to.getTime() - input.filter.from.getTime();
   const granularity = spanMs <= 36 * 60 * 60 * 1000 ? 'hour' : 'day';
-  const sources = [...new Set(input.events.map((event) => event.attribution.source).filter(Boolean))].sort();
+  const sources = [...new Set(input.events.map((event) => normalizeAcquisitionSource(event.attribution.source)))].sort();
   const campaignOptions = [...new Set(input.events.map((event) => event.attribution.campaign).filter((value): value is string => Boolean(value)))].sort();
   const newVisitorIds = new Set(current.filter((event) => event.visitorFirstSeenAt >= input.filter.from && event.visitorFirstSeenAt < input.filter.to).map((event) => event.visitorId));
   const previousNewVisitorIds = new Set(previous.filter((event) => event.visitorFirstSeenAt >= input.filter.previousFrom && event.visitorFirstSeenAt < input.filter.previousTo).map((event) => event.visitorId));
@@ -210,7 +217,7 @@ export function buildAnalyticsReport(input: {
       requests: metric(currentSummary.requests, previousSummary.requests),
       conversionRate: metric(currentConversion, previousConversion),
     },
-    trend: buildTrend(current, granularity),
+    trend: buildTrend(current, granularity, input.filter.from, input.filter.to),
     funnel: funnel(current),
     topProducts: topProducts(current, input.products),
     campaigns: campaigns(current),
@@ -222,7 +229,7 @@ export function buildAnalyticsReport(input: {
       locale: breakdown(current, (event) => event.locale),
       surface: breakdown(current, (event) => event.surface),
       device: breakdown(current, (event) => event.deviceClass),
-      source: breakdown(current, (event) => event.attribution.source),
+      source: breakdown(current, (event) => normalizeAcquisitionSource(event.attribution.source)),
     },
     filters: { sources, campaigns: campaignOptions, categories: input.categories },
   };

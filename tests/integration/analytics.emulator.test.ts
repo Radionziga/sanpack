@@ -114,4 +114,18 @@ describe.runIf(emulatorEnabled)('analytics lifecycle with the Firestore emulator
     expect((await getAdminDb().collection('analyticsEvents').get()).size).toBe(1);
     expect((await getAdminDb().collection('analyticsSessions').doc(first!.sessionId).get()).data()?.eventCount).toBe(1);
   });
+
+  it('does not turn a same-site referrer into a new acquisition source', async () => {
+    await writeAnalyticsEvent(request(), {
+      eventId: 'emulator-analytics-event-0006',
+      name: 'page_view',
+      locale: 'ru',
+      surface: 'web',
+      pathname: '/ru/product/fixture',
+      attribution: { referrerHost: 'shop.example' },
+    });
+
+    const event = (await getAdminDb().collection('analyticsEvents').get()).docs[0]?.data();
+    expect(event?.attribution).toMatchObject({ source: 'direct', landingPathname: '/ru/product/fixture' });
+  });
 });

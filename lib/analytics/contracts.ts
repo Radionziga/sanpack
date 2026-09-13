@@ -159,7 +159,7 @@ export interface AnalyticsDashboardReport {
     requests: AnalyticsMetric;
     conversionRate: AnalyticsMetric;
   };
-  trend: Array<{ bucket: string; visitors: number; sessions: number; productViews: number; cartAdds: number; requests: number }>;
+  trend: Array<{ bucket: string; visitors: number; sessions: number; pageViews: number; productViews: number; cartAdds: number; requests: number }>;
   funnel: Array<{ key: 'visitors' | 'product_viewers' | 'cart_adders' | 'request_starters' | 'request_creators'; count: number; fromPreviousPercent: number | null; overallPercent: number }>;
   topProducts: Array<{ productId: string; name: string; sku: string; categoryId?: string; views: number; visitors: number; cartAdds: number; requests: number; viewToCartPercent: number; viewToRequestPercent: number }>;
   campaigns: Array<{ source: string; medium: string; campaign: string; sessions: number; productViews: number; cartAdds: number; requests: number; conversionPercent: number }>;

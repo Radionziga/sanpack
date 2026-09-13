@@ -2,7 +2,7 @@
 
 ## Status
 
-Release candidate implemented. Final production identity/revision and collection start time are recorded after the controlled rollout; no historical analytics is fabricated.
+**SANPACK FIRST-PARTY ANALYTICS LIVE.** Analytics checkpoint `2ec8a0ae989fff64d0dcfb95329b1d2d7b453f42` and the follow-up category-curation UX patch `c149d361bf47b9a76152a3755d5b0cf2a66a53a5` are live on App Hosting revision `sanpack-build-2026-09-13-004` with 100% traffic. Production collection began with the first accepted event at **2026-09-13 16:59:28 UTC / 21:59:28 Asia/Tashkent**. No history before that timestamp is inferred or backfilled.
 
 ## Analytics architecture
 
@@ -45,6 +45,14 @@ The first event of a session captures allowlisted UTM values, normalized landing
 
 `/admin/analytics` uses the existing Admin shell and is initially available only to `super_admin`. It provides Today, Yesterday, 7/30/90 days and custom dates; locale/surface/source/campaign/category filters; current/previous KPI comparison; switchable trend chart; operational funnel; traffic sources; sortable products; campaign performance; top pages; no-result searches; and locale/device/surface breakdowns. Loading, retryable error, empty/pre-launch and truncated-query states are distinct.
 
+### Dashboard presentation patch — 2026-09-14
+
+- The activity prototype was replaced by a responsive Recharts 3 area chart with hour/day axes, grid, tooltip and accessibility layer. Sparse one-bucket data uses an honest bar state; zero and low-data periods have explicit messages instead of a decorative diagonal.
+- Filters and metric selection are compact, `Поверхность` is now the owner-facing `Платформа`, start-date copy is human-readable, and KPI comparisons distinguish increase, decrease, no change and insufficient comparison data.
+- Funnel and traffic sources use proportional horizontal bars; Product and campaign tables use business labels and preserve useful empty states. Raw technical values such as `web`, `telegram_mini_app`, `paid_social` and `internal` are not presented to the owner.
+- Acquisition remains fixed at session landing. Same-site navigation cannot become a referral source; legacy `internal` source records are presentation-normalized into `direct` without rewriting historical documents. The order of trust is explicit UTM, external referrer, Telegram Mini App, then direct.
+- The underlying privacy, storage, server-confirmed conversion, TTL and authorization contracts are unchanged.
+
 Funnel is an operational approximation over distinct visitors per event step: Visitors → Product viewers → Cart adds → Request starts → Requests created. It does not claim strict ordered-path causality.
 
 Product table shows current Product name/SKU/category plus views, unique visitors, cart additions, requests, view-to-cart and view-to-request conversion. No raw visitor list is available.
@@ -64,14 +72,27 @@ Public ingestion uses same-site origin validation, strict discriminated schemas,
 
 ## Related UX corrections
 
-- Category Admin now exposes the two real presentation slots: sidebar navigation icon and Home bento cover. Existing code artwork remains an explicit previewed fallback; no catalog migration was made.
+- Category Admin now exposes the two real presentation slots: sidebar navigation icon and Home bento cover. It also shows whether every category currently appears on Home and its position, and exposes explicit “Показывать карточку на главной” / position controls. Existing code artwork remains an explicit previewed fallback; no catalog migration or production category mutation was made.
 - Request validation now explains failed submission and scrolls/focuses the first invalid field, including delivery date/window.
 
 ## Tests
 
 Targeted coverage includes public schema/PII rejection, path/search sanitization, attribution, visitor continuation/expiry, event dedupe, exact uniques, ranges/comparisons, funnel/products/campaign/search aggregation, public conversion rejection, one server conversion across concurrent/idempotent Request handler calls, no conversion on test orders, Admin capability/API denial, direct Firestore denial, cross-origin rejection, storefront/UTM/Product/cart/request instrumentation, Mini App surface, responsive Admin dashboard, category image fallback UX, and checkout validation focus/scroll.
 
-Final command counts/results belong to the release report after the final clean-tree gate; earlier counts are not reused.
+Final local gate on the analytics checkpoint: 67 unit files passed and 5 skipped; 496 tests passed and 16 skipped. Typecheck, lint, production build (96 static pages), `git diff --check`, 132 default browser tests with 4 intentional skips, 83 taxonomy browser tests with 1 intentional skip, 28 Firestore boundary checks, 7 Storage checks and 16 auth/order/analytics emulator integrations passed. The category follow-up additionally passed its 5-test Analytics/Admin browser file, typecheck, lint and diff check. GitHub Actions run `34770879026` then passed the complete quality, emulator, default E2E and taxonomy gates on the exact final source.
+
+`npm audit --omit=dev` reported 6 moderate, 0 high and 0 critical production advisories, all in transitive Google/Firebase dependencies. The suggested update changes major transitive packages and was intentionally not introduced after the verified gate; it remains routine dependency maintenance, not an observed production failure.
+
+## Production deployment and smoke
+
+- Final source: `c149d361bf47b9a76152a3755d5b0cf2a66a53a5`; build `build-2026-09-13-004`; rollout `rollout-2026-09-13-004` `SUCCEEDED`; Cloud Run traffic 100% to `sanpack-build-2026-09-13-004`.
+- Immediate rollback target: `sanpack-build-2026-09-13-003`, source `2ec8a0ae989fff64d0dcfb95329b1d2d7b453f42`; the older pre-analytics fallback remains `sanpack-build-2026-09-13-002`, source `d0a048dde44de0a8ada3fa9df414c760d5c98e67`.
+- Scoped TTL policies are `ACTIVE` for `analyticsEvents.expiresAt`, `analyticsSessions.expiresAt` and `analyticsVisitors.expiresAt`; existing `customerSessions.expiresAt` and `rateLimits.expiresAt` remain `ACTIVE`.
+- Safe smoke wrote only six engagement events (`page_view`, `catalog_view`, `product_view`, `search`, `add_to_cart`, `link_hub_click`) under campaign `first-party-analytics-launch`. One deliberately invalid Link Hub payload was rejected with 400 as designed. No Request or Telegram notification was created for smoke.
+- Owner `/admin/analytics` rendered Today/7-day ranges, exact KPIs, funnel, products, pages, sources and the smoke campaign. The response/UI exposed no anonymous IDs or customer PII. A server-confirmed conversion from subsequent normal live traffic appeared independently; it was not manufactured by rollout smoke.
+- RU/UZ/EN/ZH Home, Catalog, a real Product, Request, Link Hub and health returned 200 on the final revision. Category Admin showed `Микрозелень` as “Не показывается на главной” and presented the new explicit switch/position controls without changing it.
+- Post-cutover logs contained 0 severity-error entries and 0 HTTP 4xx/5xx entries during the final observation window. Before the patch cutover, the sole 400 was the intentional malformed analytics probe; no 429/500/503 spike or Firestore/runtime error was observed.
+- Firestore/Storage rules, IAM, secrets, catalog/taxonomy, customer and order data were not changed. The only production configuration changes were the three scoped analytics TTL policies.
 
 ## Deployment prerequisites and rollback
 

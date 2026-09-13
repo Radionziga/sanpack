@@ -45,16 +45,27 @@ function bounded(value: string | undefined, max: number) {
   return normalized || undefined;
 }
 
-export function classifyTrafficSource(input: { utmSource?: string; referrerHost?: string; surface?: string }) {
+function normalizedHost(value: string | undefined) {
+  return bounded(value, 160)?.toLocaleLowerCase().replace(/^www\./, '').replace(/:\d+$/, '');
+}
+
+export function normalizeAcquisitionSource(value: string | undefined) {
+  const source = bounded(value, 80)?.toLocaleLowerCase();
+  return !source || source === 'internal' ? 'direct' : source;
+}
+
+export function classifyTrafficSource(input: { utmSource?: string; referrerHost?: string; surface?: string; currentHost?: string }) {
   const utm = bounded(input.utmSource, 80)?.toLocaleLowerCase();
-  if (utm) return utm;
+  if (utm && utm !== 'internal') return utm;
+  const host = normalizedHost(input.referrerHost);
+  const currentHost = normalizedHost(input.currentHost);
+  const isExternal = Boolean(host && (!currentHost || host !== currentHost));
+  if (isExternal && /telegram|t\.me$/.test(host!)) return 'telegram';
+  if (isExternal && /instagram|facebook|fb\.com$/.test(host!)) return 'social';
+  if (isExternal && /google|bing|yandex|duckduckgo/.test(host!)) return 'search';
+  if (isExternal) return 'referral';
   if (input.surface === 'telegram_mini_app') return 'telegram';
-  const host = bounded(input.referrerHost, 160)?.toLocaleLowerCase().replace(/^www\./, '');
-  if (!host) return 'direct';
-  if (/telegram|t\.me$/.test(host)) return 'telegram';
-  if (/instagram|facebook|fb\.com$/.test(host)) return 'social';
-  if (/google|bing|yandex|duckduckgo/.test(host)) return 'search';
-  return 'referral';
+  return 'direct';
 }
 
 export function normalizeAttribution(input: {
@@ -66,6 +77,7 @@ export function normalizeAttribution(input: {
   referrerHost?: string;
   landingPathname: string;
   surface: string;
+  currentHost?: string;
 }): AnalyticsAttribution {
   const source = classifyTrafficSource(input);
   return {
