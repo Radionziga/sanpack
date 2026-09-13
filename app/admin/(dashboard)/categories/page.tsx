@@ -13,7 +13,7 @@ import type { Category, Product } from '@/types';
 import { getCategoryDepth, getCategoryLabel, getCategoryPath, getOrderedCategories, getProductsInCategoryScope, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
 import { useUnsavedNavigationGuard } from '@/lib/admin/useUnsavedNavigationGuard';
 import { getCategoryArtworkSource } from '@/lib/catalog/categoryArtwork';
-import { getPopularCategoryArtworkSource } from '@/lib/catalog/popularCategoryArtwork';
+import { getPopularCategoryArtworkSource, getStorefrontCategoryGroups } from '@/lib/catalog/popularCategoryArtwork';
 
 const newCategory: Partial<Category> = {
   titleRu: '',
@@ -219,6 +219,16 @@ export default function AdminCategoriesPage() {
     category.id,
     getProductsInCategoryScope(products, categories, category.id).length,
   ])), [products, categories]);
+  const homeShowcaseCategoryIds = useMemo(() => new Set(
+    getStorefrontCategoryGroups(categories).flatMap(({ categories: showcaseCategories }) => (
+      showcaseCategories.map((category) => category.id)
+    )),
+  ), [categories]);
+  const homeShowcaseEligibleIds = useMemo(() => new Set(
+    getStorefrontCategoryGroups(categories, Number.MAX_SAFE_INTEGER).flatMap(({ categories: showcaseCategories }) => (
+      showcaseCategories.map((category) => category.id)
+    )),
+  ), [categories]);
   const editingIsGroup = !editingCategory.parentId;
   const editingIsSubcategory = Boolean(editingCategory.parentId
     && getCategoryDepth(editingCategory.parentId, categories) === 1);
@@ -288,6 +298,15 @@ export default function AdminCategoriesPage() {
                         {getCategoryDepth(category.id, categories) === 2 ? 'подкатегория' : category.parentId ? 'категория' : 'группа'} · /{category.slug}
                       </span>
                       <span className="mt-1 block text-[10px] text-[var(--sp-ink-tertiary)]">Товаров в разделе: {productCountsByCategory.get(category.id) || 0}</span>
+                      {category.parentId ? (
+                        <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${homeShowcaseCategoryIds.has(category.id) ? 'bg-emerald-500/10 text-emerald-700' : 'bg-[var(--sp-surface-inset)] text-[var(--sp-ink-tertiary)]'}`}>
+                          {homeShowcaseCategoryIds.has(category.id)
+                            ? `На главной · позиция ${category.featuredSortOrder ?? category.sortOrder}`
+                            : homeShowcaseEligibleIds.has(category.id)
+                              ? 'На главной · вне первых 12'
+                              : 'Не показывается на главной'}
+                        </span>
+                      ) : null}
                     </button>
                     <button type="button" onClick={() => selectCategory(category)} aria-label={`Редактировать ${category.titleRu}`} className="admin-icon-button size-9">
                       <Edit3 className="size-4" aria-hidden="true" />
@@ -414,13 +433,14 @@ export default function AdminCategoriesPage() {
               <input type="number" min="0" value={editingCategory.sortOrder ?? 0} onChange={(event) => setEditingCategory((current) => ({ ...current, sortOrder: Number(event.target.value) }))} className="admin-control mt-1.5 text-sm font-normal" />
             </label>
           </div>
-          {!editingIsGroup ? <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {!editingIsGroup ? <div className="mt-4 grid gap-4 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-4 sm:grid-cols-2">
             <label className="admin-panel-muted flex cursor-pointer items-center justify-between gap-3 p-3">
-              <span><strong className="block text-xs text-[var(--sp-ink)]">Показывать в bento-блоке группы</strong><span className="mt-1 block text-[11px] text-[var(--sp-ink-tertiary)]">Подкатегории включаются только явно. Обложка необязательна; обычная навигация работает без неё.</span></span>
-              <input type="checkbox" checked={editingCategory.featured ?? false} onChange={(event) => setEditingCategory((current) => ({ ...current, featured: event.target.checked }))} className="size-4 accent-[var(--sp-brand)]" />
+              <span><strong className="block text-xs text-[var(--sp-ink)]">Показывать карточку на главной</strong><span className="mt-1 block text-[11px] text-[var(--sp-ink-tertiary)]">Определяет, появится ли эта категория среди больших карточек внутри своей группы. Боковая навигация от этой настройки не зависит.</span></span>
+              <input type="checkbox" checked={editingCategory.featured ?? (editingCategory.id ? homeShowcaseEligibleIds.has(editingCategory.id) : false)} onChange={(event) => setEditingCategory((current) => ({ ...current, featured: event.target.checked }))} className="size-4 accent-[var(--sp-brand)]" />
             </label>
-            <label className="admin-field-label">Порядок в bento-блоке
+            <label className="admin-field-label">Позиция карточки на главной
               <input type="number" min="0" value={editingCategory.featuredSortOrder ?? editingCategory.sortOrder ?? 0} onChange={(event) => setEditingCategory((current) => ({ ...current, featuredSortOrder: Number(event.target.value) }))} className="admin-control mt-1.5 text-sm font-normal" />
+              <span className="mt-1 block font-normal text-[var(--sp-ink-tertiary)]">Меньшее число показывает карточку раньше. В каждой группе на главной выводятся первые 12 включённых карточек.</span>
             </label>
           </div> : null}
           </section>

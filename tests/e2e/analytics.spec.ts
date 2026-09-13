@@ -67,9 +67,13 @@ test('Telegram Mini App surface is classified without customer identity', async 
 
 test('category editor explains independent navigation and home artwork fallbacks', async ({ page }) => {
   await page.goto('/admin/categories', { waitUntil: 'networkidle' });
+  await expect(page.getByText(/На главной · позиция/).first()).toBeVisible();
+  await expect(page.getByText('Не показывается на главной', { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: /Куриные яйца/ }).first().click();
   await expect(page.getByText('Иконка для боковой навигации')).toBeVisible();
   await expect(page.getByText('Обложка карточки на главной')).toBeVisible();
   await expect(page.getByText(/резервная иконка/)).toBeVisible();
   await expect(page.getByText(/резервная обложка/)).toBeVisible();
+  await expect(page.getByText('Показывать карточку на главной', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Позиция карточки на главной')).toBeVisible();
 });
