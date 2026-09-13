@@ -9,6 +9,7 @@ import { formatMoney } from '@/lib/catalog/productPresentation';
 import { reconcileCartItems, type CartReconciliationIssue } from '@/lib/orders/cartReconciliation';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import type { RequestItem } from '@/types';
+import { trackAnalytics } from '@/lib/analytics/client';
 
 const copyByLanguage = {
   ru: {
@@ -74,6 +75,7 @@ export function RepeatRequestPanel({ items }: { items: RequestItem[] }) {
     try {
       const result = reconcileCartItems(items, await PublicRepository.getProducts());
       setReconciliation(result);
+      trackAnalytics(language, { name: 'repeat_composition', lineCount: items.length, acceptedLineCount: result.items.length, changedLineCount: result.issues.length });
       setState('ready');
     } catch {
       setState('error');

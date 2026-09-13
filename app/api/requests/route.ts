@@ -16,6 +16,7 @@ import { verifyTelegramInitData } from '@/lib/telegram/miniApp';
 import { logError } from '@/lib/observability/logger';
 import { projectCustomerOrder } from '@/lib/orders/customerOrderProjection';
 import { upsertTelegramCustomer, type ResolvedTelegramCustomer } from '@/lib/customer/telegramIdentity';
+import { applyAnalyticsCookies, writeRequestConversion } from '@/lib/analytics/server';
 
 export const runtime = 'nodejs';
 
@@ -139,7 +140,13 @@ export async function POST(request: Request) {
         if (!rateLimit.allowed) throw new RequestRateLimitError(rateLimit.retryAfter);
       },
     });
-    return NextResponse.json(result.receipt, { status: result.created ? 201 : 200 });
+    const analyticsContext = await writeRequestConversion(request, result.order).catch((error) => {
+      logError('analytics.request_conversion_failed', error, { requestId: result.order.id });
+      return null;
+    });
+    const response = NextResponse.json(result.receipt, { status: result.created ? 201 : 200 });
+    if (analyticsContext) applyAnalyticsCookies(response, analyticsContext);
+    return response;
   } catch (error) {
     if (error instanceof RequestRateLimitError) {
       return NextResponse.json(

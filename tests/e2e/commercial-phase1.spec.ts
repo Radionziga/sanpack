@@ -73,6 +73,29 @@ test.describe('commercial UX phase 1', () => {
     expect(panelBox?.y ?? 0).toBeGreaterThanOrEqual((headerBox?.y ?? 0) + (headerBox?.height ?? 0) + 4);
   });
 
+  test('invalid request submission moves focus and viewport to the first missing delivery field', async ({ page }) => {
+    await seedMixedCart(page);
+    await page.goto('/ru/request', { waitUntil: 'networkidle' });
+    const form = page.locator('#request-checkout-form');
+    await form.getByLabel('Имя').fill('Тестовый клиент');
+    await form.getByLabel('Телефон').fill('+998 90 123 45 67');
+    const address = form.getByLabel('Адрес доставки');
+    await address.fill('Ташкент, тестовый адрес');
+    await address.blur();
+
+    await page.getByRole('button', { name: 'Отправить заявку' }).filter({ visible: true }).click();
+
+    await expect(form.getByRole('alert')).toContainText('Проверьте выделенные поля');
+    await expect(form.getByText('Выберите дату доставки')).toBeVisible();
+    const firstDate = form.locator('input[name="deliveryDate"] + div button').first();
+    await expect(firstDate).toBeFocused();
+    await expect.poll(() => firstDate.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom <= window.innerHeight;
+    })).toBe(true);
+    await expect(page).toHaveURL(/\/ru\/request$/);
+  });
+
   test('package minimum, manual quantity, step normalization, and wholesale amount stay coherent', async ({ page, isMobile }) => {
     await page.goto('/ru/product/fixture-packaged', { waitUntil: 'networkidle' });
     const variant = page.getByRole('button', { name: /800 мл/ }).filter({ visible: true });

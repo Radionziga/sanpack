@@ -12,6 +12,8 @@ import { AdminRepository } from '@/lib/repositories/adminRepository';
 import type { Category, Product } from '@/types';
 import { getCategoryDepth, getCategoryLabel, getCategoryPath, getOrderedCategories, getProductsInCategoryScope, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
 import { useUnsavedNavigationGuard } from '@/lib/admin/useUnsavedNavigationGuard';
+import { getCategoryArtworkSource } from '@/lib/catalog/categoryArtwork';
+import { getPopularCategoryArtworkSource } from '@/lib/catalog/popularCategoryArtwork';
 
 const newCategory: Partial<Category> = {
   titleRu: '',
@@ -271,8 +273,13 @@ export default function AdminCategoriesPage() {
               {orderedCategories.map((category) => (
                 <li key={category.id} style={{ paddingLeft: (getCategoryDepth(category.id, categories) ?? 0) * 16 }}>
                   <div className={`flex items-center gap-3 px-3 py-3 ${editingCategory.id === category.id ? 'bg-[var(--sp-surface-inset)]' : ''}`}>
-                    <div className="relative size-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)]">
-                      {category.navigationImage || category.image ? <Image src={category.navigationImage || category.image!} alt="" fill sizes="48px" className="object-contain" /> : <ImagePlus className="absolute inset-0 m-auto size-4 text-[var(--sp-ink-muted)]" />}
+                    <div className="grid shrink-0 grid-cols-2 gap-1" aria-label="Изображения категории">
+                      {([getCategoryArtworkSource(category), getPopularCategoryArtworkSource(category)] as const).map((artwork, index) => (
+                        <div key={index} title={index === 0 ? 'Иконка навигации' : 'Обложка главной'} className={`relative size-10 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] ${index === 1 ? 'hidden min-[340px]:block' : ''}`}>
+                          {artwork.url ? <Image src={artwork.url} alt="" fill sizes="40px" className="object-contain" /> : <ImagePlus className="absolute inset-0 m-auto size-4 text-[var(--sp-ink-muted)]" />}
+                          {artwork.source !== 'managed' && artwork.source !== 'none' ? <span className="absolute bottom-0 right-0 rounded-tl bg-amber-500 px-1 text-[7px] font-bold text-white">R</span> : null}
+                        </div>
+                      ))}
                     </div>
                     <button type="button" onClick={() => selectCategory(category)} className="min-w-0 flex-1 text-left">
                       <span className="line-clamp-1 text-xs font-bold text-[var(--sp-ink)]">{category.titleRu}</span>
@@ -371,7 +378,7 @@ export default function AdminCategoriesPage() {
             <p className="admin-section-description">Навигационная иконка и большая bento-обложка управляются независимо. Старое поле image остаётся резервным для существующих документов.</p>
           </div>
           <div className="mt-4 grid gap-4 xl:grid-cols-2">
-          <MediaUploadField kind="category" label="Иконка для навигации" recommendation="800×600 px · 4:3" value={editingCategory.navigationImage || editingCategory.image} optional onUploaded={(media) => {
+          <MediaUploadField kind="category" label="Иконка для боковой навигации" recommendation="800×600 px · 4:3" value={editingCategory.navigationImage} fallbackValue={editingCategory.id ? getCategoryArtworkSource(editingCategory as Category).url : editingCategory.image} fallbackLabel="На витрине сейчас показывается встроенная или старая резервная иконка. Загрузите файл, чтобы заменить её и управлять ею из Admin." optional onUploaded={(media) => {
             if (editingCategory.navigationImagePath && editingCategory.navigationImagePath !== persistedCategory?.navigationImagePath) {
               void deleteUploadedMedia(editingCategory.navigationImagePath).catch(() => undefined);
             }
@@ -382,7 +389,7 @@ export default function AdminCategoriesPage() {
             }
             setEditingCategory((current) => ({ ...current, navigationImage: undefined, navigationImagePath: undefined }));
           }} />
-          <MediaUploadField kind="category-card" label="Обложка bento-карточки" recommendation="1200×720 px · 5:3" value={editingCategory.cardImage} optional onUploaded={(media) => {
+          <MediaUploadField kind="category-card" label="Обложка карточки на главной" recommendation="1200×720 px · 5:3" value={editingCategory.cardImage} fallbackValue={editingCategory.id ? getPopularCategoryArtworkSource(editingCategory as Category).url : editingCategory.banner || editingCategory.image} fallbackLabel="На главной сейчас показывается встроенная или старая резервная обложка. Загрузите файл, чтобы заменить её и управлять ею из Admin." optional onUploaded={(media) => {
             if (editingCategory.cardImagePath && editingCategory.cardImagePath !== persistedCategory?.cardImagePath) {
               void deleteUploadedMedia(editingCategory.cardImagePath).catch(() => undefined);
             }

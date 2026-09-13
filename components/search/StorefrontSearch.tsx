@@ -10,6 +10,8 @@ import { ProductCard } from '@/components/catalog/ProductCard';
 import { CatalogListing } from '@/components/catalog/CatalogListing';
 import type { Attribute, Category, Product } from '@/types';
 import { getCategoryLabel, getCategoryPath, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
+import { searchAndRankProducts } from '@/lib/catalog/productSearch';
+import { trackAnalytics } from '@/lib/analytics/client';
 
 const copyByLanguage = {
   ru: {
@@ -121,6 +123,10 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
     () => products.slice().sort((left, right) => right.sortOrder - left.sortOrder).slice(0, 6),
     [products],
   );
+  useEffect(() => {
+    if (loadState !== 'ready' || !initialQuery.trim()) return;
+    trackAnalytics(language, { name: 'search', query: initialQuery, resultCount: searchAndRankProducts(products, initialQuery, language, categories).length });
+  }, [categories, initialQuery, language, loadState, products]);
 
   function runSearch(value: string) {
     const normalized = value.trim();

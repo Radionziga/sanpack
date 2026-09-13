@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useSiteSettings } from '@/context/SiteSettingsContext';
 import { contactPhoneHref } from '@/lib/settings/contacts';
 import { useRequestCart } from '@/context/RequestCartContext';
+import { trackAnalytics } from '@/lib/analytics/client';
 
 const contactCopy = {
   ru: { open: 'Связаться', close: 'Закрыть контакты', title: (name: string) => `Связаться с ${name}`, phone: 'Позвонить' },
@@ -58,14 +59,14 @@ export function FloatingContactMenu() {
           </div>
           <div className="grid gap-2">
             {phones.map((phone) => (
-              <a key={phone} href={contactPhoneHref(phone)} className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 text-xs font-semibold text-[var(--sp-ink)] hover:text-[var(--sp-brand)]">
+              <a key={phone} href={contactPhoneHref(phone)} onClick={() => trackAnalytics(language, { name: 'contact_click', channel: 'phone' })} className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 text-xs font-semibold text-[var(--sp-ink)] hover:text-[var(--sp-brand)]">
                 <Phone className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />
                 <span className="min-w-0 flex-1">{copy.phone}</span>
                 <span className="tabular-nums text-[var(--sp-ink-secondary)]">{phone}</span>
               </a>
             ))}
-            {contacts.telegram ? <a href={contacts.telegram} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 text-xs font-semibold text-[var(--sp-ink)] hover:text-[var(--sp-brand)]"><Send className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />Telegram</a> : null}
-            {contacts.whatsapp ? <a href={contacts.whatsapp} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 text-xs font-semibold text-[var(--sp-ink)] hover:text-[var(--sp-brand)]"><MessageCircle className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />WhatsApp</a> : null}
+            {contacts.telegram ? <a href={contacts.telegram} onClick={() => trackAnalytics(language, { name: 'contact_click', channel: 'telegram' })} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 text-xs font-semibold text-[var(--sp-ink)] hover:text-[var(--sp-brand)]"><Send className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />Telegram</a> : null}
+            {contacts.whatsapp ? <a href={contacts.whatsapp} onClick={() => trackAnalytics(language, { name: 'contact_click', channel: 'whatsapp' })} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-3 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 text-xs font-semibold text-[var(--sp-ink)] hover:text-[var(--sp-brand)]"><MessageCircle className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />WhatsApp</a> : null}
           </div>
         </div>
       ) : null}

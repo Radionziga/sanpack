@@ -11,6 +11,7 @@ import {
   ImageIcon,
   Images,
   LayoutDashboard,
+  ChartNoAxesCombined,
   Link2,
   LogOut,
   Package,
@@ -32,6 +33,7 @@ const navigation = [
     label: 'Работа',
     items: [
       { label: 'Обзор', href: '/admin', icon: LayoutDashboard },
+      { label: 'Аналитика', href: '/admin/analytics', icon: ChartNoAxesCombined },
       { label: 'Заявки B2B', href: '/admin/requests', icon: FileSpreadsheet },
     ],
   },

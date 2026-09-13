@@ -9,6 +9,8 @@ import {
   isProductOrderable,
 } from '@/lib/commerce/productOffer';
 import { getSeedProductTranslation } from '@/lib/catalog/seedProductLocalization';
+import { useLanguage } from '@/context/LanguageContext';
+import { trackAnalytics } from '@/lib/analytics/client';
 
 interface RequestCartContextType {
   items: RequestItem[];
@@ -65,6 +67,7 @@ function readStoredItems(): RequestItem[] {
 }
 
 export function RequestCartProvider({ children }: { children: React.ReactNode }) {
+  const { language } = useLanguage();
   const [items, setItems] = useState<RequestItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -88,6 +91,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
   ) => {
     if (product.variants?.length && !variant) return;
     if (!isProductOrderable(product, variant)) return;
+    trackAnalytics(language, { name: 'add_to_cart', productId: product.id, variantId: variant?.id, categoryId: product.categoryId, quantity, priceMode: getProductPriceMode(product, variant) });
     setItems((prev) => {
       const existingIdx = prev.findIndex(
         (i) => i.productId === product.id && i.variantId === (variant?.id || undefined)
@@ -144,6 +148,8 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
   };
 
   const removeItem = (productId: string, variantId?: string) => {
+    const item = items.find((candidate) => candidate.productId === productId && candidate.variantId === variantId);
+    if (item) trackAnalytics(language, { name: 'remove_from_cart', productId, variantId, categoryId: item.product?.categoryId, quantity: item.quantity, priceMode: item.priceMode });
     setItems((prev) =>
       prev.filter((i) => !(i.productId === productId && i.variantId === variantId))
     );

@@ -18,12 +18,12 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { GET, POST } from '@/app/api/requests/route';
 
 const emulatorEnabled = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
-const collections = ['products', 'requests', 'requestIdempotency', 'rateLimits'];
+const collections = ['products', 'requests', 'requestIdempotency', 'rateLimits', 'analyticsEvents', 'analyticsSessions', 'analyticsVisitors'];
 
 function checkoutRequest(idempotencyKey: string) {
   return new Request('https://shop.example/api/requests', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'idempotency-key': idempotencyKey },
+    headers: { 'content-type': 'application/json', 'idempotency-key': idempotencyKey, 'user-agent': 'SANPACK emulator browser' },
     body: JSON.stringify({
       contactName: 'Emulator customer',
       phone: '+998901234567',
@@ -73,6 +73,11 @@ describe.runIf(emulatorEnabled)('request handler with the Firestore emulator', (
     expect(receipts[0]).toEqual(receipts[1]);
     expect(receipts[0]).not.toHaveProperty('auditTrail');
     expect(receipts[0]).not.toHaveProperty('notification');
+    const conversions = await getAdminDb().collection('analyticsEvents').where('name', '==', 'request_created').get();
+    expect(conversions.size).toBe(1);
+    expect(conversions.docs[0].data()).toMatchObject({ lineCount: 1, productIds: ['product-1'] });
+    expect(conversions.docs[0].data()).not.toHaveProperty('phone');
+    expect(conversions.docs[0].data()).not.toHaveProperty('customerUid');
   });
 
   it('replays the saved receipt after mutable catalog state changes', async () => {
@@ -87,6 +92,7 @@ describe.runIf(emulatorEnabled)('request handler with the Firestore emulator', (
     expect(await replay.json()).toEqual(receipt);
     expect(notification).toHaveBeenCalledTimes(1);
     expect((await getAdminDb().collection('requests').get()).size).toBe(1);
+    expect((await getAdminDb().collection('analyticsEvents').where('name', '==', 'request_created').get()).size).toBe(1);
   });
 
   it('returns only the signed customer history and never phone-matches another identity', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCategoryArtwork } from '@/lib/catalog/categoryArtwork';
+import { getCategoryArtwork, getCategoryArtworkSource } from '@/lib/catalog/categoryArtwork';
 import type { Category } from '@/types';
 
 function category(overrides: Partial<Category>): Category {
@@ -35,5 +35,8 @@ describe('catalog navigation artwork', () => {
       id: 'new-category',
       image: '/catalog/categories/new-category.webp',
     }))).toBe('/catalog/categories/new-category.webp');
+  });
+  it('exposes the effective source so Admin can explain built-in fallbacks', () => {
+    expect(getCategoryArtworkSource(category({ id: 'cat-beef' }))).toMatchObject({ source: 'built_in' });
   });
 });

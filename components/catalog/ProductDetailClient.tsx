@@ -54,6 +54,7 @@ import { getCategoryPath, resolveProductCategory } from '@/lib/catalog/categoryH
 import { CatalogBreadcrumbs } from '@/components/catalog/CategoryNavigation';
 import { QuantityControl } from '@/components/commerce/QuantityControl';
 import { getProductCommercialDetails } from '@/lib/commerce/productCommercial';
+import { trackAnalytics } from '@/lib/analytics/client';
 
 function MobileProductDescription({
   text,
@@ -260,6 +261,10 @@ export function ProductDetailClient({
   const [isQuantityEditing, setIsQuantityEditing] = useState(false);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'not-found' | 'error'>('ready');
   const [loadVersion, setLoadVersion] = useState(0);
+
+  useEffect(() => {
+    trackAnalytics(language, { name: 'product_view', productId: initialProduct.id, slug: initialProduct.slug, categoryId: initialProduct.categoryId, variantId: initialVariantId, priceMode: initialProduct.priceMode });
+  }, [initialProduct.id, initialProduct.slug, initialProduct.categoryId, initialProduct.priceMode, initialVariantId, language]);
 
   useEffect(() => {
     if (loadVersion === 0) return;

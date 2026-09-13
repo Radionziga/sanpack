@@ -30,8 +30,13 @@ const categoryArtworkById: Record<string, string> = {
   'cat-vegetables': '/catalog/category-icons-v3/vegetables.webp',
 };
 
+export function getCategoryArtworkSource(category: Pick<Category, 'id' | 'navigationImage' | 'image'>) {
+  if (category.navigationImage) return { url: category.navigationImage, source: 'managed' as const };
+  if (categoryArtworkById[category.id]) return { url: categoryArtworkById[category.id], source: 'built_in' as const };
+  if (category.image) return { url: category.image, source: 'legacy' as const };
+  return { url: undefined, source: 'none' as const };
+}
+
 export function getCategoryArtwork(category: Category) {
-  return category.navigationImage
-    || categoryArtworkById[category.id]
-    || category.image;
+  return getCategoryArtworkSource(category).url;
 }

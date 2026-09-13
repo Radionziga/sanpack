@@ -199,6 +199,25 @@ smoked and the rollback window has passed.
 - Owner lockout: do not weaken auth. Correct the explicit `admins/{uid}` grant using the reviewed script.
 
 
+## First-party analytics operations
+
+- Collections are server/Admin-SDK only: `analyticsEvents`, `analyticsSessions`, `analyticsVisitors`. Do not relax Firestore rules or expose raw events to the dashboard.
+- Apply TTL only through scoped field-policy commands for `expiresAt`: 190-day expiry is written on events/sessions and 400-day expiry on visitors. Verify each production policy becomes `ACTIVE` before calling rollout complete. Do not use an unscoped Firebase deploy or bulk-delete analytics records.
+- `/api/analytics/events` accepts only the typed engagement allowlist, enforces same-site origin, 8 KiB body limit, event/session caps and distributed rate limits. Expected malformed probes/429 responses are not incidents; sustained ingestion 503 or Firestore transaction failures are.
+- `/api/admin/analytics` requires `analytics.read`; current matrix grants it only to `super_admin`. It returns aggregate DTOs, never anonymous IDs or raw events. Dashboard failure must remain an error/retry state, not fabricated zeroes.
+- Production smoke may generate ordinary page/product/search/cart/link-click events. Do not create a real Request merely to manufacture a conversion. `request_created` is proven through handler/emulator integration until a genuine customer request occurs.
+- Analytics launch time is the timestamp when the new App Hosting revision receives production traffic. Do not backfill visits from logs. Record the exact revision, traffic cutover and first event time in the handoff after rollout.
+- Rollback is application-only. The old revision ignores the additive analytics collections and TTL policies; do not roll back Firestore/Storage rules. Retained anonymous analytics documents may expire normally.
+
+Read-only verification:
+
+```bash
+gcloud firestore fields ttls list --project stamply-4df8a --database='(default)'
+curl -fsS https://sanpack.uz/api/health
+```
+
+Monitor App Hosting logs for `analytics.ingestion_failed`, `analytics.report_failed`, unexpected 5xx/429 spikes and Firestore permission/index errors. Never log cookie values, event documents or search text during operational checks.
+
 ## Release gate
 
 1. `npm ci`

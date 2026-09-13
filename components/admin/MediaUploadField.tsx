@@ -66,6 +66,8 @@ export function MediaUploadField({
   label,
   recommendation,
   value,
+  fallbackValue,
+  fallbackLabel,
   onUploaded,
   onClear,
   optional = false,
@@ -75,6 +77,8 @@ export function MediaUploadField({
   label: string;
   recommendation: string;
   value?: string;
+  fallbackValue?: string;
+  fallbackLabel?: string;
   onUploaded: (media: UploadedMedia) => void;
   onClear?: () => void;
   optional?: boolean;
@@ -204,8 +208,8 @@ export function MediaUploadField({
       ) : (
         <div className="grid gap-3 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] p-3 sm:grid-cols-[148px_1fr]">
           <div className={`relative overflow-hidden rounded-[var(--sp-radius-control-inner)] border border-[var(--sp-line)] bg-[var(--sp-surface)] ${previewAspect}`}>
-          {value ? (
-            <Image src={value} alt="Предпросмотр изображения" fill sizes="148px" className="object-contain" />
+          {value || fallbackValue ? (
+            <Image src={value || fallbackValue!} alt="Предпросмотр изображения" fill sizes="148px" className="object-contain" />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-[var(--sp-ink-muted)]">
               <ImagePlus className="size-6" aria-hidden="true" />
@@ -215,6 +219,11 @@ export function MediaUploadField({
           </div>
 
           <div className={`flex min-w-0 flex-col justify-center ${kind === 'banner-desktop' ? 'sm:col-span-2' : ''}`}>
+          {!value && fallbackValue ? (
+            <p className="mb-2 rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2 text-[11px] leading-4 text-amber-800">
+              {fallbackLabel || 'Сейчас используется резервное изображение. Загрузите файл, чтобы управлять им из Admin.'}
+            </p>
+          ) : null}
           <input
             id={inputId}
             type="file"

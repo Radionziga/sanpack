@@ -17,6 +17,7 @@ import { Link } from '@/i18n/navigation';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useLanguage } from '@/context/LanguageContext';
+import { trackAnalytics } from '@/lib/analytics/client';
 import { enabledLinkHubLinks, getLinkHubText, isInternalLinkHubHref } from '@/lib/settings/linkHub';
 import type { LinkHubIcon, LinkHubSettings, SiteSettings } from '@/types';
 
@@ -109,9 +110,9 @@ export function LinkHubPageClient({ settings, linkHub }: { settings: SiteSetting
             const className = 'group grid min-h-16 grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-center gap-3 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-3 py-2.5 text-left text-sm font-semibold text-[var(--sp-ink)] shadow-[0_5px_20px_rgb(21_27_24/5%)] transition-[border-color,box-shadow,transform] hover:border-[color-mix(in_srgb,var(--sp-brand)_45%,var(--sp-line))] hover:shadow-[0_10px_28px_rgb(15_61_41/10%)] active:scale-[0.99] motion-reduce:active:scale-100';
             const content = <><span className="grid size-11 place-items-center rounded-[var(--sp-radius-control)] bg-[var(--sp-brand-soft)] text-[var(--sp-brand)]"><Icon className="size-5" aria-hidden="true" /></span><span className="min-w-0 break-words leading-5">{label}</span><ArrowUpRight className="size-4 text-[var(--sp-ink-muted)] transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" /></>;
             return isInternalLinkHubHref(item.href) ? (
-              <Link key={item.id} href={item.href} className={className}>{content}</Link>
+              <Link key={item.id} href={item.href} onClick={() => trackAnalytics(language, { name: 'link_hub_click', linkId: item.id, linkType: item.icon })} className={className}>{content}</Link>
             ) : (
-              <a key={item.id} href={item.href} className={className} target={/^https:/i.test(item.href) ? '_blank' : undefined} rel={/^https:/i.test(item.href) ? 'noreferrer' : undefined}>{content}</a>
+              <a key={item.id} href={item.href} onClick={() => trackAnalytics(language, { name: 'link_hub_click', linkId: item.id, linkType: item.icon })} className={className} target={/^https:/i.test(item.href) ? '_blank' : undefined} rel={/^https:/i.test(item.href) ? 'noreferrer' : undefined}>{content}</a>
             );
           })}
         </nav>

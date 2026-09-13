@@ -8,6 +8,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import { SiteSettingsProvider } from '@/context/SiteSettingsContext';
 import { MobileStorefrontChrome } from '@/components/layout/MobileStorefrontChrome';
 import { FloatingContactMenu } from '@/components/layout/FloatingContactMenu';
+import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 
 export function PublicProviders({
   children,
@@ -21,7 +22,7 @@ export function PublicProviders({
   return (
     <SiteSettingsProvider settings={settings}>
       <LanguageProvider initialLanguage={locale}>
-        <FavoritesProvider>
+        <AnalyticsProvider locale={locale}><FavoritesProvider>
           <RequestCartProvider>
             <ToastProvider>
               <MobileStorefrontChrome>
@@ -30,7 +31,7 @@ export function PublicProviders({
               <FloatingContactMenu />
             </ToastProvider>
           </RequestCartProvider>
-        </FavoritesProvider>
+        </FavoritesProvider></AnalyticsProvider>
       </LanguageProvider>
     </SiteSettingsProvider>
   );

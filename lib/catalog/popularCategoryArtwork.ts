@@ -19,10 +19,17 @@ const legacyPopularCategoryArtworkById: Record<string, string> = {
 export function getPopularCategoryArtwork(
   category: Pick<Category, 'id' | 'cardImage' | 'banner' | 'image'>,
 ) {
-  return category.cardImage
-    || category.banner
-    || legacyPopularCategoryArtworkById[category.id]
-    || category.image;
+  return getPopularCategoryArtworkSource(category).url;
+}
+
+export function getPopularCategoryArtworkSource(
+  category: Pick<Category, 'id' | 'cardImage' | 'banner' | 'image'>,
+) {
+  if (category.cardImage) return { url: category.cardImage, source: 'managed' as const };
+  if (category.banner) return { url: category.banner, source: 'legacy_banner' as const };
+  if (legacyPopularCategoryArtworkById[category.id]) return { url: legacyPopularCategoryArtworkById[category.id], source: 'built_in' as const };
+  if (category.image) return { url: category.image, source: 'legacy' as const };
+  return { url: undefined, source: 'none' as const };
 }
 
 export interface StorefrontCategoryGroup {

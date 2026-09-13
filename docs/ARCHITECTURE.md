@@ -323,6 +323,26 @@ Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY
 
 Владелец подтвердил 2026-09-04, что экспериментальный backend `vetclinics` прекращён. Default bucket `stamply-4df8a.firebasestorage.app` является SANPACK production Storage boundary; отдельный bucket/multi-bucket abstraction не нужны. SANPACK rules сохраняют публичный get для `media/**`, запрещают direct list/write/delete, полностью закрывают `bag-design-requests/**` и прочие prefixes; trusted server/Admin SDK использует IAM. Старый vetclinics ruleset не является поддерживаемым application contract.
 
+### First-party product analytics boundary
+
+Analytics — отдельная server-only telemetry boundary, а не расширение customer identity. Browser пишет только через `/api/analytics/events`; Firestore client rules не открываются. Случайные HttpOnly cookies `__sanpack_analytics_visitor` и `__sanpack_analytics_session` не являются auth credentials и нигде не связываются с `customers`, Telegram ID, именем, телефоном, адресом или заявочным комментарием. Session продолжается при активности менее 30 минут. UTM сохраняются только по allowlist, referrer сокращается до hostname, route — до pathname, device — до mobile/tablet/desktop; полный User-Agent/IP/query string не сохраняются.
+
+Client events описывают best-effort engagement и не блокируют storefront. `request_created` может записать только trusted request handler после принятия Request; ключ `request-created:{requestId}` предотвращает повторную conversion при idempotency replay. Analytics failure не отменяет бизнес-заявку, isolated order tests не проходят через public request conversion. Raw `analyticsEvents`/`analyticsSessions` живут 190 дней, `analyticsVisitors` — 400 дней; dashboard читает максимум 90 дней и строит exact period uniques server-side из bounded raw data. При текущем масштабе отдельный warehouse/rollup не нужен; ответ Admin — только aggregate DTO без visitor/session IDs.
+
+`analytics.read` проверяется общей Admin capability matrix и API; первоначально разрешён только `super_admin`. Logged-in Admin traffic, obvious bots, DNT/GPC, localhost и explicit opt-out не записываются. Business timezone dashboard — `Asia/Tashkent`.
+
+## First-party analytics boundary
+
+Product analytics is an additive trusted-server subsystem, not customer identity and not a second commerce source of truth. `AnalyticsProvider` and scoped interaction points send typed best-effort engagement events to `/api/analytics/events`; only the server derives time, device category, session continuity and stored attribution. Firestore collections `analyticsVisitors`, `analyticsSessions` and `analyticsEvents` remain inaccessible to direct clients.
+
+Visitor and session cookies are HttpOnly, first-party, random opaque identifiers. They are never mapped to `customers`, Telegram identity, contact fields or Request ownership. A session expires after 30 minutes of inactivity. Only allowlisted UTM fields, normalized pathname and referrer hostname persist. Search terms are length-bounded and redact email/phone-shaped content; Link Hub analytics stores item ID/type, not destination URL.
+
+`request_created` is the only confirmed conversion. It cannot pass the public event schema; the Request handler writes it after a successful canonical request result and deduplicates by Request ID. Replay therefore returns the same receipt without a second conversion. Analytics failure never invalidates the business Request, and isolated Admin order tests do not call the conversion writer.
+
+`/api/admin/analytics` requires `analytics.read`, aggregates on the trusted server and exposes no raw IDs. Reporting is exact within its selected bounded event set: period visitors are distinct visitor IDs, sessions are distinct session IDs, and funnel steps are distinct visitors with the event—not a claim of strict ordered causality. Business dates use `Asia/Tashkent`; reports are limited to 90 days and current scale uses raw server aggregation with an explicit cap rather than premature warehouse/rollup infrastructure.
+
+Retention is explicit: raw events/sessions 190 days, visitor lifecycle 400 days, enforced by scoped TTL on `expiresAt`. Existing deny-all Firestore rules, Storage boundaries, Admin/customer auth and canonical catalog/order pricing remain unchanged.
+
 ## 17. Architectural invariants
 
 1. Категория/характеристика новой ниши задаётся существующей CMS, без frontend conditions по smartphone/tire/SANPACK SKU.
@@ -336,6 +356,7 @@ Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY
 9. SiteSettings — существующий identity layer, не повод создать второй configuration/domain engine.
 10. Seed включается явно; live backend failures нельзя маскировать sample ассортиментом.
 11. Taxonomy bounded: Group → Category → optional Subcategory, максимум три уровня. Category с детьми может иметь direct Products. Scope и inheritance вычисляются по parentId, не по копии persistent path.
+12. Analytics visitor/session identity never links to customer/Telegram identity; only the trusted Request handler can emit a confirmed request conversion.
 
 ## 18. Known limitations / deferred scope
 

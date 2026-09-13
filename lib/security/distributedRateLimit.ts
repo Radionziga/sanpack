@@ -33,6 +33,7 @@ const publicCeilings: Record<string, number> = {
   'telegram-mini-app-session': 120, 'telegram-login-start': 120,
   'telegram-login-callback': 120, 'bag-designer-generate': 12,
   'bag-designer-submit': 120, 'bag-private-asset': 600,
+  'analytics-ingest': 3_000,
 };
 
 export function rateLimitBucket(scope: string, fingerprint: string, now: number, windowMs: number) {

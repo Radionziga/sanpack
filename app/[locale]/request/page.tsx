@@ -38,6 +38,7 @@ import { ensureTelegramMiniAppSession } from '@/lib/telegram/miniAppSession';
 import { QuantityControl } from '@/components/commerce/QuantityControl';
 import { presentCommercialSummary, summarizeCommercialLines } from '@/lib/commerce/commercialSummary';
 import { getProductCommercialDetails } from '@/lib/commerce/productCommercial';
+import { trackAnalytics } from '@/lib/analytics/client';
 
 interface CustomerStatus {
   authenticated: boolean;
@@ -356,7 +357,19 @@ export default function RequestPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
+  const dateSectionRef = useRef<HTMLDivElement>(null);
+  const windowSectionRef = useRef<HTMLFieldSetElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
+  const trackedRequestStart = useRef(false);
+
+  useEffect(() => {
+    if (!isHydrated || items.length === 0) return;
+    if (trackedRequestStart.current) return;
+    trackedRequestStart.current = true;
+    const requestPriceLineCount = items.filter((item) => item.price === undefined || item.priceMode === 'request').length;
+    trackAnalytics(language, { name: 'cart_view', lineCount: items.length });
+    trackAnalytics(language, { name: 'request_start', lineCount: items.length, pricedLineCount: items.length - requestPriceLineCount, requestPriceLineCount });
+  }, [isHydrated, items, language]);
 
   useEffect(() => {
     const currentUrl = new URL(window.location.href);
@@ -475,10 +488,25 @@ export default function RequestPage() {
     if (!deliveryDate) nextErrors.date = copy.dateError;
     if (!deliveryWindow) nextErrors.window = copy.timeError;
     setFieldErrors(nextErrors);
+    const validationMessage = language === 'ru'
+      ? 'Проверьте выделенные поля. Мы перешли к первому незаполненному пункту.'
+      : language === 'uz'
+        ? 'Belgilangan maydonlarni tekshiring. Birinchi to‘ldirilmagan bandga o‘tdik.'
+        : language === 'zh'
+          ? '请检查标出的字段。页面已定位到第一个未填写项目。'
+          : 'Check the highlighted fields. We moved to the first missing item.';
+    setSubmitError(Object.keys(nextErrors).length ? validationMessage : null);
 
-    if (nextErrors.name) nameInputRef.current?.focus();
-    else if (nextErrors.phone) phoneInputRef.current?.focus();
-    else if (nextErrors.address) addressInputRef.current?.focus();
+    const target = nextErrors.name ? nameInputRef.current
+      : nextErrors.phone ? phoneInputRef.current
+        : nextErrors.address ? addressInputRef.current
+          : nextErrors.date ? dateSectionRef.current?.querySelector<HTMLElement>('button')
+            : nextErrors.window ? windowSectionRef.current?.querySelector<HTMLElement>('button')
+              : null;
+    if (target) window.requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.focus({ preventScroll: true });
+    });
 
     return Object.keys(nextErrors).length === 0;
   }
@@ -814,17 +842,19 @@ export default function RequestPage() {
                     </div>
 
                     <div className="mt-4 grid min-w-0 gap-4">
-                      <DeliveryDatePicker
-                        value={deliveryDate}
-                        language={language}
-                        label={copy.date}
-                        error={fieldErrors.date}
-                        onChange={(nextDate) => {
-                          setDeliveryDate(nextDate);
-                          if (fieldErrors.date) setFieldErrors((current) => ({ ...current, date: undefined }));
-                        }}
-                      />
-                      <fieldset className="min-w-0">
+                      <div ref={dateSectionRef} className="scroll-mt-28">
+                        <DeliveryDatePicker
+                          value={deliveryDate}
+                          language={language}
+                          label={copy.date}
+                          error={fieldErrors.date}
+                          onChange={(nextDate) => {
+                            setDeliveryDate(nextDate);
+                            if (fieldErrors.date) setFieldErrors((current) => ({ ...current, date: undefined }));
+                          }}
+                        />
+                      </div>
+                      <fieldset ref={windowSectionRef} className="min-w-0 scroll-mt-28" aria-invalid={fieldErrors.window ? true : undefined}>
                         <legend className="flex items-center gap-2 text-xs font-medium"><Clock3 className="size-4 text-[var(--sp-brand)]" aria-hidden="true" />{copy.time}</legend>
                         <div className="mt-2 grid grid-cols-3 gap-2">
                           {DELIVERY_WINDOWS.map((window) => (
