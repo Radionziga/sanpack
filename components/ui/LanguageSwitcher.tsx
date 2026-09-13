@@ -61,7 +61,13 @@ const languages: Array<{ value: Language; label: string; flag: ReactNode }> = [
   },
 ];
 
-export function LanguageSwitcher({ className = '' }: { className?: string }) {
+export function LanguageSwitcher({
+  className = '',
+  menuAlign = 'end',
+}: {
+  className?: string;
+  menuAlign?: 'start' | 'end';
+}) {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -107,7 +113,7 @@ export function LanguageSwitcher({ className = '' }: { className?: string }) {
         <div
           role="menu"
           aria-label={copy.site}
-          className="absolute right-0 top-full z-50 mt-2 min-w-48 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] p-1.5 shadow-[var(--sp-shadow-raised)]"
+          className={`absolute top-full z-50 mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-raised)] p-1.5 shadow-[var(--sp-shadow-raised)] ${menuAlign === 'start' ? 'left-0' : 'right-0'}`}
         >
           {languages.map((item) => {
             const selected = item.value === language;

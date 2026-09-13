@@ -73,7 +73,7 @@ export function LinkHubPageClient({ settings, linkHub }: { settings: SiteSetting
     <main className="min-h-[100dvh] overflow-x-hidden bg-[var(--sp-canvas)] px-[max(1rem,env(safe-area-inset-left))] pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] text-[var(--sp-ink)]">
       <div className="mx-auto w-full max-w-[34rem]">
         <header className="flex min-h-11 items-center justify-between gap-3">
-          <LanguageSwitcher />
+          <LanguageSwitcher menuAlign="start" />
           <div className="flex items-center gap-2">
             <span className="sr-only" role="status" aria-live="polite">{shareStatus}</span>
             <button

@@ -17,8 +17,13 @@ test('link hub is a standalone localized mobile destination', async ({ page }) =
 
 test('link hub remains readable at 320px and passes critical accessibility checks', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
-  await page.goto('/en/links', { waitUntil: 'domcontentloaded' });
+  await page.goto('/en/links', { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { level: 1, name: /Everything your business needs/ })).toBeVisible();
+  await page.getByRole('button', { name: /Choose language/ }).click();
+  const languageMenuBounds = await page.getByRole('menu', { name: 'Website language' }).boundingBox();
+  expect(languageMenuBounds).not.toBeNull();
+  expect(languageMenuBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(languageMenuBounds!.x + languageMenuBounds!.width).toBeLessThanOrEqual(320);
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(horizontalOverflow).toBe(false);
   const results = await new AxeBuilder({ page }).analyze();
