@@ -9,8 +9,10 @@ import { useLanguage } from '@/context/LanguageContext';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { formatMoney } from '@/lib/catalog/productPresentation';
 import { ensureTelegramMiniAppSession, resetTelegramMiniAppSessionCache } from '@/lib/telegram/miniAppSession';
-import type { Language, RequestOrder } from '@/types';
+import type { Language } from '@/types';
 import { presentCommercialSummary, summarizeCommercialLines } from '@/lib/commerce/commercialSummary';
+import { RepeatRequestPanel } from '@/components/orders/RepeatRequestPanel';
+import type { CustomerRequestOrder } from '@/lib/orders/customerOrderProjection';
 
 const localeCodes: Record<Language, string> = { ru: 'ru-RU', uz: 'uz-UZ', en: 'en-US', zh: 'zh-CN' };
 
@@ -68,7 +70,7 @@ export default function OrdersPage() {
       delivery: '配送', address: '地址', priceOnRequest: '价格需询价', telegramManaged: 'Mini App 使用当前 Telegram 账号。',
     },
   }[language];
-  const [orders, setOrders] = useState<RequestOrder[]>([]);
+  const [orders, setOrders] = useState<CustomerRequestOrder[]>([]);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [customerName, setCustomerName] = useState('');
   const [isMiniApp, setIsMiniApp] = useState(false);
@@ -143,7 +145,7 @@ export default function OrdersPage() {
 
         <div className="mt-8 space-y-4">
           {orders.map((order) => {
-            const orderItems = order.originalItems ?? order.items;
+            const orderItems = order.items;
             const summary = presentCommercialSummary(summarizeCommercialLines(orderItems), language, order.currency || 'UZS');
             return (
             <article key={order.id} className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-5 sm:p-6">
@@ -152,6 +154,7 @@ export default function OrdersPage() {
               {order.deliveryAddress || order.deliveryDate || order.deliveryWindow ? <div className="mt-5 grid gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3 text-xs text-[var(--sp-ink-secondary)] sm:grid-cols-2"><p className="flex items-start gap-2"><MapPin className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.address}</strong>{order.deliveryAddress || '—'}</span></p><p className="flex items-start gap-2"><CalendarDays className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.delivery}</strong>{order.deliveryDate ? new Intl.DateTimeFormat(localeCodes[language], { dateStyle: 'medium' }).format(new Date(`${order.deliveryDate}T12:00:00`)) : '—'}{order.deliveryWindow ? ` · ${order.deliveryWindow.replace('-', '–')}` : ''}</span></p></div> : null}
               <div className="mt-5 border-t border-[var(--sp-line)] pt-4 text-sm"><div className="flex items-center justify-between gap-4"><span className="text-[var(--sp-ink-secondary)]">{summary.label}</span><strong className="text-base tabular-nums text-[var(--sp-brand)]">{summary.value}</strong></div>{summary.secondary ? <p className="mt-1 text-xs font-medium text-[var(--sp-ink-secondary)]">{summary.secondary}</p> : null}</div>
               <p className="mt-4 flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 py-2.5 text-xs text-[var(--sp-ink-secondary)]"><PackageCheck className="size-4 text-[var(--sp-brand)]" />{copy.accepted}</p>
+              <RepeatRequestPanel items={orderItems} />
             </article>
           );})}
         </div>

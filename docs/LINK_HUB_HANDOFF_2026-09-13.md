@@ -22,6 +22,7 @@
 
 ## Safety and validation
 
+- Local checkpoint: `06af3e76395612ae0d5b8c3b8056463dab6849b9` (`feat: add configurable SANPACK link hub`).
 - Production data, secrets, deploy и push не изменялись.
 - Targeted unit tests покрывают merge/defaults, public projection, URL validation и capabilities.
 - Playwright покрывает localized route, locale-preserving internal navigation, standalone chrome, 320 px overflow и critical/serious axe findings.

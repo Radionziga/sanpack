@@ -8,10 +8,13 @@ import {
 
 export default async function ProductDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ productSlug: string }>;
+  searchParams: Promise<{ variant?: string | string[] }>;
 }) {
   const { productSlug } = await params;
+  const requestedVariant = (await searchParams).variant;
   const [products, categories, attributes] = await Promise.all([
     getPublicProducts(),
     getPublicCategories(),
@@ -34,6 +37,7 @@ export default async function ProductDetailPage({
       initialAttributeDefinitions={attributes}
       initialCategories={categories}
       initialRelatedProducts={relatedProducts.slice(0, 4)}
+      initialVariantId={typeof requestedVariant === 'string' ? requestedVariant : undefined}
     />
   );
 }

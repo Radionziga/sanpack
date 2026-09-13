@@ -1,4 +1,4 @@
-import type { Language, Product, ProductVariant } from '@/types';
+import type { Language, OrderRuleSnapshot, Product, ProductVariant } from '@/types';
 import { formatProductQuantity, formatQuantity } from '@/lib/catalog/productPresentation';
 
 const EPSILON = 1e-7;
@@ -77,6 +77,27 @@ export function getProductOrderRule(
     minimumQuantity,
     quantityStep,
     maximumQuantity,
+  };
+}
+
+export function getOrderRuleSnapshot(product: Product, variant?: ProductVariant): OrderRuleSnapshot {
+  const ruleRu = getProductOrderRule(product, 'ru', variant);
+  const packageNameUz = ruleRu.packageEnabled ? getProductOrderRule(product, 'uz', variant).packageName : '';
+  const packageNameEn = ruleRu.packageEnabled ? getProductOrderRule(product, 'en', variant).packageName : '';
+  const packageNameZh = ruleRu.packageEnabled ? getProductOrderRule(product, 'zh', variant).packageName : '';
+  return {
+    salesUnit: ruleRu.salesUnit,
+    minimumQuantity: ruleRu.minimumQuantity,
+    quantityStep: ruleRu.quantityStep,
+    ...(ruleRu.maximumQuantity === undefined ? {} : { maximumQuantity: ruleRu.maximumQuantity }),
+    packageEnabled: ruleRu.packageEnabled,
+    unitsPerPackage: ruleRu.unitsPerPackage,
+    minimumPackages: ruleRu.minimumPackages,
+    packageStep: ruleRu.packageStep,
+    ...(ruleRu.packageName ? { packageNameRu: ruleRu.packageName } : {}),
+    ...(packageNameUz ? { packageNameUz } : {}),
+    ...(packageNameEn ? { packageNameEn } : {}),
+    ...(packageNameZh ? { packageNameZh } : {}),
   };
 }
 

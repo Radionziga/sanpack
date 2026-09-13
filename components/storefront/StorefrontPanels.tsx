@@ -326,8 +326,6 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
     ...groupedLeaves,
     ...leaves.filter((category) => !groupedLeafIds.has(category.id)),
   ];
-  const featuredLeaves = leaves.filter((category) => getPopularCategoryArtwork(category)).slice(0, 6);
-  const visibleLeaves = featuredLeaves.length >= 4 ? featuredLeaves : leaves.slice(0, 6);
   const categoryTitle = (category: Category) => getCategoryTitle(
     category,
     language,
@@ -408,7 +406,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
         ) : null}
       </nav>
 
-      {activeCategorySlug ? null : showFeaturedGroups ? (
+      {!activeCategorySlug && showFeaturedGroups ? (
         <div className="space-y-8">
           {featuredGroups.map(({ group, categories: groupCategories }, index) => (
             <section key={group.id} aria-labelledby={index === 0 ? 'mobile-category-rail-title' : `mobile-category-group-${group.id}`}>
@@ -422,17 +420,7 @@ export function StorefrontMobileCategoryRail({ categories, activeCategorySlug, s
             </section>
           ))}
         </div>
-      ) : (
-        <>
-          <div className="mb-3 flex items-center justify-between gap-4">
-            <h2 id="mobile-category-rail-title" className="text-xl font-extrabold tracking-[-0.03em] text-[var(--sp-ink)]">
-              {copy.catalog}
-            </h2>
-            <Link href="/catalog" className="text-xs font-bold text-[var(--sp-brand)]">{copy.allProducts}</Link>
-          </div>
-          {renderCategoryGrid(visibleLeaves, copy.categories)}
-        </>
-      )}
+      ) : null}
     </section>
   );
 }

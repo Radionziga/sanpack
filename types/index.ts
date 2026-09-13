@@ -274,6 +274,22 @@ export interface RequestItem {
   image?: string;
   product?: Product;
   variant?: ProductVariant;
+  orderRule?: OrderRuleSnapshot;
+}
+
+export interface OrderRuleSnapshot {
+  salesUnit: string;
+  minimumQuantity: number;
+  quantityStep: number;
+  maximumQuantity?: number;
+  packageEnabled: boolean;
+  unitsPerPackage: number;
+  minimumPackages: number;
+  packageStep: number;
+  packageNameRu?: string;
+  packageNameUz?: string;
+  packageNameEn?: string;
+  packageNameZh?: string;
 }
 
 export interface CustomerInfo {

@@ -128,7 +128,9 @@
     "sortPriceAsc": "Сначала дешевле",
     "sortPriceDesc": "Сначала дороже",
     "searchTitle": "Результаты поиска по запросу: «{query}»",
-    "searchWithoutQuery": "Введите запрос в строке поиска"
+    "searchWithoutQuery": "Введите запрос в строке поиска",
+    "shown": "Показано {visible} из {total}",
+    "loadMore": "Показать ещё"
   },
   "catalogFilters": {
     "title": "Фильтры",

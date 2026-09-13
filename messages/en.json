@@ -128,7 +128,9 @@
     "sortPriceAsc": "Lowest price first",
     "sortPriceDesc": "Highest price first",
     "searchTitle": "Search results for “{query}”",
-    "searchWithoutQuery": "Enter a query in the search field"
+    "searchWithoutQuery": "Enter a query in the search field",
+    "shown": "Showing {visible} of {total}",
+    "loadMore": "Show more"
   },
   "catalogFilters": {
     "title": "Filters",

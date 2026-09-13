@@ -6,6 +6,7 @@ export interface CatalogQueryState {
   inStockOnly: boolean;
   ownProductionOnly: boolean;
   filters: CatalogAttributeFilters;
+  page: number;
 }
 
 export function readCatalogQueryState(params: URLSearchParams): CatalogQueryState {
@@ -23,6 +24,7 @@ export function readCatalogQueryState(params: URLSearchParams): CatalogQueryStat
     inStockOnly: params.get('stock') === '1',
     ownProductionOnly: params.get('own') === '1',
     filters,
+    page: Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1),
   };
 }
 
@@ -31,11 +33,12 @@ export function writeCatalogQueryState(params: URLSearchParams, state: CatalogQu
   for (const key of [...next.keys()]) {
     if (key.startsWith('f.')) next.delete(key);
   }
-  for (const key of ['sort', 'view', 'stock', 'own']) next.delete(key);
+  for (const key of ['sort', 'view', 'stock', 'own', 'page']) next.delete(key);
   if (state.sortBy !== 'popular') next.set('sort', state.sortBy);
   if (state.viewMode !== 'grid') next.set('view', state.viewMode);
   if (state.inStockOnly) next.set('stock', '1');
   if (state.ownProductionOnly) next.set('own', '1');
+  if (state.page > 1) next.set('page', String(state.page));
   for (const [key, selection] of Object.entries(state.filters)) {
     next.set(`f.${key}`, JSON.stringify(selection));
   }

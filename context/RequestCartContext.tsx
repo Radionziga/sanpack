@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { RequestItem, Product, ProductVariant } from '@/types';
-import { normalizeOrderQuantity } from '@/lib/commerce/orderQuantities';
+import { getOrderRuleSnapshot, normalizeOrderQuantity } from '@/lib/commerce/orderQuantities';
 import {
   getProductPriceMode,
   getProductOrderUnitPrice,
@@ -136,6 +136,7 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
         image: variant?.image || product.mainImage,
         product,
         variant,
+        orderRule: getOrderRuleSnapshot(product, variant),
       };
 
       return [...prev, newItem];

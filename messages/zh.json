@@ -128,7 +128,9 @@
     "sortPriceAsc": "价格从低到高",
     "sortPriceDesc": "价格从高到低",
     "searchTitle": "“{query}”的搜索结果",
-    "searchWithoutQuery": "请在搜索框中输入内容"
+    "searchWithoutQuery": "请在搜索框中输入内容",
+    "shown": "已显示 {visible} / {total}",
+    "loadMore": "显示更多"
   },
   "catalogFilters": {
     "title": "筛选",

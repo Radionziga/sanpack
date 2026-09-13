@@ -4,7 +4,7 @@ import type { Product, ProductPriceMode, ProductVariant, RequestItem } from '@/t
 import type { CheckoutLineInput } from '@/lib/validation/order';
 import { getAdminDb } from '@/lib/firebase/admin';
 import { omitUndefinedFields } from '@/lib/firebase/firestoreData';
-import { getProductOrderRule, isValidOrderQuantity } from '@/lib/commerce/orderQuantities';
+import { getOrderRuleSnapshot, getProductOrderRule, isValidOrderQuantity } from '@/lib/commerce/orderQuantities';
 import { getProductOrderUnitPrice, getProductPriceMode } from '@/lib/commerce/productOffer';
 
 function resolvePriceMode(product: Product, variantId?: string): ProductPriceMode {
@@ -93,6 +93,7 @@ export async function createOrderSnapshots(lines: CheckoutLineInput[]) {
       lineTotal,
       comment: line.comment,
       image: variant?.image || product.mainImage,
+      orderRule: getOrderRuleSnapshot(product, variant),
     });
   });
 }

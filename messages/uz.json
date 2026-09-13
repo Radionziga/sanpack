@@ -128,7 +128,9 @@
     "sortPriceAsc": "Avval arzonlari",
     "sortPriceDesc": "Avval qimmatlari",
     "searchTitle": "«{query}» bo‘yicha qidiruv natijalari",
-    "searchWithoutQuery": "Qidiruv satriga so‘rov kiriting"
+    "searchWithoutQuery": "Qidiruv satriga so‘rov kiriting",
+    "shown": "{total} tadan {visible} tasi ko‘rsatildi",
+    "loadMore": "Yana ko‘rsatish"
   },
   "catalogFilters": {
     "title": "Filtrlar",

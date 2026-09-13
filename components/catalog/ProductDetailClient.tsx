@@ -103,11 +103,13 @@ export function ProductDetailClient({
   initialAttributeDefinitions,
   initialCategories,
   initialRelatedProducts,
+  initialVariantId,
 }: {
   initialProduct: Product;
   initialAttributeDefinitions: Attribute[];
   initialCategories: Category[];
   initialRelatedProducts: Product[];
+  initialVariantId?: string;
 }) {
   const productSlug = initialProduct.slug;
   const { t, getLocalizedText, language } = useLanguage();
@@ -252,8 +254,9 @@ export function ProductDetailClient({
   const [attributeDefinitions, setAttributeDefinitions] = useState<Attribute[]>(initialAttributeDefinitions);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>(initialRelatedProducts);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [quantity, setQuantity] = useState(() => getProductOrderRule(initialProduct).minimumQuantity);
+  const initialVariant = initialProduct.variants?.find((variant) => variant.id === initialVariantId) ?? null;
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(initialVariant);
+  const [quantity, setQuantity] = useState(() => getProductOrderRule(initialProduct, 'ru', initialVariant || undefined).minimumQuantity);
   const [isQuantityEditing, setIsQuantityEditing] = useState(false);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'not-found' | 'error'>('ready');
   const [loadVersion, setLoadVersion] = useState(0);
@@ -283,8 +286,9 @@ export function ProductDetailClient({
           return;
         }
 
-        setSelectedVariant(null);
-        setQuantity(getProductOrderRule(loadedProduct).minimumQuantity);
+        const restoredVariant = loadedProduct.variants?.find((variant) => variant.id === initialVariantId) ?? null;
+        setSelectedVariant(restoredVariant);
+        setQuantity(getProductOrderRule(loadedProduct, 'ru', restoredVariant || undefined).minimumQuantity);
         const configuredRelatedIds = [...new Set([
           ...(loadedProduct.relatedProductIds || []),
           ...(loadedProduct.accessoryProductIds || []),
@@ -308,7 +312,7 @@ export function ProductDetailClient({
     return () => {
       cancelled = true;
     };
-  }, [loadVersion, productSlug]);
+  }, [initialVariantId, loadVersion, productSlug]);
 
   if (loadState === 'error') {
     return (

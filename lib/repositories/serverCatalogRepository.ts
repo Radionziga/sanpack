@@ -29,9 +29,18 @@ import {
   loadPublicData,
 } from '@/lib/catalog/publicDataSource';
 import { mergeSiteSettings } from '@/lib/settings/mergeSiteSettings';
+import {
+  getPublicCatalogMirrorOrigin,
+  readPublicCatalogMirror,
+  type PublicCatalogResource,
+} from '@/lib/catalog/publicCatalogMirror';
 
 function isSeedFallbackEnabled() {
   return process.env.SANPACK_USE_SEED_DATA === 'true';
+}
+
+function isPublicCatalogMirrorEnabled() {
+  return Boolean(getPublicCatalogMirrorOrigin());
 }
 
 function optimizedLocalAsset(value?: string) {
@@ -60,6 +69,7 @@ function withOptimizedCategoryAssets(category: Category): Category {
 }
 
 function assertPublicReadAllowed(resource: string) {
+  if (isPublicCatalogMirrorEnabled()) return;
   assertPublicDataReadAllowed({
     resource,
     seedEnabled: isSeedFallbackEnabled(),
@@ -105,6 +115,9 @@ function withSeedBannerChineseLocalization(banner: Banner): Banner {
 // for storefront reads. Rules deny direct browser access; projection below is
 // the public BFF boundary. Keep SDK initialization lazy for credentialless builds.
 async function readPublicCollection<T>(name: string): Promise<T[]> {
+  if (isPublicCatalogMirrorEnabled()) {
+    return readPublicCatalogMirror<T[]>(name as PublicCatalogResource);
+  }
   const snapshot = await getAdminDb().collection(name).get();
   return snapshot.docs.map((document) => serializeFirestoreData<T>({
     ...document.data(), id: document.id,
@@ -112,6 +125,9 @@ async function readPublicCollection<T>(name: string): Promise<T[]> {
 }
 
 async function readPublicDocument<T>(path: string): Promise<T | null> {
+  if (path === 'settings/global' && isPublicCatalogMirrorEnabled()) {
+    return readPublicCatalogMirror<T>('settings');
+  }
   const snapshot = await getAdminDb().doc(path).get();
   return snapshot.exists ? serializeFirestoreData<T>(snapshot.data()) : null;
 }
@@ -166,7 +182,7 @@ const getCachedPublicProducts = unstable_cache(
   async () => projectPublicProducts(
     await readCollection<Product>('products', initialProducts)
   ).map(withSeedChineseLocalization).map(withGeneratedProductImage).map(withOptimizedProductAssets),
-  ['trusted-projection-v1-products-v13-produce-request-pricing-2026-08-29', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
+  ['trusted-projection-v1-products-v13-produce-request-pricing-2026-08-29', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false', process.env.SANPACK_PUBLIC_CATALOG_ORIGIN || 'firebase'],
   { revalidate: 300, tags: ['products'] }
 );
 
@@ -177,7 +193,7 @@ export async function getPublicProducts() {
 
 const getCachedPublicCategories = unstable_cache(
   async () => projectPublicCategories(await readCollection<Category>('categories', initialCategories)).map(withOptimizedCategoryAssets),
-  ['trusted-projection-v1-categories-v7-local-webp-2026-08-27', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
+  ['trusted-projection-v1-categories-v7-local-webp-2026-08-27', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false', process.env.SANPACK_PUBLIC_CATALOG_ORIGIN || 'firebase'],
   { revalidate: 1800, tags: ['categories'] }
 );
 
@@ -188,7 +204,7 @@ export async function getPublicCategories() {
 
 const getCachedPublicAttributes = unstable_cache(
   async () => projectPublicAttributes(await readCollection<Attribute>('attributes', initialAttributes)),
-  ['trusted-projection-v1-attributes-v5-fail-honest-2026-08-22', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
+  ['trusted-projection-v1-attributes-v5-fail-honest-2026-08-22', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false', process.env.SANPACK_PUBLIC_CATALOG_ORIGIN || 'firebase'],
   { revalidate: 1800, tags: ['attributes'] }
 );
 
@@ -199,7 +215,7 @@ export async function getPublicAttributes() {
 
 const getCachedPublicClients = unstable_cache(
   async () => projectPublicClients(await readCollection<ClientPartner>('clients', initialClients)),
-  ['trusted-projection-v1-clients-v4-fail-honest-2026-08-22', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
+  ['trusted-projection-v1-clients-v4-fail-honest-2026-08-22', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false', process.env.SANPACK_PUBLIC_CATALOG_ORIGIN || 'firebase'],
   { revalidate: 3600, tags: ['clients'] }
 );
 
@@ -211,7 +227,7 @@ export async function getPublicClients() {
 const getCachedPublicBanners = unstable_cache(
   async () => projectPublicBanners(await readCollection<Banner>('banners', initialBanners))
     .map(withSeedBannerChineseLocalization),
-  ['trusted-projection-v1-banners-v8-local-webp-2026-08-27', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
+  ['trusted-projection-v1-banners-v8-local-webp-2026-08-27', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false', process.env.SANPACK_PUBLIC_CATALOG_ORIGIN || 'firebase'],
   { revalidate: 900, tags: ['banners'] }
 );
 
@@ -236,7 +252,7 @@ const getCachedPublicSettings = unstable_cache(
       throw new Error('The global settings document does not exist.');
     },
   })),
-  ['trusted-projection-v1-settings-v5-link-hub-2026-09-13', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
+  ['trusted-projection-v1-settings-v5-link-hub-2026-09-13', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false', process.env.SANPACK_PUBLIC_CATALOG_ORIGIN || 'firebase'],
   { revalidate: 1800, tags: ['settings'] }
 );
 

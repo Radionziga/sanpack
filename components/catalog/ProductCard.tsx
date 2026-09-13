@@ -29,9 +29,11 @@ interface ProductCardProps {
   appearance?: 'default' | 'market';
   attributeDefinitions?: Attribute[];
   searchMatchLabel?: string;
+  productHref?: string;
+  onProductNavigate?: () => void;
 }
 
-export function ProductCard({ product, viewMode = 'grid', eagerImage = false, appearance = 'default', attributeDefinitions = [], searchMatchLabel }: ProductCardProps) {
+export function ProductCard({ product, viewMode = 'grid', eagerImage = false, appearance = 'default', attributeDefinitions = [], searchMatchLabel, productHref, onProductNavigate }: ProductCardProps) {
   const { t, getLocalizedText, language } = useLanguage();
   const copy = {
     ru: ['Товар добавлен в заявку', 'Удалено из избранного', 'Добавлено в избранное'],
@@ -80,12 +82,13 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
   };
 
   const favoriteLabel = favorited ? favoriteCopy[1] : favoriteCopy[0];
+  const href = productHref || `/product/${product.slug}`;
 
   if (appearance === 'market' && viewMode === 'grid') {
     return (
       <article className="group min-w-0">
         <div className="relative aspect-square overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)]">
-          <Link href={`/product/${product.slug}`} className="absolute inset-0 overflow-hidden rounded-[inherit]">
+          <Link href={href} onClick={onProductNavigate} className="absolute inset-0 overflow-hidden rounded-[inherit]">
             <ProductImage
               source={product.mainImage}
               alt={title}
@@ -107,7 +110,8 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
           <div className="absolute bottom-2 right-2 z-10">
             {hasVariants || !orderable ? (
               <Link
-                href={`/product/${product.slug}`}
+                href={href}
+                onClick={onProductNavigate}
                 aria-label={hasVariants ? chooseVariantCopy : t('details')}
                 title={hasVariants ? chooseVariantCopy : t('details')}
                 className="grid size-11 place-items-center rounded-[var(--sp-radius-control)] bg-[var(--sp-surface)] text-[var(--sp-brand)] shadow-[0_5px_18px_rgb(21_27_24/16%)] ring-1 ring-inset ring-[var(--sp-line)] transition-[background-color,transform] hover:bg-[var(--sp-brand-soft)] active:scale-[0.96] motion-reduce:active:scale-100"
@@ -120,7 +124,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
 
         <div className="px-0.5 pb-1 pt-2.5">
           <p className="text-base font-extrabold leading-none tracking-[-0.025em] text-[var(--sp-ink)]">{price}</p>
-          <Link href={`/product/${product.slug}`}>
+          <Link href={href} onClick={onProductNavigate}>
             <h3 className="mt-1.5 line-clamp-2 min-h-[2.4rem] text-sm font-semibold leading-[1.25] tracking-[-0.015em] text-[var(--sp-ink)] transition-colors group-hover:text-[var(--sp-brand)]">
               {title}
             </h3>
@@ -138,7 +142,8 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
       <article className="group grid gap-4 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-3 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--sp-brand)_42%,var(--sp-line))] hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0 md:grid-cols-[168px_minmax(0,1fr)_auto] md:items-stretch">
         <div className="relative">
           <Link
-            href={`/product/${product.slug}`}
+            href={href}
+            onClick={onProductNavigate}
             className="relative block aspect-[4/3] overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-white md:aspect-square"
           >
             <ProductImage
@@ -162,7 +167,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
         </div>
 
         <div className="flex min-w-0 flex-col py-1">
-          <Link href={`/product/${product.slug}`} className="w-fit max-w-full">
+          <Link href={href} onClick={onProductNavigate} className="w-fit max-w-full">
             <h3 className="line-clamp-2 text-base font-semibold leading-snug tracking-tight text-[var(--sp-ink)] transition-colors group-hover:text-[var(--sp-brand)]">
               {title}
             </h3>
@@ -191,7 +196,8 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
           </div>
           {hasVariants || !orderable ? (
             <Link
-              href={`/product/${product.slug}`}
+              href={href}
+              onClick={onProductNavigate}
               className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-4 text-sm font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100"
             >
               <AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />
@@ -207,7 +213,8 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
     <article className="group flex h-full min-w-0 flex-col rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-2 transition-[border-color,box-shadow] duration-200 hover:border-[color-mix(in_srgb,var(--sp-brand)_42%,var(--sp-line))] hover:shadow-[var(--sp-shadow-soft)] sm:p-3">
       <div className="relative">
         <Link
-          href={`/product/${product.slug}`}
+          href={href}
+          onClick={onProductNavigate}
           className="relative block aspect-square overflow-hidden rounded-[var(--sp-radius-control-inner)] bg-white"
         >
           <ProductImage
@@ -232,7 +239,7 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
       </div>
 
       <div className="flex flex-1 flex-col px-0.5 pb-0.5 pt-2.5 sm:px-1 sm:pb-1 sm:pt-4">
-        <Link href={`/product/${product.slug}`} className="w-fit max-w-full">
+        <Link href={href} onClick={onProductNavigate} className="w-fit max-w-full">
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug tracking-tight text-[var(--sp-ink)] transition-colors group-hover:text-[var(--sp-brand)] sm:min-h-[2.75rem] sm:text-base">
             {title}
           </h3>
@@ -255,7 +262,8 @@ export function ProductCard({ product, viewMode = 'grid', eagerImage = false, ap
 
           {hasVariants || !orderable ? (
             <Link
-              href={`/product/${product.slug}`}
+              href={href}
+              onClick={onProductNavigate}
               className="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-2 text-xs font-semibold text-[var(--sp-on-brand)] shadow-[var(--sp-shadow-soft)] transition-[background-color,transform] hover:bg-[var(--sp-brand-deep)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100 sm:gap-2 sm:px-4 sm:text-sm"
             >
               <AdjustmentsHorizontalIcon className="size-4" aria-hidden="true" />

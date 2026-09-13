@@ -119,6 +119,25 @@ describe('order snapshots with product variants', () => {
     expect(snapshot.lineTotal).toBe(66_000);
   });
 
+  it('stores the current quantity and packaging rule for future repeat reconciliation', async () => {
+    const product = createProduct({
+      salesUnit: 'шт',
+      orderPackaging: {
+        enabled: true, nameRu: 'коробка', nameUz: 'quti', nameEn: 'box', nameZh: '箱',
+        unitsPerPackage: 100, minimumPackages: 2, packageStep: 1,
+      },
+    });
+    provideProducts([product]);
+
+    const [snapshot] = await createOrderSnapshots([{ productId: product.id, quantity: 200 }]);
+
+    expect(snapshot.orderRule).toMatchObject({
+      salesUnit: 'шт', minimumQuantity: 200, quantityStep: 100,
+      packageEnabled: true, unitsPerPackage: 100, minimumPackages: 2,
+      packageNameRu: 'коробка', packageNameEn: 'box',
+    });
+  });
+
   it('rejects an order quantity above the product maximum', async () => {
     const product = createProduct({ maximumOrder: 10 });
     provideProducts([product]);

@@ -32,7 +32,7 @@ import { ProductCard } from '@/components/catalog/ProductCard';
 import { CatalogBreadcrumbs, SubcategoryNavigation } from '@/components/catalog/CategoryNavigation';
 import { getCategoryBreadcrumbs, getProductsInCategoryScope, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { filterProductsBySearch, getSearchMatchLabel } from '@/lib/catalog/productSearch';
+import { filterProductsBySearch, getProductSearchMatch, getSearchMatchLabel } from '@/lib/catalog/productSearch';
 import {
   getProductAttributeValues,
   isAttributeFilterActive,
@@ -53,9 +53,11 @@ interface CatalogListingProps {
   initialProducts?: Product[];
   initialCategories?: Category[];
   initialAttributes?: Attribute[];
+  onProductNavigate?: () => void;
 }
 
 type LoadState = 'loading' | 'ready' | 'error';
+const CATALOG_PAGE_SIZE = 24;
 
 function CatalogSkeleton() {
   return (
@@ -81,6 +83,7 @@ export function CatalogListing({
   initialProducts,
   initialCategories,
   initialAttributes,
+  onProductNavigate,
 }: CatalogListingProps) {
   const t = useTranslations('catalogListing');
   const pathname = usePathname();
@@ -100,18 +103,19 @@ export function CatalogListing({
   const [selectedFilters, setSelectedFilters] = useState<CatalogAttributeFilters>(initialQueryState.filters);
   const [inStockOnly, setInStockOnly] = useState(initialQueryState.inStockOnly);
   const [ownProductionOnly, setOwnProductionOnly] = useState(initialQueryState.ownProductionOnly);
+  const [page, setPage] = useState(initialQueryState.page);
   const filterTriggerRef = useRef<HTMLButtonElement>(null);
   const filterCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const current = new URLSearchParams(searchParams.toString());
     const next = writeCatalogQueryState(current, {
-      sortBy, viewMode, inStockOnly, ownProductionOnly, filters: selectedFilters,
+      sortBy, viewMode, inStockOnly, ownProductionOnly, filters: selectedFilters, page,
     });
     if (next.toString() !== current.toString()) {
       router.replace(`${pathname}${next.size ? `?${next}` : ''}`, { scroll: false });
     }
-  }, [inStockOnly, ownProductionOnly, pathname, router, searchParams, selectedFilters, sortBy, viewMode]);
+  }, [inStockOnly, ownProductionOnly, page, pathname, router, searchParams, selectedFilters, sortBy, viewMode]);
 
   useEffect(() => {
     const restoreFromHistory = () => {
@@ -121,6 +125,7 @@ export function CatalogListing({
       setInStockOnly(next.inStockOnly);
       setOwnProductionOnly(next.ownProductionOnly);
       setSelectedFilters(next.filters);
+      setPage(next.page);
     };
     window.addEventListener('popstate', restoreFromHistory);
     return () => window.removeEventListener('popstate', restoreFromHistory);
@@ -247,11 +252,14 @@ export function CatalogListing({
   const categoryDescription = currentCategory
     ? getLocalizedText(currentCategory.descriptionRu, currentCategory.descriptionUz, currentCategory.descriptionEn, currentCategory.descriptionZh)
     : '';
+  const visibleProducts = filteredProducts.slice(0, page * CATALOG_PAGE_SIZE);
+  const hasMoreProducts = visibleProducts.length < filteredProducts.length;
 
   const resetFilters = () => {
     setSelectedFilters({});
     setInStockOnly(false);
     setOwnProductionOnly(false);
+    setPage(1);
   };
 
   const handleSheetKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -330,7 +338,7 @@ export function CatalogListing({
 
             <CustomSelect
               value={sortBy}
-              onChange={setSortBy}
+              onChange={(value) => { setSortBy(value); setPage(1); }}
               options={[
                 { value: 'popular', label: t('sortPopular') },
                 { value: 'newest', label: t('sortNewest') },
@@ -393,7 +401,29 @@ export function CatalogListing({
 
             {loadState === 'ready' && filteredProducts.length > 0 ? (
               <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4' : 'space-y-4'}>
-                {filteredProducts.map((product, index) => <ProductCard key={product.id} product={product} viewMode={viewMode} appearance={viewMode === 'grid' ? 'market' : 'default'} eagerImage={index < 3} attributeDefinitions={attributes} searchMatchLabel={searchQuery ? getSearchMatchLabel(product, searchQuery, language, categories) : undefined} />)}
+                {visibleProducts.map((product, index) => {
+                  const searchMatch = searchQuery ? getProductSearchMatch(product, searchQuery, language, categories) : null;
+                  const productHref = searchMatch?.variant
+                    ? `/product/${product.slug}?variant=${encodeURIComponent(searchMatch.variant.id)}`
+                    : `/product/${product.slug}`;
+                  return <ProductCard key={product.id} product={product} viewMode={viewMode} appearance={viewMode === 'grid' ? 'market' : 'default'} eagerImage={index < 3} attributeDefinitions={attributes} searchMatchLabel={searchQuery ? getSearchMatchLabel(product, searchQuery, language, categories) : undefined} productHref={productHref} onProductNavigate={onProductNavigate} />;
+                })}
+              </div>
+            ) : null}
+            {loadState === 'ready' && filteredProducts.length > 0 ? (
+              <div className="mt-7 flex flex-col items-center gap-3" aria-live="polite">
+                <p className="text-xs font-medium tabular-nums text-[var(--sp-ink-secondary)]">
+                  {t('shown', { visible: visibleProducts.length, total: filteredProducts.length })}
+                </p>
+                {hasMoreProducts ? (
+                  <button
+                    type="button"
+                    onClick={() => setPage((current) => current + 1)}
+                    className="min-h-12 min-w-48 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-5 text-sm font-semibold text-[var(--sp-brand)] transition-[border-color,background-color,transform] hover:border-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sp-focus)] motion-reduce:active:scale-100"
+                  >
+                    {t('loadMore')}
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -430,16 +460,19 @@ export function CatalogListing({
                 attributes={filterAttributes}
                 products={scopedProducts}
                 selectedFilters={applicableSelectedFilters}
-                onFilterChange={(key, selection) => setSelectedFilters((current) => {
-                  if (selection) return { ...current, [key]: selection };
-                  const next = { ...current };
-                  delete next[key];
-                  return next;
-                })}
+                onFilterChange={(key, selection) => {
+                  setPage(1);
+                  setSelectedFilters((current) => {
+                    if (selection) return { ...current, [key]: selection };
+                    const next = { ...current };
+                    delete next[key];
+                    return next;
+                  });
+                }}
                 inStockOnly={inStockOnly}
-                onInStockChange={setInStockOnly}
+                onInStockChange={(value) => { setInStockOnly(value); setPage(1); }}
                 ownProductionOnly={ownProductionOnly}
-                onOwnProductionChange={setOwnProductionOnly}
+                onOwnProductionChange={(value) => { setOwnProductionOnly(value); setPage(1); }}
                 onReset={resetFilters}
               />
             </div>

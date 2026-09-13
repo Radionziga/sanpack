@@ -251,7 +251,7 @@ Trusted server reader получает коллекции Admin SDK. `publicProj
 
 Caching serverCatalogRepository: unstable_cache products 300s, categories/attributes/settings 1800s, banners 900s, clients 3600s; key включает project/seed mode и projection version. Admin writes вызывают resource-tag invalidation. Browser PublicRepository использует `/api/catalog` с no-store; отдельного browser cache слепка нет.
 
-Seed-mode включается **только** `SANPACK_USE_SEED_DATA=true`. При live read failure `PublicDataUnavailableError`/503, а не незаметная подмена seed. Credentialless production-build guard отдельно блокирует remote reads; успешная сборка со seed/empty unavailable shells не проверяет live backend.
+Seed-mode включается **только** `SANPACK_USE_SEED_DATA=true`. При live read failure `PublicDataUnavailableError`/503, а не незаметная подмена seed. Для локальной разработки без ADC можно явно выбрать `SANPACK_PUBLIC_CATALOG_ORIGIN=https://sanpack.uz`: server repository читает тот же публичный BFF projection, поэтому storefront показывает точные production media/catalog данные, но mutation APIs не проксируются. Настройка игнорируется при `NODE_ENV=production`, не является fallback и при ошибке upstream также завершается честным 503. Credentialless production-build guard отдельно блокирует remote reads; успешная сборка со seed/empty unavailable shells не проверяет live backend.
 
 Сохраняются adapters: known-SKU Chinese seed localization, banner ZH fallback, generated local Product image при отсутствии mainImage, legacy category artwork maps, optimized local asset path rewrites. Следовательно «Firestore используется» не означает «ни одного local/seed-derived value».
 
@@ -303,7 +303,7 @@ Playwright: desktop Chromium и iPhone-sized Chromium; deterministic seed-backed
 
 Listing фильтрует in-memory: примерно O(P × V × K) matching; построение facets обходит attributes/products/configurations и дедуплицирует значения. React memoization разделяет scoped/filtered computations, но configuration construction всё ещё повторяется в facet helpers. Cost зависит и от числа attributes, и от variants; это не константное время.
 
-Для текущего каталога нет отдельного faceted search service/materialized facet index. Вводить инфраструктуру только после профилирования реального объёма. При росте проверять full-collection payload, повторный client/server product loading, высокую cardinality numeric facets и клиентский rendering; в этой documentation-задаче benchmark на 1 000 товарах не запускался.
+Для текущего каталога нет отдельного faceted search service/materialized facet index. Catalog ограничивает initial render 24 карточками и хранит раскрытую страницу в URL; это снижает DOM/render cost при текущих 238 товарах, но не сокращает full-collection trusted-server payload. Вводить отдельную инфраструктуру или listing projection только после профилирования реального роста. При росте проверять full-collection payload, высокую cardinality numeric facets и клиентский rendering; benchmark на 1 000 товарах не запускался.
 
 Image optimization/Storage/WebP и tagged server caching решают другие затраты, не заменяют масштабируемый catalog index. Не считать arbitrary large catalog поддержанным только из-за универсальных TS types.
 
@@ -340,7 +340,7 @@ Historical [Production Readiness & Security Audit](PRODUCTION_READINESS_SECURITY
 ## 18. Known limitations / deferred scope
 
 - Не contextual facet counts; attribute facets требуют category/group scope. Boolean filter true-only, generic CSS-color matching без словаря цветов. Sort/view/stock/own/typed filters уже имеют query-string contract и Back/Forward restore.
-- Search не индексирует attribute values; Product/Variant SKU и localized Variant/Category names поддерживаются. Matched Variant подписан, но не выбран автоматически после перехода из списка.
+- Search не индексирует attribute values; Product/Variant SKU и localized Variant/Category names поддерживаются. Matched Variant подписан и передаётся в Product через optional query без отдельной Variant route; canonical Product URL/metadata остаются прежними.
 - Brand fields/legacy brand attribute могут расходиться; нет Brand pages или централизованной Brand CMS.
 - Catalog preview не stock-filtered offer preview; JSON-LD product-level availability, не variant offer feed.
 - Product body и essential SEO content SSR. Интерактивные variant/cart controls остаются client boundary; related payload намеренно ограничен четырьмя товарами. Это текущая граница, а не crawlability blocker.

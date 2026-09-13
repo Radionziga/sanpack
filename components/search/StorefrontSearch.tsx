@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowLeft, ArrowRight, Search, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, Search, X } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { getCategoryTitle } from '@/lib/i18n/categoryText';
 import { PublicRepository } from '@/lib/repositories/publicRepository';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { CatalogListing } from '@/components/catalog/CatalogListing';
-import type { Category, Product } from '@/types';
+import type { Attribute, Category, Product } from '@/types';
 import { getCategoryLabel, getCategoryPath, getVisibleCategories } from '@/lib/catalog/categoryHierarchy';
 
 const copyByLanguage = {
@@ -22,6 +22,10 @@ const copyByLanguage = {
     categories: 'Категории товаров',
     recommended: 'Можно начать с этого',
     allCatalog: 'Весь каталог',
+    loading: 'Загружаем каталог…',
+    error: 'Не удалось загрузить поиск',
+    errorHint: 'Проверьте соединение и попробуйте ещё раз.',
+    retry: 'Повторить',
   },
   uz: {
     back: 'Orqaga',
@@ -33,6 +37,7 @@ const copyByLanguage = {
     categories: 'Mahsulot kategoriyalari',
     recommended: 'Shulardan boshlashingiz mumkin',
     allCatalog: 'Barcha mahsulotlar',
+    loading: 'Katalog yuklanmoqda…', error: 'Qidiruvni yuklab bo‘lmadi', errorHint: 'Internet aloqasini tekshirib, qayta urinib ko‘ring.', retry: 'Qayta urinish',
   },
   en: {
     back: 'Back',
@@ -44,6 +49,7 @@ const copyByLanguage = {
     categories: 'Product categories',
     recommended: 'A good place to start',
     allCatalog: 'Full catalog',
+    loading: 'Loading catalog…', error: 'Search could not be loaded', errorHint: 'Check your connection and try again.', retry: 'Try again',
   },
   zh: {
     back: '返回',
@@ -55,6 +61,7 @@ const copyByLanguage = {
     categories: '商品分类',
     recommended: '为您推荐',
     allCatalog: '全部商品',
+    loading: '正在加载商品目录…', error: '搜索加载失败', errorHint: '请检查网络连接后重试。', retry: '重试',
   },
 } as const;
 
@@ -72,18 +79,36 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
   const [query, setQuery] = useState(initialQuery);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([PublicRepository.getProducts(), PublicRepository.getCategories()])
-      .then(([nextProducts, nextCategories]) => {
+    Promise.all([PublicRepository.getProducts(), PublicRepository.getCategories(), PublicRepository.getAttributes()])
+      .then(([nextProducts, nextCategories, nextAttributes]) => {
         if (cancelled) return;
         setProducts(nextProducts.filter((product) => product.status === 'published'));
         setCategories(getVisibleCategories(nextCategories));
+        setAttributes(nextAttributes);
+        setLoadState('ready');
       })
-      .catch(() => undefined);
+      .catch(() => { if (!cancelled) setLoadState('error'); });
     return () => { cancelled = true; };
-  }, []);
+  }, [loadAttempt]);
+
+  useEffect(() => {
+    if (loadState !== 'ready' || !initialQuery.trim()) return;
+    const key = `sanpack-search-state-v1:${language}:${initialQuery.trim()}`;
+    try {
+      const state = JSON.parse(window.sessionStorage.getItem(key) || 'null') as { href?: string; scrollY?: number } | null;
+      if (!state || state.href !== `${window.location.pathname}${window.location.search}` || !Number.isFinite(state.scrollY)) return;
+      const frame = window.requestAnimationFrame(() => window.scrollTo({ top: state.scrollY, behavior: 'instant' }));
+      return () => window.cancelAnimationFrame(frame);
+    } catch {
+      return;
+    }
+  }, [initialQuery, language, loadState]);
 
   const featuredCategories = useMemo(
     () => categories
@@ -103,7 +128,15 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
       router.replace('/search');
       return;
     }
-    router.replace({ pathname: '/search', query: { q: normalized } });
+    router.push({ pathname: '/search', query: { q: normalized } });
+  }
+
+  function rememberSearchPosition() {
+    if (!initialQuery.trim()) return;
+    window.sessionStorage.setItem(`sanpack-search-state-v1:${language}:${initialQuery.trim()}`, JSON.stringify({
+      href: `${window.location.pathname}${window.location.search}`,
+      scrollY: window.scrollY,
+    }));
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -128,7 +161,6 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
               id="storefront-search-page"
               type="search"
               enterKeyHint="search"
-              autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={copy.placeholder}
@@ -144,9 +176,29 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
         </form>
       </main>
 
-      {initialQuery.trim() ? (
-        <CatalogListing key={initialQuery} searchQuery={initialQuery} />
-      ) : (
+      {loadState === 'loading' ? (
+        <main className="mx-auto min-h-[36vh] w-full max-w-7xl flex-1 px-4 py-10" aria-busy="true" aria-live="polite">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" aria-hidden="true">
+            {Array.from({ length: 6 }, (_, index) => <div key={index} className="aspect-[3/4] animate-pulse rounded-[var(--sp-radius-card)] bg-[var(--sp-surface-inset)] motion-reduce:animate-none" />)}
+          </div>
+          <span className="sr-only">{copy.loading}</span>
+        </main>
+      ) : null}
+
+      {loadState === 'error' ? (
+        <main className="mx-auto flex min-h-[36vh] w-full max-w-7xl flex-1 items-start justify-center px-4 py-10">
+          <section className="max-w-md text-center" role="alert">
+            <RefreshCw className="mx-auto size-8 text-[var(--sp-brand)]" aria-hidden="true" />
+            <h2 className="mt-4 font-extended text-xl font-bold text-[var(--sp-ink)]">{copy.error}</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--sp-ink-secondary)]">{copy.errorHint}</p>
+            <button type="button" onClick={() => { setLoadState('loading'); setLoadAttempt((value) => value + 1); }} className="mt-5 min-h-11 rounded-[var(--sp-radius-control)] bg-[var(--sp-brand)] px-5 text-sm font-semibold text-[var(--sp-on-brand)] hover:bg-[var(--sp-brand-deep)]">{copy.retry}</button>
+          </section>
+        </main>
+      ) : null}
+
+      {loadState === 'ready' && initialQuery.trim() ? (
+        <CatalogListing key={initialQuery} searchQuery={initialQuery} initialProducts={products} initialCategories={categories} initialAttributes={attributes} onProductNavigate={rememberSearchPosition} />
+      ) : loadState === 'ready' ? (
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-12">
           <section aria-labelledby="popular-searches-heading">
             <h2 id="popular-searches-heading" className="text-sm font-bold text-[var(--sp-ink)]">{copy.popular}</h2>
@@ -184,7 +236,7 @@ export function StorefrontSearch({ initialQuery }: { initialQuery: string }) {
             </section>
           ) : null}
         </main>
-      )}
+      ) : null}
     </>
   );
 }
