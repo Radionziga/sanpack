@@ -236,7 +236,7 @@ const getCachedPublicSettings = unstable_cache(
       throw new Error('The global settings document does not exist.');
     },
   })),
-  ['trusted-projection-v1-settings-v4-fail-honest-2026-08-22', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
+  ['trusted-projection-v1-settings-v5-link-hub-2026-09-13', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'local', process.env.SANPACK_USE_SEED_DATA || 'false'],
   { revalidate: 1800, tags: ['settings'] }
 );
 

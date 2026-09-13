@@ -1,21 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { taxonomyCategories } from '@/tests/fixtures/categories';
 import { createProduct } from '@/tests/fixtures/products';
+import { initialSiteSettings } from '@/lib/seedData';
 
 vi.mock('@/components/layout/Header', () => ({ Header: () => null }));
 vi.mock('@/components/layout/Footer', () => ({ Footer: () => null }));
 vi.mock('@/components/catalog/CatalogListing', () => ({ CatalogListing: () => null }));
-vi.mock('@/lib/repositories/serverCatalogRepository', () => ({ getPublicCategories: vi.fn(), getPublicProducts: vi.fn(), getPublicAttributes: vi.fn() }));
+vi.mock('@/components/links/LinkHubPageClient', () => ({ LinkHubPageClient: () => null }));
+vi.mock('@/lib/repositories/serverCatalogRepository', () => ({ getPublicCategories: vi.fn(), getPublicProducts: vi.fn(), getPublicAttributes: vi.fn(), getPublicSettings: vi.fn() }));
 vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('NOT_FOUND'); }, permanentRedirect: (path: string) => { throw new Error(`REDIRECT:${path}`); } }));
 
-import { getPublicCategories, getPublicProducts, getPublicAttributes } from '@/lib/repositories/serverCatalogRepository';
+import { getPublicCategories, getPublicProducts, getPublicAttributes, getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
 import { CategoryRoutePage } from '@/components/catalog/CategoryRoutePage';
 import sitemap from '@/app/sitemap';
+import LinkHubPage from '@/app/[locale]/links/page';
 
 beforeEach(() => {
   vi.mocked(getPublicCategories).mockResolvedValue(taxonomyCategories);
   vi.mocked(getPublicProducts).mockResolvedValue([createProduct({ categoryId: 'grains', categorySlug: 'grains' })]);
   vi.mocked(getPublicAttributes).mockResolvedValue([]);
+  vi.mocked(getPublicSettings).mockResolvedValue(initialSiteSettings);
 });
 
 describe('actual category route boundary', () => {
@@ -41,5 +45,22 @@ describe('actual category route boundary', () => {
       expect(entries.some((entry) => entry.url.endsWith(`/${locale}/catalog/grocery/grains`))).toBe(true);
       expect(entries.some((entry) => entry.url.endsWith(`/${locale}/catalog/grains`))).toBe(false);
     }
+  });
+
+  it('includes the Link Hub in sitemap only while it is enabled', async () => {
+    expect((await sitemap()).some((entry) => entry.url.endsWith('/ru/links'))).toBe(true);
+    vi.mocked(getPublicSettings).mockResolvedValue({
+      ...initialSiteSettings,
+      linkHub: { ...initialSiteSettings.linkHub!, enabled: false },
+    });
+    expect((await sitemap()).some((entry) => entry.url.endsWith('/ru/links'))).toBe(false);
+  });
+
+  it('returns not found when the Link Hub is disabled', async () => {
+    vi.mocked(getPublicSettings).mockResolvedValue({
+      ...initialSiteSettings,
+      linkHub: { ...initialSiteSettings.linkHub!, enabled: false },
+    });
+    await expect(LinkHubPage({ params: Promise.resolve({ locale: 'ru' }) })).rejects.toThrow('NOT_FOUND');
   });
 });

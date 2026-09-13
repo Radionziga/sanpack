@@ -397,6 +397,41 @@ export interface StorefrontServiceSettings {
   navigationImagePath?: string;
 }
 
+export type LinkHubIcon = 'catalog' | 'telegram' | 'instagram' | 'phone' | 'location' | 'delivery' | 'bag' | 'website';
+
+export interface LinkHubLink {
+  id: string;
+  labelRu: string;
+  labelUz?: string;
+  labelEn?: string;
+  labelZh?: string;
+  href: string;
+  icon: LinkHubIcon;
+  enabled: boolean;
+}
+
+export interface LinkHubSettings {
+  enabled: boolean;
+  titleRu: string;
+  titleUz?: string;
+  titleEn?: string;
+  titleZh?: string;
+  descriptionRu: string;
+  descriptionUz?: string;
+  descriptionEn?: string;
+  descriptionZh?: string;
+  highlightEnabled: boolean;
+  highlightTitleRu?: string;
+  highlightTitleUz?: string;
+  highlightTitleEn?: string;
+  highlightTitleZh?: string;
+  highlightDescriptionRu?: string;
+  highlightDescriptionUz?: string;
+  highlightDescriptionEn?: string;
+  highlightDescriptionZh?: string;
+  links: LinkHubLink[];
+}
+
 export interface SiteSettings {
   company: {
     name: string;
@@ -462,6 +497,7 @@ export interface SiteSettings {
     branding?: StorefrontServiceSettings;
     bagDesigner?: StorefrontServiceSettings;
   };
+  linkHub?: LinkHubSettings;
 }
 
 export interface TelegramPrivateSettings {

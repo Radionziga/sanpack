@@ -4,6 +4,7 @@ import { getCategoryPath, getVisibleCategories } from '@/lib/catalog/categoryHie
 import {
   getPublicCategories,
   getPublicProducts,
+  getPublicSettings,
 } from '@/lib/repositories/serverCatalogRepository';
 import { logError } from '@/lib/observability/logger';
 
@@ -20,6 +21,7 @@ const staticRoutes = [
   '/contacts',
   '/privacy',
   '/terms',
+  '/links',
 ];
 
 function languageAlternates(baseUrl: string, path: string) {
@@ -31,7 +33,7 @@ function languageAlternates(baseUrl: string, path: string) {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  const [products, categories] = await Promise.all([
+  const [products, categories, settings] = await Promise.all([
     getPublicProducts().catch((error) => {
       logError('sitemap.products_failed', error);
       return [];
@@ -40,9 +42,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       logError('sitemap.categories_failed', error);
       return [];
     }),
+    getPublicSettings().catch((error) => {
+      logError('sitemap.settings_failed', error);
+      return null;
+    }),
   ]);
+  const visibleStaticRoutes = staticRoutes.filter((route) => route !== '/links' || settings?.linkHub?.enabled);
   const localizedStatic = routing.locales.flatMap((locale) =>
-    staticRoutes.map((route) => ({
+    visibleStaticRoutes.map((route) => ({
       url: `${baseUrl}/${locale}${route}`,
       changeFrequency: route === '' ? ('weekly' as const) : ('monthly' as const),
       priority: route === '' ? 1 : route === '/catalog' ? 0.9 : 0.6,

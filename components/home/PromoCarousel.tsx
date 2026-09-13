@@ -182,7 +182,7 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
   if (slides.length === 0) return null;
 
   return (
-    <div className="group relative">
+    <div className="group relative min-w-0 max-w-full overflow-x-clip">
       <section
         aria-label={copy.region}
         aria-roledescription={slides.length > 1 ? 'carousel' : undefined}

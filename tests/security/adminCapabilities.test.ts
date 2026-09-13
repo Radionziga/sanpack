@@ -16,6 +16,8 @@ describe('admin role capabilities', () => {
     expect(canAccessAdminPath('viewer', '/admin/products')).toBe(false);
     expect(canAccessAdminPath('viewer', '/admin/settings')).toBe(false);
     expect(canAccessAdminPath('viewer', '/admin')).toBe(false);
+    expect(canAccessAdminPath('content_manager', '/admin/links')).toBe(false);
+    expect(canAccessAdminPath('super_admin', '/admin/links')).toBe(true);
     expect(getAdminLandingPath('content_manager')).toBe('/admin/products');
     expect(getAdminLandingPath('sales_manager')).toBe('/admin/requests');
   });

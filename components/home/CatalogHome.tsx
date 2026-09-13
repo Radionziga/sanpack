@@ -161,10 +161,10 @@ export function CatalogHome({
     .filter((section) => section.products.length > 0), [mainCategories, products, categories]);
 
   const storefrontCopy = {
-    ru: { all: 'Смотреть все', empty: 'Каталог временно недоступен' },
-    uz: { all: 'Barchasini ko‘rish', empty: 'Katalog vaqtincha ishlamayapti' },
-    en: { all: 'View all', empty: 'The catalogue is temporarily unavailable' },
-    zh: { all: '查看全部', empty: '目录暂时不可用' },
+    ru: { all: 'Смотреть все', allShort: 'Все', empty: 'Каталог временно недоступен' },
+    uz: { all: 'Barchasini ko‘rish', allShort: 'Barchasi', empty: 'Katalog vaqtincha ishlamayapti' },
+    en: { all: 'View all', allShort: 'All', empty: 'The catalogue is temporarily unavailable' },
+    zh: { all: '查看全部', allShort: '全部', empty: '目录暂时不可用' },
   }[locale];
 
   return (
@@ -221,7 +221,7 @@ export function CatalogHome({
             {categorySections.map(({ category, products: sectionProducts }, sectionIndex) => (
               <section key={category.id} aria-labelledby={`home-shelf-${category.id}`}>
                 <div className="mb-4 flex items-end justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <h2 id={`home-shelf-${category.id}`} className="text-2xl font-extrabold leading-tight tracking-[-0.035em] text-[var(--sp-ink)]">
                       {categoryTitle(category)}
                     </h2>
@@ -230,7 +230,7 @@ export function CatalogHome({
                     ) : null}
                   </div>
                   <Link href={getCategoryPath(category, categories)} className="flex min-h-11 shrink-0 items-center gap-1 rounded-[var(--sp-radius-control)] px-2.5 text-xs font-bold text-[var(--sp-brand)] hover:bg-[var(--sp-brand-soft)]">
-                    {storefrontCopy.all}<ArrowRight className="size-4" aria-hidden="true" />
+                    <span className="sm:hidden">{storefrontCopy.allShort}</span><span className="hidden sm:inline">{storefrontCopy.all}</span><ArrowRight className="size-4" aria-hidden="true" />
                   </Link>
                 </div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4">

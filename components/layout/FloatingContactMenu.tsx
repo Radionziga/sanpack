@@ -38,7 +38,8 @@ export function FloatingContactMenu() {
   const hasCriticalBottomAction = pathname.includes('/product/')
     || pathname.endsWith('/request')
     || pathname.includes('/bag-designer')
-    || pathname.includes('/catalog/print');
+    || pathname.includes('/catalog/print')
+    || pathname.endsWith('/links');
   if (hasCriticalBottomAction) return null;
   if (phones.length === 0 && !contacts.telegram && !contacts.whatsapp) return null;
 

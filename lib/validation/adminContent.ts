@@ -205,6 +205,55 @@ const defaultSeoSettingsSchema = z.object({
   defaultDescriptionZh: z.string().trim().max(1_000).optional(),
 }).strict();
 
+const linkHubHref = z.string().trim().min(1).max(2_000).refine((value) => {
+  if (/^\/(?!\/)/.test(value)) return true;
+  if (/^(tel:|mailto:)/i.test(value)) return true;
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}, 'Используйте внутренний путь, HTTPS-, телефонную или email-ссылку.');
+
+const linkHubLinkSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  labelRu: z.string().trim().min(1, 'Укажите название ссылки.').max(100),
+  labelUz: z.string().trim().max(100).optional(),
+  labelEn: z.string().trim().max(100).optional(),
+  labelZh: z.string().trim().max(100).optional(),
+  href: linkHubHref,
+  icon: z.enum(['catalog', 'telegram', 'instagram', 'phone', 'location', 'delivery', 'bag', 'website']),
+  enabled: z.boolean(),
+}).strict();
+
+const linkHubSettingsSchema = z.object({
+  enabled: z.boolean(),
+  titleRu: z.string().trim().min(1).max(160),
+  titleUz: z.string().trim().max(160).optional(),
+  titleEn: z.string().trim().max(160).optional(),
+  titleZh: z.string().trim().max(160).optional(),
+  descriptionRu: z.string().trim().max(500),
+  descriptionUz: z.string().trim().max(500).optional(),
+  descriptionEn: z.string().trim().max(500).optional(),
+  descriptionZh: z.string().trim().max(500).optional(),
+  highlightEnabled: z.boolean(),
+  highlightTitleRu: z.string().trim().max(160).optional(),
+  highlightTitleUz: z.string().trim().max(160).optional(),
+  highlightTitleEn: z.string().trim().max(160).optional(),
+  highlightTitleZh: z.string().trim().max(160).optional(),
+  highlightDescriptionRu: z.string().trim().max(500).optional(),
+  highlightDescriptionUz: z.string().trim().max(500).optional(),
+  highlightDescriptionEn: z.string().trim().max(500).optional(),
+  highlightDescriptionZh: z.string().trim().max(500).optional(),
+  links: z.array(linkHubLinkSchema).max(20),
+}).strict().superRefine((value, context) => {
+  const ids = new Set<string>();
+  value.links.forEach((link, index) => {
+    if (ids.has(link.id)) context.addIssue({ code: 'custom', path: ['links', index, 'id'], message: 'Ссылки должны иметь уникальные идентификаторы.' });
+    ids.add(link.id);
+  });
+});
+
 export const settingsMutationSchema = z.object({
   design: designSettingsSchema.optional(),
   contacts: contactSettingsSchema.optional(),
@@ -214,6 +263,7 @@ export const settingsMutationSchema = z.object({
     branding: storefrontServiceSettingsSchema.optional(),
     bagDesigner: storefrontServiceSettingsSchema.optional(),
   }).strict().optional(),
+  linkHub: linkHubSettingsSchema.optional(),
 }).passthrough();
 
 const productOrderPackagingSchema = z.object({

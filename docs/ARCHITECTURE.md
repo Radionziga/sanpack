@@ -205,14 +205,15 @@ Product JSON-LD использует minimum **sale** Offer, не normalized amo
 
 ## 10. SiteSettings / white-label
 
-`settings/global` → server public loader → locale layout/PublicProviders → SiteSettingsProvider/UI. `mergeSiteSettings.ts` сохраняет defaults старых документов; nested company/contacts/locale/design/seo и сервисные modules сливаются явно. Это не универсальный deep merge любого будущего объекта; commerce не получает такую же гарантию автоматически.
+`settings/global` → server public loader → locale layout/PublicProviders → SiteSettingsProvider/UI. `mergeSiteSettings.ts` сохраняет defaults старых документов; nested company/contacts/locale/design/seo, сервисные modules и optional `linkHub` сливаются явно. Это не универсальный deep merge любого будущего объекта; commerce не получает такую же гарантию автоматически.
 
 - Company name, logos/dark logo/favicon, localized descriptions; contacts и social links.
 - Design: colors/radius/font preset/light-dark; `StorefrontTheme` строит semantic `--sp-*` variables. Legacy designVersion/font/radius adapters сохранены.
 - Default SEO; service modules branding/bagDesigner enabled и navigation images.
+- Optional Link Hub: localized title/description/highlight и упорядоченный список до 20 безопасных internal/HTTPS/tel/mailto links. Route фиксирован как `/[locale]/links`; отдельная collection или arbitrary page builder не создаются.
 - Sales/commerce/locale configuration присутствует, но не вся она динамически переопределяет routing/checkout (см. limitations).
 
-Admin settings/contact UI позволяет редактировать identity/SEO/theme/services; приватные integrations — отдельные endpoints/documents. Generic contact UI использует company name. Own-production filter показывается только при наличии таких товаров в scope, отдельный generic tags engine не добавлялся.
+Admin settings/contact UI позволяет редактировать identity/SEO/theme/services; `/admin/links` управляет Link Hub через тот же settings mutation boundary. Приватные integrations — отдельные endpoints/documents. Generic contact UI использует company name. Own-production filter показывается только при наличии таких товаров в scope, отдельный generic tags engine не добавлялся.
 
 SANPACK-specific About/marketing/page copy и seed остаются content layer. Технические cookie/localStorage keys не переименованы. Favicon metadata configurable, при этом статические `app/favicon.ico`/`app/icon.png` всё ещё существуют: при rebrand проверять фактически отдаваемые icons, а не только значение settings.
 
@@ -268,7 +269,7 @@ Routing `i18n/routing.ts`: RU/UZ/EN/ZH, locale prefix always. `SiteSettings.loca
 
 Commercial presentation не является вторым pricing engine. `commercialSummary.ts` агрегирует уже рассчитанные cart/request lines и одинаково представляет priced, mixed и request-only состав на cart dock, request page, sidebar и customer history. `productCommercial.ts` строит упаковку, minimum purchase amount и wholesale hints из `orderQuantities.ts` + `productOffer.ts`. Ручной quantity input всегда нормализуется теми же min/step/max/packaging/Variant rules; server canonical validation остаётся authority.
 
-Locale layout получает SiteSettings для default metadata/company identity/favicon. `lib/seo/metadata.ts` строит единые localized fallback, canonical, hreflang, OG/Twitter и company identity. Product/category layouts используют этот helper; основные content routes (`about`, `clients`, `delivery`, `branding`, `contacts`, `privacy`, `terms`) имеют собственную metadata вместо наследования Home. Product JSON-LD — sale Offer (см. pricing), locale layout добавляет Organization/WebSite, Product и taxonomy pages — BreadcrumbList. Dynamic sitemap сочетает static paths, active categories и published products для четырёх локалей; при backend failure dynamic lists пусты, static routes остаются, seed автоматически не включается.
+Locale layout получает SiteSettings для default metadata/company identity/favicon. `lib/seo/metadata.ts` строит единые localized fallback, canonical, hreflang, OG/Twitter и company identity. Product/category layouts используют этот helper; основные content routes (`about`, `clients`, `delivery`, `branding`, `contacts`, `privacy`, `terms`) и Link Hub имеют собственную metadata вместо наследования Home. Product JSON-LD — sale Offer (см. pricing), locale layout добавляет Organization/WebSite, Product и taxonomy pages — BreadcrumbList. Dynamic sitemap сочетает static paths, включённый Link Hub, active categories и published products для четырёх локалей; при backend failure dynamic lists пусты, static routes остаются, seed автоматически не включается.
 
 Indexability: published Product и active taxonomy indexable; draft/hidden entities не попадают в public repository/sitemap. Admin имеет layout noindex. Search/favorites/request/orders/profile/print и API получают `X-Robots-Tag: noindex, nofollow`; robots дополнительно исключает их из discovery. Filter combinations не являются SEO routes и не создают индексируемые faceted URLs.
 

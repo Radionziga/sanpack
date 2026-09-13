@@ -11,6 +11,7 @@ import {
   ImageIcon,
   Images,
   LayoutDashboard,
+  Link2,
   LogOut,
   Package,
   PanelsTopLeft,
@@ -49,6 +50,7 @@ const navigation = [
       { label: 'Медиафайлы', href: '/admin/media', icon: Images },
       { label: 'Промо-карусель', href: '/admin/promotions', icon: ImageIcon },
       { label: 'Клиенты и партнёры', href: '/admin/clients', icon: Users },
+      { label: 'Страница ссылок', href: '/admin/links', icon: Link2 },
     ],
   },
   {

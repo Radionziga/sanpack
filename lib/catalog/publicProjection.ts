@@ -30,6 +30,7 @@ const attribute = {
   ...localized('title'), options: [{ ...fields('value'), ...localized('label') }],
 } satisfies Shape;
 const service = fields('enabled navigationImage');
+const linkHubLink = { ...fields('id href icon enabled'), ...localized('label') } satisfies Shape;
 const settings = {
   company: { ...fields('name logo logoDark favicon'), ...localized('description') },
   contacts: { ...fields('phone1 phone2 email telegram whatsapp mapIframe'), ...localized('address'), ...localized('workingHours'), ...localized('city') },
@@ -38,6 +39,14 @@ const settings = {
   design: fields('designVersion primaryColor secondaryColor borderRadius themeMode fontPair'),
   seo: { ...localized('defaultTitle'), ...localized('defaultDescription') },
   modules: { branding: service, bagDesigner: service },
+  linkHub: {
+    ...fields('enabled highlightEnabled'),
+    ...localized('title'),
+    ...localized('description'),
+    ...localized('highlightTitle'),
+    ...localized('highlightDescription'),
+    links: [linkHubLink],
+  },
 } satisfies Shape;
 
 function primitive(value: unknown): boolean {

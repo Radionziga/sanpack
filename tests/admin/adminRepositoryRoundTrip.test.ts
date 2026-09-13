@@ -25,4 +25,36 @@ describe('AdminRepository save → read → edit → save', () => {
     expect(body.id).toBe(entity.id);
     for (const key of ['id', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy']) expect(body.data).not.toHaveProperty(key);
   });
+
+  it('round-trips Link Hub settings without leaking server metadata', async () => {
+    const linkHub = {
+      enabled: true,
+      titleRu: 'Все ссылки',
+      descriptionRu: 'Описание',
+      highlightEnabled: false,
+      links: [{ id: 'catalog', labelRu: 'Каталог', href: '/catalog', icon: 'catalog', enabled: true }],
+    };
+    fetchMock.mockResolvedValueOnce(Response.json({
+      company: { name: 'SANPACK' },
+      linkHub,
+      createdBy: 'private-owner',
+      updatedAt: 'private-timestamp',
+    }));
+    const loaded = await AdminRepository.getSettings();
+
+    fetchMock.mockResolvedValueOnce(Response.json({ ...loaded, linkHub: { ...linkHub, titleRu: 'Новый заголовок' } }));
+    await AdminRepository.saveSettings({
+      linkHub: { ...loaded.linkHub!, titleRu: 'Новый заголовок' },
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(body).toMatchObject({
+      action: 'save',
+      resource: 'settings',
+      id: 'global',
+      data: { linkHub: { titleRu: 'Новый заголовок', links: linkHub.links } },
+    });
+    expect(body.data).not.toHaveProperty('createdBy');
+    expect(body.data).not.toHaveProperty('updatedAt');
+  });
 });

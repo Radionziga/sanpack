@@ -71,6 +71,33 @@ export const initialSiteSettings: SiteSettings = {
       navigationImage: '/catalog/category-icons-v3/bag-designer-service-v2.webp',
     },
   },
+  linkHub: {
+    enabled: true,
+    titleRu: 'Всё для вашего бизнеса — в одном месте',
+    titleUz: 'Biznesingiz uchun hammasi bir joyda',
+    titleEn: 'Everything your business needs, in one place',
+    titleZh: '企业所需，一站汇集',
+    descriptionRu: 'Упаковка, расходные материалы и продукты для HoReCa с доставкой по Ташкенту.',
+    descriptionUz: 'HoReCa uchun qadoqlash, sarf materiallari va oziq-ovqat mahsulotlari. Toshkent bo‘ylab yetkazib beramiz.',
+    descriptionEn: 'Packaging, consumables and food products for HoReCa, delivered across Tashkent.',
+    descriptionZh: '面向 HoReCa 的包装、耗材与食品，塔什干配送。',
+    highlightEnabled: true,
+    highlightTitleRu: 'Подберём решение под ваш бизнес',
+    highlightTitleUz: 'Biznesingiz uchun yechim tanlaymiz',
+    highlightTitleEn: 'We will find the right solution for your business',
+    highlightTitleZh: '为您的企业匹配合适方案',
+    highlightDescriptionRu: 'Оставьте заявку — менеджер уточнит цены, наличие и доставку.',
+    highlightDescriptionUz: 'Ariza qoldiring — menejer narx, mavjudlik va yetkazib berishni aniqlashtiradi.',
+    highlightDescriptionEn: 'Send a request and a manager will confirm pricing, availability and delivery.',
+    highlightDescriptionZh: '提交申请，经理将确认价格、库存和配送。',
+    links: [
+      { id: 'catalog', labelRu: 'Открыть каталог', labelUz: 'Katalogni ochish', labelEn: 'Open catalog', labelZh: '打开目录', href: '/catalog', icon: 'catalog', enabled: true },
+      { id: 'telegram', labelRu: 'Написать в Telegram', labelUz: 'Telegram orqali yozish', labelEn: 'Message us on Telegram', labelZh: '通过 Telegram 联系', href: 'https://t.me/sanpack_uz', icon: 'telegram', enabled: true },
+      { id: 'phone', labelRu: 'Позвонить', labelUz: 'Qo‘ng‘iroq qilish', labelEn: 'Call us', labelZh: '致电我们', href: 'tel:+998998510506', icon: 'phone', enabled: true },
+      { id: 'delivery', labelRu: 'Доставка и оплата', labelUz: 'Yetkazib berish va to‘lov', labelEn: 'Delivery and payment', labelZh: '配送与付款', href: '/delivery', icon: 'delivery', enabled: true },
+      { id: 'bag-designer', labelRu: 'Конструктор пакета', labelUz: 'Paket konstruktori', labelEn: 'Bag designer', labelZh: '包装袋设计器', href: '/bag-designer', icon: 'bag', enabled: true },
+    ],
+  },
 };
 
 export const initialCategories = priceList2026Categories;

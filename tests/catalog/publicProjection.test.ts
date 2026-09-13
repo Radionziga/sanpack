@@ -20,9 +20,21 @@ describe('trusted public catalog projection', () => {
   });
 
   it('does not serialize unknown private settings fields', () => {
-    const value = { ...initialSiteSettings, privateSettings: { token: 'secret' }, company: { ...initialSiteSettings.company, internal: 'secret' } };
+    const value = {
+      ...initialSiteSettings,
+      privateSettings: { token: 'secret' },
+      company: { ...initialSiteSettings.company, internal: 'secret' },
+      linkHub: {
+        ...initialSiteSettings.linkHub!,
+        internal: 'secret',
+        links: initialSiteSettings.linkHub!.links.map((link) => ({ ...link, token: 'secret' })),
+      },
+    };
     const result = projectPublicSettings(value);
     expect(result).not.toHaveProperty('privateSettings');
     expect(result.company).not.toHaveProperty('internal');
+    expect(result.linkHub).not.toHaveProperty('internal');
+    expect(result.linkHub?.links[0]).not.toHaveProperty('token');
+    expect(result.linkHub?.links[0]).toMatchObject({ id: 'catalog', href: '/catalog' });
   });
 });

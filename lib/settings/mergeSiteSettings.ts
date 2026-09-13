@@ -1,6 +1,6 @@
 import type { SiteSettings, StorefrontServiceSettings } from '@/types';
 
-type StoredSiteSettings = Omit<Partial<SiteSettings>, 'company' | 'contacts' | 'locale' | 'design' | 'seo' | 'modules'> & {
+type StoredSiteSettings = Omit<Partial<SiteSettings>, 'company' | 'contacts' | 'locale' | 'design' | 'seo' | 'modules' | 'linkHub'> & {
   company?: Partial<SiteSettings['company']>;
   contacts?: Partial<SiteSettings['contacts']>;
   locale?: Partial<SiteSettings['locale']>;
@@ -10,6 +10,7 @@ type StoredSiteSettings = Omit<Partial<SiteSettings>, 'company' | 'contacts' | '
     branding?: Partial<NonNullable<NonNullable<SiteSettings['modules']>['branding']>>;
     bagDesigner?: Partial<NonNullable<NonNullable<SiteSettings['modules']>['bagDesigner']>>;
   };
+  linkHub?: Partial<NonNullable<SiteSettings['linkHub']>>;
 };
 
 function mergeServiceModule(
@@ -43,5 +44,14 @@ export function mergeSiteSettings(
       branding: mergeServiceModule(defaults.modules?.branding, stored.modules?.branding),
       bagDesigner: mergeServiceModule(defaults.modules?.bagDesigner, stored.modules?.bagDesigner),
     },
+    linkHub: defaults.linkHub || stored.linkHub ? {
+      ...defaults.linkHub,
+      ...stored.linkHub,
+      enabled: stored.linkHub?.enabled ?? defaults.linkHub?.enabled ?? false,
+      highlightEnabled: stored.linkHub?.highlightEnabled ?? defaults.linkHub?.highlightEnabled ?? false,
+      links: stored.linkHub?.links ?? defaults.linkHub?.links ?? [],
+      titleRu: stored.linkHub?.titleRu ?? defaults.linkHub?.titleRu ?? defaults.company.name,
+      descriptionRu: stored.linkHub?.descriptionRu ?? defaults.linkHub?.descriptionRu ?? defaults.company.descriptionRu,
+    } : undefined,
   };
 }

@@ -28,7 +28,7 @@ export function canAccessAdminPath(role: UserRole, path: string) {
   }
   if (path.startsWith('/admin/settings') || path.startsWith('/admin/contact-settings')
     || path.startsWith('/admin/integrations') || path.startsWith('/admin/document-settings')
-    || path.startsWith('/admin/services')) return false;
+    || path.startsWith('/admin/services') || path.startsWith('/admin/links')) return false;
   return role === 'content_manager';
 }
 

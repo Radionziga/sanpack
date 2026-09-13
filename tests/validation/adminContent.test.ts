@@ -167,3 +167,37 @@ describe('storefront service settings validation', () => {
     }).success).toBe(false);
   });
 });
+
+describe('link hub settings validation', () => {
+  const validLinkHub = {
+    enabled: true,
+    titleRu: 'Все ссылки',
+    descriptionRu: 'Короткое описание',
+    highlightEnabled: false,
+    links: [
+      { id: 'catalog', labelRu: 'Каталог', href: '/catalog', icon: 'catalog' as const, enabled: true },
+      { id: 'telegram', labelRu: 'Telegram', href: 'https://t.me/example', icon: 'telegram' as const, enabled: true },
+      { id: 'phone', labelRu: 'Позвонить', href: 'tel:+998901234567', icon: 'phone' as const, enabled: true },
+    ],
+  };
+
+  it('accepts bounded internal, HTTPS and contact links', () => {
+    expect(settingsMutationSchema.safeParse({ linkHub: validLinkHub }).success).toBe(true);
+  });
+
+  it.each(['javascript:alert(1)', '//evil.example/path', 'http://example.com', 'data:text/html,test'])(
+    'rejects unsafe href %j',
+    (href) => expect(settingsMutationSchema.safeParse({
+      linkHub: { ...validLinkHub, links: [{ ...validLinkHub.links[0], href }] },
+    }).success).toBe(false),
+  );
+
+  it('rejects duplicate IDs and more than twenty links', () => {
+    expect(settingsMutationSchema.safeParse({
+      linkHub: { ...validLinkHub, links: [validLinkHub.links[0], { ...validLinkHub.links[0] }] },
+    }).success).toBe(false);
+    expect(settingsMutationSchema.safeParse({
+      linkHub: { ...validLinkHub, links: Array.from({ length: 21 }, (_, index) => ({ ...validLinkHub.links[0], id: `link-${index}` })) },
+    }).success).toBe(false);
+  });
+});

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PublicProfile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-destructive: var(--destructive);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-popover: var(--popover);
+        --color-popover-foreground: var(--popover-foreground);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-chart-1: var(--chart-1);
+        --color-chart-2: var(--chart-2);
+        --color-chart-3: var(--chart-3);
+        --color-chart-4: var(--chart-4);
+        --color-chart-5: var(--chart-5);
+
+        --font-font-sans: var(--font-sans);
+        --font-font-heading: var(--font-heading);
+        --font-font-serif: var(--font-serif);
+        --font-font-mono: var(--font-mono);
+      }
+
+      @theme {
+        --radius-xs: calc(var(--radius) - 8px);
+        --radius-sm: calc(var(--radius) - 4px);
+        --radius-md: calc(var(--radius) - 2px);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) + 4px);
+        --radius-2xl: calc(var(--radius) + 8px);
+        --radius-3xl: calc(var(--radius) + 16px);
+        --radius-4xl: calc(var(--radius) + 24px);
+      }
+
+      * {
+        corner-shape: var(--shape, round);
+      }
+
+      .rounded-full,
+      .rounded-none,
+      .rounded-t-full,
+      .rounded-t-none,
+      .rounded-r-full,
+      .rounded-r-none,
+      .rounded-b-full,
+      .rounded-b-none,
+      .rounded-l-full,
+      .rounded-l-none,
+      .rounded-s-full,
+      .rounded-s-none,
+      .rounded-e-full,
+      .rounded-e-none,
+      .rounded-tl-full,
+      .rounded-tl-none,
+      .rounded-tr-full,
+      .rounded-tr-none,
+      .rounded-bl-full,
+      .rounded-bl-none,
+      .rounded-br-full,
+      .rounded-br-none,
+      .rounded-ss-full,
+      .rounded-ss-none,
+      .rounded-se-full,
+      .rounded-se-none,
+      .rounded-es-full,
+      .rounded-es-none,
+      .rounded-ee-full,
+      .rounded-ee-none {
+        corner-shape: round;
+      }
+
+      @utility rounded-* {
+        border-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-t-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-r-* {
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-b-* {
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-l-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-tl-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-tr-* {
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-bl-* {
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-br-* {
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-s-* {
+        border-start-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-end-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-e-* {
+        border-start-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-end-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-ss-* {
+        border-start-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-se-* {
+        border-start-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-es-* {
+        border-end-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-ee-* {
+        border-end-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+
+      :root {
+        --shape: squircle;
+        --shape-multiplier: 1;
+
+        --background: #faf9f5;
+        --foreground: #171a18;
+        --primary: #2e6b4f;
+        --primary-foreground: #ffffff;
+        --secondary: #eef2ed;
+        --secondary-foreground: #244b38;
+        --muted: #e7eae5;
+        --muted-foreground: #6d756f;
+        --accent: #e6f1e8;
+        --accent-foreground: #28563f;
+        --destructive: #b94a48;
+        --card: #ffffff;
+        --card-foreground: #171a18;
+        --popover: #ffffff;
+        --popover-foreground: #171a18;
+        --border: #dde2dc;
+        --input: #f4f5f1;
+        --ring: #2e6b4f;
+        --chart-1: #2e6b4f;
+        --chart-2: #6e967d;
+        --chart-3: #a8c1af;
+        --chart-4: #c8d8cb;
+        --chart-5: #8a938c;
+
+        --font-sans: "Manrope";
+        --font-heading: "Manrope";
+        --font-serif: "Playfair Display";
+        --font-mono: "JetBrains Mono";
+
+        --radius: 0.8rem;
+      }
+
+      @supports (corner-shape: squircle) {
+        :root {
+          --shape-multiplier: 2.5;
+        }
+      }
+
+      /* Hide scrollbars */
+      *,
+      *::before,
+      *::after {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      *::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main
+      style="
+        padding-top: max(20px, env(safe-area-inset-top));
+        padding-bottom: max(40px, env(safe-area-inset-bottom));
+      "
+      class="min-h-screen bg-background text-foreground px-5 pt-5 pb-10"
+    >
+      <div class="mx-auto w-full max-w-[390px]">
+        <header class="flex items-center justify-between">
+          <div
+            class="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 min-h-11"
+          >
+            <span class="text-[12px] font-bold tracking-[0.16em] text-primary">UZ</span
+            ><svg
+              class="size-4 text-muted-foreground"
+              xmlns="http://www.w3.org/2000/svg"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M19 9L12 15L5 9"
+              />
+            </svg>
+          </div>
+          <button
+            type="button"
+            class="flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label="Share SANPACK profile"
+          >
+            <svg
+              class="size-5"
+              xmlns="http://www.w3.org/2000/svg"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+            >
+              <g fill="none" stroke="currentColor" stroke-width="1.5">
+                <path
+                  d="M9 12C9 13.3807 7.88071 14.5 6.5 14.5C5.11929 14.5 4 13.3807 4 12C4 10.6193 5.11929 9.5 6.5 9.5C7.88071 9.5 9 10.6193 9 12Z"
+                />
+                <path stroke-linecap="round" d="M14 6.5L9 10" />
+                <path stroke-linecap="round" d="M14 17.5L9 14" />
+                <path
+                  d="M19 18.5C19 19.8807 17.8807 21 16.5 21C15.1193 21 14 19.8807 14 18.5C14 17.1193 15.1193 16 16.5 16C17.8807 16 19 17.1193 19 18.5Z"
+                />
+                <path
+                  d="M19 5.5C19 6.88071 17.8807 8 16.5 8C15.1193 8 14 6.88071 14 5.5C14 4.11929 15.1193 3 16.5 3C17.8807 3 19 4.11929 19 5.5Z"
+                />
+              </g>
+            </svg>
+          </button>
+        </header>
+        <section class="flex flex-col items-center pt-9 text-center">
+          <div
+            class="flex size-[76px] items-center justify-center rounded-[22px] bg-primary text-primary-foreground"
+            aria-label="SANPACK logo placeholder"
+          >
+            <div class="flex flex-col items-center leading-none">
+              <span class="text-[25px] font-extrabold tracking-[-0.08em]">SP</span
+              ><span class="mt-1 text-[7px] font-bold tracking-[0.2em]">SANPACK</span>
+            </div>
+          </div>
+          <h1 class="font-heading mt-5 text-[26px] font-extrabold tracking-[-0.045em]">SANPACK</h1>
+          <p class="mt-2 max-w-[320px] text-[14px] leading-6 text-muted-foreground">
+            Packaging, consumables and food supply for HoReCa in Tashkent.
+          </p>
+        </section>
+        <section
+          class="mt-7 rounded-[18px] border border-accent bg-accent px-4 py-3.5"
+          aria-label="Featured information"
+        >
+          <div class="flex items-start gap-3">
+            <span
+              class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-card text-primary"
+              ><svg
+                class="size-4"
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+              >
+                <g fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path
+                    d="M12 9.00006L16.5 4.50006M12 14.5001L18.5 8.00006M12 19.5001L19.5 12.0001"
+                  />
+                  <path
+                    d="M12 22C16.4183 22 20 18.3541 20 13.8567C20 9.39453 17.4467 4.18759 13.4629 2.32555C12.9986 2.10852 12.4993 2 12 2M12 22C7.58172 22 4 18.3541 4 13.8567C4 9.39453 6.55332 4.18759 10.5371 2.32555C11.0014 2.10852 11.5007 2 12 2M12 22V2"
+                  />
+                </g></svg
+            ></span>
+            <div>
+              <p class="text-[13px] font-bold text-accent-foreground">
+                Everything your kitchen needs
+              </p>
+              <p class="mt-0.5 text-[12px] leading-5 text-accent-foreground/75">
+                Reliable supply, clear pricing, on-time delivery.
+              </p>
+            </div>
+          </div>
+        </section>
+        <nav class="mt-5 flex flex-col gap-3" aria-label="SANPACK destinations">
+          <a
+            href="#catalog"
+            class="group flex min-h-[56px] items-center gap-3 rounded-[18px] border border-border bg-card px-4 text-[14px] font-bold text-card-foreground transition-colors hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            ><span
+              class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"
+              ><svg
+                class="size-5"
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+              >
+                <g fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path
+                    d="M3 10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H13C16.7712 2 18.6569 2 19.8284 3.17157C21 4.34315 21 6.22876 21 10V14C21 17.7712 21 19.6569 19.8284 20.8284C18.6569 22 16.7712 22 13 22H11C7.22876 22 5.34315 22 4.17157 20.8284C3 19.6569 3 17.7712 3 14V10Z"
+                  />
+                  <path stroke-linecap="round" d="M8 12H16" />
+                  <path stroke-linecap="round" d="M8 8H16" />
+                  <path stroke-linecap="round" d="M8 16H13" />
+                </g></svg></span
+            ><span class="flex-1">Open catalog</span
+            ><svg
+              class="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+              xmlns="http://www.w3.org/2000/svg"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M4 12H20M14 18L20 12L14 6"
+              /></svg></a
+          ><a
+            href="#telegram"
+            class="group flex min-h-[56px] items-center gap-3 rounded-[18px] border border-border bg-card px-4 text-[14px] font-bold text-card-foreground transition-colors hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            ><span
+              class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"
+              ><svg
+                class="size-5"
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="currentColor"
+                  d="m4 6.03l7.5 3.22l-7.5-1zm7.5 8.72L4 17.97v-2.22zM2 3v7l15 2l-15 2v7l21-9z"
+                /></svg></span
+            ><span class="flex-1">Write in Telegram</span
+            ><svg
+              class="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+              xmlns="http://www.w3.org/2000/svg"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M4 12H20M14 18L20 12L14 6"
+              /></svg></a
+          ><a
+            href="tel:+998000000000"
+            class="group flex min-h-[56px] items-center gap-3 rounded-[18px] border border-border bg-card px-4 text-[14px] font-bold text-card-foreground transition-colors hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            ><span
+              class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"
+              ><svg
+                class="size-5"
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-width="1.5"
+                  d="M18.6763 19.9631C19.1917 19.9122 19.6399 19.6343 20.0011 19.254L21.4217 17.7584C22.3806 16.7489 22.1102 15.0182 20.8833 14.312L18.9728 13.2123C18.1672 12.7486 17.1858 12.8848 16.5562 13.5477L16.1007 14.0272C16.1007 14.0272 15.0181 15.167 12.0631 12.0559C9.10812 8.94484 10.1907 7.80507 10.1907 7.80507L10.4775 7.50311C11.1841 6.75924 11.2507 5.56497 10.6342 4.6931L9.37326 2.90961C8.61028 1.8305 7.13596 1.68795 6.26145 2.60864L4.69185 4.26114C4.25823 4.71766 3.96765 5.30945 4.00289 5.96594C4.09304 7.64546 4.81072 11.259 8.81536 15.4752C13.0621 19.9462 17.0468 20.1239 18.6763 19.9631Z"
+                /></svg></span
+            ><span class="flex-1">Call sales</span
+            ><svg
+              class="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+              xmlns="http://www.w3.org/2000/svg"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M4 12H20M14 18L20 12L14 6"
+              /></svg></a
+          ><a
+            href="#delivery"
+            class="group flex min-h-[56px] items-center gap-3 rounded-[18px] border border-border bg-card px-4 text-[14px] font-bold text-card-foreground transition-colors hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            ><span
+              class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"
+              ><svg
+                class="size-5"
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+              >
+                <g fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path
+                    d="M9.56541 8.73049C9.0804 6.97492 8.8379 6.09714 9.24954 5.40562C9.66119 4.71409 10.5662 4.47889 12.3763 4.00849L14.2962 3.50955C16.1062 3.03915 17.0113 2.80394 17.7242 3.20319C18.4372 3.60244 18.6797 4.48023 19.1647 6.2358L19.6792 8.09786C20.1642 9.85343 20.4067 10.7312 19.995 11.4227C19.5834 12.1143 18.6784 12.3495 16.8683 12.8199L14.9484 13.3188C13.1384 13.7892 12.2333 14.0244 11.5203 13.6252C10.8073 13.2259 10.5648 12.3481 10.0798 10.5926L9.56541 8.73049Z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    d="M8.23 15.0602L6.08 7.27014C5.89453 6.61732 5.38563 6.12036 4.7 5.92L3 5.4502"
+                  />
+                  <circle cx="8.05" cy="18.1" r="2.9" />
+                  <path stroke-linecap="round" d="M10.9199 17.36L19.9999 15" />
+                </g></svg></span
+            ><span class="flex-1">Delivery information</span
+            ><svg
+              class="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+              xmlns="http://www.w3.org/2000/svg"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M4 12H20M14 18L20 12L14 6"
+              /></svg></a
+          ><a
+            href="#constructor"
+            class="group flex min-h-[56px] items-center gap-3 rounded-[18px] border border-border bg-card px-4 text-[14px] font-bold text-card-foreground transition-colors hover:border-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            ><span
+              class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"
+              ><svg
+                class="size-5"
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+              >
+                <g fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path
+                    d="M4.97883 9.68508C2.99294 8.89073 2 8.49355 2 8C2 7.50645 2.99294 7.10927 4.97883 6.31492L7.7873 5.19153C9.77318 4.39718 10.7661 4 12 4C13.2339 4 14.2268 4.39718 16.2127 5.19153L19.0212 6.31492C21.0071 7.10927 22 7.50645 22 8C22 8.49355 21.0071 8.89073 19.0212 9.68508L16.2127 10.8085C14.2268 11.6028 13.2339 12 12 12C10.7661 12 9.77318 11.6028 7.7873 10.8085L4.97883 9.68508Z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    d="M22 12C22 12 21.0071 12.8907 19.0212 13.6851L16.2127 14.8085C14.2268 15.6028 13.2339 16 12 16C10.7661 16 9.77318 15.6028 7.7873 14.8085L4.97883 13.6851C2.99294 12.8907 2 12 2 12"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    d="M22 16C22 16 21.0071 16.8907 19.0212 17.6851L16.2127 18.8085C14.2268 19.6028 13.2339 20 12 20C10.7661 20 9.77318 19.6028 7.7873 18.8085L4.97883 17.6851C2.99294 16.8907 2 16 2 16"
+                  />
+                </g></svg></span
+            ><span class="flex-1">Package constructor</span
+            ><svg
+              class="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+              xmlns="http://www.w3.org/2000/svg"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M4 12H20M14 18L20 12L14 6"
+              /></svg
+          ></a>
+        </nav>
+        <footer class="pt-8 text-center">
+          <p class="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">
+            TASHKENT · UZBEKISTAN
+          </p>
+        </footer>
+      </div>
+    </main>
+  </body>
+</html>

@@ -129,6 +129,7 @@ export function MobileStorefrontChrome({
   const panelTriggerRef = useRef<HTMLElement | null>(null);
   const normalizedPathname = normalizePathname(pathname);
   const isDocumentMode = normalizedPathname.startsWith('/catalog/print');
+  const isStandaloneMode = isDocumentMode || normalizedPathname === '/links';
 
   const pendingDestination = pendingNavigation?.fromPathname === pathname ? pendingNavigation.destination : null;
 
@@ -409,7 +410,7 @@ export function MobileStorefrontChrome({
       : []),
   ];
 
-  if (isDocumentMode) {
+  if (isStandaloneMode) {
     return (
       <MobileStorefrontChromeContext.Provider value={contextValue}>
         {children}

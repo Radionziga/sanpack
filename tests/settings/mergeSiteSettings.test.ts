@@ -13,6 +13,21 @@ describe('mergeSiteSettings service modules', () => {
     expect(settings.company.favicon).toBe(initialSiteSettings.company.favicon);
     expect(settings.seo?.defaultTitleZh).toBe(initialSiteSettings.seo?.defaultTitleZh);
     expect(settings.design.primaryColor).toBe('#123456');
+    expect(settings.linkHub).toEqual(initialSiteSettings.linkHub);
+  });
+
+  it('replaces the managed link list while retaining omitted localized defaults', () => {
+    const settings = mergeSiteSettings(initialSiteSettings, {
+      linkHub: {
+        enabled: false,
+        links: [{ id: 'custom', labelRu: 'Партнёрам', href: '/clients', icon: 'website', enabled: true }],
+      },
+    });
+
+    expect(settings.linkHub?.enabled).toBe(false);
+    expect(settings.linkHub?.links).toHaveLength(1);
+    expect(settings.linkHub?.links[0].id).toBe('custom');
+    expect(settings.linkHub?.titleEn).toBe(initialSiteSettings.linkHub?.titleEn);
   });
 
   it('keeps default service artwork when an older document only stores the enabled flag', () => {
