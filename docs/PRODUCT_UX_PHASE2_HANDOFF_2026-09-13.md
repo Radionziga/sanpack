@@ -37,6 +37,15 @@ Phase 2 ускоряет повторную B2B-закупку без измен
 - Browser: compact/bounded Catalog, load-more URL restoration, exact Variant SKU → selected Variant, Search error/retry/empty and Product → Back scroll, repeat review/merge/no POST, 320/390 px overflow.
 - Existing Phase 1, stabilization, taxonomy, auth/order and Link Hub suites remain release-gate requirements.
 
-## Deployment
+## Production rollout — 2026-09-13
 
-Deploy only after the complete release gate. App Hosting is expected to build from an ordinary `main` push; do not perform duplicate manual deploy. No Firestore/Storage rules, IAM, secrets or data migration is required. Production Link Hub content remains controlled through existing Admin settings.
+- Link Hub checkpoint: `06af3e76395612ae0d5b8c3b8056463dab6849b9` (`feat: add configurable SANPACK link hub`).
+- Product UX Phase 2 checkpoint: `6922e5a8c4f61dcf13c237d741d088c6a9404886` (`feat: improve catalog discovery and repeat requests`).
+- Narrow Link Hub viewport patch: `d0a048dde44de0a8ada3fa9df414c760d5c98e67` (`fix: keep link hub language menu in viewport`).
+- Ordinary `main` pushes triggered App Hosting rollouts `fah-stamply-4df8a-sanpack-rollout-2026-09-13-001` and `fah-stamply-4df8a-sanpack-rollout-2026-09-13-002`; both builds and the required GitHub quality/browser checks completed successfully. No duplicate manual deploy was run.
+- The live custom domain serves the final patch behavior. Production Catalog renders 24 cards initially, 48 after `Load more`, preserves `page=2`, and exact Variant SKU search restores its query and selected Variant after Product → Back.
+- Production public projection contains 238 Products and all 238 have image URLs. The previously reported missing local photos came from incomplete seed data; the development-only public mirror now renders the same read-only public projection without introducing a production fallback.
+- Link Hub language-menu geometry was verified at 320/360/390/430 px: the 192 px menu opens from the left control toward the viewport and remains fully visible without horizontal overflow.
+- Route smoke passed for RU/UZ/EN/ZH storefront, Catalog, Search, Request, Profile, Link Hub, robots and sitemap. Unauthenticated `/admin/links` redirects to the existing Admin login boundary.
+- No Request or Telegram notification was created. Repeat composition remains a cart-only operation; authenticated production mutation smoke was intentionally not performed.
+- No Firestore/Storage rules, IAM, secrets, taxonomy or production content/data were changed. Previous source `702ceb6ad35829661488cfa05e5484c9cecf98d9` / rollout `fah-stamply-4df8a-sanpack-rollout-2026-09-12-003` remains the application rollback target.
