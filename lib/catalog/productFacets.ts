@@ -23,6 +23,15 @@ export interface ProductAttributeFilterOptions {
   inStockOnly?: boolean;
 }
 
+export function isAttributeFacetUseful(facet: AttributeFacet, active = false) {
+  if (active) return true;
+  if (facet.attribute.type === 'boolean') return true;
+  if (facet.attribute.type === 'number' || facet.attribute.type === 'range') {
+    return facet.minimum !== undefined && facet.maximum !== undefined && facet.minimum !== facet.maximum;
+  }
+  return facet.options.length > 1;
+}
+
 function hasValue(value: ProductAttributeValue | undefined): value is ProductAttributeValue {
   return value !== undefined
     && value !== ''

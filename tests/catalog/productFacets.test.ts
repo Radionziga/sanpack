@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAttributeFacet,
+  isAttributeFacetUseful,
   productMatchesAttributeFilters,
   type CatalogAttributeFilters,
 } from '@/lib/catalog/productFacets';
@@ -32,6 +33,22 @@ describe('catalog product and variant facets', () => {
       createVariant({ id: '256-blue', attributes: { storage: 256, color: 'blue' } }),
       createVariant({ id: '512-white', attributes: { storage: 512, color: 'white' } }),
     ],
+  });
+
+  it('hides non-actionable single-value filters but keeps an active selection visible', () => {
+    const brand = attribute('brand', 'text');
+    const oneValue = buildAttributeFacet(brand, [
+      createProduct({ id: 'one', attributes: { brand: 'SANPACK' } }),
+      createProduct({ id: 'two', attributes: { brand: 'SANPACK' } }),
+    ]);
+    const twoValues = buildAttributeFacet(brand, [
+      createProduct({ id: 'one', attributes: { brand: 'SANPACK' } }),
+      createProduct({ id: 'two', attributes: { brand: 'Other' } }),
+    ]);
+
+    expect(isAttributeFacetUseful(oneValue)).toBe(false);
+    expect(isAttributeFacetUseful(oneValue, true)).toBe(true);
+    expect(isAttributeFacetUseful(twoValues)).toBe(true);
   });
 
   it('finds a product by a value stored only on variants', () => {

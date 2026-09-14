@@ -1,0 +1,2340 @@
+{
+  "version": 1,
+  "projectId": "stamply-4df8a",
+  "inventorySourceRevision": "329b75e556e51704a5d3c24ecb0505ae7526aeab",
+  "plannedDate": "2026-09-14",
+  "baselineDigest": "42079b8271d096dcbb385213175a2710c329e71cba06c628fa070c8d4e5dc339",
+  "baselineCounts": {
+    "products": 238,
+    "categories": 27,
+    "attributes": 16,
+    "published": 238
+  },
+  "baselineTaxonomy": [
+    {
+      "id": "cat-baking-ingredients",
+      "parentId": "cat-food",
+      "slug": "drozhzhi-i-ingredienty-dlya-vypechki",
+      "status": "active",
+      "titleRu": "Дрожжи и ингредиенты для выпечки",
+      "titleUz": "Xamirturush va pishiriq masalliqlari",
+      "titleEn": "Yeast and baking ingredients",
+      "titleZh": "酵母和烘焙原料",
+      "sortOrder": 35,
+      "featured": true,
+      "featuredSortOrder": 33
+    },
+    {
+      "id": "cat-beef",
+      "parentId": "cat-food",
+      "slug": "govyadina",
+      "status": "active",
+      "titleRu": "Говядина",
+      "titleUz": "Mol go‘shti",
+      "titleEn": "Beef",
+      "sortOrder": 20,
+      "featured": true,
+      "featuredSortOrder": 20
+    },
+    {
+      "id": "cat-berries",
+      "parentId": "cat-food",
+      "slug": "yagody",
+      "status": "active",
+      "titleRu": "Ягоды",
+      "titleUz": "Rezavorlar",
+      "titleEn": "Berries",
+      "sortOrder": 28
+    },
+    {
+      "id": "cat-carrier-bags",
+      "parentId": "cat-packaging",
+      "slug": "pakety-mayka",
+      "status": "active",
+      "titleRu": "Пакеты «Майка»",
+      "titleUz": "Mayka paketlar",
+      "titleEn": "T-shirt carrier bags",
+      "sortOrder": 12
+    },
+    {
+      "id": "cat-chicken",
+      "parentId": "cat-food",
+      "slug": "kuritsa",
+      "status": "active",
+      "titleRu": "Курица",
+      "titleUz": "Tovuq go‘shti",
+      "titleEn": "Chicken",
+      "sortOrder": 21,
+      "featured": true,
+      "featuredSortOrder": 21
+    },
+    {
+      "id": "cat-cleaning",
+      "parentId": "cat-packaging",
+      "slug": "khoztovary",
+      "status": "active",
+      "titleRu": "Хозяйственные товары",
+      "titleUz": "Xo‘jalik mollari",
+      "titleEn": "Cleaning supplies",
+      "sortOrder": 16
+    },
+    {
+      "id": "cat-dairy",
+      "parentId": "cat-food",
+      "slug": "molochnaya-produktsiya",
+      "status": "active",
+      "titleRu": "Молочная продукция",
+      "titleUz": "Sut mahsulotlari",
+      "titleEn": "Dairy products",
+      "sortOrder": 32
+    },
+    {
+      "id": "cat-eggs",
+      "parentId": "cat-food",
+      "slug": "yaytsa",
+      "status": "active",
+      "titleRu": "Куриные яйца",
+      "titleUz": "Tovuq tuxumlari",
+      "titleEn": "Chicken eggs",
+      "sortOrder": 22
+    },
+    {
+      "id": "cat-flour",
+      "parentId": "cat-food",
+      "slug": "muka",
+      "status": "active",
+      "titleRu": "Мука",
+      "titleUz": "Un",
+      "titleEn": "Flour",
+      "sortOrder": 23
+    },
+    {
+      "id": "cat-food",
+      "parentId": null,
+      "slug": "produkty-pitaniya",
+      "status": "active",
+      "titleRu": "Продукты питания",
+      "titleUz": "Oziq-ovqat mahsulotlari",
+      "titleEn": "Food products",
+      "sortOrder": 2
+    },
+    {
+      "id": "cat-food-packaging",
+      "parentId": "cat-packaging",
+      "slug": "upakovka-dlya-produktov",
+      "status": "active",
+      "titleRu": "Упаковка для пищевых продуктов",
+      "titleUz": "Oziq-ovqat qadoqlari",
+      "titleEn": "Food packaging",
+      "sortOrder": 14
+    },
+    {
+      "id": "cat-frozen-food",
+      "parentId": "cat-food",
+      "slug": "zamorozhennye-produkty",
+      "status": "active",
+      "titleRu": "Замороженные продукты",
+      "titleUz": "Muzlatilgan mahsulotlar",
+      "titleEn": "Frozen foods",
+      "titleZh": "冷冻食品",
+      "sortOrder": 33,
+      "featured": true,
+      "featuredSortOrder": 31
+    },
+    {
+      "id": "cat-fruits",
+      "parentId": "cat-food",
+      "slug": "frukty",
+      "status": "active",
+      "titleRu": "Фрукты",
+      "titleUz": "Mevalar",
+      "titleEn": "Fruit",
+      "sortOrder": 27,
+      "featured": true,
+      "featuredSortOrder": 27
+    },
+    {
+      "id": "cat-gloves",
+      "parentId": "cat-packaging",
+      "slug": "perchatki",
+      "status": "active",
+      "titleRu": "Перчатки",
+      "titleUz": "Qo‘lqoplar",
+      "titleEn": "Gloves",
+      "sortOrder": 15
+    },
+    {
+      "id": "cat-greens",
+      "parentId": "cat-food",
+      "slug": "svezhaya-zelen",
+      "status": "active",
+      "titleRu": "Свежая зелень Novagreen",
+      "titleUz": "Novagreen yangi ko‘katlari",
+      "titleEn": "Fresh Novagreen greens",
+      "sortOrder": 30,
+      "featured": true,
+      "featuredSortOrder": 30
+    },
+    {
+      "id": "cat-groats",
+      "parentId": "cat-food",
+      "slug": "krupy-i-bobovye",
+      "status": "active",
+      "titleRu": "Крупы и бобовые",
+      "titleUz": "Yorma va dukkaklilar",
+      "titleEn": "Grains and pulses",
+      "sortOrder": 25,
+      "featured": true,
+      "featuredSortOrder": 25
+    },
+    {
+      "id": "cat-microgreens",
+      "parentId": "cat-food",
+      "slug": "mikrozelen",
+      "status": "active",
+      "titleRu": "Микрозелень",
+      "titleUz": "Mikroko‘katlar",
+      "titleEn": "Microgreens",
+      "sortOrder": 31
+    },
+    {
+      "id": "cat-oils",
+      "parentId": "cat-food",
+      "slug": "rastitelnye-masla",
+      "status": "active",
+      "titleRu": "Растительные и фритюрные масла",
+      "titleUz": "O‘simlik va fritür moylari",
+      "titleEn": "Cooking and frying oils",
+      "sortOrder": 26
+    },
+    {
+      "id": "cat-packaging",
+      "parentId": null,
+      "slug": "upakovka",
+      "status": "active",
+      "titleRu": "Упаковка и расходные материалы",
+      "titleUz": "Qadoqlash va sarf materiallari",
+      "titleEn": "Packaging and consumables",
+      "sortOrder": 1
+    },
+    {
+      "id": "cat-paper-goods",
+      "parentId": "cat-packaging",
+      "slug": "bumazhnaya-produktsiya",
+      "status": "active",
+      "titleRu": "Бумажная продукция",
+      "titleUz": "Qog‘oz mahsulotlari",
+      "titleEn": "Paper products",
+      "sortOrder": 17
+    },
+    {
+      "id": "cat-salt",
+      "parentId": "cat-food",
+      "slug": "sol",
+      "status": "active",
+      "titleRu": "Соль",
+      "titleUz": "Tuz",
+      "titleEn": "Salt",
+      "titleZh": "食盐",
+      "sortOrder": 34,
+      "featured": true,
+      "featuredSortOrder": 32
+    },
+    {
+      "id": "cat-special-bags",
+      "parentId": "cat-packaging",
+      "slug": "vakuumnye-i-pizza-pakety",
+      "status": "active",
+      "titleRu": "Вакуумные пакеты и пакеты для пиццы",
+      "titleUz": "Vakuum va pitsa paketlari",
+      "titleEn": "Vacuum and pizza bags",
+      "sortOrder": 13
+    },
+    {
+      "id": "cat-sugar",
+      "parentId": "cat-food",
+      "slug": "sakhar",
+      "status": "active",
+      "titleRu": "Сахар",
+      "titleUz": "Shakar",
+      "titleEn": "Sugar",
+      "sortOrder": 24
+    },
+    {
+      "id": "cat-tearoff-bags",
+      "parentId": "cat-packaging",
+      "slug": "otryvnye-pakety",
+      "status": "active",
+      "titleRu": "Отрывные пакеты",
+      "titleUz": "Uziladigan paketlar",
+      "titleEn": "Perforated bags",
+      "sortOrder": 11
+    },
+    {
+      "id": "cat-tomato-sauces",
+      "parentId": "cat-food",
+      "slug": "tomatnye-pasty-i-sousy",
+      "status": "active",
+      "titleRu": "Томатные пасты и соусы",
+      "titleUz": "Tomat pastalari va souslar",
+      "titleEn": "Tomato pastes and sauces",
+      "titleZh": "番茄酱和调味酱",
+      "sortOrder": 36,
+      "featured": true,
+      "featuredSortOrder": 34
+    },
+    {
+      "id": "cat-trash-bags",
+      "parentId": "cat-packaging",
+      "slug": "musornye-pakety",
+      "status": "active",
+      "titleRu": "Мусорные пакеты",
+      "titleUz": "Chiqindi paketlari",
+      "titleEn": "Refuse bags",
+      "sortOrder": 10
+    },
+    {
+      "id": "cat-vegetables",
+      "parentId": "cat-food",
+      "slug": "ovoshchi",
+      "status": "active",
+      "titleRu": "Овощи",
+      "titleUz": "Sabzavotlar",
+      "titleEn": "Vegetables",
+      "sortOrder": 29,
+      "featured": true,
+      "featuredSortOrder": 29
+    }
+  ],
+  "targetCounts": {
+    "products": 238,
+    "categories": 31,
+    "published": 238,
+    "expectedCanonicalTaxonomyUrls": 124,
+    "expectedCanonicalProductUrls": 952,
+    "expectedSitemapDelta": 16
+  },
+  "strategy": {
+    "model": "Group -> Category -> optional Subcategory -> Product",
+    "productIdsPreserved": true,
+    "productCategoryIdsPreserved": true,
+    "existingSlugsPreserved": true,
+    "legacyFlatSubcategoryUrls": "308 redirect to the existing slug under its new Category parent",
+    "historicalRequestsAndAnalytics": "not rewritten",
+    "zhFallback": "existing untranslated nodes keep the established EN -> RU/UZ fallback; all newly created or renamed nodes include explicit ZH"
+  },
+  "summary": {
+    "productsBefore": 238,
+    "productsAfter": 238,
+    "publishedBefore": 238,
+    "publishedAfter": 238,
+    "productsMoved": 0,
+    "productsUnchanged": 238,
+    "categoriesBefore": 27,
+    "categoriesAfter": 31,
+    "categoriesCreated": 4,
+    "categoriesChanged": 20,
+    "reparentedCategories": 19,
+    "explicitMediaRepairs": 6,
+    "orphanProducts": 0,
+    "invalidLineage": 0,
+    "duplicateSlugs": 0,
+    "ambiguousProducts": 4
+  },
+  "taxonomyCreates": [
+    {
+      "id": "cat-bags",
+      "parentId": "cat-packaging",
+      "slug": "pakety-i-meshki",
+      "titleRu": "Пакеты и мешки",
+      "titleUz": "Paketlar va qoplar",
+      "titleEn": "Bags and sacks",
+      "titleZh": "塑料袋和垃圾袋",
+      "descriptionRu": "Мусорные, фасовочные, вакуумные и другие пакеты для HoReCa и бизнеса.",
+      "descriptionUz": "HoReCa va biznes uchun chiqindi, qadoqlash, vakuum va boshqa paketlar.",
+      "descriptionEn": "Waste, food, vacuum and other bags for HoReCa and business use.",
+      "descriptionZh": "适用于餐饮业和企业的垃圾袋、食品袋、真空袋及其他包装袋。",
+      "image": "/catalog/category-icons-v3/packaging.webp",
+      "navigationImage": "/catalog/category-icons-v3/packaging.webp",
+      "cardImage": "/catalog/categories/packaging_hero.webp",
+      "icon": "Package",
+      "featured": false,
+      "status": "active",
+      "sortOrder": 10
+    },
+    {
+      "id": "cat-meat-poultry-eggs",
+      "parentId": "cat-food",
+      "slug": "myaso-ptitsa-yaytsa",
+      "titleRu": "Мясо, птица и яйца",
+      "titleUz": "Go‘sht, parranda va tuxum",
+      "titleEn": "Meat, poultry and eggs",
+      "titleZh": "肉类、禽类和鸡蛋",
+      "descriptionRu": "Говядина, курица и яйца для ресторанов, кафе и профессиональной кухни.",
+      "descriptionUz": "Restoranlar, kafelar va professional oshxonalar uchun mol go‘shti, tovuq va tuxum.",
+      "descriptionEn": "Beef, chicken and eggs for restaurants, cafés and professional kitchens.",
+      "descriptionZh": "面向餐厅、咖啡馆和专业厨房的牛肉、鸡肉和鸡蛋。",
+      "image": "/catalog/category-icons-v3/food.webp",
+      "navigationImage": "/catalog/category-icons-v3/food.webp",
+      "cardImage": "/catalog/categories/food_hero.webp",
+      "icon": "Beef",
+      "featured": false,
+      "status": "active",
+      "sortOrder": 20
+    },
+    {
+      "id": "cat-grocery",
+      "parentId": "cat-food",
+      "slug": "bakaleya-i-ingredienty",
+      "titleRu": "Бакалея и ингредиенты",
+      "titleUz": "Bakaleya va ingredientlar",
+      "titleEn": "Grocery and ingredients",
+      "titleZh": "杂货和烘焙原料",
+      "descriptionRu": "Мука, крупы, масла, соль, сахар, соусы и ингредиенты для кухни и выпечки.",
+      "descriptionUz": "Oshxona va pishiriq uchun un, yorma, yog‘, tuz, shakar, sous va ingredientlar.",
+      "descriptionEn": "Flour, grains, oils, salt, sugar, sauces and ingredients for cooking and baking.",
+      "descriptionZh": "用于烹饪和烘焙的面粉、谷物、食用油、盐、糖、酱料和配料。",
+      "image": "/catalog/category-icons-v3/groats.webp",
+      "navigationImage": "/catalog/category-icons-v3/groats.webp",
+      "cardImage": "/catalog/categories/groats.webp",
+      "icon": "Wheat",
+      "featured": false,
+      "status": "active",
+      "sortOrder": 23
+    },
+    {
+      "id": "cat-fresh-produce",
+      "parentId": "cat-food",
+      "slug": "ovoshchi-frukty-zelen",
+      "titleRu": "Овощи, фрукты и зелень",
+      "titleUz": "Sabzavotlar, mevalar va ko‘katlar",
+      "titleEn": "Fruit, vegetables and herbs",
+      "titleZh": "水果、蔬菜和香草",
+      "descriptionRu": "Свежие овощи, фрукты, ягоды, салаты, зелень и микрозелень для HoReCa.",
+      "descriptionUz": "HoReCa uchun yangi sabzavot, meva, rezavor, salat, ko‘kat va mikroko‘katlar.",
+      "descriptionEn": "Fresh vegetables, fruit, berries, salads, herbs and microgreens for HoReCa.",
+      "descriptionZh": "面向餐饮业的新鲜蔬菜、水果、浆果、沙拉菜、香草和微型蔬菜。",
+      "image": "/catalog/category-icons-v3/vegetables.webp",
+      "navigationImage": "/catalog/category-icons-v3/vegetables.webp",
+      "cardImage": "/catalog/categories/vegetables.webp",
+      "icon": "LeafyGreen",
+      "featured": false,
+      "status": "active",
+      "sortOrder": 27
+    }
+  ],
+  "taxonomyUpdates": [
+    {
+      "id": "cat-trash-bags",
+      "patch": {
+        "parentId": "cat-bags",
+        "featured": true
+      }
+    },
+    {
+      "id": "cat-tearoff-bags",
+      "patch": {
+        "parentId": "cat-bags",
+        "featured": true
+      }
+    },
+    {
+      "id": "cat-carrier-bags",
+      "patch": {
+        "parentId": "cat-bags",
+        "featured": true
+      }
+    },
+    {
+      "id": "cat-special-bags",
+      "patch": {
+        "parentId": "cat-bags",
+        "featured": true
+      }
+    },
+    {
+      "id": "cat-beef",
+      "patch": {
+        "parentId": "cat-meat-poultry-eggs"
+      }
+    },
+    {
+      "id": "cat-chicken",
+      "patch": {
+        "parentId": "cat-meat-poultry-eggs"
+      }
+    },
+    {
+      "id": "cat-eggs",
+      "patch": {
+        "parentId": "cat-meat-poultry-eggs"
+      }
+    },
+    {
+      "id": "cat-flour",
+      "patch": {
+        "parentId": "cat-grocery"
+      }
+    },
+    {
+      "id": "cat-sugar",
+      "patch": {
+        "parentId": "cat-grocery"
+      }
+    },
+    {
+      "id": "cat-groats",
+      "patch": {
+        "parentId": "cat-grocery"
+      }
+    },
+    {
+      "id": "cat-oils",
+      "patch": {
+        "parentId": "cat-grocery"
+      }
+    },
+    {
+      "id": "cat-salt",
+      "patch": {
+        "parentId": "cat-grocery"
+      }
+    },
+    {
+      "id": "cat-baking-ingredients",
+      "patch": {
+        "parentId": "cat-grocery"
+      }
+    },
+    {
+      "id": "cat-tomato-sauces",
+      "patch": {
+        "parentId": "cat-grocery"
+      }
+    },
+    {
+      "id": "cat-fruits",
+      "patch": {
+        "parentId": "cat-fresh-produce"
+      }
+    },
+    {
+      "id": "cat-berries",
+      "patch": {
+        "parentId": "cat-fresh-produce"
+      }
+    },
+    {
+      "id": "cat-vegetables",
+      "patch": {
+        "parentId": "cat-fresh-produce"
+      }
+    },
+    {
+      "id": "cat-greens",
+      "patch": {
+        "parentId": "cat-fresh-produce",
+        "titleRu": "Салаты, зелень и пряные травы",
+        "titleUz": "Salatlar, ko‘katlar va ziravor o‘tlar",
+        "titleEn": "Salads, greens and herbs",
+        "titleZh": "沙拉菜、绿叶菜和香草"
+      }
+    },
+    {
+      "id": "cat-microgreens",
+      "patch": {
+        "parentId": "cat-fresh-produce"
+      }
+    },
+    {
+      "id": "cat-paper-goods",
+      "patch": {
+        "titleRu": "Бумажная продукция и салфетки",
+        "titleUz": "Qog‘oz mahsulotlari va salfetkalar",
+        "titleEn": "Paper products and wipes",
+        "titleZh": "纸制品和湿巾"
+      }
+    }
+  ],
+  "productMappings": [
+    {
+      "productId": "grocery-2026-bi-001",
+      "sku": "SP-BI-001",
+      "currentCategoryId": "cat-baking-ingredients",
+      "targetCategoryId": "cat-baking-ingredients",
+      "status": "unchanged"
+    },
+    {
+      "productId": "grocery-2026-bi-002",
+      "sku": "SP-BI-002",
+      "currentCategoryId": "cat-baking-ingredients",
+      "targetCategoryId": "cat-baking-ingredients",
+      "status": "unchanged"
+    },
+    {
+      "productId": "grocery-2026-sl-001",
+      "sku": "SP-SL-001",
+      "currentCategoryId": "cat-salt",
+      "targetCategoryId": "cat-salt",
+      "status": "unchanged"
+    },
+    {
+      "productId": "grocery-2026-sl-002",
+      "sku": "SP-SL-002",
+      "currentCategoryId": "cat-salt",
+      "targetCategoryId": "cat-salt",
+      "status": "unchanged"
+    },
+    {
+      "productId": "grocery-2026-ts-001",
+      "sku": "SP-TS-001",
+      "currentCategoryId": "cat-tomato-sauces",
+      "targetCategoryId": "cat-tomato-sauces",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-001",
+      "sku": "SP-BF-001",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-002",
+      "sku": "SP-BF-002",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-003",
+      "sku": "SP-BF-003",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-004",
+      "sku": "SP-BF-004",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-005",
+      "sku": "SP-BF-005",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-006",
+      "sku": "SP-BF-006",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-007",
+      "sku": "SP-BF-007",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-008",
+      "sku": "SP-BF-008",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-009",
+      "sku": "SP-BF-009",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-010",
+      "sku": "SP-BF-010",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-011",
+      "sku": "SP-BF-011",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-bf-012",
+      "sku": "SP-BF-012",
+      "currentCategoryId": "cat-beef",
+      "targetCategoryId": "cat-beef",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-001",
+      "sku": "SP-BR-001",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-002",
+      "sku": "SP-BR-002",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-003",
+      "sku": "SP-BR-003",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-004",
+      "sku": "SP-BR-004",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-005",
+      "sku": "SP-BR-005",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-006",
+      "sku": "SP-BR-006",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-007",
+      "sku": "SP-BR-007",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-008",
+      "sku": "SP-BR-008",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-009",
+      "sku": "SP-BR-009",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-010",
+      "sku": "SP-BR-010",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-011",
+      "sku": "SP-BR-011",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-br-012",
+      "sku": "SP-BR-012",
+      "currentCategoryId": "cat-berries",
+      "targetCategoryId": "cat-berries",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cb-001",
+      "sku": "SP-CB-001",
+      "currentCategoryId": "cat-carrier-bags",
+      "targetCategoryId": "cat-carrier-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cb-002",
+      "sku": "SP-CB-002",
+      "currentCategoryId": "cat-carrier-bags",
+      "targetCategoryId": "cat-carrier-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cb-003",
+      "sku": "SP-CB-003",
+      "currentCategoryId": "cat-carrier-bags",
+      "targetCategoryId": "cat-carrier-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cb-004",
+      "sku": "SP-CB-004",
+      "currentCategoryId": "cat-carrier-bags",
+      "targetCategoryId": "cat-carrier-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cb-005",
+      "sku": "SP-CB-005",
+      "currentCategoryId": "cat-carrier-bags",
+      "targetCategoryId": "cat-carrier-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-001",
+      "sku": "SP-CH-001",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-002",
+      "sku": "SP-CH-002",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-003",
+      "sku": "SP-CH-003",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-004",
+      "sku": "SP-CH-004",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-005",
+      "sku": "SP-CH-005",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-006",
+      "sku": "SP-CH-006",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-007",
+      "sku": "SP-CH-007",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-008",
+      "sku": "SP-CH-008",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-ch-009",
+      "sku": "SP-CH-009",
+      "currentCategoryId": "cat-chicken",
+      "targetCategoryId": "cat-chicken",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cl-001",
+      "sku": "SP-CL-001",
+      "currentCategoryId": "cat-cleaning",
+      "targetCategoryId": "cat-cleaning",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cl-002",
+      "sku": "SP-CL-002",
+      "currentCategoryId": "cat-cleaning",
+      "targetCategoryId": "cat-cleaning",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cl-004",
+      "sku": "SP-CL-004",
+      "currentCategoryId": "cat-cleaning",
+      "targetCategoryId": "cat-cleaning",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-cl-005",
+      "sku": "SP-CL-005",
+      "currentCategoryId": "cat-cleaning",
+      "targetCategoryId": "cat-cleaning",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-001",
+      "sku": "SP-DA-001",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-002",
+      "sku": "SP-DA-002",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-003",
+      "sku": "SP-DA-003",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-004",
+      "sku": "SP-DA-004",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-006",
+      "sku": "SP-DA-006",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-007",
+      "sku": "SP-DA-007",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-008",
+      "sku": "SP-DA-008",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-009",
+      "sku": "SP-DA-009",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-010",
+      "sku": "SP-DA-010",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-011",
+      "sku": "SP-DA-011",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-012",
+      "sku": "SP-DA-012",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-da-013",
+      "sku": "SP-DA-013",
+      "currentCategoryId": "cat-dairy",
+      "targetCategoryId": "cat-dairy",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-eg-001",
+      "sku": "SP-EG-001",
+      "currentCategoryId": "cat-eggs",
+      "targetCategoryId": "cat-eggs",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fl-001",
+      "sku": "SP-FL-001",
+      "currentCategoryId": "cat-flour",
+      "targetCategoryId": "cat-flour",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fl-002",
+      "sku": "SP-FL-002",
+      "currentCategoryId": "cat-flour",
+      "targetCategoryId": "cat-flour",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fl-003",
+      "sku": "SP-FL-003",
+      "currentCategoryId": "cat-flour",
+      "targetCategoryId": "cat-flour",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fl-004",
+      "sku": "SP-FL-004",
+      "currentCategoryId": "cat-flour",
+      "targetCategoryId": "cat-flour",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fl-005",
+      "sku": "SP-FL-005",
+      "currentCategoryId": "cat-flour",
+      "targetCategoryId": "cat-flour",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fl-006",
+      "sku": "SP-FL-006",
+      "currentCategoryId": "cat-flour",
+      "targetCategoryId": "cat-flour",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fl-007",
+      "sku": "SP-FL-007",
+      "currentCategoryId": "cat-flour",
+      "targetCategoryId": "cat-flour",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fl-008",
+      "sku": "SP-FL-008",
+      "currentCategoryId": "cat-flour",
+      "targetCategoryId": "cat-flour",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fp-001",
+      "sku": "SP-FP-001",
+      "currentCategoryId": "cat-food-packaging",
+      "targetCategoryId": "cat-food-packaging",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fp-002",
+      "sku": "SP-FP-002",
+      "currentCategoryId": "cat-food-packaging",
+      "targetCategoryId": "cat-food-packaging",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fp-003",
+      "sku": "SP-FP-003",
+      "currentCategoryId": "cat-food-packaging",
+      "targetCategoryId": "cat-food-packaging",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fp-004",
+      "sku": "SP-FP-004",
+      "currentCategoryId": "cat-food-packaging",
+      "targetCategoryId": "cat-food-packaging",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fp-005",
+      "sku": "SP-FP-005",
+      "currentCategoryId": "cat-food-packaging",
+      "targetCategoryId": "cat-food-packaging",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-001",
+      "sku": "SP-FR-001",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-002",
+      "sku": "SP-FR-002",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-003",
+      "sku": "SP-FR-003",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-004",
+      "sku": "SP-FR-004",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-005",
+      "sku": "SP-FR-005",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-006",
+      "sku": "SP-FR-006",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-007",
+      "sku": "SP-FR-007",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-008",
+      "sku": "SP-FR-008",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-009",
+      "sku": "SP-FR-009",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-010",
+      "sku": "SP-FR-010",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-011",
+      "sku": "SP-FR-011",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-012",
+      "sku": "SP-FR-012",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-013",
+      "sku": "SP-FR-013",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-014",
+      "sku": "SP-FR-014",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-015",
+      "sku": "SP-FR-015",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-016",
+      "sku": "SP-FR-016",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-017",
+      "sku": "SP-FR-017",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-018",
+      "sku": "SP-FR-018",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-019",
+      "sku": "SP-FR-019",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-020",
+      "sku": "SP-FR-020",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-021",
+      "sku": "SP-FR-021",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-022",
+      "sku": "SP-FR-022",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-023",
+      "sku": "SP-FR-023",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-024",
+      "sku": "SP-FR-024",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-025",
+      "sku": "SP-FR-025",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-026",
+      "sku": "SP-FR-026",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-027",
+      "sku": "SP-FR-027",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-028",
+      "sku": "SP-FR-028",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-029",
+      "sku": "SP-FR-029",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-030",
+      "sku": "SP-FR-030",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-031",
+      "sku": "SP-FR-031",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-032",
+      "sku": "SP-FR-032",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-033",
+      "sku": "SP-FR-033",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-034",
+      "sku": "SP-FR-034",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-035",
+      "sku": "SP-FR-035",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-036",
+      "sku": "SP-FR-036",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-037",
+      "sku": "SP-FR-037",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-038",
+      "sku": "SP-FR-038",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-039",
+      "sku": "SP-FR-039",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-040",
+      "sku": "SP-FR-040",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-041",
+      "sku": "SP-FR-041",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-042",
+      "sku": "SP-FR-042",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fr-043",
+      "sku": "SP-FR-043",
+      "currentCategoryId": "cat-fruits",
+      "targetCategoryId": "cat-fruits",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-fz-001",
+      "sku": "SP-FZ-001",
+      "currentCategoryId": "cat-frozen-food",
+      "targetCategoryId": "cat-frozen-food",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gl-001",
+      "sku": "SP-GL-001",
+      "currentCategoryId": "cat-gloves",
+      "targetCategoryId": "cat-gloves",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gl-002",
+      "sku": "SP-GL-002",
+      "currentCategoryId": "cat-gloves",
+      "targetCategoryId": "cat-gloves",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gl-003",
+      "sku": "SP-GL-003",
+      "currentCategoryId": "cat-gloves",
+      "targetCategoryId": "cat-gloves",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gl-004",
+      "sku": "SP-GL-004",
+      "currentCategoryId": "cat-gloves",
+      "targetCategoryId": "cat-gloves",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-001",
+      "sku": "SP-GN-001",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-002",
+      "sku": "SP-GN-002",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-003",
+      "sku": "SP-GN-003",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-004",
+      "sku": "SP-GN-004",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-006",
+      "sku": "SP-GN-006",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-008",
+      "sku": "SP-GN-008",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-009",
+      "sku": "SP-GN-009",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-010",
+      "sku": "SP-GN-010",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-012",
+      "sku": "SP-GN-012",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-013",
+      "sku": "SP-GN-013",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-016",
+      "sku": "SP-GN-016",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-018",
+      "sku": "SP-GN-018",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-020",
+      "sku": "SP-GN-020",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-022",
+      "sku": "SP-GN-022",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-024",
+      "sku": "SP-GN-024",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-025",
+      "sku": "SP-GN-025",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-026",
+      "sku": "SP-GN-026",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-027",
+      "sku": "SP-GN-027",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-028",
+      "sku": "SP-GN-028",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gn-029",
+      "sku": "SP-GN-029",
+      "currentCategoryId": "cat-greens",
+      "targetCategoryId": "cat-greens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-001",
+      "sku": "SP-GR-001",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-002",
+      "sku": "SP-GR-002",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-003",
+      "sku": "SP-GR-003",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-004",
+      "sku": "SP-GR-004",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-005",
+      "sku": "SP-GR-005",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-006",
+      "sku": "SP-GR-006",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-007",
+      "sku": "SP-GR-007",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-008",
+      "sku": "SP-GR-008",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-009",
+      "sku": "SP-GR-009",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-010",
+      "sku": "SP-GR-010",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-011",
+      "sku": "SP-GR-011",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-012",
+      "sku": "SP-GR-012",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-013",
+      "sku": "SP-GR-013",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-014",
+      "sku": "SP-GR-014",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-015",
+      "sku": "SP-GR-015",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-016",
+      "sku": "SP-GR-016",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-gr-017",
+      "sku": "SP-GR-017",
+      "currentCategoryId": "cat-groats",
+      "targetCategoryId": "cat-groats",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-001",
+      "sku": "SP-MG-001",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-002",
+      "sku": "SP-MG-002",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-003",
+      "sku": "SP-MG-003",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-004",
+      "sku": "SP-MG-004",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-005",
+      "sku": "SP-MG-005",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-006",
+      "sku": "SP-MG-006",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-007",
+      "sku": "SP-MG-007",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-008",
+      "sku": "SP-MG-008",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-009",
+      "sku": "SP-MG-009",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-010",
+      "sku": "SP-MG-010",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-011",
+      "sku": "SP-MG-011",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-mg-012",
+      "sku": "SP-MG-012",
+      "currentCategoryId": "cat-microgreens",
+      "targetCategoryId": "cat-microgreens",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-oi-001",
+      "sku": "SP-OI-001",
+      "currentCategoryId": "cat-oils",
+      "targetCategoryId": "cat-oils",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-oi-002",
+      "sku": "SP-OI-002",
+      "currentCategoryId": "cat-oils",
+      "targetCategoryId": "cat-oils",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-pb-001",
+      "sku": "SP-PB-001",
+      "currentCategoryId": "cat-special-bags",
+      "targetCategoryId": "cat-special-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-pg-001",
+      "sku": "SP-PG-001",
+      "currentCategoryId": "cat-paper-goods",
+      "targetCategoryId": "cat-paper-goods",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-pg-002",
+      "sku": "SP-PG-002",
+      "currentCategoryId": "cat-paper-goods",
+      "targetCategoryId": "cat-paper-goods",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-pg-003",
+      "sku": "SP-PG-003",
+      "currentCategoryId": "cat-paper-goods",
+      "targetCategoryId": "cat-paper-goods",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-pg-004",
+      "sku": "SP-PG-004",
+      "currentCategoryId": "cat-paper-goods",
+      "targetCategoryId": "cat-paper-goods",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-pg-005",
+      "sku": "SP-PG-005",
+      "currentCategoryId": "cat-paper-goods",
+      "targetCategoryId": "cat-paper-goods",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-pg-006",
+      "sku": "SP-PG-006",
+      "currentCategoryId": "cat-paper-goods",
+      "targetCategoryId": "cat-paper-goods",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-pg-007",
+      "sku": "SP-PG-007",
+      "currentCategoryId": "cat-paper-goods",
+      "targetCategoryId": "cat-paper-goods",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-sg-001",
+      "sku": "SP-SG-001",
+      "currentCategoryId": "cat-sugar",
+      "targetCategoryId": "cat-sugar",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-tb-001",
+      "sku": "SP-TB-001",
+      "currentCategoryId": "cat-trash-bags",
+      "targetCategoryId": "cat-trash-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-tb-002",
+      "sku": "SP-TB-002",
+      "currentCategoryId": "cat-trash-bags",
+      "targetCategoryId": "cat-trash-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-tb-003",
+      "sku": "SP-TB-003",
+      "currentCategoryId": "cat-trash-bags",
+      "targetCategoryId": "cat-trash-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-tb-004",
+      "sku": "SP-TB-004",
+      "currentCategoryId": "cat-trash-bags",
+      "targetCategoryId": "cat-trash-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-tb-005",
+      "sku": "SP-TB-005",
+      "currentCategoryId": "cat-trash-bags",
+      "targetCategoryId": "cat-trash-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-tb-006",
+      "sku": "SP-TB-006",
+      "currentCategoryId": "cat-trash-bags",
+      "targetCategoryId": "cat-trash-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-tb-007",
+      "sku": "SP-TB-007",
+      "currentCategoryId": "cat-trash-bags",
+      "targetCategoryId": "cat-trash-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-tb-008",
+      "sku": "SP-TB-008",
+      "currentCategoryId": "cat-trash-bags",
+      "targetCategoryId": "cat-trash-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-to-001",
+      "sku": "SP-TO-001",
+      "currentCategoryId": "cat-tearoff-bags",
+      "targetCategoryId": "cat-tearoff-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-to-002",
+      "sku": "SP-TO-002",
+      "currentCategoryId": "cat-tearoff-bags",
+      "targetCategoryId": "cat-tearoff-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vb-001",
+      "sku": "SP-VB-001",
+      "currentCategoryId": "cat-special-bags",
+      "targetCategoryId": "cat-special-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vb-002",
+      "sku": "SP-VB-002",
+      "currentCategoryId": "cat-special-bags",
+      "targetCategoryId": "cat-special-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vb-003",
+      "sku": "SP-VB-003",
+      "currentCategoryId": "cat-special-bags",
+      "targetCategoryId": "cat-special-bags",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-001",
+      "sku": "SP-VG-001",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-002",
+      "sku": "SP-VG-002",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-003",
+      "sku": "SP-VG-003",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-004",
+      "sku": "SP-VG-004",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-005",
+      "sku": "SP-VG-005",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-006",
+      "sku": "SP-VG-006",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-007",
+      "sku": "SP-VG-007",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-008",
+      "sku": "SP-VG-008",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-009",
+      "sku": "SP-VG-009",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-010",
+      "sku": "SP-VG-010",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-011",
+      "sku": "SP-VG-011",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-012",
+      "sku": "SP-VG-012",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-013",
+      "sku": "SP-VG-013",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-014",
+      "sku": "SP-VG-014",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-015",
+      "sku": "SP-VG-015",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-016",
+      "sku": "SP-VG-016",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-017",
+      "sku": "SP-VG-017",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-018",
+      "sku": "SP-VG-018",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-019",
+      "sku": "SP-VG-019",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-020",
+      "sku": "SP-VG-020",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-021",
+      "sku": "SP-VG-021",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-022",
+      "sku": "SP-VG-022",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-023",
+      "sku": "SP-VG-023",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-024",
+      "sku": "SP-VG-024",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-025",
+      "sku": "SP-VG-025",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-026",
+      "sku": "SP-VG-026",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-027",
+      "sku": "SP-VG-027",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-028",
+      "sku": "SP-VG-028",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-029",
+      "sku": "SP-VG-029",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-030",
+      "sku": "SP-VG-030",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-031",
+      "sku": "SP-VG-031",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-032",
+      "sku": "SP-VG-032",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-033",
+      "sku": "SP-VG-033",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-034",
+      "sku": "SP-VG-034",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-035",
+      "sku": "SP-VG-035",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-036",
+      "sku": "SP-VG-036",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-037",
+      "sku": "SP-VG-037",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-038",
+      "sku": "SP-VG-038",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-039",
+      "sku": "SP-VG-039",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-040",
+      "sku": "SP-VG-040",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-041",
+      "sku": "SP-VG-041",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-042",
+      "sku": "SP-VG-042",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-043",
+      "sku": "SP-VG-043",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    },
+    {
+      "productId": "price-2026-vg-044",
+      "sku": "SP-VG-044",
+      "currentCategoryId": "cat-vegetables",
+      "targetCategoryId": "cat-vegetables",
+      "status": "unchanged"
+    }
+  ],
+  "mediaRepairs": [
+    {
+      "id": "price-2026-gn-027",
+      "patch": {
+        "mainImage": "/catalog/generated-products/price-2026-gn-027.webp",
+        "mainImagePath": "/catalog/generated-products/price-2026-gn-027.webp",
+        "images": [
+          "/catalog/generated-products/price-2026-gn-027.webp"
+        ],
+        "imagePaths": [
+          "/catalog/generated-products/price-2026-gn-027.webp"
+        ]
+      },
+      "reason": "Promote the existing correct local compatibility image to explicit Product media."
+    },
+    {
+      "id": "price-2026-pg-007",
+      "patch": {
+        "mainImage": "/catalog/generated-products/price-2026-pg-007.webp",
+        "mainImagePath": "/catalog/generated-products/price-2026-pg-007.webp",
+        "images": [
+          "/catalog/generated-products/price-2026-pg-007.webp"
+        ],
+        "imagePaths": [
+          "/catalog/generated-products/price-2026-pg-007.webp"
+        ]
+      },
+      "reason": "Promote the existing correct local compatibility image to explicit Product media."
+    },
+    {
+      "id": "price-2026-tb-004",
+      "patch": {
+        "mainImage": "/catalog/generated-products/price-2026-tb-004.webp",
+        "mainImagePath": "/catalog/generated-products/price-2026-tb-004.webp",
+        "images": [
+          "/catalog/generated-products/price-2026-tb-004.webp"
+        ],
+        "imagePaths": [
+          "/catalog/generated-products/price-2026-tb-004.webp"
+        ]
+      },
+      "reason": "Promote the existing correct local compatibility image to explicit Product media."
+    },
+    {
+      "id": "price-2026-vb-001",
+      "patch": {
+        "mainImage": "/catalog/generated-products/price-2026-vb-001.webp",
+        "mainImagePath": "/catalog/generated-products/price-2026-vb-001.webp",
+        "images": [
+          "/catalog/generated-products/price-2026-vb-001.webp"
+        ],
+        "imagePaths": [
+          "/catalog/generated-products/price-2026-vb-001.webp"
+        ]
+      },
+      "reason": "Promote the existing correct local compatibility image to explicit Product media."
+    },
+    {
+      "id": "price-2026-vb-002",
+      "patch": {
+        "mainImage": "/catalog/generated-products/price-2026-vb-002.webp",
+        "mainImagePath": "/catalog/generated-products/price-2026-vb-002.webp",
+        "images": [
+          "/catalog/generated-products/price-2026-vb-002.webp"
+        ],
+        "imagePaths": [
+          "/catalog/generated-products/price-2026-vb-002.webp"
+        ]
+      },
+      "reason": "Promote the existing correct local compatibility image to explicit Product media."
+    },
+    {
+      "id": "price-2026-vb-003",
+      "patch": {
+        "mainImage": "/catalog/generated-products/price-2026-vb-003.webp",
+        "mainImagePath": "/catalog/generated-products/price-2026-vb-003.webp",
+        "images": [
+          "/catalog/generated-products/price-2026-vb-003.webp"
+        ],
+        "imagePaths": [
+          "/catalog/generated-products/price-2026-vb-003.webp"
+        ]
+      },
+      "reason": "Promote the existing correct local compatibility image to explicit Product media."
+    }
+  ],
+  "ambiguousProducts": [
+    {
+      "sku": "SP-GR-013",
+      "titleRu": "Ош магиз — изюм для плова",
+      "decision": "Keep in Крупы и бобовые until the owner confirms a dried-fruit/spice assortment expansion."
+    },
+    {
+      "sku": "SP-GR-014",
+      "titleRu": "Кунжут белый",
+      "decision": "Keep in Крупы и бобовые; do not create a one-purpose seed node for the current small assortment."
+    },
+    {
+      "sku": "SP-GR-015",
+      "titleRu": "Кунжут красный",
+      "decision": "Keep in Крупы и бобовые; do not create a one-purpose seed node for the current small assortment."
+    },
+    {
+      "sku": "SP-GR-016",
+      "titleRu": "Чёрный тмин — qora sedana",
+      "decision": "Keep in Крупы и бобовые until a broader spices category is commercially confirmed."
+    }
+  ],
+  "manualContentReview": [
+    "Confirm supplier-specific beef cut names (Ташки сон, Чарви, Сарпанжа) before rewriting authoritative Product titles.",
+    "The seven duplicate-image groups are candidates only; no asset was deleted or reassigned without authoritative alternate media.",
+    "Existing category/Product ZH gaps continue to use the established fallback; no bulk machine copy was generated."
+  ]
+}

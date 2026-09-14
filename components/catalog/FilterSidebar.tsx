@@ -9,6 +9,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { localizeSeedAttributeValue } from '@/lib/catalog/seedProductLocalization';
 import {
   buildAttributeFacet,
+  isAttributeFacetUseful,
   isAttributeFilterActive,
   type AttributeFilterSelection,
   type CatalogAttributeFilters,
@@ -101,8 +102,7 @@ export function FilterSidebar({
           const active = isAttributeFilterActive(current);
           const isRange = attribute.type === 'number' || attribute.type === 'range';
           const isBoolean = attribute.type === 'boolean';
-          if (isRange && facet.minimum === undefined && facet.maximum === undefined) return null;
-          if (!isRange && !isBoolean && facet.options.length === 0) return null;
+          if (!isAttributeFacetUseful(facet, active)) return null;
 
           const isExpanded = expandedGroups[attribute.key] === true || active;
           const selectedOptions = current?.kind === 'options' ? current.values : [];
