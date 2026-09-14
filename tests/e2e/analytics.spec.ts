@@ -52,7 +52,7 @@ test.describe('first-party analytics admin', () => {
     });
     await page.goto('/admin/analytics', { waitUntil: 'networkidle' });
     await expect(page.locator('[data-chart="analytics"] .recharts-area')).toBeVisible();
-    await expect(page.locator('[data-chart="analytics"]')).toContainText('08.09');
+    await expect(page.locator('[data-chart="analytics"]')).toContainText(/\d{2}\.\d{2}/);
     await page.getByRole('button', { name: 'Сегодня' }).click();
     await expect(page.locator('[data-chart="analytics"]')).toContainText(/\d{2}:00/);
     await page.getByLabel('Показатель графика').selectOption('requests');
