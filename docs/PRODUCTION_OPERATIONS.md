@@ -222,6 +222,14 @@ Dashboard acquisition is attached when a session starts. Same-site navigation mu
 
 Completed 2026-09-13: analytics source `2ec8a0ae989fff64d0dcfb95329b1d2d7b453f42` and category-curation follow-up `c149d361bf47b9a76152a3755d5b0cf2a66a53a5` are live as `sanpack-build-2026-09-13-004` with 100% traffic; rollout `rollout-2026-09-13-004` succeeded at 2026-09-13 17:16:38 UTC. First accepted analytics event: 2026-09-13 16:59:28 UTC / 21:59:28 Asia/Tashkent. All three analytics TTL policies and the existing customer-session/rate-limit policies are `ACTIVE`. Owner dashboard and safe engagement ingestion were smoked without creating a Request or Telegram notification. Immediate rollback is `sanpack-build-2026-09-13-003`; `sanpack-build-2026-09-13-002` remains the pre-analytics fallback. See [FIRST_PARTY_ANALYTICS_HANDOFF_2026-09-13.md](FIRST_PARTY_ANALYTICS_HANDOFF_2026-09-13.md).
 
+## Real catalog content operation — 2026-09-14
+
+Production taxonomy changed through the bounded Firestore operation in `scripts/real-catalog-taxonomy-2026.mjs`, not a seed import or Firebase deploy. The script is dry-run by default, pins project `stamply-4df8a`, requires explicit `--apply --project=stamply-4df8a`, checks the 238/27/16 baseline and lineage invariants, writes one preconditioned atomic batch and rereads the target. Its committed artifact is `docs/catalog/production-taxonomy-map-2026-09.json`.
+
+The private exact-document backup is `/private/tmp/sanpack-production-backups/real-catalog-taxonomy-2026-09-14T03-03-34-454Z.json` (mode 0600). Keep it outside Git and do not display its content. Only for a confirmed taxonomy incident, restore with `node --env-file=.env.local scripts/real-catalog-taxonomy-2026.mjs --rollback=<backup-path> --project=stamply-4df8a`; this restores the 26 existing documents and removes only the four Categories created here. Application and content rollback are independent.
+
+Verified target: 31 taxonomy documents, 238/238 published Products, 16 Attributes, zero orphan/invalid lineages and zero remaining operations. Sitemap is 1,120 URLs (124 taxonomy, 952 Product, 44 static), an explained +16. No rules, IAM, secrets, indexes, TTL, customer/order data or catalog prices changed. Final runtime revision and traffic evidence are in [REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md](REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md).
+
 ## Release gate
 
 1. `npm ci`

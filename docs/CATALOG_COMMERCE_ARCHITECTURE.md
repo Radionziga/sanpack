@@ -127,3 +127,9 @@ Existing records may later opt in to normalized pricing by adding
 `catalogPriceBasis: 'comparison'`. Legacy informational attributes such as
 `price_per_kg` remain readable until a separately audited, dry-run migration is
 approved; they are not silently rewritten.
+
+## Production taxonomy application — 2026-09-14
+
+The real SANPACK catalog now uses four commercial parent Categories and 19 pre-existing leaf Subcategories. Product `categoryId` values stay on those leaves; no Product clone, separate Subcategory collection, persistent path or fourth level was introduced. Search uses the complete localized lineage so a parent commercial term can find descendant Products. Category/group filters continue to derive scope and Attribute applicability from `parentId`; option/range facets with one available value are hidden unless already active.
+
+The operation did not alter sale/request modes, wholesale tiers, quantities, packaging or historical Request snapshots. See [REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md](REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md) for the exact 238-Product mapping, dry-run, backup and production verification.

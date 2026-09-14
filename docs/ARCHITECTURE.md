@@ -392,3 +392,9 @@ Retention is explicit: raw events/sessions 190 days, visitor lifecycle 400 days,
 ## Admin route UI boundary — stabilization patch 2026-09-08
 
 The authenticated layout retains the Admin shell and landing redirect. `AdminShell` evaluates the shared capability matrix against live `usePathname()` for every navigation, including Back/Forward; denied page components do not mount or issue reads. This is the UI boundary, not data authorization: existing server handlers continue to verify Admin sessions and capabilities. Do not move pathname-dependent content selection back into the persistent server layout. Browser regressions cover denied → allowed → Back/Forward and ordinary owner navigation.
+
+## Production catalog taxonomy contract — 2026-09-14
+
+Production now exercises the bounded hierarchy rather than remaining flat. Two Groups contain 29 Category/Subcategory documents; four buyer-facing Categories group 19 existing leaves. Products continue to point to their original leaf IDs, so moving a leaf changes lineage, scope and canonical category navigation without replacing Product identity or historical Request/analytics references. Parent-category search includes localized lineage through `getCategoryLineage`; it is still the same in-memory search system.
+
+Category artwork has two independent roles: `navigationImage` for compact navigation and `cardImage`/`banner` for Home showcase. `featured` and `featuredSortOrder` control Home curation independently of taxonomy placement. A navigation parent is not implicitly a Home bento card. Mapping and rollback evidence: [REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md](REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md).

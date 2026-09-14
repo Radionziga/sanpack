@@ -1,4 +1,5 @@
 import type { Category, Language, Product, ProductVariant } from '@/types';
+import { getCategoryLineage } from './categoryHierarchy';
 
 function normalizeSearchText(value: unknown): string {
   return String(value ?? '').trim().toLocaleLowerCase();
@@ -14,7 +15,9 @@ function localizedVariantTitle(variant: ProductVariant, language: Language) {
 function categorySearchFields(product: Product, categories: Category[]) {
   const category = categories.find((candidate) => candidate.id === product.categoryId);
   if (!category) return [];
-  return [category.titleRu, category.titleUz, category.titleEn, category.titleZh];
+  return getCategoryLineage(category.id, categories).flatMap((node) => [
+    node.titleRu, node.titleUz, node.titleEn, node.titleZh,
+  ]);
 }
 
 export interface ProductSearchMatch {

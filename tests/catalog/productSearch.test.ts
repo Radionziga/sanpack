@@ -64,6 +64,21 @@ describe('catalog product search', () => {
     expect(filterProductsBySearch([variantProduct, unrelated], 'Молочное', categories).map((product) => product.id)).toEqual(['variant-product']);
   });
 
+  it('matches a parent category name for products assigned to its subcategories', () => {
+    const produce = createProduct({ id: 'cucumber', categoryId: 'vegetables', sku: 'VEG-001' });
+    const unrelated = createProduct({ id: 'napkins', categoryId: 'paper', sku: 'PAPER-001' });
+    const categories = [
+      { id: 'food', slug: 'food', titleRu: 'Продукты питания', titleUz: 'Oziq-ovqat', status: 'active' as const, sortOrder: 1 },
+      { id: 'fresh', parentId: 'food', slug: 'fresh', titleRu: 'Овощи, фрукты и зелень', titleUz: 'Sabzavotlar va mevalar', status: 'active' as const, sortOrder: 1 },
+      { id: 'vegetables', parentId: 'fresh', slug: 'vegetables', titleRu: 'Овощи', titleUz: 'Sabzavotlar', status: 'active' as const, sortOrder: 1 },
+      { id: 'packaging', slug: 'packaging', titleRu: 'Упаковка', titleUz: 'Qadoqlash', status: 'active' as const, sortOrder: 2 },
+      { id: 'paper', parentId: 'packaging', slug: 'paper', titleRu: 'Бумажная продукция', titleUz: 'Qog‘oz mahsulotlar', status: 'active' as const, sortOrder: 1 },
+    ];
+
+    expect(filterProductsBySearch([produce, unrelated], 'Овощи, фрукты и зелень', categories)
+      .map((product) => product.id)).toEqual(['cucumber']);
+  });
+
   it('returns no results for an empty query', () => {
     expect(filterProductsBySearch(products, '   ')).toEqual([]);
   });
