@@ -218,6 +218,18 @@ curl -fsS https://sanpack.uz/api/health
 
 Monitor App Hosting logs for `analytics.ingestion_failed`, `analytics.report_failed`, unexpected 5xx/429 spikes and Firestore permission/index errors. Never log cookie values, event documents or search text during operational checks.
 
+## External analytics and search operations
+
+- GA4 property **SANPACK**, web stream **SANPACK Production**, Measurement ID `G-XW6EZGTB80`. Enhanced Measurement stays off because the application owns SPA page-view mapping. `request_created` maps to `generate_lead`, never `purchase`.
+- Яндекс Метрика is disabled until an owner creates/chooses the production counter in an authenticated Yandex session. When enabled through Admin → Integrations, keep Webvisor/session replay, clickmap, form capture and ecommerce mode off. No secret value is required.
+- The external bridge is best-effort and must not block navigation, cart or Request submission. It loads only for `sanpack.uz`/`www.sanpack.uz` in production and is disabled for localhost, Playwright/WebDriver, DNT, GPC and the shared analytics opt-out. Do not bypass those gates for smoke testing.
+- Search text is not forwarded to GA4/Metrica. Product names/SKUs, bounded category/variant context and aggregate line counts are allowed; customer UID, Telegram ID, contacts, delivery fields, comments, auth data and Request contents are forbidden.
+- Google Search Console domain property `sanpack.uz` is verified by DNS TXT. Keep the verification TXT alongside hosting DNS records. The canonical sitemap is `https://sanpack.uz/sitemap.xml`; do not submit locale/filter/search alternatives.
+- Yandex Webmaster ownership and sitemap submission require an authenticated owner account. Prefer its offered HTML/meta verification when it can be deployed safely; if DNS TXT is selected, add only the exact scoped record and preserve all existing DNS values.
+- A new property/counter has no historical data. Never backfill or generate a real Request merely to populate conversion reports. After the first genuine `generate_lead`, confirm its key-event status in GA4 without fabricating traffic.
+
+Rollback is application-only: move App Hosting traffic to the preceding healthy revision. Removing provider scripts does not require Firestore/Storage rules, IAM, secret, taxonomy, customer or order changes. Search ownership TXT may remain because it is independent of runtime rollback.
+
 Dashboard acquisition is attached when a session starts. Same-site navigation must resolve to direct/session-continuation rather than a new acquisition source. Existing `internal` rows are grouped with direct traffic at report time; do not rewrite historical analytics documents merely to change a display label.
 
 Completed 2026-09-13: analytics source `2ec8a0ae989fff64d0dcfb95329b1d2d7b453f42` and category-curation follow-up `c149d361bf47b9a76152a3755d5b0cf2a66a53a5` are live as `sanpack-build-2026-09-13-004` with 100% traffic; rollout `rollout-2026-09-13-004` succeeded at 2026-09-13 17:16:38 UTC. First accepted analytics event: 2026-09-13 16:59:28 UTC / 21:59:28 Asia/Tashkent. All three analytics TTL policies and the existing customer-session/rate-limit policies are `ACTIVE`. Owner dashboard and safe engagement ingestion were smoked without creating a Request or Telegram notification. Immediate rollback is `sanpack-build-2026-09-13-003`; `sanpack-build-2026-09-13-002` remains the pre-analytics fallback. See [FIRST_PARTY_ANALYTICS_HANDOFF_2026-09-13.md](FIRST_PARTY_ANALYTICS_HANDOFF_2026-09-13.md).

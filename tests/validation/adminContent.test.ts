@@ -201,3 +201,23 @@ describe('link hub settings validation', () => {
     }).success).toBe(false);
   });
 });
+
+describe('external analytics settings validation', () => {
+  it('accepts valid public provider identifiers and disabled empty providers', () => {
+    expect(settingsMutationSchema.safeParse({
+      externalAnalytics: {
+        googleAnalytics: { enabled: true, measurementId: 'G-XW6EZGTB80' },
+        yandexMetrica: { enabled: false, counterId: '' },
+      },
+    }).success).toBe(true);
+  });
+
+  it('rejects invalid identifiers when a provider is enabled', () => {
+    expect(settingsMutationSchema.safeParse({
+      externalAnalytics: {
+        googleAnalytics: { enabled: true, measurementId: 'UA-OLD' },
+        yandexMetrica: { enabled: true, counterId: 'not-a-counter' },
+      },
+    }).success).toBe(false);
+  });
+});

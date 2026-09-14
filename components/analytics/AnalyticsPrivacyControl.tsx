@@ -5,10 +5,10 @@ import { optOutAnalytics } from '@/lib/analytics/client';
 import { useLanguage } from '@/context/LanguageContext';
 
 const copy = {
-  ru: { text: 'Можно отключить first-party аналитику на этом устройстве. Это не влияет на корзину, вход или отправку заявки.', action: 'Отключить аналитику', done: 'Аналитика отключена' },
-  uz: { text: 'Ushbu qurilmada first-party tahlilini o‘chirishingiz mumkin. Bu savat, kirish yoki ariza yuborishga ta’sir qilmaydi.', action: 'Tahlilni o‘chirish', done: 'Tahlil o‘chirildi' },
-  en: { text: 'You can disable first-party analytics on this device. This does not affect the cart, sign-in, or request submission.', action: 'Disable analytics', done: 'Analytics disabled' },
-  zh: { text: '您可以在此设备上关闭第一方分析。这不会影响购物车、登录或提交申请。', action: '关闭分析', done: '分析已关闭' },
+  ru: { text: 'Можно отключить внутреннюю и внешнюю аналитику на этом устройстве. Это не влияет на корзину, вход или отправку заявки.', action: 'Отключить аналитику', done: 'Аналитика отключена' },
+  uz: { text: 'Ushbu qurilmada ichki va tashqi tahlilni o‘chirishingiz mumkin. Bu savat, kirish yoki ariza yuborishga ta’sir qilmaydi.', action: 'Tahlilni o‘chirish', done: 'Tahlil o‘chirildi' },
+  en: { text: 'You can disable first-party and external analytics on this device. This does not affect the cart, sign-in, or request submission.', action: 'Disable analytics', done: 'Analytics disabled' },
+  zh: { text: '您可以在此设备上关闭第一方和外部分析。这不会影响购物车、登录或提交申请。', action: '关闭分析', done: '分析已关闭' },
 } as const;
 
 export function AnalyticsPrivacyControl() {

@@ -39,6 +39,8 @@ import { QuantityControl } from '@/components/commerce/QuantityControl';
 import { presentCommercialSummary, summarizeCommercialLines } from '@/lib/commerce/commercialSummary';
 import { getProductCommercialDetails } from '@/lib/commerce/productCommercial';
 import { trackAnalytics } from '@/lib/analytics/client';
+import { trackConfirmedRequest } from '@/lib/analytics/external';
+import type { CustomerRequestOrder } from '@/lib/orders/customerOrderProjection';
 
 interface CustomerStatus {
   authenticated: boolean;
@@ -511,6 +513,12 @@ export default function RequestPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
+  function finishSubmittedRequest(request: CustomerRequestOrder) {
+    trackConfirmedRequest(language, request.id, request.items.length);
+    setSubmittedRequestNumber(request.requestNumber);
+    clearCart();
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (miniAppAuthRejected || (isMiniApp && !customerChecked)) {
@@ -554,8 +562,7 @@ export default function RequestPage() {
         }, pending.key);
         window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
         window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
-        setSubmittedRequestNumber(replayed.requestNumber);
-        clearCart();
+        finishSubmittedRequest(replayed);
         return;
       }
 
@@ -576,8 +583,7 @@ export default function RequestPage() {
       const created = await PublicRepository.createRequest(currentTransport(), intent.key);
       window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
       window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
-      setSubmittedRequestNumber(created.requestNumber);
-      clearCart();
+      finishSubmittedRequest(created);
     } catch (error) {
       if (error instanceof ApiResponseError && error.code === 'IDEMPOTENCY_CONFLICT') {
         setPendingIntentConflict(readPendingCheckoutIntent(window.sessionStorage, CHECKOUT_IDEMPOTENCY_KEY));
@@ -606,8 +612,7 @@ export default function RequestPage() {
       window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
       window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
       setPendingIntentConflict(null);
-      setSubmittedRequestNumber(replayed.requestNumber);
-      clearCart();
+      finishSubmittedRequest(replayed);
     } catch (error) {
       if (error instanceof ApiResponseError && error.code === 'IDEMPOTENCY_CONFLICT') {
         setPendingIntentConflict(pending);

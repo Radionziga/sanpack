@@ -1,6 +1,12 @@
 'use client';
 
 import type { AnalyticsSurface, PublicAnalyticsEvent } from '@/lib/analytics/contracts';
+import {
+  disableExternalAnalytics,
+  isAnalyticsOptedOut,
+  trackExternalAnalytics,
+  type ExternalAnalyticsContext,
+} from '@/lib/analytics/external';
 import type { Language } from '@/types';
 
 type TrackInput = PublicAnalyticsEvent extends infer Event
@@ -28,8 +34,8 @@ function attribution() {
   return Object.values(allowed).some(Boolean) ? allowed : undefined;
 }
 
-export function trackAnalytics(locale: Language, input: TrackInput) {
-  if (typeof window === 'undefined' || navigator.doNotTrack === '1') return;
+export function trackAnalytics(locale: Language, input: TrackInput, externalContext?: ExternalAnalyticsContext) {
+  if (typeof window === 'undefined' || navigator.doNotTrack === '1' || isAnalyticsOptedOut()) return;
   const payload: PublicAnalyticsEvent = {
     ...input,
     eventId: crypto.randomUUID(),
@@ -37,6 +43,7 @@ export function trackAnalytics(locale: Language, input: TrackInput) {
     surface: surface(),
     attribution: attribution(),
   } as PublicAnalyticsEvent;
+  try { trackExternalAnalytics(payload, externalContext); } catch { /* External providers are independent from first-party delivery. */ }
   deliveryQueue = deliveryQueue.catch(() => undefined).then(async () => {
     await fetch('/api/analytics/events', {
       method: 'POST', credentials: 'same-origin', keepalive: true,
@@ -46,5 +53,6 @@ export function trackAnalytics(locale: Language, input: TrackInput) {
 }
 
 export async function optOutAnalytics() {
+  disableExternalAnalytics();
   await fetch('/api/analytics/events', { method: 'DELETE', credentials: 'same-origin' });
 }

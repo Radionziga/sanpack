@@ -67,7 +67,7 @@ function readStoredItems(): RequestItem[] {
 }
 
 export function RequestCartProvider({ children }: { children: React.ReactNode }) {
-  const { language } = useLanguage();
+  const { language, getLocalizedText } = useLanguage();
   const [items, setItems] = useState<RequestItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -91,7 +91,20 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
   ) => {
     if (product.variants?.length && !variant) return;
     if (!isProductOrderable(product, variant)) return;
-    trackAnalytics(language, { name: 'add_to_cart', productId: product.id, variantId: variant?.id, categoryId: product.categoryId, quantity, priceMode: getProductPriceMode(product, variant) });
+    const unitPrice = getProductOrderUnitPrice(product, variant, quantity);
+    trackAnalytics(
+      language,
+      { name: 'add_to_cart', productId: product.id, variantId: variant?.id, categoryId: product.categoryId, quantity, priceMode: getProductPriceMode(product, variant) },
+      { item: {
+        itemId: variant?.sku || product.sku || product.id,
+        itemName: getLocalizedText(product.titleRu, product.titleUz, product.titleEn, product.titleZh),
+        itemCategory: product.categoryId,
+        itemVariant: variant ? getLocalizedText(variant.titleRu, variant.titleUz, variant.titleEn, variant.titleZh) : undefined,
+        price: unitPrice,
+        currency: product.currency,
+        quantity,
+      } },
+    );
     setItems((prev) => {
       const existingIdx = prev.findIndex(
         (i) => i.productId === product.id && i.variantId === (variant?.id || undefined)
@@ -149,7 +162,19 @@ export function RequestCartProvider({ children }: { children: React.ReactNode })
 
   const removeItem = (productId: string, variantId?: string) => {
     const item = items.find((candidate) => candidate.productId === productId && candidate.variantId === variantId);
-    if (item) trackAnalytics(language, { name: 'remove_from_cart', productId, variantId, categoryId: item.product?.categoryId, quantity: item.quantity, priceMode: item.priceMode });
+    if (item) trackAnalytics(
+      language,
+      { name: 'remove_from_cart', productId, variantId, categoryId: item.product?.categoryId, quantity: item.quantity, priceMode: item.priceMode },
+      { item: {
+        itemId: item.sku || productId,
+        itemName: getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn, item.productTitleZh),
+        itemCategory: item.product?.categoryId,
+        itemVariant: item.variantId ? getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn, item.variantTitleZh) : undefined,
+        price: item.price,
+        currency: item.product?.currency,
+        quantity: item.quantity,
+      } },
+    );
     setItems((prev) =>
       prev.filter((i) => !(i.productId === productId && i.variantId === variantId))
     );

@@ -263,8 +263,20 @@ export function ProductDetailClient({
   const [loadVersion, setLoadVersion] = useState(0);
 
   useEffect(() => {
-    trackAnalytics(language, { name: 'product_view', productId: initialProduct.id, slug: initialProduct.slug, categoryId: initialProduct.categoryId, variantId: initialVariantId, priceMode: initialProduct.priceMode });
-  }, [initialProduct.id, initialProduct.slug, initialProduct.categoryId, initialProduct.priceMode, initialVariantId, language]);
+    const unitPrice = getProductOrderUnitPrice(initialProduct, initialVariant || undefined);
+    trackAnalytics(
+      language,
+      { name: 'product_view', productId: initialProduct.id, slug: initialProduct.slug, categoryId: initialProduct.categoryId, variantId: initialVariantId, priceMode: initialProduct.priceMode },
+      { item: {
+        itemId: initialVariant?.sku || initialProduct.sku || initialProduct.id,
+        itemName: getLocalizedText(initialProduct.titleRu, initialProduct.titleUz, initialProduct.titleEn, initialProduct.titleZh),
+        itemCategory: initialProduct.categoryId,
+        itemVariant: initialVariant ? getLocalizedText(initialVariant.titleRu, initialVariant.titleUz, initialVariant.titleEn, initialVariant.titleZh) : undefined,
+        price: unitPrice,
+        currency: initialProduct.currency,
+      } },
+    );
+  }, [getLocalizedText, initialProduct, initialVariant, initialVariantId, language]);
 
   useEffect(() => {
     if (loadVersion === 0) return;

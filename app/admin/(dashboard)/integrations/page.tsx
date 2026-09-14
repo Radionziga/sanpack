@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Bot, CheckCircle2, ExternalLink, LogIn, Send, ShieldCheck } from 'lucide-react';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 import { GeminiSettingsPanel } from '@/components/admin/GeminiSettingsPanel';
+import { ExternalAnalyticsSettingsPanel } from '@/components/admin/ExternalAnalyticsSettingsPanel';
 
 interface TelegramAdminSettings {
   login: {
@@ -183,6 +184,7 @@ export default function IntegrationsPage() {
         <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">Подключайте внешние сервисы магазина. Секретные ключи доступны только серверу.</p>
       </header>
       <GeminiSettingsPanel />
+      <ExternalAnalyticsSettingsPanel />
       <header className="border-b border-[var(--sp-line)] pb-5 pt-2">
         <h2 className="font-extended text-xl font-bold tracking-[-0.02em]">Telegram</h2>
         <p className="mt-1.5 max-w-3xl text-sm leading-6 text-[var(--sp-ink-secondary)]">Вход покупателей, магазин внутри Telegram и уведомления о новых заявках настраиваются независимо.</p>

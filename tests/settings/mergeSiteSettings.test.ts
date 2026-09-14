@@ -14,6 +14,17 @@ describe('mergeSiteSettings service modules', () => {
     expect(settings.seo?.defaultTitleZh).toBe(initialSiteSettings.seo?.defaultTitleZh);
     expect(settings.design.primaryColor).toBe('#123456');
     expect(settings.linkHub).toEqual(initialSiteSettings.linkHub);
+    expect(settings.externalAnalytics).toEqual(initialSiteSettings.externalAnalytics);
+  });
+
+  it('merges provider settings independently for older public settings documents', () => {
+    const settings = mergeSiteSettings(initialSiteSettings, {
+      externalAnalytics: {
+        yandexMetrica: { enabled: true, counterId: '12345678' },
+      },
+    });
+    expect(settings.externalAnalytics?.googleAnalytics).toEqual(initialSiteSettings.externalAnalytics?.googleAnalytics);
+    expect(settings.externalAnalytics?.yandexMetrica).toEqual({ enabled: true, counterId: '12345678' });
   });
 
   it('replaces the managed link list while retaining omitted localized defaults', () => {

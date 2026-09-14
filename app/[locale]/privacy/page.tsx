@@ -11,10 +11,10 @@ export default function PrivacyPage() {
   const { language } = useLanguage();
   const copy = pageCopy[language].privacy;
   const analyticsCopy = {
-    ru: ['First-party аналитика использования', 'SANPACK использует случайный псевдонимный идентификатор, чтобы агрегированно измерять посещения, интерес к товарам, источники трафика и путь до заявки. Мы не связываем эти данные с Telegram-профилем, именем, телефоном или адресом и не используем fingerprinting.'],
-    uz: ['First-party foydalanish tahlili', 'SANPACK tashriflar, mahsulotlarga qiziqish, trafik manbalari va arizagacha bo‘lgan yo‘lni umumiy ko‘rinishda o‘lchash uchun tasodifiy taxallusli identifikatordan foydalanadi. Bu ma’lumotlar Telegram profili, ism, telefon yoki manzil bilan bog‘lanmaydi va fingerprinting ishlatilmaydi.'],
-    en: ['First-party usage analytics', 'SANPACK uses a random pseudonymous identifier to measure visits, product interest, traffic sources, and the path to a request in aggregate. We do not link this data to a Telegram profile, name, phone number, or address, and we do not use fingerprinting.'],
-    zh: ['第一方使用分析', 'SANPACK 使用随机的假名标识符，汇总衡量访问、商品兴趣、流量来源以及提交申请的路径。我们不会将这些数据与 Telegram 资料、姓名、电话号码或地址关联，也不使用设备指纹。'],
+    ru: ['Аналитика использования', 'SANPACK использует собственную first-party аналитику, а также может использовать Google Analytics и Яндекс Метрику для статистики, улучшения каталога и оценки рекламных кампаний. В собственные события для этих сервисов не передаются имя, телефон, адрес, комментарий, Telegram ID или customer UID. Аналитика не связывается с профилем покупателя, fingerprinting и запись сессий не используются.'],
+    uz: ['Foydalanish tahlili', 'SANPACK o‘z first-party tahlilidan, shuningdek statistika, katalogni yaxshilash va reklama kampaniyalarini baholash uchun Google Analytics hamda Yandex Metrica xizmatlaridan foydalanishi mumkin. Ushbu xizmatlarga yuboriladigan maxsus hodisalarda ism, telefon, manzil, izoh, Telegram ID yoki customer UID uzatilmaydi. Tahlil xaridor profiliga bog‘lanmaydi, fingerprinting va sessiya yozuvi ishlatilmaydi.'],
+    en: ['Usage analytics', 'SANPACK uses first-party analytics and may also use Google Analytics and Yandex Metrica for statistics, catalogue improvement, and campaign measurement. Our custom events do not send names, phone numbers, addresses, comments, Telegram IDs, or customer UIDs to these services. Analytics is not linked to the customer profile, and we do not use fingerprinting or session recording.'],
+    zh: ['使用分析', 'SANPACK 使用第一方分析，也可能使用 Google Analytics 和 Yandex Metrica 进行统计、改进目录并评估广告活动。我们发送给这些服务的自定义事件不包含姓名、电话号码、地址、备注、Telegram ID 或客户 UID。分析数据不会与客户资料关联，也不使用设备指纹或会话录制。'],
   }[language];
   return (
     <div className="min-h-screen flex flex-col bg-[var(--sp-canvas)]">

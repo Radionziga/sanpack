@@ -14,15 +14,17 @@ export function PublicProviders({
   children,
   locale,
   settings,
+  analyticsOptedOut,
 }: {
   children: React.ReactNode;
   locale: Language;
   settings: SiteSettings;
+  analyticsOptedOut: boolean;
 }) {
   return (
     <SiteSettingsProvider settings={settings}>
       <LanguageProvider initialLanguage={locale}>
-        <AnalyticsProvider locale={locale}><FavoritesProvider>
+        <AnalyticsProvider locale={locale} externalAnalytics={analyticsOptedOut ? undefined : settings.externalAnalytics}><FavoritesProvider>
           <RequestCartProvider>
             <ToastProvider>
               <MobileStorefrontChrome>

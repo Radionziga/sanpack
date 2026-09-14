@@ -254,6 +254,24 @@ const linkHubSettingsSchema = z.object({
   });
 });
 
+const externalAnalyticsSettingsSchema = z.object({
+  googleAnalytics: z.object({
+    enabled: z.boolean(),
+    measurementId: z.string().trim().max(32),
+  }).strict(),
+  yandexMetrica: z.object({
+    enabled: z.boolean(),
+    counterId: z.string().trim().max(24),
+  }).strict(),
+}).strict().superRefine((value, context) => {
+  if (value.googleAnalytics.enabled && !/^G-[A-Z0-9]{4,20}$/.test(value.googleAnalytics.measurementId)) {
+    context.addIssue({ code: 'custom', path: ['googleAnalytics', 'measurementId'], message: 'Укажите корректный GA4 Measurement ID.' });
+  }
+  if (value.yandexMetrica.enabled && !/^\d{5,20}$/.test(value.yandexMetrica.counterId)) {
+    context.addIssue({ code: 'custom', path: ['yandexMetrica', 'counterId'], message: 'Укажите корректный номер счётчика Яндекс Метрики.' });
+  }
+});
+
 export const settingsMutationSchema = z.object({
   design: designSettingsSchema.optional(),
   contacts: contactSettingsSchema.optional(),
@@ -264,6 +282,7 @@ export const settingsMutationSchema = z.object({
     bagDesigner: storefrontServiceSettingsSchema.optional(),
   }).strict().optional(),
   linkHub: linkHubSettingsSchema.optional(),
+  externalAnalytics: externalAnalyticsSettingsSchema.optional(),
 }).passthrough();
 
 const productOrderPackagingSchema = z.object({

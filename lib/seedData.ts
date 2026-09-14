@@ -71,6 +71,16 @@ export const initialSiteSettings: SiteSettings = {
       navigationImage: '/catalog/category-icons-v3/bag-designer-service-v2.webp',
     },
   },
+  externalAnalytics: {
+    googleAnalytics: {
+      enabled: true,
+      measurementId: 'G-XW6EZGTB80',
+    },
+    yandexMetrica: {
+      enabled: false,
+      counterId: '',
+    },
+  },
   linkHub: {
     enabled: true,
     titleRu: 'Всё для вашего бизнеса — в одном месте',

@@ -343,6 +343,8 @@ Visitor and session cookies are HttpOnly, first-party, random opaque identifiers
 
 Retention is explicit: raw events/sessions 190 days, visitor lifecycle 400 days, enforced by scoped TTL on `expiresAt`. Existing deny-all Firestore rules, Storage boundaries, Admin/customer auth and canonical catalog/order pricing remain unchanged.
 
+External measurement is a non-authoritative client bridge fed from the same typed engagement calls. Provider scripts load only on the canonical production host, outside automation, when DNT/GPC and the shared privacy opt-out permit them. GA4 Enhanced Measurement is disabled; SANPACK sends one explicit SPA `page_view`. Yandex Metrica uses explicit `hit`/`reachGoal` calls with Webvisor, clickmap, link tracking and ecommerce mode disabled. Free-form search text and arbitrary link destinations are deliberately excluded from the external mapping. A server-confirmed Request response may emit GA4 `generate_lead` and the Metrica `request_created` goal; it never emits `purchase`, and provider failure cannot change Request acceptance. First-party server conversion remains the canonical deduplicated business metric.
+
 ## 17. Architectural invariants
 
 1. Категория/характеристика новой ниши задаётся существующей CMS, без frontend conditions по smartphone/tire/SANPACK SKU.

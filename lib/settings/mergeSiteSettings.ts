@@ -1,6 +1,6 @@
 import type { SiteSettings, StorefrontServiceSettings } from '@/types';
 
-type StoredSiteSettings = Omit<Partial<SiteSettings>, 'company' | 'contacts' | 'locale' | 'design' | 'seo' | 'modules' | 'linkHub'> & {
+type StoredSiteSettings = Omit<Partial<SiteSettings>, 'company' | 'contacts' | 'locale' | 'design' | 'seo' | 'modules' | 'linkHub' | 'externalAnalytics'> & {
   company?: Partial<SiteSettings['company']>;
   contacts?: Partial<SiteSettings['contacts']>;
   locale?: Partial<SiteSettings['locale']>;
@@ -11,6 +11,10 @@ type StoredSiteSettings = Omit<Partial<SiteSettings>, 'company' | 'contacts' | '
     bagDesigner?: Partial<NonNullable<NonNullable<SiteSettings['modules']>['bagDesigner']>>;
   };
   linkHub?: Partial<NonNullable<SiteSettings['linkHub']>>;
+  externalAnalytics?: {
+    googleAnalytics?: Partial<NonNullable<SiteSettings['externalAnalytics']>['googleAnalytics']>;
+    yandexMetrica?: Partial<NonNullable<SiteSettings['externalAnalytics']>['yandexMetrica']>;
+  };
 };
 
 function mergeServiceModule(
@@ -44,6 +48,24 @@ export function mergeSiteSettings(
       branding: mergeServiceModule(defaults.modules?.branding, stored.modules?.branding),
       bagDesigner: mergeServiceModule(defaults.modules?.bagDesigner, stored.modules?.bagDesigner),
     },
+    externalAnalytics: defaults.externalAnalytics || stored.externalAnalytics ? {
+      googleAnalytics: {
+        enabled: stored.externalAnalytics?.googleAnalytics?.enabled
+          ?? defaults.externalAnalytics?.googleAnalytics.enabled
+          ?? false,
+        measurementId: stored.externalAnalytics?.googleAnalytics?.measurementId
+          ?? defaults.externalAnalytics?.googleAnalytics.measurementId
+          ?? '',
+      },
+      yandexMetrica: {
+        enabled: stored.externalAnalytics?.yandexMetrica?.enabled
+          ?? defaults.externalAnalytics?.yandexMetrica.enabled
+          ?? false,
+        counterId: stored.externalAnalytics?.yandexMetrica?.counterId
+          ?? defaults.externalAnalytics?.yandexMetrica.counterId
+          ?? '',
+      },
+    } : undefined,
     linkHub: defaults.linkHub || stored.linkHub ? {
       ...defaults.linkHub,
       ...stored.linkHub,

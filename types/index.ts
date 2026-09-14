@@ -448,6 +448,17 @@ export interface LinkHubSettings {
   links: LinkHubLink[];
 }
 
+export interface ExternalAnalyticsSettings {
+  googleAnalytics: {
+    enabled: boolean;
+    measurementId: string;
+  };
+  yandexMetrica: {
+    enabled: boolean;
+    counterId: string;
+  };
+}
+
 export interface SiteSettings {
   company: {
     name: string;
@@ -514,6 +525,7 @@ export interface SiteSettings {
     bagDesigner?: StorefrontServiceSettings;
   };
   linkHub?: LinkHubSettings;
+  externalAnalytics?: ExternalAnalyticsSettings;
 }
 
 export interface TelegramPrivateSettings {

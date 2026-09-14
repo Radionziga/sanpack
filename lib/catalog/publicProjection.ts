@@ -39,6 +39,10 @@ const settings = {
   design: fields('designVersion primaryColor secondaryColor borderRadius themeMode fontPair'),
   seo: { ...localized('defaultTitle'), ...localized('defaultDescription') },
   modules: { branding: service, bagDesigner: service },
+  externalAnalytics: {
+    googleAnalytics: fields('enabled measurementId'),
+    yandexMetrica: fields('enabled counterId'),
+  },
   linkHub: {
     ...fields('enabled highlightEnabled'),
     ...localized('title'),

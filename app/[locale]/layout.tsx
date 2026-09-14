@@ -12,6 +12,8 @@ import { TelegramMiniAppBridge } from '@/components/telegram/TelegramMiniAppBrid
 import '../globals.css';
 import { storefrontFontVariables } from '../fonts';
 import { buildSeoMetadata, buildSiteStructuredData } from '@/lib/seo/metadata';
+import { cookies } from 'next/headers';
+import { ANALYTICS_OPTOUT_COOKIE } from '@/lib/analytics/server';
 
 export const viewport = {
   width: 'device-width',
@@ -95,6 +97,7 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const messages = await getMessages();
+  const analyticsOptedOut = (await cookies()).get(ANALYTICS_OPTOUT_COOKIE)?.value === '1';
   let settings;
   try {
     settings = await getPublicSettings();
@@ -150,6 +153,7 @@ export default async function LocaleLayout({
             <PublicProviders
               locale={locale}
               settings={settings}
+              analyticsOptedOut={analyticsOptedOut}
             >
               {children}
             </PublicProviders>

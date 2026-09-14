@@ -29,6 +29,11 @@ describe('trusted public catalog projection', () => {
         internal: 'secret',
         links: initialSiteSettings.linkHub!.links.map((link) => ({ ...link, token: 'secret' })),
       },
+      externalAnalytics: {
+        ...initialSiteSettings.externalAnalytics!,
+        internalToken: 'secret',
+        googleAnalytics: { ...initialSiteSettings.externalAnalytics!.googleAnalytics, privateKey: 'secret' },
+      },
     };
     const result = projectPublicSettings(value);
     expect(result).not.toHaveProperty('privateSettings');
@@ -36,5 +41,7 @@ describe('trusted public catalog projection', () => {
     expect(result.linkHub).not.toHaveProperty('internal');
     expect(result.linkHub?.links[0]).not.toHaveProperty('token');
     expect(result.linkHub?.links[0]).toMatchObject({ id: 'catalog', href: '/catalog' });
+    expect(result.externalAnalytics).not.toHaveProperty('internalToken');
+    expect(result.externalAnalytics?.googleAnalytics).toEqual({ enabled: true, measurementId: 'G-XW6EZGTB80' });
   });
 });
