@@ -2,7 +2,9 @@
 
 ## Status
 
-Production content migration is complete and verified. Runtime rollout evidence is recorded below after the application checkpoint receives traffic.
+`SANPACK REAL CATALOG & TAXONOMY LIVE`
+
+Production content migration, application rollout and post-release verification are complete.
 
 ## Production baseline
 
@@ -104,7 +106,15 @@ The final lineage patch is included in these results.
 
 ## Production rollout and monitoring
 
-Taxonomy checkpoint: `e43bcdf701dd7abf1d76e5f0ad40ca9174323882` (`feat: organize production catalog taxonomy`). The final lineage-search source/revision and 100% traffic evidence are appended after automatic App Hosting rollout. No rules, IAM, secrets, indexes, TTL, catalog prices, customers, orders or Telegram notifications are part of it.
+- Taxonomy checkpoint: `e43bcdf701dd7abf1d76e5f0ad40ca9174323882` (`feat: organize production catalog taxonomy`).
+- Final release source: `dcd1c8a5cb7093b7ca7363f20c46aed3e8a11681` (`fix: search catalog category lineages`).
+- App Hosting build: `build-2026-09-14-001`; rollout: `rollout-2026-09-14-001` (`SUCCEEDED`).
+- Runtime revision: `sanpack-build-2026-09-14-001`, Ready, 100% traffic.
+- Production traffic cutover: `2026-09-14T03:27:20.765860Z`.
+- Immediate application rollback: `sanpack-build-2026-09-13-005`, source `329b75e556e51704a5d3c24ecb0505ae7526aeab`. Content rollback remains the separate exact-document procedure above.
+- Post-cutover observation found 0 error-severity log entries, 0 HTTP 5xx responses and 0 critical catalog, analytics, order or notification application events for the new revision. Health reports `sanpack-build-2026-09-14-001`.
+
+No rules, IAM, secrets, indexes, TTL, catalog prices, customers, orders or Telegram notifications were changed. The final documentation record is intentionally kept as a local docs-only checkpoint so it cannot trigger a redundant App Hosting rollout.
 
 ## Remaining content backlog
 

@@ -228,7 +228,9 @@ Production taxonomy changed through the bounded Firestore operation in `scripts/
 
 The private exact-document backup is `/private/tmp/sanpack-production-backups/real-catalog-taxonomy-2026-09-14T03-03-34-454Z.json` (mode 0600). Keep it outside Git and do not display its content. Only for a confirmed taxonomy incident, restore with `node --env-file=.env.local scripts/real-catalog-taxonomy-2026.mjs --rollback=<backup-path> --project=stamply-4df8a`; this restores the 26 existing documents and removes only the four Categories created here. Application and content rollback are independent.
 
-Verified target: 31 taxonomy documents, 238/238 published Products, 16 Attributes, zero orphan/invalid lineages and zero remaining operations. Sitemap is 1,120 URLs (124 taxonomy, 952 Product, 44 static), an explained +16. No rules, IAM, secrets, indexes, TTL, customer/order data or catalog prices changed. Final runtime revision and traffic evidence are in [REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md](REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md).
+Verified target: 31 taxonomy documents, 238/238 published Products, 16 Attributes, zero orphan/invalid lineages and zero remaining operations. Sitemap is 1,120 URLs (124 taxonomy, 952 Product, 44 static), an explained +16. No rules, IAM, secrets, indexes, TTL, customer/order data or catalog prices changed.
+
+Application source `dcd1c8a5cb7093b7ca7363f20c46aed3e8a11681` is live as `sanpack-build-2026-09-14-001` with 100% traffic. Automatic rollout `rollout-2026-09-14-001` succeeded at `2026-09-14T03:27:20.765860Z`; rollback is `sanpack-build-2026-09-13-005` plus the independent content restore procedure above when a content rollback is actually required. Full evidence is in [REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md](REAL_CATALOG_TAXONOMY_HANDOFF_2026-09-14.md).
 
 ## Release gate
 
