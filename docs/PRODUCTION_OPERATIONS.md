@@ -220,7 +220,7 @@ Monitor App Hosting logs for `analytics.ingestion_failed`, `analytics.report_fai
 
 ## External analytics and search operations
 
-- GA4 property **SANPACK**, web stream **SANPACK Production**, Measurement ID `G-XW6EZGTB80`. Enhanced Measurement stays off because the application owns SPA page-view mapping. `request_created` maps to `generate_lead`, never `purchase`.
+- GA4 property **SANPACK** in the owner account `hello@clarityext.com`, web stream **SANPACK Production**, Measurement ID `G-0NGEJGYW2Z`. Enhanced Measurement stays off because the application owns SPA page-view mapping. `request_created` maps to `generate_lead`, never `purchase`.
 - Яндекс Метрика is disabled until an owner creates/chooses the production counter in an authenticated Yandex session. When enabled through Admin → Integrations, keep Webvisor/session replay, clickmap, form capture and ecommerce mode off. No secret value is required.
 - The external bridge is best-effort and must not block navigation, cart or Request submission. It loads only for `sanpack.uz`/`www.sanpack.uz` in production and is disabled for localhost, Playwright/WebDriver, DNT, GPC and the shared analytics opt-out. Do not bypass those gates for smoke testing.
 - Search text is not forwarded to GA4/Metrica. Product names/SKUs, bounded category/variant context and aggregate line counts are allowed; customer UID, Telegram ID, contacts, delivery fields, comments, auth data and Request contents are forbidden.

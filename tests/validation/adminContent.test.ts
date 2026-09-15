@@ -206,7 +206,7 @@ describe('external analytics settings validation', () => {
   it('accepts valid public provider identifiers and disabled empty providers', () => {
     expect(settingsMutationSchema.safeParse({
       externalAnalytics: {
-        googleAnalytics: { enabled: true, measurementId: 'G-XW6EZGTB80' },
+        googleAnalytics: { enabled: true, measurementId: 'G-0NGEJGYW2Z' },
         yandexMetrica: { enabled: false, counterId: '' },
       },
     }).success).toBe(true);

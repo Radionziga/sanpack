@@ -74,7 +74,7 @@ export const initialSiteSettings: SiteSettings = {
   externalAnalytics: {
     googleAnalytics: {
       enabled: true,
-      measurementId: 'G-XW6EZGTB80',
+      measurementId: 'G-0NGEJGYW2Z',
     },
     yandexMetrica: {
       enabled: false,

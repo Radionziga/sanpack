@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation checkpoint prepared for controlled rollout. Google ownership and sitemap registration are complete. Yandex account-bound setup remains the only owner-gated external step.
+Implementation checkpoint prepared for controlled rollout. GA4 is owned by `hello@clarityext.com`. Google Search Console and Yandex account-bound setup remain owner-gated external steps.
 
 ## Baseline
 
@@ -14,7 +14,8 @@ Implementation checkpoint prepared for controlled rollout. Google ownership and 
 ## Google Analytics 4
 
 - Property: **SANPACK**; web stream: **SANPACK Production**.
-- Measurement ID: `G-XW6EZGTB80` (public configuration, not a secret).
+- Owner account: `hello@clarityext.com`.
+- Measurement ID: `G-0NGEJGYW2Z` (public configuration, not a secret).
 - Enhanced Measurement is off. The application sends explicit SPA page views with `send_page_view: false` to prevent duplicates.
 - Advertising signals and ad personalization signals are disabled in the application configuration.
 - A confirmed Request response maps to GA4 `generate_lead`; SANPACK never emits `purchase` because it is a B2B request portal without online payment.
@@ -52,8 +53,8 @@ First-party `request_created` remains the canonical server-confirmed, Request-ID
 
 ## Search integrations and technical SEO
 
-- Google Search Console domain property `sanpack.uz` is verified through a scoped DNS TXT record; no existing DNS value was replaced.
-- `https://sanpack.uz/sitemap.xml` was submitted and processed successfully: last read 2026-09-14, 1,120 discovered pages.
+- Google Search Console was opened under `hello@clarityext.com` and requested a dedicated scoped DNS TXT record for that owner. The existing verification record for another Google account was left intact; the Hello Clarity record still needs to be added after owner reauthentication to Cloud DNS.
+- `https://sanpack.uz/sitemap.xml` is ready to submit after ownership is confirmed. A prior submission under another Google account is not treated as completion for the owner account.
 - Production `robots.txt` is HTTP 200, advertises the canonical sitemap and excludes Admin/API/private utility routes.
 - Sample Home/Catalog checks confirm canonical URLs, RU/UZ/EN/ZH plus x-default alternates, and Organization/WebSite structured data. Product/Breadcrumb structured-data regressions remain in the release suite.
 - Yandex Webmaster site verification and sitemap submission are pending an authenticated owner Yandex session.
