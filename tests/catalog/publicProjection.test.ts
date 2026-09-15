@@ -42,6 +42,6 @@ describe('trusted public catalog projection', () => {
     expect(result.linkHub?.links[0]).not.toHaveProperty('token');
     expect(result.linkHub?.links[0]).toMatchObject({ id: 'catalog', href: '/catalog' });
     expect(result.externalAnalytics).not.toHaveProperty('internalToken');
-    expect(result.externalAnalytics?.googleAnalytics).toEqual({ enabled: true, measurementId: 'G-0NGEJGYW2Z' });
+    expect(result.externalAnalytics?.googleAnalytics).toEqual({ enabled: true, measurementId: 'G-ZXR9E6443E' });
   });
 });

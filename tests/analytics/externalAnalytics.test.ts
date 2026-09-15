@@ -28,10 +28,10 @@ describe('external analytics bridge', () => {
 
   it('validates public provider identifiers and never enables an invalid tag', () => {
     expect(normalizeExternalAnalyticsSettings({
-      googleAnalytics: { enabled: true, measurementId: 'G-0NGEJGYW2Z' },
+      googleAnalytics: { enabled: true, measurementId: 'G-ZXR9E6443E' },
       yandexMetrica: { enabled: true, counterId: '12345678' },
     })).toEqual({
-      googleAnalytics: { enabled: true, measurementId: 'G-0NGEJGYW2Z' },
+      googleAnalytics: { enabled: true, measurementId: 'G-ZXR9E6443E' },
       yandexMetrica: { enabled: true, counterId: '12345678' },
     });
     expect(normalizeExternalAnalyticsSettings({

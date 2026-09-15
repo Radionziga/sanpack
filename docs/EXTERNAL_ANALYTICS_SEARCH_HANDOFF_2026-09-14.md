@@ -13,9 +13,9 @@ Implementation checkpoint prepared for controlled rollout. GA4 is owned by `hell
 
 ## Google Analytics 4
 
-- Property: **SANPACK**; web stream: **SANPACK Production**.
+- Property: **stamply-4df8a** (`514533266`); web stream: **Sanpack** (`15319853813`).
 - Owner account: `hello@clarityext.com`.
-- Measurement ID: `G-0NGEJGYW2Z` (public configuration, not a secret).
+- Measurement ID: `G-ZXR9E6443E` (public configuration, not a secret).
 - Enhanced Measurement is off. The application sends explicit SPA page views with `send_page_view: false` to prevent duplicates.
 - Advertising signals and ad personalization signals are disabled in the application configuration.
 - A confirmed Request response maps to GA4 `generate_lead`; SANPACK never emits `purchase` because it is a B2B request portal without online payment.
