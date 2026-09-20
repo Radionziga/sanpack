@@ -29,10 +29,13 @@ async function clearCollection(name: string) {
 async function editWorkbook(buffer: Buffer, changes: Record<string, number>) {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(Uint8Array.from(buffer).buffer);
-  const sheet = workbook.getWorksheet('Цены')!;
-  for (let row = 5; row <= sheet.rowCount; row += 1) {
-    const rowId = String(sheet.getCell(row, 15).value || '');
-    if (changes[rowId] !== undefined) sheet.getCell(row, 12).value = changes[rowId];
+  for (const sheet of workbook.worksheets.filter((candidate) => candidate.name !== 'Инструкция' && candidate.name !== '_SANPACK_META')) {
+    const headers = new Map<string, number>();
+    sheet.getRow(4).eachCell((cell, column) => headers.set(String(cell.value || ''), column));
+    for (let row = 5; row <= sheet.rowCount; row += 1) {
+      const rowId = String(sheet.getCell(row, headers.get('__rowId')!).value || '');
+      if (changes[rowId] !== undefined) sheet.getCell(row, headers.get('Новая цена')!).value = changes[rowId];
+    }
   }
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }

@@ -2,10 +2,12 @@ import type { Product } from '@/types';
 import { getProductPriceMode } from '@/lib/commerce/productOffer';
 import {
   PRICE_WORKBOOK_SCHEMA_VERSION,
+  LEGACY_PRICE_WORKBOOK_SCHEMA_VERSION,
   type ParsedPriceWorkbookRow,
   type PriceExportManifest,
   type PricePreviewRow,
   type PricePreviewSummary,
+  type PriceWorkbookSheet,
 } from './priceManagerTypes';
 import { priceManifestRowDigest } from './priceRows';
 
@@ -59,11 +61,28 @@ export function buildPricePreview(input: {
   manifest: PriceExportManifest;
   products: Product[];
   workbookCatalogDigest: string;
+  workbookSheets?: PriceWorkbookSheet[];
 }) {
-  const { parsedRows, manifest, products, workbookCatalogDigest } = input;
+  const { parsedRows, manifest, products, workbookCatalogDigest, workbookSheets = [] } = input;
   const structuralErrors: string[] = [];
-  if (manifest.schemaVersion !== PRICE_WORKBOOK_SCHEMA_VERSION) structuralErrors.push('Версия export manifest больше не поддерживается.');
+  if (manifest.schemaVersion !== PRICE_WORKBOOK_SCHEMA_VERSION && manifest.schemaVersion !== LEGACY_PRICE_WORKBOOK_SCHEMA_VERSION) {
+    structuralErrors.push('Версия export manifest больше не поддерживается.');
+  }
   if (workbookCatalogDigest !== manifest.catalogDigest) structuralErrors.push('Служебная контрольная сумма Excel не совпадает с экспортом.');
+  if (manifest.schemaVersion === PRICE_WORKBOOK_SCHEMA_VERSION) {
+    const expectedSheets = manifest.sheets || [];
+    if (expectedSheets.length !== workbookSheets.length
+      || expectedSheets.some((sheet, index) => {
+        const actual = workbookSheets[index];
+        return !actual
+          || actual.sheetName !== sheet.sheetName
+          || actual.categoryId !== sheet.categoryId
+          || actual.rowCount !== sheet.rowCount
+          || actual.order !== sheet.order;
+      })) {
+      structuralErrors.push('Структура вкладок категорий не совпадает с исходным экспортом. Скачайте свежий Excel.');
+    }
+  }
 
   const manifestById = new Map(manifest.rows.map((row) => [row.rowId, row]));
   const productsById = new Map(products.map((product) => [product.id, product]));
@@ -95,6 +114,8 @@ export function buildPricePreview(input: {
       priceOwner: row.priceOwner,
       editable: row.editable,
       exportedPrice: row.exportedPrice,
+      categoryId: row.categoryId,
+      sheetName: row.sheetName,
     };
     const identityMatches = expected.digest === priceManifestRowDigest(identity)
       && expected.productId === row.productId
@@ -104,7 +125,9 @@ export function buildPricePreview(input: {
       && expected.variantTitle === row.variantTitle
       && expected.priceOwner === row.priceOwner
       && expected.editable === row.editable
-      && expected.exportedPrice === row.exportedPrice;
+      && expected.exportedPrice === row.exportedPrice
+      && expected.categoryId === row.categoryId
+      && expected.sheetName === row.sheetName;
     if (!identityMatches) {
       rows.push(previewError(row, 'Служебные данные строки были изменены.'));
       continue;

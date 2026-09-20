@@ -49,4 +49,18 @@ describe('price workbook rows', () => {
     expect(first[0]).toMatchObject({ rowId: 'product:p', productId: 'p', sku: 'SKU' });
     expect(catalogPriceDigest(first)).toMatch(/^[a-f0-9]{64}$/);
   });
+
+  it('assigns each product only to its direct category in taxonomy order', () => {
+    const rows = buildPriceWorkbookRows([
+      createProduct({ id: 'cheese-product', sku: 'CHEESE', categoryId: 'cheese', sortOrder: 2 }),
+      createProduct({ id: 'dairy-product', sku: 'DAIRY', categoryId: 'dairy', sortOrder: 1 }),
+    ], categories);
+    expect(rows.map((row) => row.categoryId)).toEqual(['dairy', 'cheese']);
+    expect(rows.map((row) => row.categoryTitle)).toEqual(['Молочная продукция', 'Сыры']);
+    expect(rows.find((row) => row.productId === 'cheese-product')).toMatchObject({
+      categoryId: 'cheese',
+      categoryBreadcrumb: 'Продукты → Молочная продукция → Сыры',
+    });
+    expect(rows.filter((row) => row.productId === 'cheese-product')).toHaveLength(1);
+  });
 });

@@ -7,7 +7,7 @@ import type { Category, Product } from '@/types';
 import { getProductPriceMode } from '@/lib/commerce/productOffer';
 import { buildPriceWorkbookRows, catalogPriceDigest, manifestRows } from './priceRows';
 import { buildPricePreview } from './pricePreview';
-import { createPriceWorkbook, parsePriceWorkbook, sha256 } from './priceWorkbook';
+import { buildPriceWorkbookSheetPlan, createPriceWorkbook, parsePriceWorkbook, sha256 } from './priceWorkbook';
 import {
   PRICE_EXPORT_RETENTION_DAYS,
   PRICE_PREVIEW_RETENTION_HOURS,
@@ -77,7 +77,8 @@ export async function exportCurrentPrices(admin: AdminSession) {
   const exportId = crypto.randomUUID();
   const { products, categories } = await readCatalog();
   const rows = buildPriceWorkbookRows(products, categories);
-  const manifestPriceRows = manifestRows(rows);
+  const sheets = buildPriceWorkbookSheetPlan(rows);
+  const manifestPriceRows = manifestRows(rows, sheets);
   const digest = catalogPriceDigest(manifestPriceRows);
   const manifest: PriceExportManifest = {
     exportId,
@@ -87,9 +88,10 @@ export async function exportCurrentPrices(admin: AdminSession) {
     actor: actor(admin),
     catalogDigest: digest,
     rowCount: rows.length,
+    sheets,
     rows: manifestPriceRows,
   };
-  const workbook = await createPriceWorkbook({ exportId, createdAt, catalogDigest: digest, rows });
+  const workbook = await createPriceWorkbook({ exportId, createdAt, catalogDigest: digest, rows, sheets });
   await getAdminDb().collection(MANIFESTS).doc(exportId).set(removeUndefined({
     ...manifest,
     expiresAt: Timestamp.fromDate(manifest.expiresAt),
@@ -102,7 +104,7 @@ export async function previewPriceWorkbook(admin: AdminSession, file: { name: st
   try {
     parsed = await parsePriceWorkbook(file.buffer);
   } catch (error) {
-    const message = error instanceof Error && /Excel|файл|лист|таблиц|колонк|цену числом|макрос|вложен/i.test(error.message)
+    const message = error instanceof Error && /Excel|файл|лист|вклад|строк|таблиц|колонк|категор|служебн|цену числом|макрос|вложен/i.test(error.message)
       ? error.message
       : 'Excel повреждён или имеет неподдерживаемую структуру. Скачайте свежий файл и повторите изменения.';
     throw new PriceOperationError(message);
@@ -120,6 +122,7 @@ export async function previewPriceWorkbook(admin: AdminSession, file: { name: st
     manifest,
     products,
     workbookCatalogDigest: parsed.catalogDigest,
+    workbookSheets: parsed.sheets,
   });
   const changed = preview.rows.filter((row) => row.status === 'change' || row.status === 'warning');
   const now = new Date();

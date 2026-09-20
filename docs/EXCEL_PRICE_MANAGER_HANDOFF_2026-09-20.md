@@ -2,14 +2,14 @@
 
 ## Status
 
-Release candidate passed the local gate. The immutable production source/revision and smoke result are reported after the controlled automatic App Hosting rollout. No real Product price is changed by the smoke procedure.
+Category-sheets schema v2 is a release candidate. The immutable production source/revision and smoke result are reported after the controlled automatic App Hosting rollout. No real Product price is changed by the smoke procedure.
 
 ## Production source / revision
 
-- Verified source baseline before implementation: `a329b813015c6c58b4ef7698026f74c188f34533` (`main`, equal to `origin/main`).
-- Verified production health baseline: `sanpack-build-2026-09-19-002`.
+- Verified source baseline before the category-sheets patch: `9ea16a86d5383396d460d43080915417b4965d1d` (`main`, equal to `origin/main`).
+- Verified production health baseline: `sanpack-build-2026-09-20-003`.
 - Release source: the Git checkpoint containing this handoff and the Price Manager implementation.
-- Rollback target before rollout: `sanpack-build-2026-09-19-002`.
+- Rollback target before rollout: `sanpack-build-2026-09-20-003`.
 
 ## Admin route
 
@@ -17,7 +17,9 @@ Release candidate passed the local gate. The immutable production source/revisio
 
 ## Excel schema
 
-The export contains `Инструкция`, `Цены`, and a `veryHidden` `_SANPACK_META` sheet. `Цены` is a styled table with frozen headers, filters, current catalog context, locked read-only cells and highlighted editable new-price cells. The workbook contains no formulas in editable inputs and rejects macros, external links, embedded objects and oversized ZIP content on import.
+Schema v2 contains `Инструкция`, one visible sheet for every direct Product category that has rows, and a final `veryHidden` `_SANPACK_META` sheet. The former master sheet `Цены` is not duplicated. Each category sheet has the same styled table, category title, taxonomy breadcrumb, export date, frozen header, filters, locked read-only cells and highlighted editable new-price cells. The workbook contains no formulas in editable inputs and rejects macros, external links, embedded objects and oversized ZIP content on import.
+
+Category sheets follow the existing Group → Category → Subcategory order. A Product is assigned only from its direct `categoryId`; parent categories do not receive descendant copies and categories without direct Products do not create empty sheets. Human sheet names are sanitized to Excel's 31-character/invalid-character rules and receive deterministic suffixes on collision.
 
 ## Product / Variant row semantics
 
@@ -29,11 +31,11 @@ The export contains `Инструкция`, `Цены`, and a `veryHidden` `_SAN
 
 ## Export manifest
 
-Every workbook is paired with a server-side `priceExportManifests` document containing stable row identity, editable state, price/mode snapshots and integrity digests. It expires after 90 days. Import requires the matching unexpired manifest and validates the hidden workbook metadata and every row against it.
+Every workbook is paired with a server-side `priceExportManifests` document containing stable row identity, editable state, price/mode snapshots, expected direct category, expected sheet and integrity digests. It expires after 90 days. Import requires the matching unexpired manifest and validates the hidden workbook metadata, complete sheet map and every row against it. Sheet names are never used to find or mutate a Product.
 
 ## Import validation
 
-The endpoint accepts only `.xlsx`, requires a bounded `Content-Length`, caps the file at 5 MB, 2,000 rows, 30 columns, five worksheets and bounded decompressed ZIP content. It rejects duplicate/missing/foreign rows, formula cells, non-integer or non-positive new prices, tampered protected context and unsupported workbook features. User strings are normalized and bounded; spreadsheet formula prefixes remain literal text.
+The endpoint accepts only `.xlsx`, requires a bounded `Content-Length`, caps the file at 5 MB, 2,000 total price rows, 30 columns per data sheet, 64 worksheets and bounded decompressed ZIP content. It normalizes every approved category sheet into the existing canonical preview row set. It rejects renamed/missing/added category sheets, cross-category row movement, duplicate/missing/foreign rows, formula cells, non-integer or non-positive new prices, tampered protected context and unsupported workbook features. User strings are normalized and bounded; spreadsheet formula prefixes remain literal text. Still-valid schema v1 exports retain their legacy single-sheet parser path.
 
 Upload is preview-only. It creates an audit batch but does not write `products`.
 
@@ -70,9 +72,9 @@ Browser code never reads or writes Firestore directly. Admin SDK routes enforce 
 
 ## Tests
 
-- Unit/API/security: 553 passed, 20 skipped across 79 files (73 passed, six skipped).
+- Unit/API/security: 563 passed, 20 skipped across 79 files (73 passed, six skipped). Category-sheet targeted coverage includes direct placement, taxonomy order, empty-parent exclusion, global identity uniqueness, sheet-name sanitization/collisions, multi-sheet edits, structural tampering and unchanged round-trip.
 - Emulator: 32 Firestore boundary checks, seven Storage checks and 20 integration tests passed, including preview non-write, atomic multi-price apply, idempotency, unrelated-field preservation, stale/mode conflicts and rollback.
-- Browser: Price Manager desktop/mobile tests cover export, preview, warning acknowledgement, explicit apply, no-change state, stale conflict, history, rollback preview, narrow layout and role denial. The full suite produced 145 passes and four configured skips; one unrelated mobile Variant-SKU search timeout passed immediately when rerun alone.
+- Browser: Price Manager desktop/mobile tests cover export, preview, warning acknowledgement, explicit apply, no-change state, stale conflict, history, rollback preview, narrow layout and role denial. The full default suite produced 146 passes and four configured skips. The taxonomy suite produced 81 passes and one configured skip; two desktop fixture timeouts passed immediately when rerun against the same isolated production fixture.
 - Typecheck, lint, production build and `git diff --check` passed.
 - Production dependency audit contains the pre-existing Firebase/Google dependency advisory set: six moderate, zero high/critical; the added workbook dependencies introduce no remaining high/critical production advisory.
 
@@ -82,7 +84,7 @@ Use the normal push to `main` and the automatic App Hosting rollout. Do not run 
 
 ## Production smoke
 
-The safe smoke is: owner opens `/admin/prices`, downloads the real workbook, uploads that same unchanged workbook, verifies a zero-change preview and confirms there is no apply action. No real price, request, notification, customer or catalog content is mutated.
+The safe smoke is: owner opens `/admin/prices`, downloads the real workbook, verifies category tabs and global identity counts, uploads that same unchanged workbook, verifies zero changes/warnings/conflicts/errors and confirms there is no apply action. No real price, request, notification, customer or catalog content is mutated.
 
 ## Known limitations
 

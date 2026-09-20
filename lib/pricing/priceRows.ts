@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Category, Product, ProductPriceMode, ProductVariant } from '@/types';
 import { getCategoryLineage, getOrderedCategories } from '@/lib/catalog/categoryHierarchy';
 import { getProductPriceMode } from '@/lib/commerce/productOffer';
-import type { PriceManifestRow, PriceOwner, PriceWorkbookRow } from './priceManagerTypes';
+import type { PriceManifestRow, PriceOwner, PriceWorkbookRow, PriceWorkbookSheet } from './priceManagerTypes';
 
 function digest(value: unknown) {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -22,13 +22,34 @@ function workbookText(value: string, max: number) {
 
 function taxonomyTitles(product: Product, categories: Category[]) {
   const lineage = getCategoryLineage(product.categoryId, categories);
+  const directCategory = lineage.at(-1);
+  const categoryId = directCategory?.id || product.categoryId;
+  const categoryTitle = workbookText(directCategory?.titleRu || product.categorySlug || product.categoryId, 300);
+  const categoryBreadcrumb = workbookText(lineage.map((category) => category.titleRu).join(' → ') || categoryTitle, 500);
+  const categoryOrder = getOrderedCategories(categories).findIndex((category) => category.id === categoryId);
   if (lineage.length >= 3) {
-    return { group: workbookText(lineage[0].titleRu, 300), category: workbookText(lineage[1].titleRu, 300), subcategory: workbookText(lineage[2].titleRu, 300) };
+    return {
+      categoryId, categoryTitle, categoryBreadcrumb,
+      categoryOrder: categoryOrder === -1 ? Number.MAX_SAFE_INTEGER : categoryOrder,
+      group: workbookText(lineage[0].titleRu, 300),
+      category: workbookText(lineage[1].titleRu, 300),
+      subcategory: workbookText(lineage[2].titleRu, 300),
+    };
   }
   if (lineage.length === 2) {
-    return { group: workbookText(lineage[0].titleRu, 300), category: workbookText(lineage[1].titleRu, 300), subcategory: '' };
+    return {
+      categoryId, categoryTitle, categoryBreadcrumb,
+      categoryOrder: categoryOrder === -1 ? Number.MAX_SAFE_INTEGER : categoryOrder,
+      group: workbookText(lineage[0].titleRu, 300),
+      category: workbookText(lineage[1].titleRu, 300),
+      subcategory: '',
+    };
   }
-  return { group: '', category: workbookText(lineage[0]?.titleRu || product.categorySlug, 300), subcategory: '' };
+  return {
+    categoryId, categoryTitle, categoryBreadcrumb,
+    categoryOrder: categoryOrder === -1 ? Number.MAX_SAFE_INTEGER : categoryOrder,
+    group: '', category: categoryTitle, subcategory: '',
+  };
 }
 
 function sourceFor(owner: PriceOwner, mode: ProductPriceMode) {
@@ -104,9 +125,10 @@ export function buildPriceWorkbookRows(products: Product[], categories: Category
     .flatMap((product) => [productRow(product, categories), ...(product.variants || []).map((variant) => variantRow(product, variant, categories))]);
 }
 
-export function manifestRows(rows: PriceWorkbookRow[]): PriceManifestRow[] {
+export function manifestRows(rows: PriceWorkbookRow[], sheets: PriceWorkbookSheet[] = []): PriceManifestRow[] {
+  const sheetByCategory = new Map(sheets.map((sheet) => [sheet.categoryId, sheet.sheetName]));
   return rows.map((row) => {
-    const identity = {
+    const baseIdentity = {
       rowId: row.rowId,
       productId: row.productId,
       variantId: row.variantId,
@@ -117,6 +139,10 @@ export function manifestRows(rows: PriceWorkbookRow[]): PriceManifestRow[] {
       editable: row.editable,
       exportedPrice: row.exportedPrice,
     };
+    const sheetName = sheetByCategory.get(row.categoryId);
+    const identity = sheetName
+      ? { ...baseIdentity, categoryId: row.categoryId, sheetName }
+      : baseIdentity;
     return { ...identity, digest: digest(identity) };
   });
 }

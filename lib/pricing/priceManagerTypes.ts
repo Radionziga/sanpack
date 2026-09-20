@@ -1,4 +1,5 @@
-export const PRICE_WORKBOOK_SCHEMA_VERSION = 1;
+export const LEGACY_PRICE_WORKBOOK_SCHEMA_VERSION = 1;
+export const PRICE_WORKBOOK_SCHEMA_VERSION = 2;
 export const PRICE_WORKBOOK_MAX_BYTES = 5 * 1024 * 1024;
 export const PRICE_WORKBOOK_MAX_ROWS = 2_000;
 export const PRICE_WORKBOOK_MAX_COLUMNS = 30;
@@ -16,6 +17,10 @@ export interface PriceWorkbookRow {
   priceOwner: PriceOwner;
   editable: boolean;
   exportedPrice: number | null;
+  categoryId: string;
+  categoryTitle: string;
+  categoryBreadcrumb: string;
+  categoryOrder: number;
   group: string;
   category: string;
   subcategory: string;
@@ -39,7 +44,18 @@ export interface PriceManifestRow {
   priceOwner: PriceOwner;
   editable: boolean;
   exportedPrice: number | null;
+  categoryId?: string;
+  sheetName?: string;
   digest: string;
+}
+
+export interface PriceWorkbookSheet {
+  categoryId: string;
+  categoryTitle: string;
+  breadcrumb: string;
+  order: number;
+  sheetName: string;
+  rowCount: number;
 }
 
 export interface PriceExportManifest {
@@ -50,6 +66,7 @@ export interface PriceExportManifest {
   actor: { uid: string; email: string; name: string };
   catalogDigest: string;
   rowCount: number;
+  sheets?: PriceWorkbookSheet[];
   rows: PriceManifestRow[];
 }
 
@@ -59,6 +76,14 @@ export interface ParsedPriceWorkbookRow extends PriceManifestRow {
   variantTitle: string;
   newPrice: number | null;
   newPriceFormula?: string;
+}
+
+export interface ParsedPriceWorkbook {
+  exportId: string;
+  schemaVersion: number;
+  catalogDigest: string;
+  sheets: PriceWorkbookSheet[];
+  rows: ParsedPriceWorkbookRow[];
 }
 
 export interface PricePreviewRow {

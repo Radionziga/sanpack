@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createProduct, createVariant } from '@/tests/fixtures/products';
 import { buildPricePreview } from '@/lib/pricing/pricePreview';
 import { catalogPriceDigest, manifestRows, priceManifestRowDigest } from '@/lib/pricing/priceRows';
+import { buildPriceWorkbookSheetPlan } from '@/lib/pricing/priceWorkbook';
 import type { ParsedPriceWorkbookRow, PriceExportManifest, PriceWorkbookRow } from '@/lib/pricing/priceManagerTypes';
 
 const product = createProduct({
@@ -13,17 +14,18 @@ const product = createProduct({
 });
 
 const baseRows: PriceWorkbookRow[] = [
-  { rowId: `product:${product.id}`, productId: product.id, priceOwner: 'product', editable: true, exportedPrice: 100_000, group: '', category: '', subcategory: '', sku: 'P-1', productTitle: 'Канонический товар', variantTitle: '', priceLevel: 'Товар', salesUnit: 'шт', priceMode: 'Фиксированная', priceSource: 'Цена товара', currentPrice: 100_000 },
-  { rowId: `variant:${product.id}:variant-explicit`, productId: product.id, variantId: 'variant-explicit', priceOwner: 'variant', editable: true, exportedPrice: 120_000, group: '', category: '', subcategory: '', sku: 'V-1', productTitle: 'Канонический товар', variantTitle: 'Явный', priceLevel: 'Вариант', salesUnit: 'шт', priceMode: 'Фиксированная', priceSource: 'Цена варианта', currentPrice: 120_000 },
-  { rowId: `variant:${product.id}:variant-inherited`, productId: product.id, variantId: 'variant-inherited', priceOwner: 'inherited', editable: false, exportedPrice: null, group: '', category: '', subcategory: '', sku: 'V-2', productTitle: 'Канонический товар', variantTitle: 'Наследуемый', priceLevel: 'Вариант', salesUnit: 'шт', priceMode: 'Фиксированная', priceSource: 'Цена товара', currentPrice: 100_000 },
+  { rowId: `product:${product.id}`, productId: product.id, priceOwner: 'product', editable: true, exportedPrice: 100_000, categoryId: 'category-1', categoryTitle: 'Категория', categoryBreadcrumb: 'Раздел → Категория', categoryOrder: 1, group: 'Раздел', category: 'Категория', subcategory: '', sku: 'P-1', productTitle: 'Канонический товар', variantTitle: '', priceLevel: 'Товар', salesUnit: 'шт', priceMode: 'Фиксированная', priceSource: 'Цена товара', currentPrice: 100_000 },
+  { rowId: `variant:${product.id}:variant-explicit`, productId: product.id, variantId: 'variant-explicit', priceOwner: 'variant', editable: true, exportedPrice: 120_000, categoryId: 'category-1', categoryTitle: 'Категория', categoryBreadcrumb: 'Раздел → Категория', categoryOrder: 1, group: 'Раздел', category: 'Категория', subcategory: '', sku: 'V-1', productTitle: 'Канонический товар', variantTitle: 'Явный', priceLevel: 'Вариант', salesUnit: 'шт', priceMode: 'Фиксированная', priceSource: 'Цена варианта', currentPrice: 120_000 },
+  { rowId: `variant:${product.id}:variant-inherited`, productId: product.id, variantId: 'variant-inherited', priceOwner: 'inherited', editable: false, exportedPrice: null, categoryId: 'category-1', categoryTitle: 'Категория', categoryBreadcrumb: 'Раздел → Категория', categoryOrder: 1, group: 'Раздел', category: 'Категория', subcategory: '', sku: 'V-2', productTitle: 'Канонический товар', variantTitle: 'Наследуемый', priceLevel: 'Вариант', salesUnit: 'шт', priceMode: 'Фиксированная', priceSource: 'Цена товара', currentPrice: 100_000 },
 ];
 
-const manifestRowsValue = manifestRows(baseRows);
+const workbookSheets = buildPriceWorkbookSheetPlan(baseRows);
+const manifestRowsValue = manifestRows(baseRows, workbookSheets);
 const manifest: PriceExportManifest = {
-  exportId: '12345678-1234-1234-1234-123456789012', schemaVersion: 1,
+  exportId: '12345678-1234-1234-1234-123456789012', schemaVersion: 2,
   createdAt: '2026-09-20T00:00:00.000Z', expiresAt: new Date('2026-12-20T00:00:00.000Z'),
   actor: { uid: 'admin', email: 'admin@example.com', name: 'Admin' },
-  catalogDigest: catalogPriceDigest(manifestRowsValue), rowCount: manifestRowsValue.length, rows: manifestRowsValue,
+  catalogDigest: catalogPriceDigest(manifestRowsValue), rowCount: manifestRowsValue.length, sheets: workbookSheets, rows: manifestRowsValue,
 };
 
 function parsed(overrides: Partial<ParsedPriceWorkbookRow>[] = []): ParsedPriceWorkbookRow[] {
@@ -34,7 +36,7 @@ function parsed(overrides: Partial<ParsedPriceWorkbookRow>[] = []): ParsedPriceW
 }
 
 function preview(rows = parsed(), products = [product], digest = manifest.catalogDigest) {
-  return buildPricePreview({ parsedRows: rows, manifest, products, workbookCatalogDigest: digest });
+  return buildPricePreview({ parsedRows: rows, manifest, products, workbookCatalogDigest: digest, workbookSheets });
 }
 
 describe('price import preview', () => {
@@ -69,23 +71,25 @@ describe('price import preview', () => {
     const requestProduct = createProduct({ id: 'request-product', sku: 'REQ-1', price: 99_000, priceMode: 'request' });
     const workbookRow: PriceWorkbookRow = {
       rowId: 'product:request-product', productId: requestProduct.id, priceOwner: 'product', editable: false,
-      exportedPrice: null, group: '', category: '', subcategory: '', sku: 'REQ-1', productTitle: requestProduct.titleRu,
+      exportedPrice: null, categoryId: 'category-1', categoryTitle: 'Категория', categoryBreadcrumb: 'Раздел → Категория', categoryOrder: 1, group: 'Раздел', category: 'Категория', subcategory: '', sku: 'REQ-1', productTitle: requestProduct.titleRu,
       variantTitle: '', priceLevel: 'Товар', salesUnit: 'шт', priceMode: 'По запросу', priceSource: 'По запросу', currentPrice: null,
     };
-    const [manifestRow] = manifestRows([workbookRow]);
+    const requestSheets = buildPriceWorkbookSheetPlan([workbookRow]);
+    const [manifestRow] = manifestRows([workbookRow], requestSheets);
     const requestManifest: PriceExportManifest = {
-      ...manifest, rowCount: 1, rows: [manifestRow], catalogDigest: catalogPriceDigest([manifestRow]),
+      ...manifest, rowCount: 1, sheets: requestSheets, rows: [manifestRow], catalogDigest: catalogPriceDigest([manifestRow]),
     };
     const result = buildPricePreview({
       parsedRows: [{ ...manifestRow, digest: '', newPrice: 50_000 }],
       manifest: requestManifest, products: [requestProduct], workbookCatalogDigest: requestManifest.catalogDigest,
+      workbookSheets: requestSheets,
     });
     expect(result.rows[0]).toMatchObject({ status: 'error', message: expect.stringContaining('только для просмотра') });
   });
 
   it('rejects unknown, duplicate, missing and modified identity rows', () => {
     const duplicate = parsed();
-    duplicate.push({ ...duplicate[0] });
+    duplicate.push({ ...duplicate[0], categoryId: 'other-category', sheetName: 'Другая вкладка' });
     expect(preview(duplicate).summary.errors).toBeGreaterThan(0);
 
     const missing = parsed().slice(0, 2);
@@ -123,5 +127,29 @@ describe('price import preview', () => {
     const row = manifest.rows[0];
     const { digest: _digest, ...identity } = row;
     expect(priceManifestRowDigest({ ...identity, sku: 'CHANGED' })).not.toBe(row.digest);
+  });
+
+  it('keeps still-valid legacy schema v1 manifests readable', () => {
+    const legacyRows = manifestRows(baseRows);
+    const legacyManifest: PriceExportManifest = {
+      ...manifest,
+      schemaVersion: 1,
+      sheets: undefined,
+      rows: legacyRows,
+      catalogDigest: catalogPriceDigest(legacyRows),
+    };
+    const legacyParsed = legacyRows.map((row) => ({
+      ...row,
+      digest: '',
+      newPrice: row.editable ? row.exportedPrice : null,
+    }));
+    const result = buildPricePreview({
+      parsedRows: legacyParsed,
+      manifest: legacyManifest,
+      products: [product],
+      workbookCatalogDigest: legacyManifest.catalogDigest,
+      workbookSheets: [],
+    });
+    expect(result.summary).toEqual({ changes: 0, unchanged: 3, warnings: 0, conflicts: 0, errors: 0 });
   });
 });
