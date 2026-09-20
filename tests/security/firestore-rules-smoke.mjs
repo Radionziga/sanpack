@@ -23,6 +23,8 @@ for (const [path, fields] of [
   ['requests/order', { contactName: text('fixture-only') }],
   ['bagDesignRequests/request', { contactName: text('fixture-only') }],
   ['analyticsEvents/event', { name: text('page_view') }],
+  ['priceExportManifests/export', { exportId: text('export') }],
+  ['priceImportBatches/batch', { batchId: text('batch') }],
 ]) {
   assert.equal((await call(path, 'PATCH', 'owner', fields)).status, 200, `Emulator setup: ${path}`);
 }
@@ -38,7 +40,7 @@ for (const auth of [undefined, token]) {
     assert.equal((await call(`${collection}/attempt`, 'PATCH', auth, { id: text('attempt') })).status, 403);
     checks++;
   }
-  for (const path of ['requests/order', 'privateSettings/telegram', 'admins/fixture-admin', 'bagDesignRequests/request', 'analyticsEvents/event']) {
+  for (const path of ['requests/order', 'privateSettings/telegram', 'admins/fixture-admin', 'bagDesignRequests/request', 'analyticsEvents/event', 'priceExportManifests/export', 'priceImportBatches/batch']) {
     assert.equal((await call(path, 'GET', auth)).status, 403); checks++;
   }
   assert.equal((await call('settings/global', 'PATCH', auth, { id: text('global') })).status, 403); checks++;

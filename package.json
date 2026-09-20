@@ -11,7 +11,7 @@
     "test:e2e": "playwright test",
     "test:e2e:taxonomy": "playwright test --config=playwright.taxonomy.config.ts",
     "test:e2e:stabilization": "playwright test tests/e2e/stabilization.spec.ts",
-    "test:security:emulator": "firebase emulators:exec --only firestore,storage --project demo-sanpack-audit --config firebase.security-test.json \"node tests/security/firestore-rules-smoke.mjs && node tests/security/storage-rules-smoke.mjs && npm exec -- vitest run --no-file-parallelism tests/integration/analytics.emulator.test.ts tests/integration/customerIdentity.emulator.test.ts tests/integration/customerSessionConcurrency.emulator.test.ts tests/integration/requestPipeline.emulator.test.ts tests/integration/telegramCheckoutIdentity.emulator.test.ts\"",
+    "test:security:emulator": "firebase emulators:exec --only firestore,storage --project demo-sanpack-audit --config firebase.security-test.json \"node tests/security/firestore-rules-smoke.mjs && node tests/security/storage-rules-smoke.mjs && npm exec -- vitest run --no-file-parallelism tests/integration/analytics.emulator.test.ts tests/integration/customerIdentity.emulator.test.ts tests/integration/customerSessionConcurrency.emulator.test.ts tests/integration/priceManager.emulator.test.ts tests/integration/requestPipeline.emulator.test.ts tests/integration/telegramCheckoutIdentity.emulator.test.ts\"",
     "test:a11y": "playwright test --grep @a11y",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
@@ -31,9 +31,11 @@
     "@swc/helpers": "0.5.23",
     "@types/pdfmake": "^0.3.3",
     "autoprefixer": "^10.4.21",
+    "exceljs": "^4.4.0",
     "firebase": "^12.17.0",
     "firebase-admin": "^14.3.0",
     "jose": "^6.2.8",
+    "jszip": "^3.10.2",
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
     "next": "^16.3.4",
@@ -60,6 +62,12 @@
     "tailwindcss": "4.1.11",
     "typescript": "5.9.3",
     "vitest": "4.1.11"
+  },
+  "overrides": {
+    "exceljs": {
+      "brace-expansion": "2.1.7",
+      "uuid": "11.1.1"
+    }
   },
   "description": "Reusable multilingual storefront and B2B catalog platform"
 }

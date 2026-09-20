@@ -1,9 +1,9 @@
 import type { UserRole } from '@/types';
 
-export type AdminCapability = 'catalog.write' | 'orders.write' | 'settings.write' | 'analytics.read';
+export type AdminCapability = 'catalog.write' | 'orders.write' | 'settings.write' | 'analytics.read' | 'pricing.write';
 
 const capabilities: Record<UserRole, ReadonlySet<AdminCapability>> = {
-  super_admin: new Set(['catalog.write', 'orders.write', 'settings.write', 'analytics.read']),
+  super_admin: new Set(['catalog.write', 'orders.write', 'settings.write', 'analytics.read', 'pricing.write']),
   content_manager: new Set(['catalog.write']),
   sales_manager: new Set(['orders.write']),
   viewer: new Set(),
@@ -22,6 +22,7 @@ export function canMutateAdminResource(role: UserRole, resource?: string) {
 
 export function canAccessAdminPath(role: UserRole, path: string) {
   if (role === 'super_admin') return true;
+  if (path.startsWith('/admin/prices')) return hasAdminCapability(role, 'pricing.write');
   if (path.startsWith('/admin/analytics')) return false;
   if (path === '/admin') return false;
   if (path.startsWith('/admin/requests') || path.startsWith('/admin/bag-designer')) {

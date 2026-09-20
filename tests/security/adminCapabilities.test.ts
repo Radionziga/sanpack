@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canAccessAdminPath, canMutateAdminResource, getAdminLandingPath } from '@/lib/auth/adminCapabilities';
+import { canAccessAdminPath, canMutateAdminResource, getAdminLandingPath, hasAdminCapability } from '@/lib/auth/adminCapabilities';
 
 describe('admin role capabilities', () => {
   it('lets content managers maintain catalog without privileged settings/orders', () => {
@@ -23,5 +23,14 @@ describe('admin role capabilities', () => {
     expect(canAccessAdminPath('sales_manager', '/admin/analytics')).toBe(false);
     expect(getAdminLandingPath('content_manager')).toBe('/admin/products');
     expect(getAdminLandingPath('sales_manager')).toBe('/admin/requests');
+  });
+
+  it('reserves bulk price writes for the super admin', () => {
+    expect(hasAdminCapability('super_admin', 'pricing.write')).toBe(true);
+    expect(canAccessAdminPath('super_admin', '/admin/prices')).toBe(true);
+    for (const role of ['content_manager', 'sales_manager', 'viewer'] as const) {
+      expect(hasAdminCapability(role, 'pricing.write')).toBe(false);
+      expect(canAccessAdminPath(role, '/admin/prices')).toBe(false);
+    }
   });
 });

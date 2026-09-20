@@ -15,11 +15,16 @@ import * as bag from '@/app/api/admin/bag-designer/route';
 import * as bagAsset from '@/app/api/bag-designer/asset/route';
 import * as order from '@/app/api/admin/orders/[orderId]/route';
 import * as pdf from '@/app/api/admin/orders/[orderId]/document/route';
+import * as prices from '@/app/api/admin/prices/route';
+import * as priceExport from '@/app/api/admin/prices/export/route';
+import * as priceImport from '@/app/api/admin/prices/import/route';
+import * as priceBatch from '@/app/api/admin/prices/[batchId]/route';
 
 function request(body: unknown = {}, method = 'POST') {
   return new Request('https://shop.example/api/admin/data?resource=requests', { method, body: JSON.stringify(body), headers: { 'content-type': 'application/json' } });
 }
 const context = { params: Promise.resolve({ orderId: 'order-1' }) };
+const priceContext = { params: Promise.resolve({ batchId: '12345678-1234-1234-1234-123456789012' }) };
 const routes = [
   ['data GET', () => data.GET(new Request('https://shop.example/api/admin/data?resource=requests'))],
   ['data POST', () => data.POST(request())],
@@ -30,6 +35,10 @@ const routes = [
   ['media GET', () => media.GET()], ['media POST', () => media.POST(request())], ['media DELETE', () => media.DELETE(request({}, 'DELETE'))],
   ['bag GET', () => bag.GET()], ['bag POST', () => bag.POST(request({ action: 'status', id: 'request-123', status: 'completed' }))],
   ['order PATCH', () => order.PATCH(request({}, 'PATCH'), context)], ['order PDF', () => pdf.GET(request(), context)],
+  ['prices GET', () => prices.GET()], ['price export GET', () => priceExport.GET()],
+  ['price import POST', () => priceImport.POST(request())],
+  ['price batch GET', () => priceBatch.GET(new Request('https://shop.example/api/admin/prices/batch'), priceContext)],
+  ['price batch POST', () => priceBatch.POST(request({ action: 'apply', warningsConfirmed: false }), priceContext)],
 ] as const;
 beforeEach(() => {
   vi.clearAllMocks();

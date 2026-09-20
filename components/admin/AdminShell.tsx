@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   FileSpreadsheet,
+  CircleDollarSign,
   FileText,
   FolderTree,
   Globe,
@@ -41,6 +42,7 @@ const navigation = [
     label: 'Каталог',
     items: [
       { label: 'Товары', href: '/admin/products', icon: Package },
+      { label: 'Цены', href: '/admin/prices', icon: CircleDollarSign },
       { label: 'Категории', href: '/admin/categories', icon: FolderTree },
       { label: 'Атрибуты и фильтры', href: '/admin/attributes', icon: SlidersHorizontal },
       { label: 'PDF-каталог', href: '/admin/pdf-catalog', icon: FileText },
