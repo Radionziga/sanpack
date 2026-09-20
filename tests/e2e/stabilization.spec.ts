@@ -31,7 +31,7 @@ test.describe('production-like hard entries', () => {
       const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
       expect(response?.ok()).toBe(true);
       await expect(page.locator('body')).not.toContainText('Каталог временно недоступен');
-      await expect(page.locator('header')).toBeVisible();
+      await expect(page.getByRole('banner').first()).toBeVisible();
     });
   }
 
