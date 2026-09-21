@@ -177,7 +177,9 @@ Final release-gate results before the checkpoint:
 
 ## Deploy
 
-The controlled checkpoint, push, App Hosting rollout and post-rollout production verification are recorded in the final release status. No Firebase data deployment or business-data mutation is part of this release.
+The first App Hosting attempt (`build-2026-09-21-003`) stopped safely during dependency installation, before an application image or rollout was produced. The Node 22 buildpack's npm detected two transitive entries omitted by the newer local npm lockfile writer: `brace-expansion@1.1.21` and `concat-map@0.0.1`. Production remained healthy on `sanpack-build-2026-09-21-002` throughout.
+
+The lockfile was regenerated and verified with npm 10.9.4, matching the App Hosting buildpack's compatibility behavior. Exact npm 10 `ci`, the full unit suite, typecheck, lint, production build and dependency audit then passed locally. The successful replacement rollout and post-rollout verification are recorded in the final release status. No Firebase data deployment or business-data mutation is part of this release.
 
 ## Search Console validation state
 
