@@ -1,5 +1,8 @@
 @import "tailwindcss";
 @import "../stylesheet.css";
+@source not "../.agents";
+@source not "../outputs";
+@source not "../scratch";
 
 @theme {
   --font-sans: var(--sp-font-body);

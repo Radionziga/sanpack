@@ -38,4 +38,19 @@ describe('admin product list', () => {
     const higher = product({ id: 'higher', price: 150 });
     expect(filterAndSortAdminProducts([higher, lower], categories, { sort: 'price_asc' }).map(({ id }) => id)).toEqual(['lower', 'higher']);
   });
+
+  it('filters price mode, variants and actionable readiness issues', () => {
+    const clean = product({ id: 'clean', mainImage: '/media/a.webp', shortDescriptionRu: 'Описание', titleEn: 'Product' });
+    const request = product({ id: 'request', priceMode: 'request', price: undefined, variants: [] });
+    const withVariant = product({ id: 'variant', mainImage: '/media/a.webp', shortDescriptionRu: 'Описание', titleEn: 'Product', variants: [{ id: 'v', sku: 'V-1', titleRu: 'V', titleUz: 'V', stockStatus: 'in_stock', attributes: {} }] });
+    expect(filterAndSortAdminProducts([clean, request, withVariant], categories, { priceMode: 'request' })).toEqual([request]);
+    expect(filterAndSortAdminProducts([clean, request, withVariant], categories, { variants: 'with' })).toEqual([withVariant]);
+    expect(filterAndSortAdminProducts([clean, request, withVariant], categories, { issues: true })).toEqual([request]);
+  });
+
+  it('sorts by direct category title', () => {
+    const flour = product({ id: 'flour', categoryId: 's' });
+    const grocery = product({ id: 'grocery', categoryId: 'c' });
+    expect(filterAndSortAdminProducts([flour, grocery], categories, { sort: 'category' }).map(({ id }) => id)).toEqual(['grocery', 'flour']);
+  });
 });

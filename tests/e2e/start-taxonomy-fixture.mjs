@@ -1,22 +1,74 @@
 // Runs the real application in an isolated disposable source copy. Never loads .env.local.
 // Authentication and admin reads are fixtures; all cloud access/admin writes are disabled.
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const fixture = mkdtempSync(path.join(tmpdir(), 'sanpack-taxonomy-'));
 const port = process.env.TAXONOMY_PORT || '3101';
-for (const directory of ['app', 'components', 'context', 'hooks', 'i18n', 'lib', 'messages', 'types', 'tests/fixtures']) {
-  if (!existsSync(path.join(source, directory))) continue;
-  cpSync(path.join(source, directory), path.join(fixture, directory), { recursive: true });
-}
-for (const name of readdirSync(source)) {
-  if (/^(package(-lock)?\.json|tsconfig\.json|next-env\.d\.ts|next\.config\..+|postcss\.config\..+|middleware\.ts|proxy\.ts|stylesheet\.css|.*\.woff2?)$/.test(name)) {
-    cpSync(path.join(source, name), path.join(fixture, name));
+
+let cleaned = false;
+function cleanupFixture() {
+  if (cleaned) return;
+  cleaned = true;
+  const expectedPrefix = path.join(tmpdir(), 'sanpack-taxonomy-');
+  if (!fixture.startsWith(expectedPrefix)) {
+    throw new Error(`Refusing to clean unexpected fixture path: ${fixture}`);
   }
+  rmSync(fixture, { recursive: true, force: true });
+}
+
+// A force-killed test runner cannot execute its shutdown hook. Remove only
+// dedicated SANPACK fixture directories before starting the next isolated run.
+for (const entry of readdirSync(tmpdir())) {
+  if (!entry.startsWith('sanpack-taxonomy-')) continue;
+  const staleFixture = path.join(tmpdir(), entry);
+  if (staleFixture === fixture) continue;
+  if (!staleFixture.startsWith(path.join(tmpdir(), 'sanpack-taxonomy-'))) {
+    throw new Error(`Refusing to clean unexpected fixture path: ${staleFixture}`);
+  }
+  rmSync(staleFixture, { recursive: true, force: true });
+}
+
+let child;
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    child?.kill(signal);
+    cleanupFixture();
+    process.exit(signal === 'SIGINT' ? 130 : 143);
+  });
+}
+
+const sourceDirectories = ['app', 'components', 'context', 'hooks', 'i18n', 'lib', 'messages', 'types', 'tests/fixtures']
+  .filter((directory) => existsSync(path.join(source, directory)));
+const rootFiles = readdirSync(source)
+  .filter((name) => /^(package(-lock)?\.json|tsconfig\.json|next-env\.d\.ts|next\.config\..+|postcss\.config\..+|middleware\.ts|proxy\.ts|stylesheet\.css|.*\.woff2?)$/.test(name));
+const fixtureSources = [...sourceDirectories, ...rootFiles];
+
+try {
+  // A bounded worktree archive includes the active patch and new source files,
+  // but excludes build artifacts, dependencies and unrelated project files.
+  const archive = spawnSync('tar', ['-cf', '-', ...fixtureSources], {
+    cwd: source,
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  if (archive.status !== 0) throw new Error(archive.stderr?.toString() || 'Unable to create fixture archive');
+  const extraction = spawnSync('tar', ['-xf', '-', '-C', fixture], { input: archive.stdout });
+  if (extraction.status !== 0) throw new Error(extraction.stderr?.toString() || 'Unable to extract fixture archive');
+} catch (error) {
+  cleanupFixture();
+  throw error;
 }
 for (const directory of ['node_modules', 'public']) symlinkSync(path.join(source, directory), path.join(fixture, directory));
 const seedPath = path.join(fixture, 'lib/seedData.ts');
@@ -101,9 +153,14 @@ const buildOptions = {
 };
 const next = path.join(source, 'node_modules/next/dist/bin/next');
 // Webpack supports the read-only node_modules symlink outside this temporary root.
-let child = spawn(process.execPath, [next, 'build', '--webpack'], buildOptions);
-for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));
+child = spawn(process.execPath, [next, 'build', '--webpack'], buildOptions);
 const buildCode = await new Promise((resolve) => child.on('exit', resolve));
-if (buildCode !== 0) process.exit(buildCode || 1);
+if (buildCode !== 0) {
+  cleanupFixture();
+  process.exit(buildCode || 1);
+}
 child = spawn(process.execPath, [next, 'start', '--hostname', '127.0.0.1', '--port', port], runtimeOptions);
-child.on('exit', (code) => process.exit(code || 0));
+child.on('exit', (code) => {
+  cleanupFixture();
+  process.exit(code || 0);
+});

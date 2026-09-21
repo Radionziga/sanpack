@@ -46,6 +46,15 @@ async function mutate<T>(body: Record<string, unknown>): Promise<T> {
   );
 }
 
+async function operateProducts<T>(body: Record<string, unknown>): Promise<T> {
+  return parseJsonResponse<T>(
+    await fetch('/api/admin/products/operations', {
+      method: 'POST', credentials: 'same-origin', cache: 'no-store',
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    })
+  );
+}
+
 function createId(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`;
 }
@@ -62,24 +71,47 @@ export const AdminRepository = {
   async getProductById(id: string) {
     return (await this.getProducts()).find((product) => product.id === id) || null;
   },
-  saveProduct(product: Partial<Product>) {
+  saveProduct(product: Partial<Product>, expectedUpdatedAt?: string) {
     const id = product.id || createId('prod');
     return mutate<Product>({
       action: 'save',
       resource: 'products',
       id,
       data: toProductMutationInput(product),
+      ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}),
     });
   },
   createProduct(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) {
     return this.saveProduct(product);
   },
   updateProduct(id: string, product: Partial<Product>) {
-    return this.saveProduct({ ...product, id });
+    return this.saveProduct({ ...product, id }, product.updatedAt);
   },
   async deleteProduct(id: string) {
     await mutate({ action: 'delete', resource: 'products', id });
     return true;
+  },
+  quickEditProduct(product: Product, patch: Pick<Partial<Product>, 'categoryId' | 'brandName' | 'status' | 'stockStatus' | 'stockQuantity' | 'featured' | 'newProduct'>) {
+    return operateProducts<{ product: Product; message: string }>({
+      action: 'quick_edit', target: { id: product.id, expectedUpdatedAt: product.updatedAt }, patch,
+    });
+  },
+  duplicateProduct(product: Product) {
+    return operateProducts<{ product: Product; message: string }>({
+      action: 'duplicate', target: { id: product.id, expectedUpdatedAt: product.updatedAt },
+    });
+  },
+  bulkMoveProducts(products: Product[], categoryId: string) {
+    return operateProducts<{ updated: number; message: string }>({
+      action: 'bulk_category', categoryId,
+      targets: products.map(({ id, updatedAt }) => ({ id, expectedUpdatedAt: updatedAt })),
+    });
+  },
+  bulkSetProductStatus(products: Product[], status: 'published' | 'hidden') {
+    return operateProducts<{ updated: number; message: string }>({
+      action: 'bulk_status', status,
+      targets: products.map(({ id, updatedAt }) => ({ id, expectedUpdatedAt: updatedAt })),
+    });
   },
 
   getCategories: () => read<Category[]>('categories'),

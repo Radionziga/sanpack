@@ -1,14 +1,19 @@
 import type { Category, Product } from '@/types';
 import { getCategoryScopeIds, resolveProductCategory } from '@/lib/catalog/categoryHierarchy';
 import { getEffectiveCatalogPrice } from '@/lib/commerce/productOffer';
+import { getProductReadiness } from '@/lib/admin/productOperations';
 
-export type AdminProductSort = 'catalog' | 'updated' | 'name' | 'sku' | 'price_asc' | 'price_desc';
+export type AdminProductSort = 'catalog' | 'updated' | 'name' | 'sku' | 'category' | 'price_asc' | 'price_desc';
 
 export interface AdminProductListFilters {
   query?: string;
   categoryId?: string;
   status?: Product['status'] | '';
   stockStatus?: Product['stockStatus'] | '';
+  priceMode?: NonNullable<Product['priceMode']> | '';
+  variants?: 'with' | 'without' | '';
+  issues?: boolean;
+  attributes?: Parameters<typeof getProductReadiness>[2];
   sort?: AdminProductSort;
 }
 
@@ -50,6 +55,10 @@ export function filterAndSortAdminProducts(
         : [product.stockStatus];
       if (!statuses.includes(filters.stockStatus)) return false;
     }
+    if (filters.priceMode && (product.priceMode || 'fixed') !== filters.priceMode) return false;
+    if (filters.variants === 'with' && !product.variants?.length) return false;
+    if (filters.variants === 'without' && product.variants?.length) return false;
+    if (filters.issues && getProductReadiness(product, categories, filters.attributes || []).issues.length === 0) return false;
     if (categoryScope) {
       const category = resolveProductCategory(product, categories);
       if (!category || !categoryScope.has(category.id)) return false;
@@ -61,6 +70,9 @@ export function filterAndSortAdminProducts(
   return filtered.toSorted((left, right) => {
     if (sort === 'name') return left.titleRu.localeCompare(right.titleRu, 'ru');
     if (sort === 'sku') return left.sku.localeCompare(right.sku, 'ru');
+    if (sort === 'category') {
+      return getCategoryLabelSafe(left, categories).localeCompare(getCategoryLabelSafe(right, categories), 'ru');
+    }
     if (sort === 'updated') return String(right.updatedAt || '').localeCompare(String(left.updatedAt || ''));
     if (sort === 'price_asc' || sort === 'price_desc') {
       const leftPrice = getEffectiveCatalogPrice(left)?.amount ?? Number.POSITIVE_INFINITY;
@@ -69,4 +81,9 @@ export function filterAndSortAdminProducts(
     }
     return (left.sortOrder || 0) - (right.sortOrder || 0);
   });
+}
+
+function getCategoryLabelSafe(product: Product, categories: Category[]) {
+  const category = resolveProductCategory(product, categories);
+  return category?.titleRu || '';
 }

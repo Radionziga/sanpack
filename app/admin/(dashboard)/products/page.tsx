@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
 import { Product, Category, Attribute } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -11,7 +13,7 @@ import { ProductVariantsEditor } from '@/components/admin/ProductVariantsEditor'
 import { ProductAttributeField } from '@/components/admin/ProductAttributeField';
 import { ProductCmsFields } from '@/components/admin/ProductCmsFields';
 import { deleteUploadedMedia, MediaUploadField } from '@/components/admin/MediaUploadField';
-import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star, FileText, Download, RotateCcw } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Factory, ShieldCheck, X, Check, RefreshCw, TriangleAlert, Star, FileText, Download, RotateCcw, Copy, ExternalLink, MoreHorizontal, PackageCheck, Tags, Eye, EyeOff } from 'lucide-react';
 import { getMinimumOrderLabel, getOrderRuleSummary, getProductOrderRule } from '@/lib/commerce/orderQuantities';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
 import { getCategoryLabel, getOrderedCategories, isProductCategory } from '@/lib/catalog/categoryHierarchy';
@@ -22,6 +24,7 @@ import { getProductCatalogPriceText } from '@/lib/catalog/productPresentation';
 import { filterAndSortAdminProducts, type AdminProductSort } from '@/lib/admin/productList';
 import { trapDialogFocus } from '@/lib/admin/dialogLifecycle';
 import { useUnsavedNavigationGuard } from '@/lib/admin/useUnsavedNavigationGuard';
+import { getCategoryBreadcrumb, getCompactCategoryName, getProductReadiness, productStatusLabels, stockStatusLabels } from '@/lib/admin/productOperations';
 
 const PRODUCTS_PER_PAGE = 50;
 
@@ -98,7 +101,23 @@ function getManagedMediaPaths(product?: Partial<Product> | null) {
   );
 }
 
+function formatUpdatedAt(value?: string) {
+  if (!value) return 'Не указано';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Не указано';
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  if (day === today) return `сегодня, ${time}`;
+  if (day === today - 86_400_000) return `вчера, ${time}`;
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+}
+
 export default function AdminProductsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
@@ -106,13 +125,31 @@ export default function AdminProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<AdminProductSort>('catalog');
+  const [priceModeFilter, setPriceModeFilter] = useState('all');
+  const [variantFilter, setVariantFilter] = useState('all');
+  const [issuesOnly, setIssuesOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<AdminProductSort>('updated');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [quickEditProduct, setQuickEditProduct] = useState<Product | null>(null);
+  const [quickEditDraft, setQuickEditDraft] = useState<Partial<Product>>({});
+  const [quickEditSaving, setQuickEditSaving] = useState(false);
+  const [duplicateSource, setDuplicateSource] = useState<Product | null>(null);
+  const [duplicating, setDuplicating] = useState(false);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [copyPickerQuery, setCopyPickerQuery] = useState('');
+  const [bulkAction, setBulkAction] = useState<'category' | 'publish' | 'hide' | null>(null);
+  const [bulkCategoryId, setBulkCategoryId] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const urlStateLoaded = useRef(false);
+  const createProductButtonRef = useRef<HTMLButtonElement>(null);
+  const quickEditReturnFocusRef = useRef<HTMLElement | null>(null);
+  const editorReturnFocusRef = useRef<HTMLElement | null>(null);
 
   // Edit/Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -133,9 +170,42 @@ export default function AdminProductsPage() {
   }, []);
 
   useEffect(() => {
+    if (urlStateLoaded.current) return;
+    setSearchTerm(searchParams.get('q') || '');
+    setCategoryFilter(searchParams.get('category') || '');
+    setStatusFilter(searchParams.get('status') || 'all');
+    setStockFilter(searchParams.get('stock') || 'all');
+    setPriceModeFilter(searchParams.get('priceMode') || 'all');
+    setVariantFilter(searchParams.get('variants') || 'all');
+    setIssuesOnly(searchParams.get('attention') === '1');
+    setSortBy((searchParams.get('sort') as AdminProductSort) || 'updated');
+    setPage(Math.max(1, Number(searchParams.get('page')) || 1));
+    urlStateLoaded.current = true;
+    const savedScroll = Number(sessionStorage.getItem('admin-products-scroll') || 0);
+    if (savedScroll > 0) window.requestAnimationFrame(() => window.scrollTo({ top: savedScroll }));
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!urlStateLoaded.current) return;
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('q', searchTerm);
+    if (categoryFilter) params.set('category', categoryFilter);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (stockFilter !== 'all') params.set('stock', stockFilter);
+    if (priceModeFilter !== 'all') params.set('priceMode', priceModeFilter);
+    if (variantFilter !== 'all') params.set('variants', variantFilter);
+    if (issuesOnly) params.set('attention', '1');
+    if (sortBy !== 'updated') params.set('sort', sortBy);
+    if (page > 1) params.set('page', String(page));
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [categoryFilter, issuesOnly, page, pathname, priceModeFilter, router, searchTerm, sortBy, statusFilter, stockFilter, variantFilter]);
+
+  useEffect(() => {
     if (!isModalOpen) return;
     const previousOverflow = document.body.style.overflow;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousFocus = editorReturnFocusRef.current || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    const fallbackFocus = createProductButtonRef.current;
     const closeOnEscape = (event: KeyboardEvent) => {
       const current = dialogStateRef.current;
       if (event.key !== 'Escape' || current.saving) return;
@@ -163,7 +233,9 @@ export default function AdminProductsPage() {
       document.body.style.overflow = previousOverflow;
       window.cancelAnimationFrame(focusFrame);
       window.removeEventListener('keydown', closeOnEscape);
-      previousFocus?.focus();
+      if (previousFocus?.isConnected) previousFocus.focus();
+      else fallbackFocus?.focus();
+      editorReturnFocusRef.current = null;
     };
   }, [isModalOpen]);
 
@@ -176,6 +248,21 @@ export default function AdminProductsPage() {
     window.addEventListener('beforeunload', warnBeforeUnload);
     return () => window.removeEventListener('beforeunload', warnBeforeUnload);
   }, [hasUnsavedChanges, isModalOpen]);
+
+  useEffect(() => {
+    if (!quickEditProduct) return;
+    const previousFocus = quickEditReturnFocusRef.current;
+    const close = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || quickEditSaving) return;
+      setQuickEditProduct(null);
+      setSaveError('');
+    };
+    window.addEventListener('keydown', close);
+    return () => {
+      window.removeEventListener('keydown', close);
+      previousFocus?.focus();
+    };
+  }, [quickEditProduct, quickEditSaving]);
 
   async function loadData() {
     setLoading(true);
@@ -197,6 +284,7 @@ export default function AdminProductsPage() {
   }
 
   const handleOpenCreate = () => {
+    editorReturnFocusRef.current = createProductButtonRef.current;
     const firstLeaf = getOrderedCategories(categories).find((category) => isProductCategory(category.id, categories) && category.status === 'active');
     const draft: Partial<Product> = {
       titleRu: '',
@@ -378,13 +466,94 @@ export default function AdminProductsPage() {
     }
   };
 
+  const openProductEditor = (product: Product) => {
+    sessionStorage.setItem('admin-products-scroll', String(window.scrollY));
+    editorReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    handleOpenEdit(product);
+  };
+
+  const openQuickEdit = (product: Product) => {
+    quickEditReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setQuickEditProduct(product);
+    setQuickEditDraft({
+      categoryId: product.categoryId,
+      brandName: product.brandName || '',
+      status: product.status,
+      stockStatus: product.stockStatus,
+      stockQuantity: product.stockQuantity,
+      featured: product.featured,
+      newProduct: product.newProduct,
+    });
+    setSaveError('');
+  };
+
+  const saveQuickEdit = async () => {
+    if (!quickEditProduct) return;
+    setQuickEditSaving(true);
+    setSaveError('');
+    try {
+      const result = await AdminRepository.quickEditProduct(quickEditProduct, quickEditDraft);
+      setProducts((current) => current.map((product) => product.id === result.product.id ? result.product : product));
+      setQuickEditProduct(null);
+      setNotice(result.message);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить изменения.');
+    } finally {
+      setQuickEditSaving(false);
+    }
+  };
+
+  const confirmDuplicate = async (source = duplicateSource) => {
+    if (!source) return;
+    setDuplicating(true);
+    setSaveError('');
+    try {
+      const result = await AdminRepository.duplicateProduct(source);
+      setProducts((current) => [result.product, ...current]);
+      setDuplicateSource(null);
+      setCreateMenuOpen(false);
+      setCopyPickerQuery('');
+      setNotice(result.message);
+      editorReturnFocusRef.current = createProductButtonRef.current;
+      handleOpenEdit(result.product);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Не удалось создать копию.');
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
+  const selectedProducts = products.filter((product) => selectedIds.has(product.id));
+  const applyBulkAction = async () => {
+    if (!bulkAction || !selectedProducts.length) return;
+    setBulkSaving(true);
+    setSaveError('');
+    try {
+      const result = bulkAction === 'category'
+        ? await AdminRepository.bulkMoveProducts(selectedProducts, bulkCategoryId)
+        : await AdminRepository.bulkSetProductStatus(selectedProducts, bulkAction === 'publish' ? 'published' : 'hidden');
+      setNotice(result.message);
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      await loadData();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Массовая операция не выполнена.');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   const filteredProducts = useMemo(() => filterAndSortAdminProducts(products, categories, {
     query: searchTerm,
     categoryId: categoryFilter || undefined,
     status: statusFilter === 'all' ? '' : statusFilter as Product['status'],
     stockStatus: stockFilter === 'all' ? '' : stockFilter as Product['stockStatus'],
+    priceMode: priceModeFilter === 'all' ? '' : priceModeFilter as NonNullable<Product['priceMode']>,
+    variants: variantFilter === 'all' ? '' : variantFilter as 'with' | 'without',
+    issues: issuesOnly,
+    attributes,
     sort: sortBy,
-  }), [categoryFilter, categories, products, searchTerm, sortBy, statusFilter, stockFilter]);
+  }), [attributes, categoryFilter, categories, issuesOnly, priceModeFilter, products, searchTerm, sortBy, statusFilter, stockFilter, variantFilter]);
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
   const visibleProducts = filteredProducts.slice((currentPage - 1) * PRODUCTS_PER_PAGE, currentPage * PRODUCTS_PER_PAGE);
@@ -404,6 +573,15 @@ export default function AdminProductsPage() {
   ));
   const editingBrand = editingProduct?.brandName
     || (typeof editingProduct?.attributes?.brand === 'string' ? editingProduct.attributes.brand : '');
+  const editingReadiness = editingProduct ? getProductReadiness(editingProduct, categories, attributes) : null;
+  const pageIds = visibleProducts.map((product) => product.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const copyPickerProducts = products.filter((product) => {
+    const value = copyPickerQuery.trim().toLocaleLowerCase('ru');
+    if (!value) return true;
+    return [product.titleRu, product.sku, getCompactCategoryName(product, categories), ...product.variants.map((variant) => variant.sku)]
+      .some((entry) => entry?.toLocaleLowerCase('ru').includes(value));
+  }).slice(0, 12);
 
   return (
     <div className="admin-page space-y-6">
@@ -412,6 +590,9 @@ export default function AdminProductsPage() {
         description="Управляйте ассортиментом, ценами, упаковкой и характеристиками. Редактор открывается как отдельное рабочее пространство."
         action={(
           <div className="flex flex-wrap items-center gap-2">
+            <Link href="/admin/prices" className="admin-button-secondary inline-flex items-center gap-1.5 text-xs font-semibold">
+              <Tags className="size-3.5 text-[var(--sp-brand)]" aria-hidden="true" /> Массово изменить цены
+            </Link>
             <a
               href="/ru/catalog/print?prices=1&lang=ru"
               target="_blank"
@@ -432,8 +613,8 @@ export default function AdminProductsPage() {
               <FileText className="size-3.5 text-[var(--sp-ink-secondary)]" aria-hidden="true" />
               PDF без цен
             </a>
-            <button type="button" onClick={handleOpenCreate} className="admin-button-primary">
-              <Plus className="size-4" aria-hidden="true" /> Добавить товар
+            <button ref={createProductButtonRef} type="button" aria-label="Добавить товар" onClick={() => setCreateMenuOpen(true)} className="admin-button-primary">
+              <Plus className="size-4" aria-hidden="true" /> Новый товар
             </button>
           </div>
         )}
@@ -447,10 +628,18 @@ export default function AdminProductsPage() {
       ) : null}
 
       {notice ? <p role="status" className="sp-alert sp-alert-success text-sm">{notice}</p> : null}
+      {saveError && !isModalOpen ? <p role="alert" className="sp-alert sp-alert-danger text-sm">{saveError}</p> : null}
 
-      {/* Search & Stats */}
-      <div className="admin-panel space-y-3 p-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(16rem,1.5fr)_repeat(4,minmax(10rem,1fr))_auto]">
+      <div className="admin-panel space-y-4 p-4">
+        <div className="flex flex-wrap gap-2" aria-label="Быстрые представления">
+          {[
+            ['all', 'Все'], ['published', 'Опубликованные'], ['draft', 'Черновики'], ['attention', 'Требуют внимания'],
+          ].map(([value, label]) => {
+            const active = value === 'all' ? statusFilter === 'all' && !issuesOnly : value === 'attention' ? issuesOnly : statusFilter === value && !issuesOnly;
+            return <button key={value} type="button" aria-pressed={active} onClick={() => { setIssuesOnly(value === 'attention'); setStatusFilter(value === 'published' || value === 'draft' ? value : 'all'); setPage(1); }} className={`min-h-9 rounded-[var(--sp-radius-control)] px-3 text-xs font-semibold transition-colors ${active ? 'bg-[var(--sp-brand)] text-[var(--sp-on-brand)]' : 'bg-[var(--sp-surface-inset)] text-[var(--sp-ink-secondary)] hover:text-[var(--sp-brand)]'}`}>{label}</button>;
+          })}
+        </div>
+        <div className="grid gap-3 xl:grid-cols-[minmax(18rem,1.7fr)_repeat(3,minmax(10rem,1fr))_auto]">
         <div className="relative min-w-0">
           <Search className="absolute left-3 top-3.5 size-4 text-[var(--sp-ink-muted)]" aria-hidden="true" />
           <input
@@ -474,14 +663,24 @@ export default function AdminProductsPage() {
           { value: 'out_of_stock', label: 'Нет в наличии' }, { value: 'on_order', label: 'Под заказ' },
           { value: 'temporarily_unavailable', label: 'Временно недоступны' }, { value: 'discontinued', label: 'Сняты с ассортимента' },
         ]} />
-        <CustomSelect ariaLabel="Сортировка товаров" value={sortBy} onChange={(value) => { setSortBy(value as AdminProductSort); setPage(1); }} options={[
-          { value: 'catalog', label: 'Порядок каталога' }, { value: 'updated', label: 'Недавно изменённые' },
-          { value: 'name', label: 'По названию' }, { value: 'sku', label: 'По SKU' },
-          { value: 'price_asc', label: 'Цена: сначала ниже' }, { value: 'price_desc', label: 'Цена: сначала выше' },
+        <CustomSelect ariaLabel="Фильтр по режиму цены" value={priceModeFilter} onChange={(value) => { setPriceModeFilter(value); setPage(1); }} options={[
+          { value: 'all', label: 'Любой режим цены' }, { value: 'fixed', label: 'Фиксированная цена' },
+          { value: 'from', label: 'Цена от' }, { value: 'request', label: 'Цена по запросу' }, { value: 'informational', label: 'Информационный' },
         ]} />
-        <button type="button" onClick={() => { setSearchTerm(''); setCategoryFilter(''); setStatusFilter('all'); setStockFilter('all'); setSortBy('catalog'); setPage(1); }} className="admin-button-secondary justify-center" title="Сбросить поиск и фильтры">
+        <button type="button" onClick={() => { setSearchTerm(''); setCategoryFilter(''); setStatusFilter('all'); setStockFilter('all'); setPriceModeFilter('all'); setVariantFilter('all'); setIssuesOnly(false); setSortBy('updated'); setPage(1); }} className="admin-button-secondary justify-center" title="Сбросить поиск и фильтры">
           <RotateCcw className="size-4" aria-hidden="true" /> Сбросить
         </button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)_auto]">
+        <CustomSelect ariaLabel="Фильтр по вариантам" value={variantFilter} onChange={(value) => { setVariantFilter(value); setPage(1); }} options={[
+          { value: 'all', label: 'С вариантами и без' }, { value: 'with', label: 'Есть варианты' }, { value: 'without', label: 'Без вариантов' },
+        ]} />
+        <CustomSelect ariaLabel="Сортировка товаров" value={sortBy} onChange={(value) => { setSortBy(value as AdminProductSort); setPage(1); }} options={[
+          { value: 'catalog', label: 'Порядок каталога' }, { value: 'updated', label: 'Недавно изменённые' },
+          { value: 'name', label: 'По названию' }, { value: 'sku', label: 'По SKU' }, { value: 'category', label: 'По категории' },
+          { value: 'price_asc', label: 'Цена: сначала ниже' }, { value: 'price_desc', label: 'Цена: сначала выше' },
+        ]} />
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control)] border border-[var(--sp-line)] px-3 text-xs font-semibold text-[var(--sp-ink-secondary)]"><input type="checkbox" checked={issuesOnly} onChange={(event) => { setIssuesOnly(event.target.checked); setPage(1); }} className="size-4 accent-[var(--sp-brand)]" />Только требующие внимания</label>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
           <span className="text-[var(--sp-ink-secondary)]">Показано <strong className="text-[var(--sp-ink)]">{filteredProducts.length}</strong> из {products.length}</span>
@@ -495,40 +694,36 @@ export default function AdminProductsPage() {
           <div className="p-8 text-center text-xs text-[var(--sp-ink-tertiary)]">Загрузка товаров...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[1120px] text-left text-xs">
               <thead className="admin-table-head font-bold">
                 <tr>
-                  <th className="p-3.5">Фото</th>
-                  <th className="p-3.5">Артикул / Название</th>
+                  <th className="w-11 p-3.5"><input type="checkbox" aria-label="Выбрать все товары на странице" checked={allPageSelected} onChange={(event) => setSelectedIds((current) => { const next = new Set(current); pageIds.forEach((id) => event.target.checked ? next.add(id) : next.delete(id)); return next; })} className="size-4 accent-[var(--sp-brand)]" /></th>
+                  <th className="p-3.5">Товар</th>
                   <th className="p-3.5">Категория</th>
-                  <th className="p-3.5">Цена / Ед.</th>
-                  <th className="p-3.5">Завод</th>
-                  <th className="p-3.5">Статус</th>
+                  <th className="p-3.5">Цена</th>
+                  <th className="p-3.5">Наличие</th>
+                  <th className="p-3.5">Публикация</th>
+                  <th className="p-3.5">Варианты</th>
+                  <th className="p-3.5">Изменён</th>
                   <th className="p-3.5 text-right">Действия</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--sp-line-soft)]">
                 {visibleProducts.map((p) => {
-                  const cat = categories.find((c) => c.id === p.categoryId);
                   const orderSummary = getMinimumOrderLabel(p);
+                  const readiness = getProductReadiness(p, categories, attributes);
                   return (
-                    <tr key={p.id} className="transition-colors hover:bg-[var(--sp-surface-inset)]">
+                    <tr key={p.id} className={`transition-colors hover:bg-[var(--sp-surface-inset)] ${selectedIds.has(p.id) ? 'bg-[color-mix(in_srgb,var(--sp-brand)_7%,var(--sp-surface))]' : ''}`}>
+                      <td className="p-3.5"><input type="checkbox" aria-label={`Выбрать ${p.titleRu}`} checked={selectedIds.has(p.id)} onChange={(event) => setSelectedIds((current) => { const next = new Set(current); event.target.checked ? next.add(p.id) : next.delete(p.id); return next; })} className="size-4 accent-[var(--sp-brand)]" /></td>
                       <td className="p-3.5">
-                        <Image
-                          src={p.mainImage || '/catalog/product-placeholder.svg'}
-                          alt={p.titleRu}
-                          width={40}
-                          height={40}
-                          className="size-10 rounded-[var(--radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface)] object-contain p-1"
-                        />
+                        <div className="flex min-w-64 items-center gap-3">
+                          {p.mainImage ? <Image src={p.mainImage} alt="" width={48} height={48} className="size-12 shrink-0 rounded-[var(--sp-radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface)] object-contain p-1" /> : <span className="flex size-12 shrink-0 items-center justify-center rounded-[var(--sp-radius-sm)] border border-dashed border-[var(--sp-line)] bg-[var(--sp-surface-inset)] text-[9px] text-[var(--sp-ink-tertiary)]">Нет фото</span>}
+                          <span className="min-w-0"><button type="button" onClick={() => openProductEditor(p)} className="block max-w-72 truncate text-left font-bold text-[var(--sp-ink)] hover:text-[var(--sp-brand)] hover:underline">{p.titleRu}</button><span className="mt-0.5 block font-mono text-[10px] text-[var(--sp-ink-tertiary)]">{p.sku || 'SKU не указан'}</span>{readiness.issues.length ? <button type="button" onClick={() => { setIssuesOnly(true); setPage(1); }} className={`mt-1 inline-flex items-center gap-1 text-[10px] font-semibold ${readiness.blockers.length ? 'text-[var(--sp-danger)]' : 'text-amber-700'}`} title={readiness.issues.map((issue) => issue.label).join('\n')}><TriangleAlert className="size-3" />Нужно проверить: {readiness.issues.length}</button> : <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700"><Check className="size-3" />Карточка готова</span>}</span>
+                        </div>
                       </td>
-                      <td className="p-3.5">
-                        <span className="block font-bold text-[var(--sp-ink)]">{p.titleRu}</span>
-                        <span className="font-mono text-[10px] text-[var(--sp-ink-tertiary)]">Арт: {p.sku}</span>
-                        {p.variants?.length ? <span className="mt-1 block text-[10px] font-semibold text-[var(--sp-brand)]">Вариантов: {p.variants.length}</span> : null}
-                      </td>
-                      <td className="p-3.5 font-semibold text-[var(--sp-ink-secondary)]">
-                        {cat ? getCategoryLabel(cat.id, categories) : '—'}
+                      <td className="max-w-48 p-3.5 font-semibold text-[var(--sp-ink-secondary)]" title={getCategoryBreadcrumb(p, categories)}>
+                        <span className="block truncate">{getCompactCategoryName(p, categories)}</span>
+                        <Link href="/admin/categories" className="mt-1 inline-block text-[10px] font-normal text-[var(--sp-brand)] hover:underline">Управление категориями</Link>
                       </td>
                       <td className="p-3.5 font-bold text-[var(--sp-brand)]">
                         {getProductCatalogPriceText(p, 'ru')}
@@ -537,43 +732,18 @@ export default function AdminProductsPage() {
                         </span>
                       </td>
                       <td className="p-3.5">
-                        {p.ownProduction ? (
-                          <span className="flex w-fit items-center gap-1 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--sp-brand)_10%,var(--sp-surface))] px-2 py-0.5 text-[10px] font-bold text-[var(--sp-brand)]">
-                            <Factory className="w-3 h-3" /> Собственное производство
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-[var(--sp-ink-tertiary)]">Импорт</span>
-                        )}
+                        <span className={`inline-flex rounded px-2 py-1 text-[10px] font-bold ${p.stockStatus === 'in_stock' ? 'bg-emerald-100 text-emerald-800' : p.stockStatus === 'out_of_stock' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>{stockStatusLabels[p.stockStatus]}</span>
+                        {typeof p.stockQuantity === 'number' ? <span className="mt-1 block text-[10px] text-[var(--sp-ink-tertiary)]">Остаток: {p.stockQuantity}</span> : null}
                       </td>
-                      <td className="p-3.5">
-                        <span className={`mb-1 block w-fit rounded px-2 py-1 text-[10px] font-bold ${p.status === 'published' ? 'bg-emerald-100 text-emerald-800' : p.status === 'draft' ? 'bg-slate-100 text-slate-700' : 'bg-rose-100 text-rose-800'}`}>
-                          {p.status === 'published' ? 'Опубликован' : p.status === 'draft' ? 'Черновик' : p.status === 'hidden' ? 'Скрыт' : 'В архиве'}
-                        </span>
-                        <span
-                          className={`px-2 py-1 rounded text-[10px] font-bold ${
-                            p.stockStatus === 'in_stock'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {p.stockStatus === 'in_stock' ? 'В наличии' : 'Под заказ'}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-right space-x-2">
-                        <button
-                          onClick={() => handleOpenEdit(p)}
-                          className="admin-icon-button size-9 hover:bg-[var(--sp-brand)] hover:text-[var(--sp-on-brand)]"
-                          title="Редактировать"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(p.id)}
-                          className="admin-icon-button size-9 text-[var(--sp-danger)] hover:bg-red-500/10 hover:text-[var(--sp-danger)]"
-                          title="Удалить"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <td className="p-3.5"><span className={`inline-flex rounded px-2 py-1 text-[10px] font-bold ${p.status === 'published' ? 'bg-emerald-100 text-emerald-800' : p.status === 'draft' ? 'bg-slate-100 text-slate-700' : 'bg-rose-100 text-rose-800'}`}>{productStatusLabels[p.status]}</span></td>
+                      <td className="p-3.5"><span className="font-semibold tabular-nums text-[var(--sp-ink)]">{p.variants?.length || 0}</span><span className="mt-1 block text-[10px] text-[var(--sp-ink-tertiary)]">{p.variants?.length ? 'вариантов' : 'базовый товар'}</span></td>
+                      <td className="p-3.5 text-[var(--sp-ink-secondary)]"><span title={p.updatedAt ? new Date(p.updatedAt).toLocaleString('ru-RU') : ''}>{formatUpdatedAt(p.updatedAt)}</span></td>
+                      <td className="p-3.5 text-right">
+                        <div className="flex justify-end gap-1.5">
+                        <button type="button" onClick={() => openProductEditor(p)} className="admin-icon-button size-9" title="Открыть товар" aria-label={`Открыть ${p.titleRu}`}><Edit className="size-4" /></button>
+                        <button type="button" onClick={() => openQuickEdit(p)} className="admin-icon-button size-9" title="Быстро изменить" aria-label={`Быстро изменить ${p.titleRu}`}><PackageCheck className="size-4" /></button>
+                        <details className="relative"><summary className="admin-icon-button flex size-9 cursor-pointer list-none items-center justify-center" aria-label={`Другие действия с ${p.titleRu}`}><MoreHorizontal className="size-4" /></summary><div className="absolute right-0 z-30 mt-1 w-52 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-1.5 text-left shadow-lg"><a href={`/ru/product/${p.slug}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold text-[var(--sp-ink)] hover:bg-[var(--sp-surface-inset)]"><ExternalLink className="size-3.5" />Открыть на сайте</a><button type="button" onClick={() => setDuplicateSource(p)} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold text-[var(--sp-ink)] hover:bg-[var(--sp-surface-inset)]"><Copy className="size-3.5" />Создать копию</button><button type="button" onClick={() => handleDelete(p.id)} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold text-[var(--sp-danger)] hover:bg-red-500/8"><Trash2 className="size-3.5" />Удалить</button></div></details>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -593,6 +763,43 @@ export default function AdminProductsPage() {
         </nav>
       ) : null}
 
+      {selectedProducts.length ? (
+        <div className="sticky bottom-4 z-30 mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] px-4 py-3 shadow-xl" role="region" aria-label="Массовые действия">
+          <div><strong className="text-sm text-[var(--sp-ink)]">Выбрано: {selectedProducts.length}</strong><button type="button" onClick={() => setSelectedIds(new Set())} className="ml-3 text-xs font-semibold text-[var(--sp-brand)] hover:underline">Снять выбор</button></div>
+          <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setBulkCategoryId(''); setBulkAction('category'); }} className="admin-button-secondary"><Tags className="size-4" />Изменить категорию</button><button type="button" onClick={() => setBulkAction('publish')} className="admin-button-secondary"><Eye className="size-4" />Опубликовать</button><button type="button" onClick={() => setBulkAction('hide')} className="admin-button-secondary"><EyeOff className="size-4" />Скрыть</button></div>
+        </div>
+      ) : null}
+
+      {quickEditProduct ? (
+        <div className="admin-modal-backdrop justify-end p-0" role="dialog" aria-modal="true" aria-label={`Быстро изменить ${quickEditProduct.titleRu}`}>
+          <div className="h-full w-full max-w-lg overflow-y-auto bg-[var(--sp-surface)] shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[var(--sp-line)] bg-[var(--sp-surface)] px-5 py-4"><div><h2 className="text-lg font-bold text-[var(--sp-ink)]">Быстро изменить</h2><p className="mt-1 text-xs text-[var(--sp-ink-secondary)]">{quickEditProduct.titleRu} · {quickEditProduct.sku || 'SKU не указан'}</p></div><button type="button" onClick={() => { setQuickEditProduct(null); setSaveError(''); }} className="admin-icon-button" aria-label="Закрыть"><X className="size-5" /></button></div>
+            <div className="space-y-5 p-5">
+              <label className="block text-xs font-bold text-[var(--sp-ink)]">Категория<CustomSelect ariaLabel="Категория товара" value={String(quickEditDraft.categoryId || '')} onChange={(value) => setQuickEditDraft((current) => ({ ...current, categoryId: value }))} options={leafCategories.filter((category) => category.status === 'active').map((category) => ({ value: category.id, label: getCategoryLabel(category.id, categories) }))} /></label>
+              <label className="block text-xs font-bold text-[var(--sp-ink)]">Бренд<input autoFocus type="text" value={quickEditDraft.brandName || ''} onChange={(event) => setQuickEditDraft((current) => ({ ...current, brandName: event.target.value }))} className="admin-control mt-1.5 font-normal" /></label>
+              <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold text-[var(--sp-ink)]">Публикация<select value={quickEditDraft.status || 'draft'} onChange={(event) => setQuickEditDraft((current) => ({ ...current, status: event.target.value as Product['status'] }))} className="admin-control mt-1.5 font-normal"><option value="published">Опубликован</option><option value="draft">Черновик</option><option value="hidden">Скрыт</option><option value="archived">В архиве</option></select></label><label className="text-xs font-bold text-[var(--sp-ink)]">Наличие<select value={quickEditDraft.stockStatus || 'in_stock'} onChange={(event) => setQuickEditDraft((current) => ({ ...current, stockStatus: event.target.value as Product['stockStatus'] }))} className="admin-control mt-1.5 font-normal"><option value="in_stock">В наличии</option><option value="on_order">Под заказ</option><option value="out_of_stock">Нет в наличии</option><option value="temporarily_unavailable">Временно недоступен</option><option value="discontinued">Снят с ассортимента</option></select></label></div>
+              <label className="block text-xs font-bold text-[var(--sp-ink)]">Остаток<input type="number" min="0" value={quickEditDraft.stockQuantity ?? ''} onChange={(event) => setQuickEditDraft((current) => ({ ...current, stockQuantity: event.target.value === '' ? undefined : Number(event.target.value) }))} className="admin-control mt-1.5 font-normal" /></label>
+              <fieldset className="space-y-3 rounded-[var(--sp-radius-sm)] bg-[var(--sp-surface-inset)] p-4"><legend className="px-1 text-xs font-bold text-[var(--sp-ink)]">Размещение</legend>{([['featured', 'Популярное на главной'], ['newProduct', 'Новинка']] as const).map(([field, label]) => <label key={field} className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-[var(--sp-ink-secondary)]"><input type="checkbox" checked={Boolean(quickEditDraft[field])} onChange={(event) => setQuickEditDraft((current) => ({ ...current, [field]: event.target.checked }))} className="size-4 accent-[var(--sp-brand)]" />{label}</label>)}</fieldset>
+              <div className="rounded-[var(--sp-radius-sm)] border border-[var(--sp-line)] p-4"><span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--sp-ink-tertiary)]">Цена</span><p className="mt-1 text-sm font-bold text-[var(--sp-brand)]">{getProductCatalogPriceText(quickEditProduct, 'ru')}</p><Link href="/admin/prices" className="mt-2 inline-block text-xs font-semibold text-[var(--sp-brand)] hover:underline">Изменить цену в Price Manager</Link></div>
+              {saveError ? <p role="alert" className="sp-alert sp-alert-danger text-xs">{saveError}</p> : null}
+            </div>
+            <div className="sticky bottom-0 flex justify-end gap-2 border-t border-[var(--sp-line)] bg-[var(--sp-surface)] px-5 py-4"><button type="button" disabled={quickEditSaving} onClick={() => { setQuickEditProduct(null); setSaveError(''); }} className="admin-button-secondary">Отмена</button><button type="button" disabled={quickEditSaving} onClick={() => void saveQuickEdit()} className="admin-button-primary disabled:opacity-50">{quickEditSaving ? 'Сохраняем…' : 'Сохранить'}</button></div>
+          </div>
+        </div>
+      ) : null}
+
+      {duplicateSource ? (
+        <div className="admin-modal-backdrop p-4" role="dialog" aria-modal="true" aria-label="Создать копию товара"><div className="admin-modal-card max-w-lg p-6"><h2 className="text-lg font-bold text-[var(--sp-ink)]">Создать черновик на основе товара?</h2><p className="mt-3 text-sm leading-6 text-[var(--sp-ink-secondary)]">Категория, характеристики, правила заказа, варианты и ссылки на изображения будут скопированы из «{duplicateSource.titleRu}». SKU товара и вариантов необходимо указать заново.</p>{saveError ? <p role="alert" className="sp-alert sp-alert-danger mt-4 text-xs">{saveError}</p> : null}<div className="mt-6 flex justify-end gap-2"><button type="button" disabled={duplicating} onClick={() => { setDuplicateSource(null); setSaveError(''); }} className="admin-button-secondary">Отмена</button><button type="button" disabled={duplicating} onClick={() => void confirmDuplicate()} className="admin-button-primary"><Copy className="size-4" />{duplicating ? 'Создаём…' : 'Создать черновик'}</button></div></div></div>
+      ) : null}
+
+      {createMenuOpen ? (
+        <div className="admin-modal-backdrop p-4" role="dialog" aria-modal="true" aria-label="Новый товар"><div className="admin-modal-card max-w-2xl p-6"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-bold text-[var(--sp-ink)]">Новый товар</h2><p className="mt-1 text-sm text-[var(--sp-ink-secondary)]">Создайте пустую карточку или используйте существующий товар как безопасную основу.</p></div><button type="button" onClick={() => setCreateMenuOpen(false)} className="admin-icon-button" aria-label="Закрыть"><X className="size-5" /></button></div><button type="button" onClick={() => { setCreateMenuOpen(false); handleOpenCreate(); }} className="mt-5 flex w-full items-center justify-between rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] p-4 text-left hover:border-[var(--sp-brand)]"><span><strong className="block text-sm text-[var(--sp-ink)]">Создать с нуля</strong><span className="mt-1 block text-xs text-[var(--sp-ink-secondary)]">Пустая карточка с базовыми настройками.</span></span><Plus className="size-5 text-[var(--sp-brand)]" /></button><div className="mt-5 border-t border-[var(--sp-line)] pt-5"><label className="text-xs font-bold text-[var(--sp-ink)]">Создать на основе существующего<input type="search" value={copyPickerQuery} onChange={(event) => setCopyPickerQuery(event.target.value)} placeholder="Название, SKU, SKU варианта или категория…" className="admin-control mt-2 font-normal" /></label><div className="mt-3 max-h-72 divide-y divide-[var(--sp-line-soft)] overflow-y-auto rounded-[var(--sp-radius-sm)] border border-[var(--sp-line)]">{copyPickerProducts.map((product) => <button key={product.id} type="button" onClick={() => { setCreateMenuOpen(false); setDuplicateSource(product); }} className="flex w-full items-center gap-3 p-3 text-left hover:bg-[var(--sp-surface-inset)]">{product.mainImage ? <Image src={product.mainImage} alt="" width={40} height={40} className="size-10 rounded-md object-contain" /> : <span className="flex size-10 items-center justify-center rounded-md bg-[var(--sp-surface-inset)] text-[9px]">Нет фото</span>}<span className="min-w-0"><strong className="block truncate text-xs text-[var(--sp-ink)]">{product.titleRu}</strong><span className="mt-0.5 block truncate text-[10px] text-[var(--sp-ink-tertiary)]">{product.sku || 'SKU не указан'} · {getCompactCategoryName(product, categories)}</span></span></button>)}</div></div></div></div>
+      ) : null}
+
+      {bulkAction ? (
+        <div className="admin-modal-backdrop p-4" role="dialog" aria-modal="true" aria-label="Подтверждение массовой операции"><div className="admin-modal-card max-w-2xl p-6"><h2 className="text-lg font-bold text-[var(--sp-ink)]">{bulkAction === 'category' ? 'Изменить категорию' : bulkAction === 'publish' ? 'Опубликовать товары' : 'Скрыть товары'}</h2><p className="mt-2 text-sm text-[var(--sp-ink-secondary)]">Будет обновлено товаров: <strong>{selectedProducts.length}</strong>. Операция выполняется целиком: при конфликте или проблеме ни один товар не изменится.</p>{bulkAction === 'category' ? <div className="mt-5"><CustomSelect ariaLabel="Новая категория" value={bulkCategoryId} onChange={setBulkCategoryId} options={[{ value: '', label: 'Выберите категорию' }, ...leafCategories.filter((category) => category.status === 'active').map((category) => ({ value: category.id, label: getCategoryLabel(category.id, categories) }))]} /><div className="mt-4 max-h-48 overflow-y-auto rounded-[var(--sp-radius-sm)] bg-[var(--sp-surface-inset)] p-3 text-xs">{selectedProducts.slice(0, 12).map((product) => <p key={product.id} className="py-1 text-[var(--sp-ink-secondary)]"><strong className="text-[var(--sp-ink)]">{product.titleRu}</strong>: {getCompactCategoryName(product, categories)} → {categories.find((category) => category.id === bulkCategoryId)?.titleRu || 'новая категория'}</p>)}</div></div> : bulkAction === 'publish' ? <div className="mt-4 space-y-2">{selectedProducts.filter((product) => !getProductReadiness(product, categories, attributes).readyToPublish).map((product) => <p key={product.id} className="sp-alert sp-alert-warning text-xs"><strong>{product.titleRu}:</strong> {getProductReadiness(product, categories, attributes).blockers.map((issue) => issue.label).join(', ')}</p>)}</div> : null}{saveError ? <p role="alert" className="sp-alert sp-alert-danger mt-4 text-xs">{saveError}</p> : null}<div className="mt-6 flex justify-end gap-2"><button type="button" disabled={bulkSaving} onClick={() => { setBulkAction(null); setSaveError(''); }} className="admin-button-secondary">Отмена</button><button type="button" disabled={bulkSaving || (bulkAction === 'category' && !bulkCategoryId) || (bulkAction === 'publish' && selectedProducts.some((product) => !getProductReadiness(product, categories, attributes).readyToPublish))} onClick={() => void applyBulkAction()} className="admin-button-primary disabled:cursor-not-allowed disabled:opacity-50">{bulkSaving ? 'Применяем…' : 'Применить'}</button></div></div></div>
+      ) : null}
+
       {/* Product Edit / Create Modal */}
       {isModalOpen && editingProduct && (
         <div className="admin-modal-backdrop p-0 md:p-4" role="dialog" aria-modal="true" aria-label={editingProduct.id ? 'Редактирование товара' : 'Новый товар'} onKeyDown={trapDialogFocus}>
@@ -604,12 +811,12 @@ export default function AdminProductsPage() {
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--sp-brand)]">Каталог</p>
                 <h3 className="mt-1 text-lg font-bold text-[var(--sp-ink)]">
-                  {editingProduct.id ? 'Редактирование товара' : 'Новый товар'}
+                  {editingProduct.id ? (editingProduct.titleRu || 'Редактирование товара') : 'Новый товар'}
                 </h3>
-                <p className="mt-1 text-[11px] text-[var(--sp-ink-tertiary)]">Заполните обязательные данные, затем настройте продажу, описание и характеристики.</p>
+                <p className="mt-1 text-[11px] text-[var(--sp-ink-tertiary)]">{editingProduct.sku || 'SKU не указан'}{editingCategory ? ` · ${editingCategory.titleRu}` : ''} · {productStatusLabels[(editingProduct.status || 'draft') as Product['status']]}</p>
                 {hasUnsavedChanges ? <p className="mt-1 text-[11px] font-semibold text-amber-700">Есть несохранённые изменения</p> : null}
               </div>
-              <button
+              <div className="flex items-center gap-2">{editingProduct.id && editingProduct.slug ? <a href={`/ru/product/${editingProduct.slug}`} target="_blank" rel="noreferrer" className="admin-button-secondary hidden sm:inline-flex"><ExternalLink className="size-4" />На сайте</a> : null}{editingProduct.id ? <button type="button" onClick={() => { const source = products.find((product) => product.id === editingProduct.id); if (source) { closeEditor(); setDuplicateSource(source); } }} className="admin-button-secondary hidden sm:inline-flex"><Copy className="size-4" />Копия</button> : null}<button
                 data-product-dialog-close
                 type="button"
                 onClick={closeEditor}
@@ -617,7 +824,7 @@ export default function AdminProductsPage() {
                 aria-label="Закрыть редактор"
               >
                 <X className="size-5" />
-              </button>
+              </button></div>
             </div>
 
             <div className="admin-modal-body space-y-7 bg-[var(--sp-canvas)] px-5 py-6 md:px-7">
@@ -627,6 +834,7 @@ export default function AdminProductsPage() {
                 ['product-relations', 'Связи'], ['product-seo', 'SEO'], ['product-description', 'Описание'], ['product-attributes', 'Характеристики'],
               ].map(([href, label]) => <a key={href} href={`#${href}`} className="shrink-0 rounded-[var(--sp-radius-control-inner)] px-3 py-2 text-[11px] font-semibold text-[var(--sp-ink-secondary)] hover:bg-[var(--sp-surface-inset)] hover:text-[var(--sp-brand)]">{label}</a>)}
             </nav>
+            {editingReadiness?.issues.length ? <section className="admin-panel p-4"><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm text-[var(--sp-ink)]">Нужно проверить: {editingReadiness.issues.length}</strong><span className={`rounded px-2 py-1 text-[10px] font-bold ${editingReadiness.readyToPublish ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`}>{editingReadiness.readyToPublish ? 'Рекомендации' : 'Есть блокеры публикации'}</span></div><ul className="mt-3 grid gap-2 text-xs text-[var(--sp-ink-secondary)] sm:grid-cols-2">{editingReadiness.issues.map((issue) => <li key={issue.code} className="flex items-start gap-2"><TriangleAlert className={`mt-0.5 size-3.5 shrink-0 ${issue.severity === 'blocker' ? 'text-[var(--sp-danger)]' : 'text-amber-700'}`} /><span>{issue.label}</span></li>)}</ul></section> : null}
             <section id="product-main" className="admin-panel scroll-mt-20 p-5 md:p-6">
               <h4 className="admin-section-heading">Основная информация</h4>
               <p className="admin-section-description">Название, артикул, категория, цена и изображение, которые определяют товар в каталоге.</p>

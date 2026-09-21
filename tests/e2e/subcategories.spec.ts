@@ -79,6 +79,7 @@ test('admin tree and safe parent selection use lineage', async ({ page }) => {
 test('admin product selection inherits all three levels without leaking sibling attrs', async ({ page }) => {
   await page.goto('/admin/products');
   await page.getByRole('button', { name: 'Добавить товар', exact: true }).click();
+  await page.getByRole('button', { name: /Создать с нуля/ }).click();
   await page.getByLabel('Категория *', { exact: true }).click();
   await page.getByRole('option', { name: 'food / grocery / grains', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Новый товар' });

@@ -42,6 +42,7 @@ const mutationSchema = z.object({
   resource: resourceSchema.optional(),
   id: z.string().min(1).max(160).regex(/^[^/]+$/).refine((id) => id !== '.' && id !== '..').optional(),
   data: z.record(z.string(), z.unknown()).optional(),
+  expectedUpdatedAt: z.string().trim().min(1).max(100).optional(),
 }).strict();
 
 async function validateAttributeMutation(
@@ -71,14 +72,23 @@ async function normalizeAndValidateProduct(
   product: Partial<Product>,
 ) {
   const slug = product.slug || createCatalogSlug(product.titleRu || '', product.sku || '');
-  const [duplicateSlug, duplicateSku, categorySnapshot, attributeSnapshot] = await Promise.all([
+  const [duplicateSlug, productSnapshot, categorySnapshot, attributeSnapshot] = await Promise.all([
     database.collection('products').where('slug', '==', slug).limit(2).get(),
-    product.sku ? database.collection('products').where('sku', '==', product.sku).limit(2).get() : null,
+    database.collection('products').get(),
     database.collection('categories').get(),
     database.collection('attributes').get(),
   ]);
   if (duplicateSlug.docs.some((document) => document.id !== id)) return { error: 'Товар с таким URL уже существует.' } as const;
-  if (duplicateSku?.docs.some((document) => document.id !== id)) return { error: 'Товар с таким SKU уже существует.' } as const;
+  const ownSkus = [product.sku, ...(product.variants || []).map((variant) => variant.sku)]
+    .map((sku) => sku?.trim().toLocaleLowerCase('ru')).filter((sku): sku is string => Boolean(sku));
+  if (new Set(ownSkus).size !== ownSkus.length) return { error: 'SKU товара и его вариантов не должны повторяться.' } as const;
+  const catalogSkus = new Set(productSnapshot.docs.filter((entry) => entry.id !== id).flatMap((entry) => {
+    const candidate = entry.data() as Partial<Product>;
+    return [candidate.sku, ...(candidate.variants || []).map((variant) => variant.sku)]
+      .map((sku) => sku?.trim().toLocaleLowerCase('ru')).filter((sku): sku is string => Boolean(sku));
+  }));
+  const duplicateSku = ownSkus.find((sku) => catalogSkus.has(sku));
+  if (duplicateSku) return { error: `SKU «${duplicateSku}» уже используется другим товаром или вариантом.` } as const;
 
   const categories = categorySnapshot.docs.map((document) => ({ id: document.id, ...document.data() } as Category));
   const category = categories.find((candidate) => candidate.id === product.categoryId);
@@ -322,6 +332,9 @@ export async function POST(request: Request) {
       await database.runTransaction(async (transaction) => {
         const existing = await transaction.get(document);
         const existingData = existing.data() as Partial<Product> | undefined;
+        if (mutation.expectedUpdatedAt && existingData?.updatedAt !== mutation.expectedUpdatedAt) {
+          throw new Error('PRODUCT_STALE_CONFLICT');
+        }
         transaction.set(document, {
           ...data,
           createdAt: existingData?.createdAt || timestamp,
@@ -335,6 +348,9 @@ export async function POST(request: Request) {
     const saved = await document.get();
     return NextResponse.json({ id: saved.id, ...saved.data() });
   } catch (error) {
+    if (error instanceof Error && error.message === 'PRODUCT_STALE_CONFLICT') {
+      return NextResponse.json({ error: 'Товар уже изменён другим пользователем. Обновите данные и повторите сохранение.' }, { status: 409 });
+    }
     logError('Admin mutation failed.', error);
     return NextResponse.json(
       { error: firebaseAdminUnavailableMessage('данных', error) },

@@ -19,6 +19,7 @@ import * as prices from '@/app/api/admin/prices/route';
 import * as priceExport from '@/app/api/admin/prices/export/route';
 import * as priceImport from '@/app/api/admin/prices/import/route';
 import * as priceBatch from '@/app/api/admin/prices/[batchId]/route';
+import * as productOperations from '@/app/api/admin/products/operations/route';
 
 function request(body: unknown = {}, method = 'POST') {
   return new Request('https://shop.example/api/admin/data?resource=requests', { method, body: JSON.stringify(body), headers: { 'content-type': 'application/json' } });
@@ -39,6 +40,7 @@ const routes = [
   ['price import POST', () => priceImport.POST(request())],
   ['price batch GET', () => priceBatch.GET(new Request('https://shop.example/api/admin/prices/batch'), priceContext)],
   ['price batch POST', () => priceBatch.POST(request({ action: 'apply', warningsConfirmed: false }), priceContext)],
+  ['product operations POST', () => productOperations.POST(request({ action: 'duplicate', target: { id: 'p', expectedUpdatedAt: '2026-01-01' } }))],
 ] as const;
 beforeEach(() => {
   vi.clearAllMocks();

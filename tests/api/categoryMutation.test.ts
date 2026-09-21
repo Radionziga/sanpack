@@ -116,6 +116,12 @@ describe('admin Product assignment / inherited requirements', () => {
     expect(saved.createdAt).not.toBe('2099-01-01T00:00:00.000Z');
   });
 
+  it('rejects a stale full-editor save without overwriting the current Product', async () => {
+    store.set('products/stale-product', createProduct({ id: 'stale-product', categoryId: 'grocery', status: 'draft', updatedAt: 'server-v2', titleRu: 'Текущая версия' }) as unknown as Record<string, unknown>);
+    await expect(AdminRepository.updateProduct('stale-product', createProduct({ id: 'stale-product', categoryId: 'grocery', status: 'draft', updatedAt: 'client-v1', titleRu: 'Старая версия' }))).rejects.toThrow('Товар уже изменён');
+    expect(store.get('products/stale-product')).toMatchObject({ titleRu: 'Текущая версия', updatedAt: 'server-v2' });
+  });
+
   it('uses the envelope identity and ignores audit fields in a hand-crafted payload', async () => {
     const product = createProduct({ id: 'payload-id', categoryId: 'grocery', status: 'draft' });
     const response = await save('products', 'trusted-envelope-id', {

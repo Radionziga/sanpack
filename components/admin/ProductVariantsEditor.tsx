@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import { useFieldArray, useForm, useWatch, type Control, type UseFormRegister } from 'react-hook-form';
-import { Plus, Trash2 } from 'lucide-react';
+import { Copy, Plus, Trash2 } from 'lucide-react';
+import { duplicateVariantDraft } from '@/lib/admin/productOperations';
 
 import type {
   Attribute,
@@ -387,7 +388,19 @@ export function ProductVariantsEditor({ initialVariants, attributes, currency, o
             <article key={field.id} className="rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface)] p-4 md:p-5">
               <div className="flex items-center justify-between gap-4">
                 <h5 className="text-sm font-bold text-[var(--sp-ink)]">Вариант {index + 1}</h5>
-                <button
+                <div className="flex items-center gap-2"><button
+                  type="button"
+                  onClick={() => {
+                    const current = variants?.[index];
+                    if (!current) return;
+                    append(toFormVariant(duplicateVariantDraft(toProductVariant(current, attributes, initialVariantsRef.current.get(current.id)))));
+                  }}
+                  className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control)] px-3 text-xs font-semibold text-[var(--sp-brand)] transition-colors hover:bg-[var(--sp-surface-inset)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sp-brand)] focus-visible:ring-offset-2"
+                  aria-label={`Дублировать вариант ${index + 1}`}
+                >
+                  <Copy className="size-4" aria-hidden="true" />
+                  Дублировать
+                </button><button
                   type="button"
                   onClick={() => remove(index)}
                   className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[var(--sp-radius-control)] px-3 text-xs font-semibold text-[var(--sp-danger)] transition-colors hover:bg-red-500/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sp-brand)] focus-visible:ring-offset-2"
@@ -395,7 +408,7 @@ export function ProductVariantsEditor({ initialVariants, attributes, currency, o
                 >
                   <Trash2 className="size-4" aria-hidden="true" />
                   Удалить
-                </button>
+                </button></div>
               </div>
 
               <input type="hidden" {...register(`variants.${index}.id`)} />

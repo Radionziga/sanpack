@@ -173,6 +173,7 @@ test.describe('production-like hard entries', () => {
     await page.goto('/admin/products');
     const trigger = page.getByRole('button', { name: 'Добавить товар', exact: true });
     await trigger.click();
+    await page.getByRole('button', { name: /Создать с нуля/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Новый товар' });
     const close = dialog.getByRole('button', { name: 'Закрыть редактор' });
     await expect(close).toBeFocused();
@@ -181,6 +182,7 @@ test.describe('production-like hard entries', () => {
     await expect(trigger).toBeFocused();
 
     await trigger.click();
+    await page.getByRole('button', { name: /Создать с нуля/ }).click();
     const title = dialog.getByLabel('Название (RU) *');
     await title.focus();
     for (const key of ['KeyA', 'KeyB', 'KeyC']) await page.keyboard.press(key);
