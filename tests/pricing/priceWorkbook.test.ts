@@ -215,6 +215,8 @@ describe('price workbook', () => {
     expect(first.every((sheet) => sheet.sheetName.length <= 31 && !/[:\\/?*\[\]]/.test(sheet.sheetName))).toBe(true);
     expect(first[1].sheetName).toMatch(/\(2\)$/);
     expect(first[2].sheetName).not.toBe('Цены');
+    expect(sanitizePriceWorksheetName('Вакуумные пакеты и пакеты для пиццы'))
+      .toBe('Вакуумные пакеты и пакеты…');
     expect(sanitizePriceWorksheetName("'' : / ? * [ ] ")).toBe('Категория');
   });
 

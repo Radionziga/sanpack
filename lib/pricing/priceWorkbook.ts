@@ -60,14 +60,25 @@ function rowsLabel(value: number) {
   return `${value} ${noun}`;
 }
 
+function shortenWorksheetName(title: string, limit: number, ellipsis = true) {
+  if (title.length <= limit) return title;
+  const marker = ellipsis ? '…' : '';
+  const available = Math.max(1, limit - marker.length);
+  const clipped = title.slice(0, available).trimEnd();
+  const boundary = clipped.lastIndexOf(' ');
+  const readable = boundary >= Math.floor(available * 0.6)
+    ? clipped.slice(0, boundary).trimEnd()
+    : clipped;
+  return `${readable}${marker}`;
+}
+
 export function sanitizePriceWorksheetName(title: string) {
-  return safeText(title)
+  const sanitized = safeText(title)
     .replace(/[:\\/?*\[\]]/g, ' ')
     .replace(/\s+/g, ' ')
     .replace(/^'+|'+$/g, '')
-    .trim()
-    .slice(0, EXCEL_SHEET_NAME_LIMIT)
-    .trim() || 'Категория';
+    .trim();
+  return shortenWorksheetName(sanitized, EXCEL_SHEET_NAME_LIMIT) || 'Категория';
 }
 
 function uniqueWorksheetName(title: string, used: Set<string>) {
@@ -75,7 +86,7 @@ function uniqueWorksheetName(title: string, used: Set<string>) {
   let candidate = base;
   for (let suffix = 2; used.has(candidate.toLocaleLowerCase('ru-RU')); suffix += 1) {
     const marker = ` (${suffix})`;
-    candidate = `${base.slice(0, EXCEL_SHEET_NAME_LIMIT - marker.length).trim()}${marker}`;
+    candidate = `${shortenWorksheetName(base.replace(/…$/u, ''), EXCEL_SHEET_NAME_LIMIT - marker.length, false)}${marker}`;
   }
   used.add(candidate.toLocaleLowerCase('ru-RU'));
   return candidate;
