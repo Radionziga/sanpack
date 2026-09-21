@@ -12,6 +12,13 @@ describe('SEO metadata foundation', () => {
     expect(metadata.title).toBe('Maxsus title');
     expect(metadata.description).toBe('Maxsus tavsif');
     expect(metadata.alternates).toMatchObject({ canonical: '/uz/catalog/bakaleya', languages: localeAlternates('/catalog/bakaleya') });
+    expect(localeAlternates('/catalog/bakaleya')).toMatchObject({
+      ru: expect.stringMatching(/\/ru\/catalog\/bakaleya$/),
+      uz: expect.stringMatching(/\/uz\/catalog\/bakaleya$/),
+      en: expect.stringMatching(/\/en\/catalog\/bakaleya$/),
+      zh: expect.stringMatching(/\/zh\/catalog\/bakaleya$/),
+      'x-default': expect.stringMatching(/\/ru\/catalog\/bakaleya$/),
+    });
     expect(metadata.openGraph).toMatchObject({ title: 'Maxsus title', url: expect.stringContaining('/uz/catalog/bakaleya') });
   });
 

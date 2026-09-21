@@ -166,9 +166,16 @@ export function CatalogHome({
     en: { all: 'View all', allShort: 'All', empty: 'The catalogue is temporarily unavailable' },
     zh: { all: '查看全部', allShort: '全部', empty: '目录暂时不可用' },
   }[locale];
+  const homeHeading = {
+    ru: `${company.name} — упаковка, расходные материалы и продукты для HoReCa`,
+    uz: `${company.name} — HoReCa uchun qadoqlash, sarf materiallari va oziq-ovqat`,
+    en: `${company.name} — packaging, supplies and food products for HoReCa`,
+    zh: `${company.name} — 面向餐饮酒店行业的包装、耗材与食品`,
+  }[locale];
 
   return (
     <div className="bg-[var(--sp-canvas)]">
+      <h1 className="sr-only">{homeHeading}</h1>
       <div className="mx-auto grid w-full max-w-[1536px] gap-5 px-4 pb-12 pt-5 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_300px] xl:gap-6">
         <div className="hidden lg:block">
           <StorefrontCategorySidebar categories={categories} />

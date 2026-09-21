@@ -194,7 +194,7 @@ export const initialBanners: Banner[] = [
     buttonTextUz: 'Ko‘katlarni tanlash',
     buttonTextEn: 'Explore greens',
     buttonTextZh: '选购新鲜香草',
-    link: '/catalog/svezhaya-zelen-novagreen',
+    link: '/catalog/ovoshchi-frukty-zelen/svezhaya-zelen',
     sortOrder: 3,
     active: true,
   },

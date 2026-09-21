@@ -4,8 +4,8 @@ import { getPublicCategories, getPublicProducts, getPublicSettings } from '@/lib
 import { routing } from '@/i18n/routing';
 import type { Language } from '@/types';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
-import { getMinimumSalePrice } from '@/lib/commerce/productOffer';
 import { buildBreadcrumbStructuredData, buildSeoMetadata } from '@/lib/seo/metadata';
+import { buildProductStructuredData } from '@/lib/seo/productStructuredData';
 import { getCategoryBreadcrumbs, resolveProductCategory } from '@/lib/catalog/categoryHierarchy';
 
 function localized(
@@ -83,36 +83,7 @@ export default async function ProductSeoLayout({
   );
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   const productUrl = `${baseUrl}/${locale}/product/${product.slug}`;
-  const availability = product.stockStatus === 'in_stock'
-    ? 'https://schema.org/InStock'
-    : product.stockStatus === 'out_of_stock'
-      ? 'https://schema.org/OutOfStock'
-      : 'https://schema.org/PreOrder';
-  const minimumSalePrice = getMinimumSalePrice(product);
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name,
-    description,
-    image: [...new Set([product.mainImage, ...(product.images || [])].filter(Boolean))],
-    sku: product.sku,
-    url: productUrl,
-    brand: product.brandName
-      ? {
-          '@type': 'Brand',
-          name: product.brandName,
-        }
-      : undefined,
-    offers: minimumSalePrice
-      ? {
-          '@type': 'Offer',
-          priceCurrency: product.currency === 'сум' ? 'UZS' : product.currency,
-          price: minimumSalePrice.amount,
-          availability,
-          url: productUrl,
-        }
-      : undefined,
-  };
+  const structuredData = buildProductStructuredData(product, { name, description, url: productUrl });
   const category = resolveProductCategory(product, categories);
   const breadcrumbData = buildBreadcrumbStructuredData([
     { name: localized(locale, 'Главная', 'Bosh sahifa', 'Home', '首页'), path: `/${locale}` },

@@ -110,7 +110,7 @@ describe('routes, breadcrumbs and SEO', () => {
   it.each(['ru', 'uz', 'en', 'zh'] as const)('generates canonical and hreflang for %s', (locale) => {
     const meta = getCategoryMetadata(['grocery', 'grains'], locale, categories, initialSiteSettings);
     expect(meta.alternates?.canonical).toBe(`/${locale}/catalog/grocery/grains`);
-    expect(meta.alternates?.languages?.en).toBe('/en/catalog/grocery/grains');
+    expect(meta.alternates?.languages?.en).toBe('http://localhost:3000/en/catalog/grocery/grains');
     expect(getCategoryMetadata(['grains'], locale, categories, initialSiteSettings).alternates).toEqual(meta.alternates);
   });
   it('keeps subcategories out of automatic showcase and permits explicit promotion', () => {

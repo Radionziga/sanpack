@@ -23,6 +23,7 @@
     "security:owner-grant": "node --env-file-if-exists=.env.local scripts/provision-owner-admin.mjs",
     "security:private-storage-audit": "node --env-file-if-exists=.env.local scripts/audit-private-storage-tokens.mjs",
     "identity:audit": "node --env-file-if-exists=.env.local scripts/audit-customer-identities.mjs",
+    "seo:verify:production": "node scripts/verify-production-seo.mjs",
     "clean": "next clean"
   },
   "dependencies": {
@@ -64,6 +65,12 @@
     "vitest": "4.1.11"
   },
   "overrides": {
+    "gaxios": {
+      "uuid": "11.1.1"
+    },
+    "teeny-request": {
+      "uuid": "11.1.1"
+    },
     "exceljs": {
       "brace-expansion": "2.1.7",
       "uuid": "11.1.1"

@@ -23,8 +23,8 @@ export function withCompanyName(title: string, companyName: string) {
 
 export function localeAlternates(path: string) {
   return Object.fromEntries([
-    ...routing.locales.map((locale) => [locale, `/${locale}${path}`]),
-    ['x-default', `/ru${path}`],
+    ...routing.locales.map((locale) => [locale, new URL(`/${locale}${path}`, siteBaseUrl()).toString()]),
+    ['x-default', new URL(`/ru${path}`, siteBaseUrl()).toString()],
   ]);
 }
 

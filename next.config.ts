@@ -69,6 +69,30 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     '/*': ['./.agents/**/*', './playwright-report/**/*', './test-results/**/*'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:locale(ru|uz|en|zh)/catalog/branding-polygraphy',
+        destination: '/:locale/branding',
+        permanent: true,
+      },
+      {
+        source: '/catalog/branding-polygraphy',
+        destination: '/ru/branding',
+        permanent: true,
+      },
+      {
+        source: '/:locale(ru|uz|en|zh)/catalog/svezhaya-zelen-novagreen',
+        destination: '/:locale/catalog/ovoshchi-frukty-zelen/svezhaya-zelen',
+        permanent: true,
+      },
+      {
+        source: '/catalog/svezhaya-zelen-novagreen',
+        destination: '/ru/catalog/ovoshchi-frukty-zelen/svezhaya-zelen',
+        permanent: true,
+      },
+    ];
+  },
   transpilePackages: ['motion'],
   turbopack: {
     root: process.cwd(),
