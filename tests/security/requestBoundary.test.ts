@@ -63,7 +63,7 @@ describe('canonical category routing boundary', () => {
     expect(missing.headers.get('x-middleware-rewrite')).toBeNull();
     expect(missing.headers.get('content-type')).toContain('text/html');
     expect(missing.headers.get('x-robots-tag')).toBe('noindex, nofollow');
-    expect(await missing.text()).toContain('<h1>Такой страницы каталога нет</h1>');
+    expect(await missing.text()).toContain('<h1>Такой страницы нет</h1>');
   });
 });
 
