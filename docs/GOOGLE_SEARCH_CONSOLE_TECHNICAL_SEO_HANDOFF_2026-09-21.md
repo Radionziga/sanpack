@@ -2,7 +2,7 @@
 
 ## Status
 
-Production-oriented remediation completed against the actual Google Search Console property `https://sanpack.uz/` owned by the current Hello Clarity Google session. The release gate and rollout fields below are completed after the controlled App Hosting rollout.
+**SANPACK GOOGLE SEARCH TECHNICAL SEO CLEANUP LIVE.** Production-oriented remediation was completed against the actual Google Search Console property `https://sanpack.uz/` owned by the Hello Clarity Google session. The final code is live, the production crawl is clean, and Google recrawl of historical report rows remains asynchronous.
 
 No Product, price, taxonomy, publication, customer, request, Telegram, analytics or Price Manager data was changed.
 
@@ -11,7 +11,9 @@ No Product, price, taxonomy, publication, customer, request, Telegram, analytics
 - Baseline Git source: `802745602fcfa5da090a71848cbeceeee343e592`
 - Baseline App Hosting revision: `sanpack-build-2026-09-21-002`
 - Baseline health: healthy
-- Release source/revision: pending controlled rollout
+- Release Git source: `c06a9f0dbffb55903737766951be72ea198aded6`
+- Release App Hosting revision: `sanpack-build-2026-09-22-004`
+- Release health: healthy, 100% production traffic
 
 ## Search Console baseline
 
@@ -20,7 +22,7 @@ Page Indexing was last updated by Google on 18 September 2026: 438 indexed URLs,
 | Reason | URL count | Classification | Action |
 | --- | ---: | --- | --- |
 | Page with redirect | 33 | Expected / historical | Root, locale-less and historical URLs should not be indexed. Current aliases are reduced to one permanent hop where SANPACK has a known replacement. |
-| Soft 404 | 8 | Historical/stale | All eight examples now return real, content-rich 200 pages with H1 and self-canonical. Google live test confirmed the representative Product is available to Google. Validation can be requested after rollout. |
+| Soft 404 | 8 | Historical/stale | All eight examples now return real, content-rich 200 pages with H1 and self-canonical. Google live tests confirmed representative current pages are available to Google. No bulk validation was started for stale rows. |
 | Duplicate without user-selected canonical | 5 | Historical + expected utility | Public content pages now self-canonical. Favorites/request are intentionally non-indexable utility pages. |
 | Alternate page with proper canonical | 5 | Expected + two repaired aliases | Three print-document URLs remain intentionally non-indexable alternates. Two retired taxonomy slugs now permanently redirect to real replacements. |
 | Blocked by robots.txt | 4 | Expected | Request/profile/favorites utility URLs remain blocked and carry `X-Robots-Tag: noindex, nofollow`. |
@@ -98,7 +100,7 @@ Actual blocked examples (`/request`, `/uz/profile`, `/uz/favorites`, `/zh/reques
 - Baseline composition: 952 Product + 124 taxonomy + 44 static localized URLs
 - Baseline full production crawl: 1,116 clean; four localized Home pages were the only URLs without an H1
 - Remediation: one concise localized SANPACK/Horeca H1 was added to Home without keyword stuffing
-- Post-rollout full crawl: pending
+- Post-rollout full crawl: 1,120 passed, 0 failed
 
 The verifier rejects duplicate, cross-origin, query-parameter and trailing-slash sitemap entries, and checks every sitemap URL for HTTP 200, absence of redirect/noindex, exact self-canonical, localized H1, ru/uz/en/zh/x-default alternates and required Product/Breadcrumb JSON-LD.
 
@@ -111,6 +113,8 @@ Representative query checks:
 - Catalog filters/sort/page/UTM → clean Catalog canonical
 - Category filters/UTM → clean nested Category canonical
 - Product variant/UTM/gclid → clean Product canonical
+
+`http://sanpack.uz` returns one 301 to the preferred HTTPS host. `www.sanpack.uz` currently has no DNS record, so there is no live alternate host producing duplicate content.
 
 ## Structured data
 
@@ -141,9 +145,11 @@ SANPACK remains a request-based B2B flow (`Cart → Request → manager confirma
 
 ## Internal links
 
-A bounded production discovery check covered Home, Header/Footer, Catalog, Category, Subcategory, Product/related/breadcrumb context, Link Hub and representative static content. It found 129 unique internal URLs and zero redirect/4xx/5xx targets.
+A bounded production discovery check covered Home, Header/Footer, Catalog, Category, Subcategory, Product/related/breadcrumb context, Link Hub and representative static content. The first post-rollout check found two Home promo links that still pointed to valid one-hop Category redirects. Banner rendering now resolves CMS-managed internal Category links to their current canonical taxonomy paths without changing persisted content or taxonomy. The final 150-URL discovery pass found zero redirect/4xx/5xx targets.
 
 The malformed `https://sanpack.uz/&` 404 reported by Google named two Product pages as historical referrers, but neither current server HTML contains that link.
+
+One isolated `500` was observed once on `/uz/catalog/pakety-i-meshki` during the first 180-URL discovery pass. Five immediate repeats plus all four locale variants returned 200, and the final 150-URL pass had no failures. It is classified as a transient runtime response, not a reproducible route defect; production health remained `ok`.
 
 ## Tests
 
@@ -160,7 +166,7 @@ Targeted coverage includes:
 - existing robots boundaries;
 - full 1,120-URL production SEO verifier.
 
-Final release-gate results before the checkpoint:
+Final release-gate results for source `c06a9f0dbffb55903737766951be72ea198aded6`:
 
 - `npm ci`: passed
 - `npm ls --depth=0`: passed
@@ -174,16 +180,32 @@ Final release-gate results before the checkpoint:
 - `git diff --check`: passed
 - high-confidence secret scan: no findings
 - production dependency audit: 0 vulnerabilities
+- GitHub Actions run `35692214691`: quality and browser jobs passed
 
 ## Deploy
 
 The first App Hosting attempt (`build-2026-09-21-003`) stopped safely during dependency installation, before an application image or rollout was produced. The Node 22 buildpack's npm detected two transitive entries omitted by the newer local npm lockfile writer: `brace-expansion@1.1.21` and `concat-map@0.0.1`. Production remained healthy on `sanpack-build-2026-09-21-002` throughout.
 
-The lockfile was regenerated and verified with npm 10.9.4, matching the App Hosting buildpack's compatibility behavior. Exact npm 10 `ci`, the full unit suite, typecheck, lint, production build and dependency audit then passed locally. The successful replacement rollout and post-rollout verification are recorded in the final release status. No Firebase data deployment or business-data mutation is part of this release.
+The lockfile was regenerated and verified with npm 10.9.4, matching the App Hosting buildpack's compatibility behavior. Exact npm 10 `ci`, the full unit suite, typecheck, lint, production build and dependency audit then passed locally. Follow-up route-status and internal-link regressions were fixed through normal `main` checkpoints; the final automatic rollout is `sanpack-build-2026-09-22-004` from `c06a9f0dbffb55903737766951be72ea198aded6`.
+
+Post-rollout evidence:
+
+- `/api/health`: `ok`, revision `sanpack-build-2026-09-22-004`;
+- full sitemap verifier: 1,120/1,120 passed;
+- composition: 952 Product, 124 taxonomy and 44 static URLs;
+- fixed Product: truthful `Product + Offer + BreadcrumbList`;
+- request-price Product: `Product + BreadcrumbList`, no fake Offer;
+- current flat Subcategory and retired aliases: one HTTP 308 hop;
+- unknown Category: real HTTP 404;
+- final bounded internal-link discovery: 150 checked, 0 failures.
+
+No Firebase data deployment, taxonomy/content mutation or business-data mutation was part of this release.
 
 ## Search Console validation state
 
-No validation was started for expected Redirect, Alternate, Robots, 404, Discovered or Crawled exclusions. Soft 404 validation is started only after the corrected production behavior and a post-rollout live inspection are confirmed.
+No validation was started for expected Redirect, Alternate, Robots, 404, Discovered or Crawled exclusions. Soft 404 validation was also not started: the report is dated 18 September, all eight current examples are valid, and representative live inspection confirms current availability. Google should recrawl naturally from the successful sitemap rather than receive a misleading validation request for an already-stale cohort.
+
+Final live inspection on 22 September used the canonical Category URL `/ru/catalog/myaso-ptitsa-yaytsa/govyadina` in the Hello Clarity property. Search Console reported both `URL is on Google` for indexed data and `URL is available to Google / page can be indexed` for the published-page test, with one valid Breadcrumb item and no error. No Request Indexing action was submitted.
 
 ## Google recrawl pending
 
