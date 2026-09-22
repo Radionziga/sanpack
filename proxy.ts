@@ -16,7 +16,7 @@ async function readRouteCategories(request: NextRequest) {
   // Production reads Firestore directly instead of self-fetching the same Next
   // service: a self-fetch can wait behind the request that initiated it and let
   // a streamed notFound()/redirect degrade to HTTP 200 on App Hosting.
-  if (process.env.SANPACK_USE_SEED_DATA === 'true') {
+  if (process.env.SANPACK_USE_SEED_DATA === 'true' || process.env.NODE_ENV === 'test') {
     const response = await fetch(new URL('/api/catalog?resource=categories', request.url), {
       headers: { accept: 'application/json' },
       cache: 'no-store',

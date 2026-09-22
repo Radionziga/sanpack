@@ -60,8 +60,10 @@ describe('canonical category routing boundary', () => {
 
     const missing = await proxy(new NextRequest('https://seo-route.example/ru/catalog/not-a-category'));
     expect(missing.status).toBe(404);
-    expect(missing.headers.get('x-middleware-rewrite')).toBe('https://seo-route.example/ru/__catalog-not-found');
+    expect(missing.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(missing.headers.get('content-type')).toContain('text/html');
     expect(missing.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+    expect(await missing.text()).toContain('<h1>Такой страницы каталога нет</h1>');
   });
 });
 
