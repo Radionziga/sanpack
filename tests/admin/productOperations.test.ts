@@ -29,13 +29,16 @@ describe('Product Operations duplication', () => {
     const source = createProduct({
       id: 'source', sku: 'SOURCE-SKU', status: 'published', mainImage: 'https://cdn/image.webp', mainImagePath: 'media/image.webp',
       attributes: { weight: 25 }, variants: [createVariant({ id: 'source-variant', sku: 'SOURCE-VARIANT' })],
+      seo: { titleRu: 'SEO исходного товара', descriptionRu: 'Описание только исходного товара' },
     });
     const duplicate = createProductDuplicateDraft(source, {
       id: 'copy', slug: 'test-product-copy-1', now: '2026-09-21T10:00:00.000Z', actor: 'admin', createVariantId: () => 'copy-variant',
     });
     expect(duplicate).toMatchObject({ id: 'copy', status: 'draft', sku: '', slug: 'test-product-copy-1', mainImage: source.mainImage, mainImagePath: source.mainImagePath, attributes: source.attributes });
+    expect(duplicate.seo).toBeUndefined();
     expect(duplicate.variants[0]).toMatchObject({ id: 'copy-variant', sku: '', price: source.variants[0].price });
     expect(source).toMatchObject({ id: 'source', sku: 'SOURCE-SKU', status: 'published' });
+    expect(source.seo?.titleRu).toBe('SEO исходного товара');
   });
 
   it('duplicates a Variant structure with a new identity and blank SKU', () => {

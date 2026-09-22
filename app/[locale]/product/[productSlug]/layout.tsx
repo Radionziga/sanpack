@@ -4,8 +4,9 @@ import { getPublicCategories, getPublicProducts, getPublicSettings } from '@/lib
 import { routing } from '@/i18n/routing';
 import type { Language } from '@/types';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
-import { buildBreadcrumbStructuredData, buildSeoMetadata } from '@/lib/seo/metadata';
+import { buildBreadcrumbStructuredData } from '@/lib/seo/metadata';
 import { buildProductStructuredData } from '@/lib/seo/productStructuredData';
+import { buildProductMetadata, getEffectiveProductSeo } from '@/lib/seo/policy';
 import { getCategoryBreadcrumbs, resolveProductCategory } from '@/lib/catalog/categoryHierarchy';
 
 function localized(
@@ -27,33 +28,15 @@ export async function generateMetadata({
   const locale: Language = routing.locales.includes(rawLocale as Language)
     ? (rawLocale as Language)
     : 'ru';
-  const [products, settings] = await Promise.all([getPublicProducts(), getPublicSettings()]);
+  const [products, categories, settings] = await Promise.all([
+    getPublicProducts(), getPublicCategories(), getPublicSettings(),
+  ]);
   const product = products.find(
     (candidate) => candidate.slug === productSlug && candidate.status === 'published'
   );
   if (!product) return {};
 
-  const title = localized(
-    locale,
-    product.seo?.titleRu || product.titleRu,
-    product.seo?.titleUz || product.titleUz,
-    product.seo?.titleEn || product.titleEn,
-    product.seo?.titleZh || product.titleZh,
-  );
-  const description = localized(
-    locale,
-    product.seo?.descriptionRu || product.shortDescriptionRu,
-    product.seo?.descriptionUz || product.shortDescriptionUz,
-    product.seo?.descriptionEn || product.shortDescriptionEn,
-    product.seo?.descriptionZh || product.shortDescriptionZh,
-  );
-  const pathname = `/product/${product.slug}`;
-
-  const explicitTitle = locale === 'ru' ? product.seo?.titleRu
-    : locale === 'uz' ? product.seo?.titleUz
-      : locale === 'en' ? product.seo?.titleEn
-        : product.seo?.titleZh;
-  return buildSeoMetadata({ locale, path: pathname, title, description, settings, image: product.mainImage, titleIsExplicit: Boolean(explicitTitle?.trim()) });
+  return buildProductMetadata(product, locale, settings, categories);
 }
 
 export default async function ProductSeoLayout({
@@ -67,23 +50,28 @@ export default async function ProductSeoLayout({
   const locale: Language = routing.locales.includes(rawLocale as Language)
     ? (rawLocale as Language)
     : 'ru';
-  const [products, categories] = await Promise.all([getPublicProducts(), getPublicCategories()]);
+  const [products, categories, settings] = await Promise.all([
+    getPublicProducts(), getPublicCategories(), getPublicSettings(),
+  ]);
   const product = products.find(
     (candidate) => candidate.slug === productSlug && candidate.status === 'published'
   );
   if (!product) notFound();
 
   const name = localized(locale, product.titleRu, product.titleUz, product.titleEn, product.titleZh);
-  const description = localized(
+  const effectiveSeo = getEffectiveProductSeo(product, locale, settings, categories);
+  const visibleDescription = localized(
     locale,
-    product.shortDescriptionRu,
-    product.shortDescriptionUz,
-    product.shortDescriptionEn,
-    product.shortDescriptionZh,
-  );
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  const productUrl = `${baseUrl}/${locale}/product/${product.slug}`;
-  const structuredData = buildProductStructuredData(product, { name, description, url: productUrl });
+    product.shortDescriptionRu || product.descriptionRu,
+    product.shortDescriptionUz || product.descriptionUz,
+    product.shortDescriptionEn || product.descriptionEn,
+    product.shortDescriptionZh || product.descriptionZh,
+  ) || effectiveSeo.description;
+  const structuredData = buildProductStructuredData(product, {
+    name,
+    description: visibleDescription,
+    url: effectiveSeo.absoluteCanonical,
+  });
   const category = resolveProductCategory(product, categories);
   const breadcrumbData = buildBreadcrumbStructuredData([
     { name: localized(locale, 'Главная', 'Bosh sahifa', 'Home', '首页'), path: `/${locale}` },

@@ -23,6 +23,20 @@ function extractLinks(html, rel) {
     .filter((attrs) => attrs.rel?.toLowerCase() === rel);
 }
 
+function extractMeta(html, attribute, value) {
+  return [...html.matchAll(/<meta\b[^>]*>/gi)]
+    .map((match) => attributes(match[0]))
+    .find((attrs) => attrs[attribute]?.toLowerCase() === value.toLowerCase())
+    ?.content || '';
+}
+
+function extractTitle(html) {
+  return (html.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function expectedAlternates(url) {
   const parsed = new URL(url);
   const match = parsed.pathname.match(/^\/(ru|uz|en|zh)(\/.*)?$/);
@@ -34,23 +48,45 @@ function expectedAlternates(url) {
   ]);
 }
 
-function jsonLdTypes(html) {
-  const types = new Set();
+function jsonLdDocuments(html) {
+  const documents = [];
   for (const match of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
-      const data = JSON.parse(match[1]);
-      const visit = (value) => {
-        if (!value || typeof value !== 'object') return;
-        if (typeof value['@type'] === 'string') types.add(value['@type']);
-        if (Array.isArray(value)) value.forEach(visit);
-        else Object.values(value).forEach(visit);
-      };
-      visit(data);
+      documents.push(JSON.parse(match[1]));
     } catch {
-      types.add('INVALID_JSON_LD');
+      documents.push({ '@type': 'INVALID_JSON_LD' });
     }
   }
+  return documents;
+}
+
+function jsonLdTypes(documents) {
+  const types = new Set();
+  const visit = (value) => {
+    if (!value || typeof value !== 'object') return;
+    if (typeof value['@type'] === 'string') types.add(value['@type']);
+    if (Array.isArray(value)) value.forEach(visit);
+    else Object.values(value).forEach(visit);
+  };
+  for (const document of documents) {
+    visit(document);
+  }
   return [...types].sort();
+}
+
+function findJsonLdType(documents, expectedType) {
+  let found;
+  const visit = (value) => {
+    if (found || !value || typeof value !== 'object') return;
+    if (value['@type'] === expectedType) {
+      found = value;
+      return;
+    }
+    if (Array.isArray(value)) value.forEach(visit);
+    else Object.values(value).forEach(visit);
+  };
+  documents.forEach(visit);
+  return found;
 }
 
 async function inspect(url) {
@@ -79,6 +115,12 @@ async function inspect(url) {
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  const title = extractTitle(html);
+  const description = extractMeta(html, 'name', 'description');
+  const openGraphTitle = extractMeta(html, 'property', 'og:title');
+  const openGraphDescription = extractMeta(html, 'property', 'og:description');
+  const openGraphUrl = extractMeta(html, 'property', 'og:url');
+  const openGraphImage = extractMeta(html, 'property', 'og:image');
   const errors = [];
   if (response.status !== 200) errors.push(`status=${response.status}`);
   if (response.headers.get('location')) errors.push(`redirect=${response.headers.get('location')}`);
@@ -86,6 +128,12 @@ async function inspect(url) {
   if (response.headers.get('x-robots-tag')?.toLowerCase().includes('noindex')) errors.push('x-robots-tag=noindex');
   if (robotsMeta.toLowerCase().includes('noindex')) errors.push('meta-robots=noindex');
   if (canonical !== url) errors.push(`canonical=${canonical || 'missing'}`);
+  if (!title) errors.push('missing-title');
+  if (!description) errors.push('missing-description');
+  if (!openGraphTitle) errors.push('missing-og-title');
+  if (!openGraphDescription) errors.push('missing-og-description');
+  if (openGraphUrl !== url) errors.push(`og-url=${openGraphUrl || 'missing'}`);
+  if (!openGraphImage) errors.push('missing-og-image');
   if (!h1) errors.push('missing-h1');
   if (expected) {
     for (const [locale, target] of Object.entries(expected)) {
@@ -95,16 +143,23 @@ async function inspect(url) {
       }
     }
   }
-  const types = jsonLdTypes(html);
+  const jsonLd = jsonLdDocuments(html);
+  const types = jsonLdTypes(jsonLd);
   if (types.includes('INVALID_JSON_LD')) errors.push('invalid-json-ld');
   if (new URL(url).pathname.includes('/product/')) {
     if (!types.includes('Product')) errors.push('missing-product-json-ld');
     if (!types.includes('BreadcrumbList')) errors.push('missing-product-breadcrumb-json-ld');
+    const product = findJsonLdType(jsonLd, 'Product');
+    const offerPrices = product?.offers
+      ? (Array.isArray(product.offers) ? product.offers : [product.offers]).map((offer) => Number(offer?.price))
+      : [];
+    if (offerPrices.some((price) => !Number.isFinite(price) || price <= 0)) errors.push('invalid-product-offer-price');
+    if (product?.aggregateRating || product?.review) errors.push('unexpected-review-or-rating');
   }
   if (new URL(url).pathname.includes('/catalog/') && !types.includes('BreadcrumbList')) {
     errors.push('missing-category-breadcrumb-json-ld');
   }
-  return { url, status: response.status, canonical, h1, types, errors };
+  return { url, status: response.status, canonical, title, description, h1, types, errors };
 }
 
 async function mapConcurrent(values, worker) {
@@ -117,7 +172,7 @@ async function mapConcurrent(values, worker) {
       try {
         results[index] = await worker(values[index]);
       } catch (error) {
-        results[index] = { url: values[index], status: 0, canonical: '', h1: '', types: [], errors: [`fetch=${error instanceof Error ? error.message : String(error)}`] };
+        results[index] = { url: values[index], status: 0, canonical: '', title: '', description: '', h1: '', types: [], errors: [`fetch=${error instanceof Error ? error.message : String(error)}`] };
       }
     }
   }));
@@ -139,14 +194,19 @@ console.log(`SANPACK production SEO verification: ${urls.length} sitemap URLs, c
 const results = await mapConcurrent(urls, inspect);
 const failures = results.filter((result) => result.errors.length);
 const typeCounts = new Map();
+const titleCounts = new Map();
 for (const result of results) {
   for (const type of result.types) typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
+  titleCounts.set(result.title, (titleCounts.get(result.title) || 0) + 1);
 }
+const duplicateTitles = [...titleCounts.entries()].filter(([title, count]) => title && count > locales.length);
 
 console.log(`Passed: ${results.length - failures.length}`);
 console.log(`Failed: ${failures.length}`);
 console.log(`Composition: products=${urls.filter((url) => new URL(url).pathname.includes('/product/')).length}, taxonomy=${urls.filter((url) => new URL(url).pathname.includes('/catalog/')).length}, static=${urls.filter((url) => !new URL(url).pathname.includes('/product/') && !new URL(url).pathname.includes('/catalog/')).length}`);
 console.log(`JSON-LD types: ${[...typeCounts.entries()].sort().map(([type, count]) => `${type}=${count}`).join(', ') || 'none'}`);
+console.log(`Effective title diagnostics: ${duplicateTitles.length} title(s) reused across more than one locale set.`);
+for (const [title, count] of duplicateTitles.slice(0, 20)) console.warn(`- title x${count}: ${title}`);
 if (failures.length) {
   for (const failure of failures.slice(0, 100)) console.error(`- ${failure.url}: ${failure.errors.join(', ')}`);
   if (failures.length > 100) console.error(`...and ${failures.length - 100} more failure(s).`);

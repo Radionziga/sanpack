@@ -2,17 +2,22 @@
 
 import { useState } from 'react';
 import { FilePlus2, Plus, Search, Trash2 } from 'lucide-react';
-import type { Product, ProductDocument, WholesaleTier } from '@/types';
+import type { Category, Language, Product, ProductDocument, SiteSettings, WholesaleTier } from '@/types';
 import { SeoFieldsEditor } from '@/components/admin/SeoFieldsEditor';
+import { getEffectiveProductSeo } from '@/lib/seo/policy';
+import { createCatalogSlug } from '@/lib/catalog/catalogSlugs';
 
 interface ProductCmsFieldsProps {
   product: Partial<Product>;
   products: Product[];
-  canonicalPath: string;
+  categories: Category[];
+  settings: SiteSettings;
   onChange: (patch: Partial<Product>) => void;
 }
 
-export function ProductCmsFields({ product, products, canonicalPath, onChange }: ProductCmsFieldsProps) {
+const seoLocales: Language[] = ['ru', 'uz', 'en', 'zh'];
+
+export function ProductCmsFields({ product, products, categories, settings, onChange }: ProductCmsFieldsProps) {
   const [relationQuery, setRelationQuery] = useState('');
   const tiers = product.wholesaleTiers || [];
   const documents = product.documents || [];
@@ -21,6 +26,18 @@ export function ProductCmsFields({ product, products, canonicalPath, onChange }:
     !normalizedRelationQuery
     || `${candidate.titleRu} ${candidate.sku} ${candidate.brandName || ''}`.toLocaleLowerCase('ru-RU').includes(normalizedRelationQuery)
   ));
+  const seoPreviewProduct = {
+    ...product,
+    slug: product.slug || createCatalogSlug(product.titleRu || '', product.sku || ''),
+  };
+  const automaticSeo = Object.fromEntries(seoLocales.map((locale) => [
+    locale,
+    getEffectiveProductSeo({ ...seoPreviewProduct, seo: undefined }, locale, settings, categories),
+  ])) as Record<Language, ReturnType<typeof getEffectiveProductSeo>>;
+  const effectiveSeo = Object.fromEntries(seoLocales.map((locale) => [
+    locale,
+    getEffectiveProductSeo(seoPreviewProduct, locale, settings, categories),
+  ])) as Record<Language, ReturnType<typeof getEffectiveProductSeo>>;
 
   const updateTier = (index: number, patch: Partial<WholesaleTier>) => {
     onChange({ wholesaleTiers: tiers.map((tier, tierIndex) => tierIndex === index ? { ...tier, ...patch } : tier) });
@@ -95,12 +112,11 @@ export function ProductCmsFields({ product, products, canonicalPath, onChange }:
     </section>
 
     <section id="product-seo" className="admin-panel scroll-mt-20 space-y-5 p-5 md:p-6">
-      <div><h4 className="admin-section-heading">SEO товара</h4><p className="admin-section-description">Необязательные метаданные. При пустом значении storefront использует название и краткое описание товара.</p></div>
+      <div><h4 className="admin-section-heading">SEO товара</h4><p className="admin-section-description">Title, description, canonical, языковые версии и social preview формируются автоматически. Ручные поля — только для точечного переопределения.</p></div>
       <SeoFieldsEditor
         value={product.seo}
-        fallbackTitles={{ ru: product.titleRu, uz: product.titleUz || product.titleRu, en: product.titleEn || product.titleRu, zh: product.titleZh || product.titleEn || product.titleRu }}
-        fallbackDescriptions={{ ru: product.shortDescriptionRu, uz: product.shortDescriptionUz || product.shortDescriptionRu, en: product.shortDescriptionEn || product.shortDescriptionRu, zh: product.shortDescriptionZh || product.shortDescriptionEn || product.shortDescriptionRu }}
-        canonicalPath={canonicalPath}
+        automaticValues={automaticSeo}
+        effectiveValues={effectiveSeo}
         onChange={(seo) => onChange({ seo })}
       />
     </section>

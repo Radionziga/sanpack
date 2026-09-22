@@ -49,6 +49,7 @@ import {
   getProductSalesUnitLabel,
 } from '@/lib/catalog/productPresentation';
 import { getProductGalleryImages } from '@/lib/catalog/productGallery';
+import { buildProductImageAlt } from '@/lib/seo/policy';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
 import { getCategoryPath, resolveProductCategory } from '@/lib/catalog/categoryHierarchy';
 import { CatalogBreadcrumbs } from '@/components/catalog/CategoryNavigation';
@@ -417,6 +418,17 @@ export function ProductDetailClient({
     [product.mainImage, ...(product.images || [])],
     selectedVariant?.image,
   );
+  const productGallerySources = [product.mainImage, ...(product.images || [])];
+  const galleryImageAlts = galleryImages.map((image) => {
+    const isSelectedVariantImage = Boolean(selectedVariant?.image && image === selectedVariant.image);
+    const productImageIndex = productGallerySources.indexOf(image);
+    return buildProductImageAlt({
+      product,
+      locale: language,
+      variant: isSelectedVariantImage ? selectedVariant || undefined : undefined,
+      galleryIndex: productImageIndex >= 0 ? productImageIndex + 1 : undefined,
+    });
+  });
   const quantityLabel = t('quantity').replace(/:\s*$/, '');
   const commercialDetails = getProductCommercialDetails(product, language, selectedVariant || undefined);
   const quantityAriaLabel = `${quantityLabel}: ${title}${selectedVariant ? ` — ${getLocalizedText(selectedVariant.titleRu, selectedVariant.titleUz, selectedVariant.titleEn, selectedVariant.titleZh)}` : ''}`;
@@ -442,7 +454,7 @@ export function ProductDetailClient({
           <div className="mb-8 grid grid-cols-1 gap-0 md:gap-7 lg:mb-12 lg:grid-cols-12 lg:gap-x-12 lg:gap-y-8">
             {/* Col 1: Gallery */}
             <div className="relative order-1 lg:col-span-7">
-              <ProductGallery images={galleryImages} title={title} mobileEdgeToEdge />
+              <ProductGallery images={galleryImages} imageAlts={galleryImageAlts} title={title} mobileEdgeToEdge />
               <Link
                 href={resolveProductCategory(product, categories) ? getCategoryPath(resolveProductCategory(product, categories)!, categories) : '/catalog'}
                 aria-label={copy.back || t('catalog')}

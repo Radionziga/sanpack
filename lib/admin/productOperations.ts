@@ -89,6 +89,9 @@ export function createProductDuplicateDraft(
     titleRu: `${source.titleRu} — копия`,
     featured: false,
     newProduct: false,
+    // Manual SEO copy often contains source-specific wording. A duplicate starts
+    // from the automatic policy derived from its own new title and canonical.
+    seo: undefined,
     variants: (source.variants || []).map((variant) => ({ ...variant, id: input.createVariantId(), sku: '' })),
     createdAt: input.now,
     updatedAt: input.now,

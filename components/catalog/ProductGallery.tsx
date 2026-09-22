@@ -9,10 +9,11 @@ import { hasProductImage } from '@/lib/catalog/productImages';
 interface ProductGalleryProps {
   images: string[];
   title: string;
+  imageAlts?: string[];
   mobileEdgeToEdge?: boolean;
 }
 
-export function ProductGallery({ images, title, mobileEdgeToEdge = false }: ProductGalleryProps) {
+export function ProductGallery({ images, title, imageAlts, mobileEdgeToEdge = false }: ProductGalleryProps) {
   const t = useTranslations('productGallery');
   const availableImages = images.filter(hasProductImage);
   const imageScope = availableImages.join('\n');
@@ -20,6 +21,8 @@ export function ProductGallery({ images, title, mobileEdgeToEdge = false }: Prod
   const activeImage = selection.scope === imageScope && availableImages.includes(selection.image)
     ? selection.image
     : availableImages[0] || '';
+  const activeImageIndex = images.indexOf(activeImage);
+  const activeAlt = imageAlts?.[activeImageIndex] || title;
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const zoomTriggerRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -64,7 +67,7 @@ export function ProductGallery({ images, title, mobileEdgeToEdge = false }: Prod
       }`}>
         <ProductImage
           source={activeImage}
-          alt={title}
+          alt={activeAlt}
           loading="eager"
           fetchPriority="high"
           sizes="(min-width: 1024px) 45vw, 90vw"
@@ -114,7 +117,7 @@ export function ProductGallery({ images, title, mobileEdgeToEdge = false }: Prod
             >
               <ProductImage
                 source={img}
-                alt={`${title} — ${idx + 1}`}
+                alt=""
                 sizes="80px"
                 variant="compact"
                 imageClassName="object-contain p-1"
@@ -152,7 +155,7 @@ export function ProductGallery({ images, title, mobileEdgeToEdge = false }: Prod
             <div className="relative h-full w-full">
               <ProductImage
                 source={activeImage}
-                alt={title}
+                alt={activeAlt}
                 sizes="(min-width: 640px) 90vw, 100vw"
                 variant="detail"
                 imageClassName="object-contain"

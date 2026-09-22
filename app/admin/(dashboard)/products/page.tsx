@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
-import { Product, Category, Attribute } from '@/types';
+import { Product, Category, Attribute, SiteSettings } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AiTranslateButton } from '@/components/admin/AiTranslateButton';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -25,6 +25,7 @@ import { filterAndSortAdminProducts, type AdminProductSort } from '@/lib/admin/p
 import { trapDialogFocus } from '@/lib/admin/dialogLifecycle';
 import { useUnsavedNavigationGuard } from '@/lib/admin/useUnsavedNavigationGuard';
 import { getCategoryBreadcrumb, getCompactCategoryName, getProductReadiness, productStatusLabels, stockStatusLabels } from '@/lib/admin/productOperations';
+import { initialSiteSettings } from '@/lib/seedData';
 
 const PRODUCTS_PER_PAGE = 50;
 
@@ -121,6 +122,7 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(initialSiteSettings);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -268,14 +270,16 @@ export default function AdminProductsPage() {
     setLoading(true);
     setLoadError('');
     try {
-      const [p, c, a] = await Promise.all([
+      const [p, c, a, settings] = await Promise.all([
         AdminRepository.getProducts(),
         AdminRepository.getCategories(),
         AdminRepository.getAttributes(),
+        AdminRepository.getSettings(),
       ]);
       setProducts(p);
       setCategories(c);
       setAttributes(a);
+      setSiteSettings(settings);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить каталог.');
     } finally {
@@ -718,7 +722,7 @@ export default function AdminProductsPage() {
                       <td className="p-3.5">
                         <div className="flex min-w-64 items-center gap-3">
                           {p.mainImage ? <Image src={p.mainImage} alt="" width={48} height={48} className="size-12 shrink-0 rounded-[var(--sp-radius-sm)] border border-[var(--sp-line)] bg-[var(--sp-surface)] object-contain p-1" /> : <span className="flex size-12 shrink-0 items-center justify-center rounded-[var(--sp-radius-sm)] border border-dashed border-[var(--sp-line)] bg-[var(--sp-surface-inset)] text-[9px] text-[var(--sp-ink-tertiary)]">Нет фото</span>}
-                          <span className="min-w-0"><button type="button" onClick={() => openProductEditor(p)} className="block max-w-72 truncate text-left font-bold text-[var(--sp-ink)] hover:text-[var(--sp-brand)] hover:underline">{p.titleRu}</button><span className="mt-0.5 block font-mono text-[10px] text-[var(--sp-ink-tertiary)]">{p.sku || 'SKU не указан'}</span>{readiness.issues.length ? <button type="button" onClick={() => { setIssuesOnly(true); setPage(1); }} className={`mt-1 inline-flex items-center gap-1 text-[10px] font-semibold ${readiness.blockers.length ? 'text-[var(--sp-danger)]' : 'text-amber-700'}`} title={readiness.issues.map((issue) => issue.label).join('\n')}><TriangleAlert className="size-3" />Нужно проверить: {readiness.issues.length}</button> : <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700"><Check className="size-3" />Карточка готова</span>}</span>
+                          <span className="min-w-0"><button type="button" onClick={() => openProductEditor(p)} className="block max-w-72 truncate text-left font-bold text-[var(--sp-ink)] hover:text-[var(--sp-brand)] hover:underline">{p.titleRu}</button><span className="mt-0.5 block font-mono text-[10px] text-[var(--sp-ink-tertiary)]">{p.sku || 'SKU не указан'}</span>{readiness.issues.length ? <button type="button" onClick={() => { setIssuesOnly(true); setPage(1); }} className={`mt-1 inline-flex items-center gap-1 text-[10px] font-semibold ${readiness.blockers.length ? 'text-[var(--sp-danger)]' : 'text-amber-700'}`} title={readiness.issues.map((issue) => issue.label).join('\n')}><TriangleAlert className="size-3" />Нужно проверить: {readiness.issues.length}</button> : <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700"><Check className="size-3" />Карточка и SEO готовы</span>}</span>
                         </div>
                       </td>
                       <td className="max-w-48 p-3.5 font-semibold text-[var(--sp-ink-secondary)]" title={getCategoryBreadcrumb(p, categories)}>
@@ -1312,7 +1316,8 @@ export default function AdminProductsPage() {
             <ProductCmsFields
               product={editingProduct}
               products={products}
-              canonicalPath={`/product/${editingProduct.slug || createCatalogSlug(editingProduct.titleRu || '', editingProduct.sku || '')}`}
+              categories={categories}
+              settings={siteSettings}
               onChange={(patch) => setEditingProduct({ ...editingProduct, ...patch })}
             />
 

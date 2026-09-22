@@ -7,6 +7,8 @@ import {
   getPublicSettings,
 } from '@/lib/repositories/serverCatalogRepository';
 import { logError } from '@/lib/observability/logger';
+import { isProductSeoIndexable, safeSitemapLastModified } from '@/lib/seo/policy';
+import { localeAlternates, siteBaseUrl } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,15 +26,8 @@ const staticRoutes = [
   '/links',
 ];
 
-function languageAlternates(baseUrl: string, path: string) {
-  return Object.fromEntries([
-    ...routing.locales.map((locale) => [locale, `${baseUrl}/${locale}${path}`]),
-    ['x-default', `${baseUrl}/ru${path}`],
-  ]);
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const baseUrl = siteBaseUrl();
   const [products, categories, settings] = await Promise.all([
     getPublicProducts().catch((error) => {
       logError('sitemap.products_failed', error);
@@ -53,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/${locale}${route}`,
       changeFrequency: route === '' ? ('weekly' as const) : ('monthly' as const),
       priority: route === '' ? 1 : route === '/catalog' ? 0.9 : 0.6,
-      alternates: { languages: languageAlternates(baseUrl, route) },
+      alternates: { languages: localeAlternates(route) },
     }))
   );
   const localizedCategories = routing.locales.flatMap((locale) =>
@@ -63,20 +58,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: 'weekly' as const,
         priority: 0.8,
         alternates: {
-          languages: languageAlternates(baseUrl, getCategoryPath(category, categories)),
+          languages: localeAlternates(getCategoryPath(category, categories)),
         },
       }))
   );
   const localizedProducts = routing.locales.flatMap((locale) =>
     products
-      .filter((product) => product.status === 'published')
+      .filter((product) => isProductSeoIndexable(product, categories))
       .map((product) => ({
         url: `${baseUrl}/${locale}/product/${product.slug}`,
-        lastModified: new Date(product.updatedAt),
+        lastModified: safeSitemapLastModified(product.updatedAt),
         changeFrequency: 'weekly' as const,
         priority: 0.7,
         alternates: {
-          languages: languageAlternates(baseUrl, `/product/${product.slug}`),
+          languages: localeAlternates(`/product/${product.slug}`),
         },
       }))
   );

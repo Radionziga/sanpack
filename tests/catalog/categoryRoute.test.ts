@@ -47,6 +47,26 @@ describe('actual category route boundary', () => {
     }
   });
 
+  it('automatically follows Product publication and visible taxonomy lineage in sitemap', async () => {
+    const published = createProduct({ id: 'published', slug: 'published', categoryId: 'grains', categorySlug: 'grains', status: 'published' });
+    const draft = createProduct({ id: 'draft', slug: 'draft', categoryId: 'grains', categorySlug: 'grains', status: 'draft' });
+    vi.mocked(getPublicProducts).mockResolvedValue([published, draft]);
+    let entries = await sitemap();
+    expect(entries.some((entry) => entry.url.endsWith('/ru/product/published'))).toBe(true);
+    expect(entries.some((entry) => entry.url.endsWith('/ru/product/draft'))).toBe(false);
+
+    vi.mocked(getPublicProducts).mockResolvedValue([{ ...draft, status: 'published' }]);
+    entries = await sitemap();
+    expect(entries.some((entry) => entry.url.endsWith('/ru/product/draft'))).toBe(true);
+
+    vi.mocked(getPublicCategories).mockResolvedValue(taxonomyCategories.map((category) => (
+      category.id === 'grocery' ? { ...category, status: 'hidden' as const } : category
+    )));
+    entries = await sitemap();
+    expect(entries.some((entry) => entry.url.includes('/product/draft'))).toBe(false);
+    expect(entries.some((entry) => entry.url.includes('/catalog/grocery/grains'))).toBe(false);
+  });
+
   it('includes the Link Hub in sitemap only while it is enabled', async () => {
     expect((await sitemap()).some((entry) => entry.url.endsWith('/ru/links'))).toBe(true);
     vi.mocked(getPublicSettings).mockResolvedValue({

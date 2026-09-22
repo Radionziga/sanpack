@@ -3,7 +3,7 @@ import type { Language, SiteSettings } from '@/types';
 import { routing } from '@/i18n/routing';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
 
-export const siteBaseUrl = () => process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+export const siteBaseUrl = () => (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
 export function localizedSiteDescription(settings: SiteSettings, locale: Language) {
   return resolveLocalizedText(locale, {

@@ -196,6 +196,13 @@ test.describe('production-like hard entries', () => {
     });
     await dialog.getByRole('link', { name: 'SEO', exact: true }).click();
     await expect(page).toHaveURL(/#product-seo$/);
+    await expect(dialog.getByText('SEO готово', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('abc — SANPACK', { exact: true }).first()).toBeVisible();
+    const seoTitle = dialog.getByLabel('SEO title RU');
+    await seoTitle.fill('Ручной тестовый title');
+    await expect(dialog.getByRole('button', { name: 'Использовать автоматическое значение' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Использовать автоматическое значение' }).click();
+    await expect(seoTitle).toHaveValue('');
     expect(discardPrompts).toBe(0);
 
     await page.keyboard.press('Escape');
@@ -252,13 +259,14 @@ test.describe('production-like hard entries', () => {
     await expect(page).toHaveURL(/\/admin\/products$/);
     await expect(addProduct).toBeVisible();
     await expect(denied).toHaveCount(0);
+    const readsAfterAllowedProducts = resourceReads.length;
 
     await page.goBack();
     await expect(page).toHaveURL(/\/admin\/settings$/);
     await expect(denied).toBeVisible();
     await expect(addProduct).toHaveCount(0);
     await expect(page.locator('#admin-content input, #admin-content button')).toHaveCount(0);
-    expect(resourceReads.some((url) => url.includes('resource=settings'))).toBe(false);
+    expect(resourceReads).toHaveLength(readsAfterAllowedProducts);
 
     await page.goForward();
     await expect(page).toHaveURL(/\/admin\/products$/);

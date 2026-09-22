@@ -7,6 +7,8 @@ import { BagDesigner } from '@/components/bag-designer/BagDesigner';
 import { getBagDesignerSettings } from '@/lib/bag-designer/settings';
 import { routing } from '@/i18n/routing';
 import type { Language } from '@/types';
+import { getPublicSettings } from '@/lib/repositories/serverCatalogRepository';
+import { buildContentMetadata } from '@/lib/seo/policy';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,17 +22,14 @@ const metadataCopy: Record<Language, { title: string; description: string }> = {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale: rawLocale } = await params;
   const locale: Language = routing.locales.includes(rawLocale as Language) ? rawLocale as Language : 'ru';
-  const path = '/bag-designer';
-  return {
-    ...metadataCopy[locale],
-    alternates: {
-      canonical: `/${locale}${path}`,
-      languages: Object.fromEntries([
-        ...routing.locales.map((language) => [language, `/${language}${path}`]),
-        ['x-default', `/ru${path}`],
-      ]),
-    },
-  };
+  const settings = await getPublicSettings();
+  return buildContentMetadata({
+    locale,
+    path: '/bag-designer',
+    title: metadataCopy[locale].title,
+    description: metadataCopy[locale].description,
+    settings,
+  });
 }
 
 export default async function BagDesignerPage({ params }: { params: Promise<{ locale: Language }> }) {

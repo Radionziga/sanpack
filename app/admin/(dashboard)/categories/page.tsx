@@ -9,11 +9,13 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { SeoFieldsEditor } from '@/components/admin/SeoFieldsEditor';
 import { AdminRepository } from '@/lib/repositories/adminRepository';
-import type { Category, Product } from '@/types';
-import { getCategoryDepth, getCategoryLabel, getCategoryPath, getOrderedCategories, getProductsInCategoryScope, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
+import type { Category, Language, Product, SiteSettings } from '@/types';
+import { getCategoryDepth, getCategoryLabel, getOrderedCategories, getProductsInCategoryScope, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
 import { useUnsavedNavigationGuard } from '@/lib/admin/useUnsavedNavigationGuard';
 import { getCategoryArtworkSource } from '@/lib/catalog/categoryArtwork';
 import { getPopularCategoryArtworkSource, getStorefrontCategoryGroups } from '@/lib/catalog/popularCategoryArtwork';
+import { initialSiteSettings } from '@/lib/seedData';
+import { getEffectiveCategorySeo } from '@/lib/seo/policy';
 
 const newCategory: Partial<Category> = {
   titleRu: '',
@@ -29,6 +31,8 @@ const newCategory: Partial<Category> = {
   sortOrder: 1,
 };
 
+const seoLocales: Language[] = ['ru', 'uz', 'en', 'zh'];
+
 function getCategoryMediaPaths(category?: Partial<Category>) {
   return new Set([
     category?.imagePath,
@@ -40,6 +44,7 @@ function getCategoryMediaPaths(category?: Partial<Category>) {
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(initialSiteSettings);
   const [editingCategory, setEditingCategory] = useState<Partial<Category>>({ ...newCategory });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,9 +68,12 @@ export default function AdminCategoriesPage() {
     setLoading(true);
     setPageError('');
     try {
-      const [data, productData] = await Promise.all([AdminRepository.getCategories(), AdminRepository.getProducts()]);
+      const [data, productData, settings] = await Promise.all([
+        AdminRepository.getCategories(), AdminRepository.getProducts(), AdminRepository.getSettings(),
+      ]);
       setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
       setProducts(productData);
+      setSiteSettings(settings);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : 'Не удалось загрузить категории.');
     } finally {
@@ -75,11 +83,12 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([AdminRepository.getCategories(), AdminRepository.getProducts()])
-      .then(([data, productData]) => {
+    Promise.all([AdminRepository.getCategories(), AdminRepository.getProducts(), AdminRepository.getSettings()])
+      .then(([data, productData, settings]) => {
         if (active) {
           setCategories(data.slice().sort((a, b) => a.sortOrder - b.sortOrder));
           setProducts(productData);
+          setSiteSettings(settings);
         }
       })
       .catch((error: unknown) => {
@@ -238,7 +247,14 @@ export default function AdminCategoriesPage() {
     slug: editingCategory.slug || 'novaya-kategoriya',
   } as Category;
   const previewCategories = [...categories.filter((category) => category.id !== previewCategory.id), previewCategory];
-  const canonicalPath = getCategoryPath(previewCategory, previewCategories);
+  const automaticSeo = Object.fromEntries(seoLocales.map((locale) => [
+    locale,
+    getEffectiveCategorySeo({ ...previewCategory, seo: undefined }, locale, siteSettings, previewCategories),
+  ])) as Record<Language, ReturnType<typeof getEffectiveCategorySeo>>;
+  const effectiveSeo = Object.fromEntries(seoLocales.map((locale) => [
+    locale,
+    getEffectiveCategorySeo(previewCategory, locale, siteSettings, previewCategories),
+  ])) as Record<Language, ReturnType<typeof getEffectiveCategorySeo>>;
 
   return (
     <div className="admin-page space-y-6">
@@ -447,12 +463,11 @@ export default function AdminCategoriesPage() {
 
           <section className="admin-section">
             <h3 className="admin-section-heading">SEO категории</h3>
-            <p className="admin-section-description">Необязательные заголовки и описания для поисковых систем. Если оставить пустыми, используются обычные название и описание.</p>
+            <p className="admin-section-description">Metadata, canonical, языковые версии, breadcrumbs и sitemap eligibility формируются автоматически. Ручные поля — только для точечного переопределения.</p>
             <div className="mt-4"><SeoFieldsEditor
               value={editingCategory.seo}
-              fallbackTitles={{ ru: editingCategory.titleRu, uz: editingCategory.titleUz || editingCategory.titleRu, en: editingCategory.titleEn || editingCategory.titleRu, zh: editingCategory.titleZh || editingCategory.titleEn || editingCategory.titleRu }}
-              fallbackDescriptions={{ ru: editingCategory.descriptionRu, uz: editingCategory.descriptionUz || editingCategory.descriptionRu, en: editingCategory.descriptionEn || editingCategory.descriptionRu, zh: editingCategory.descriptionZh || editingCategory.descriptionEn || editingCategory.descriptionRu }}
-              canonicalPath={canonicalPath}
+              automaticValues={automaticSeo}
+              effectiveValues={effectiveSeo}
               onChange={(seo) => setEditingCategory((current) => ({ ...current, seo }))}
             /></div>
           </section>

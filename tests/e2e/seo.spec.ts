@@ -16,16 +16,41 @@ test('static content routes have their own canonical localized metadata', async 
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', /\/en\/about$/);
 });
 
+test('public service route uses the shared metadata factory instead of Home social URLs', async ({ page }) => {
+  const response = await page.goto('/uz/bag-designer');
+  expect(response?.status()).toBe(200);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/uz\/bag-designer$/);
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', /\/uz\/bag-designer$/);
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /paket konstruktori/i);
+});
+
 test('product metadata and JSON-LD use the canonical offer page', async ({ page, request }) => {
-  const products = await (await request.get('/api/catalog?resource=products')).json() as Array<{ slug: string }>;
+  const products = await (await request.get('/api/catalog?resource=products')).json() as Array<{ slug: string; titleRu: string }>;
   const product = products[0];
   expect(product).toBeTruthy();
   const response = await page.goto(`/ru/product/${product.slug}`, { waitUntil: 'domcontentloaded' });
   expect(response?.status()).toBe(200);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new RegExp(`/ru/product/${product.slug}$`));
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /.{20,}/);
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /\S+/);
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', /.{20,}/);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /\S+/);
+  await expect(page.locator('main img').first()).toHaveAttribute('alt', product.titleRu);
   const structured = await page.locator('script[type="application/ld+json"]').evaluateAll((nodes) => nodes.map((node) => JSON.parse(node.textContent || '{}')));
   expect(structured.some((item) => item['@type'] === 'Product')).toBe(true);
   expect(structured.some((item) => item['@type'] === 'BreadcrumbList')).toBe(true);
+});
+
+test('request-price Product keeps automatic metadata without inventing an Offer', async ({ page, request }) => {
+  const products = await (await request.get('/api/catalog?resource=products')).json() as Array<{ slug: string; priceMode?: string; showPrice?: boolean }>;
+  const product = products.find((candidate) => candidate.priceMode === 'request' || candidate.showPrice === false);
+  test.skip(!product, 'Current fixture has no request-price Product.');
+  expect((await page.goto(`/en/product/${product!.slug}`, { waitUntil: 'domcontentloaded' }))?.status()).toBe(200);
+  const structured = await page.locator('script[type="application/ld+json"]').evaluateAll((nodes) => nodes.map((node) => JSON.parse(node.textContent || '{}')));
+  const productData = structured.find((item) => item['@type'] === 'Product');
+  expect(productData).toBeTruthy();
+  expect(productData.offers).toBeUndefined();
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /SANPACK/);
 });
 
 test('nested subcategory metadata follows its real lineage when available', async ({ page, request }) => {
