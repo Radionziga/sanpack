@@ -182,7 +182,7 @@ export function CatalogHome({
         </div>
 
         <div className="min-w-0">
-          <PromoCarousel banners={banners} locale={locale} />
+          <PromoCarousel banners={banners} categories={categories} locale={locale} />
 
           <div className="mt-7">
             <StorefrontMobileCategoryRail categories={categories} showFeaturedGroups />

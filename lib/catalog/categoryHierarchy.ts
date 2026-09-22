@@ -4,6 +4,10 @@ import type { Category, Product } from '@/types';
 // Subcategory (2). No persisted depth/path or arbitrary-depth taxonomy.
 export const MAX_CATEGORY_DEPTH = 2;
 export const RESERVED_CATEGORY_SLUGS = new Set(['print']);
+const RETIRED_CATEGORY_PATHS: Readonly<Record<string, string>> = {
+  '/catalog/branding-polygraphy': '/branding',
+  '/catalog/svezhaya-zelen-novagreen': '/catalog/ovoshchi-frukty-zelen/svezhaya-zelen',
+};
 
 function lineageFromMap(id: string, byId: Map<string, Category>): Category[] {
   const lineage: Category[] = [];
@@ -100,6 +104,27 @@ export function resolveCategoryRoute(segments: string[], categories: Category[])
   const path = getCategoryPath(category, categories);
   if (segments.length === 2 && path !== `/catalog/${segments.join('/')}`) return null;
   return { category, path, redirect: segments.length === 1 && getCategoryDepth(category.id, categories) === 2 };
+}
+
+/** Keep CMS-managed internal links on the current canonical taxonomy route. */
+export function getCanonicalInternalCatalogHref(href: string, categories: Category[]) {
+  if (!href.startsWith('/')) return href;
+  const base = 'https://sanpack.internal';
+  const parsed = new URL(href, base);
+  if (parsed.origin !== base) return href;
+
+  const localeMatch = parsed.pathname.match(/^\/(ru|uz|en|zh)(?=\/)/);
+  const localePrefix = localeMatch?.[0] || '';
+  const unlocalizedPath = localePrefix ? parsed.pathname.slice(localePrefix.length) : parsed.pathname;
+  let canonicalPath = RETIRED_CATEGORY_PATHS[unlocalizedPath] || unlocalizedPath;
+
+  if (!RETIRED_CATEGORY_PATHS[unlocalizedPath] && canonicalPath.startsWith('/catalog/')) {
+    const segments = canonicalPath.slice('/catalog/'.length).split('/').filter(Boolean);
+    const resolved = resolveCategoryRoute(segments, categories);
+    if (resolved) canonicalPath = resolved.path;
+  }
+
+  return `${localePrefix}${canonicalPath}${parsed.search}${parsed.hash}`;
 }
 
 /** Validate the resulting subtree, including a move that would deepen children. */

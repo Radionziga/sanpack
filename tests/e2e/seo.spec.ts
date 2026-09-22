@@ -75,4 +75,8 @@ test('known retired taxonomy URLs redirect directly to their current public repl
   const greens = await request.get('/uz/catalog/svezhaya-zelen-novagreen', { maxRedirects: 0 });
   expect(greens.status()).toBe(308);
   expect(greens.headers().location).toBe('/uz/catalog/ovoshchi-frukty-zelen/svezhaya-zelen');
+
+  const home = await (await request.get('/ru')).text();
+  expect(home).not.toContain('href="/ru/catalog/svezhaya-zelen-novagreen"');
+  expect(home).toContain('href="/ru/catalog/ovoshchi-frukty-zelen/svezhaya-zelen"');
 });

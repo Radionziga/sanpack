@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCategoryBreadcrumbs, getCategoryDepth, getCategoryLabel, getCategoryLineage, getCategoryPath, getCategoryScopeIds, getProductsInCategoryScope, getVisibleCategories, isProductCategory, resolveCategoryRoute, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
+import { getCanonicalInternalCatalogHref, getCategoryBreadcrumbs, getCategoryDepth, getCategoryLabel, getCategoryLineage, getCategoryPath, getCategoryScopeIds, getProductsInCategoryScope, getVisibleCategories, isProductCategory, resolveCategoryRoute, validateCategoryPlacement, validateCategorySave } from '@/lib/catalog/categoryHierarchy';
 import { getCategoryMetadata } from '@/lib/catalog/categoryMetadata';
 import { initialSiteSettings } from '@/lib/seedData';
 import { getApplicableAttributes } from '@/lib/catalog/attributeApplicability';
@@ -106,6 +106,12 @@ describe('routes, breadcrumbs and SEO', () => {
     expect(getCategoryBreadcrumbs(categories[1], categories).map(({ href }) => href)).toEqual(['/catalog/grocery']);
     expect(getCategoryBreadcrumbs(categories[2], categories).map(({ href }) => href)).toEqual(['/catalog/grocery', '/catalog/grocery/grains']);
     expect(getCategoryLabel('grains', categories)).toBe('food / grocery / grains');
+  });
+  it('canonicalizes CMS-managed category links without changing external URLs', () => {
+    expect(getCanonicalInternalCatalogHref('/catalog/grains?utm_source=banner', categories)).toBe('/catalog/grocery/grains?utm_source=banner');
+    expect(getCanonicalInternalCatalogHref('/uz/catalog/grains#products', categories)).toBe('/uz/catalog/grocery/grains#products');
+    expect(getCanonicalInternalCatalogHref('/catalog/svezhaya-zelen-novagreen', categories)).toBe('/catalog/ovoshchi-frukty-zelen/svezhaya-zelen');
+    expect(getCanonicalInternalCatalogHref('https://example.com/catalog/grains', categories)).toBe('https://example.com/catalog/grains');
   });
   it.each(['ru', 'uz', 'en', 'zh'] as const)('generates canonical and hreflang for %s', (locale) => {
     const meta = getCategoryMetadata(['grocery', 'grains'], locale, categories, initialSiteSettings);

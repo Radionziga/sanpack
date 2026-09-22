@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getImageProps } from 'next/image';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Banner, Language } from '@/types';
+import type { Banner, Category, Language } from '@/types';
 import { Link } from '@/i18n/navigation';
 import { resolveLocalizedText } from '@/lib/i18n/localizedText';
+import { getCanonicalInternalCatalogHref } from '@/lib/catalog/categoryHierarchy';
 
 const labels = {
   ru: { region: 'Промо-предложения', previous: 'Предыдущий баннер', next: 'Следующий баннер', slide: 'Показать баннер' },
@@ -60,7 +61,7 @@ function BannerImage({ banner, alt, eager }: { banner: Banner; alt: string; eage
   );
 }
 
-export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: Language }) {
+export function PromoCarousel({ banners, categories, locale }: { banners: Banner[]; categories: Category[]; locale: Language }) {
   const slides = useMemo(() => banners
     .filter((banner) => banner.active && banner.imageDesktop)
     .slice()
@@ -206,8 +207,9 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
             const title = localizedTitle(banner, locale);
             const subtitle = localizedSubtitle(banner, locale);
             const buttonText = localizedButtonText(banner, locale);
+            const bannerHref = banner.link ? getCanonicalInternalCatalogHref(banner.link, categories) : undefined;
             const hasText = Boolean(title || subtitle);
-            const hasButton = Boolean(buttonText && banner.link);
+            const hasButton = Boolean(buttonText && bannerHref);
             const isActive = !clone && logicalIndex === activeIndex;
 
             const content = (
@@ -234,11 +236,11 @@ export function PromoCarousel({ banners, locale }: { banners: Banner[]; locale: 
             return (
               <div key={key} aria-hidden={clone || !isActive} className="relative min-w-[calc(100%-0.75rem)] snap-start py-1 sm:min-w-full">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] shadow-sm sm:aspect-video md:aspect-[24/7]">
-                  {banner.link ? (
-                    banner.link.startsWith('/') ? (
-                      <Link href={banner.link} tabIndex={isActive ? 0 : -1} aria-label={buttonText ? `${buttonText}: ${title || copy.region}` : title || copy.region} className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]">{content}</Link>
+                  {bannerHref ? (
+                    bannerHref.startsWith('/') ? (
+                      <Link href={bannerHref} tabIndex={isActive ? 0 : -1} aria-label={buttonText ? `${buttonText}: ${title || copy.region}` : title || copy.region} className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]">{content}</Link>
                     ) : (
-                      <a href={banner.link} tabIndex={isActive ? 0 : -1} aria-label={buttonText ? `${buttonText}: ${title || copy.region}` : title || copy.region} className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]">{content}</a>
+                      <a href={bannerHref} tabIndex={isActive ? 0 : -1} aria-label={buttonText ? `${buttonText}: ${title || copy.region}` : title || copy.region} className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]">{content}</a>
                     )
                   ) : <div className="relative h-full w-full">{content}</div>}
                 </div>
