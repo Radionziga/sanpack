@@ -9,6 +9,21 @@ const criticalRoutes = [
   '/ru/definitely-missing-page',
 ];
 
+test('image loading prioritizes visible content and caches static artwork', async ({ page, request }) => {
+  await page.goto('/ru', { waitUntil: 'domcontentloaded' });
+  const banners = page.locator('section[aria-label="Промо-предложения"] img');
+  await expect(banners.first()).toHaveAttribute('loading', 'eager');
+  await expect(banners.nth(1)).toHaveAttribute('loading', 'lazy');
+  await expect(page.locator('section[aria-labelledby^="home-shelf-"] img').first()).toHaveAttribute('loading', 'lazy');
+
+  const artwork = await request.get('/catalog/generated-products/price-2026-vb-001.webp');
+  expect(artwork.ok()).toBe(true);
+  expect(artwork.headers()['cache-control']).toContain('max-age=3600');
+
+  await page.goto('/ru/product/syr-svalya-3-kg-da-013', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('img[fetchpriority="high"][loading="eager"]').first()).toBeVisible();
+});
+
 test('storefront, product and designer render without raw translation keys', async ({ page }) => {
   for (const route of criticalRoutes) {
     await page.goto(route, { waitUntil: 'domcontentloaded' });

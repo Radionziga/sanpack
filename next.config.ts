@@ -36,6 +36,16 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      ...[
+        '/catalog/generated-products/:path*',
+        '/catalog/category-icons-v3/:path*',
+        '/catalog/popular-categories/:path*',
+        '/catalog/categories/:path*',
+        '/promo/:path*',
+      ].map((source) => ({
+        source,
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=3600, stale-while-revalidate=86400' }],
+      })),
       {
         source: '/api/:path*',
         headers: [

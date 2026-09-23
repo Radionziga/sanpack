@@ -201,21 +201,22 @@ export function CatalogHome({
                     </Link>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    {cards.map(({ category, count }) => (
-                      <Link
+                    {cards.map(({ category, count }) => {
+                      const artwork = getPopularCategoryArtwork(category);
+                      return <Link
                         key={category.id}
                         href={getCategoryPath(category, categories)}
-                        className="group relative isolate min-h-40 overflow-hidden rounded-[var(--sp-radius-card)] bg-[var(--sp-brand-soft)] p-4 ring-1 ring-inset ring-[var(--sp-line)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0"
+                        className={`group relative isolate min-h-40 overflow-hidden rounded-[var(--sp-radius-card)] p-4 ring-1 ring-inset ring-[var(--sp-line)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[var(--sp-shadow-raised)] motion-reduce:hover:translate-y-0 ${artwork ? 'bg-[var(--sp-brand-deep)]' : 'bg-[var(--sp-brand-soft)]'}`}
                       >
-                        {getPopularCategoryArtwork(category) ? (
-                          <Image src={getPopularCategoryArtwork(category)!} alt="" fill sizes="(min-width: 1024px) 26vw, 320px" className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
+                        {artwork ? (
+                          <Image src={artwork} alt="" fill sizes="(min-width: 1024px) 26vw, 320px" className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
                         ) : null}
-                        <div className={`relative z-10 max-w-[52%] pt-0.5 ${getPopularCategoryArtwork(category) ? 'text-white' : 'text-[var(--sp-ink)]'}`}>
+                        <div className={`relative z-10 max-w-[52%] pt-0.5 ${artwork ? 'text-white' : 'text-[var(--sp-ink)]'}`}>
                           <h3 className="line-clamp-3 text-sm font-extrabold leading-[1.18]">{categoryTitle(category)}</h3>
                           <p className="mt-1.5 text-[11px] font-semibold opacity-85">{t('categoryItemsCount', { count })}</p>
                         </div>
-                      </Link>
-                    ))}
+                      </Link>;
+                    })}
                   </div>
                 </section>
               ))}
@@ -225,7 +226,7 @@ export function CatalogHome({
           ) : null}
 
           <div className="mt-9 space-y-10">
-            {categorySections.map(({ category, products: sectionProducts }, sectionIndex) => (
+            {categorySections.map(({ category, products: sectionProducts }) => (
               <section key={category.id} aria-labelledby={`home-shelf-${category.id}`}>
                 <div className="mb-4 flex items-end justify-between gap-4">
                   <div className="min-w-0">
@@ -241,8 +242,8 @@ export function CatalogHome({
                   </Link>
                 </div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4">
-                  {sectionProducts.map((product, productIndex) => (
-                    <ProductCard key={product.id} product={product} appearance="market" eagerImage={sectionIndex === 0 && productIndex < 3} attributeDefinitions={attributes} />
+                  {sectionProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} appearance="market" attributeDefinitions={attributes} />
                   ))}
                 </div>
               </section>

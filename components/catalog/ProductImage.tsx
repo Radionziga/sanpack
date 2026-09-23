@@ -32,28 +32,38 @@ export function ProductImage({
     source: string;
     stage: 'direct' | 'failed';
   }>();
+  const [loadedSource, setLoadedSource] = useState<string>();
   const failureStage = loadFailure && loadFailure.source === source ? loadFailure.stage : undefined;
 
   if (hasProductImage(source) && failureStage !== 'failed') {
     const useDirectSource = failureStage === 'direct';
     return (
-      <Image
-        key={`${source}:${useDirectSource ? 'direct' : 'optimized'}`}
-        src={source}
-        alt={alt}
-        fill
-        sizes={sizes}
-        loading={loading}
-        fetchPriority={fetchPriority}
-        unoptimized={useDirectSource}
-        onError={() => {
-          setLoadFailure({
-            source,
-            stage: useDirectSource || !canRetryProductImageDirectly(source) ? 'failed' : 'direct',
-          });
-        }}
-        className={`rounded-[inherit] ${imageClassName ?? ''}`}
-      />
+      <>
+        {variant === 'detail' && loadedSource !== source ? (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[var(--sp-surface-inset)] motion-safe:animate-pulse"
+          />
+        ) : null}
+        <Image
+          key={`${source}:${useDirectSource ? 'direct' : 'optimized'}`}
+          src={source}
+          alt={alt}
+          fill
+          sizes={sizes}
+          loading={loading}
+          fetchPriority={fetchPriority}
+          unoptimized={useDirectSource}
+          onLoad={() => setLoadedSource(source)}
+          onError={() => {
+            setLoadFailure({
+              source,
+              stage: useDirectSource || !canRetryProductImageDirectly(source) ? 'failed' : 'direct',
+            });
+          }}
+          className={`rounded-[inherit] ${imageClassName ?? ''}`}
+        />
+      </>
     );
   }
 

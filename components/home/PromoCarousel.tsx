@@ -235,7 +235,7 @@ export function PromoCarousel({ banners, categories, locale }: { banners: Banner
 
             return (
               <div key={key} aria-hidden={clone || !isActive} className="relative min-w-[calc(100%-0.75rem)] snap-start py-1 sm:min-w-full">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-surface-inset)] shadow-sm sm:aspect-video md:aspect-[24/7]">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--sp-radius-card)] border border-[var(--sp-line)] bg-[var(--sp-brand-deep)] shadow-sm sm:aspect-video md:aspect-[24/7]">
                   {bannerHref ? (
                     bannerHref.startsWith('/') ? (
                       <Link href={bannerHref} tabIndex={isActive ? 0 : -1} aria-label={buttonText ? `${buttonText}: ${title || copy.region}` : title || copy.region} className="group relative block h-full w-full focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--sp-focus)]">{content}</Link>
