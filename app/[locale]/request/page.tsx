@@ -108,6 +108,7 @@ const checkoutCopy = {
     submit: 'Отправить заявку',
     submitting: 'Отправляем заявку…',
     genericError: 'Не удалось отправить заявку. Проверьте соединение и попробуйте ещё раз.',
+    miniAppSubmitAuthError: 'Telegram-сеанс больше не подтверждается. Закройте магазин и откройте его снова из чата SANPACK. Заявка не отправлена.',
     rateError: 'Слишком много попыток. Подождите несколько минут и попробуйте снова.',
     pendingIntentError: 'Предыдущая отправка не получила однозначного ответа, а данные формы изменились. Сначала повторите прежнюю отправку или явно начните новую.',
     retryPendingIntent: 'Повторить прежнюю отправку',
@@ -171,6 +172,7 @@ const checkoutCopy = {
     submit: 'Ariza yuborish',
     submitting: 'Ariza yuborilmoqda…',
     genericError: 'Arizani yuborib bo‘lmadi. Internet aloqasini tekshirib, qayta urinib ko‘ring.',
+    miniAppSubmitAuthError: 'Telegram seansini tasdiqlab bo‘lmadi. Do‘konni yoping va SANPACK chatidan qayta oching. Ariza yuborilmadi.',
     rateError: 'Urinishlar juda ko‘p. Bir necha daqiqadan keyin qayta urinib ko‘ring.',
     pendingIntentError: 'Oldingi yuborish bo‘yicha aniq javob olinmadi, lekin forma o‘zgardi. Avval oldingi yuborishni takrorlang yoki yangi arizani aniq boshlang.',
     retryPendingIntent: 'Oldingi yuborishni takrorlash',
@@ -234,6 +236,7 @@ const checkoutCopy = {
     submit: 'Submit request',
     submitting: 'Submitting your request…',
     genericError: 'We could not submit the request. Check your connection and try again.',
+    miniAppSubmitAuthError: 'Your Telegram session could not be verified. Close the store and reopen it from the SANPACK chat. No request was sent.',
     rateError: 'There have been too many attempts. Wait a few minutes and try again.',
     pendingIntentError: 'The previous submission has no definite result, but the form has changed. Retry the exact previous submission or explicitly start a new request.',
     retryPendingIntent: 'Retry previous submission',
@@ -297,6 +300,7 @@ const checkoutCopy = {
     submit: '提交申请',
     submitting: '正在提交申请…',
     genericError: '申请提交失败，请检查网络连接后重试。',
+    miniAppSubmitAuthError: '无法验证 Telegram 会话。请关闭商店并从 SANPACK 聊天中重新打开。申请尚未发送。',
     rateError: '尝试次数过多，请等待几分钟后重试。',
     pendingIntentError: '上次提交尚无明确结果，但表单内容已更改。请先重试原提交，或明确开始新的申请。',
     retryPendingIntent: '重试原提交',
@@ -314,10 +318,13 @@ const checkoutCopy = {
   },
 } satisfies Record<Language, Record<string, string>>;
 
-function checkoutErrorMessage(error: unknown, language: Language) {
+function checkoutErrorMessage(error: unknown, language: Language, isMiniApp: boolean) {
   const copy = checkoutCopy[language];
   if (error instanceof ApiResponseError && error.code === 'IDEMPOTENCY_CONFLICT') {
     return copy.intentServerConflict;
+  }
+  if (isMiniApp && error instanceof ApiResponseError && error.status === 401) {
+    return copy.miniAppSubmitAuthError;
   }
   if (error instanceof Error && error.message.startsWith('Слишком много попыток')) {
     return copy.rateError;
@@ -592,7 +599,10 @@ export default function RequestPage() {
         // server failure remains pending because its outcome is unknown.
         window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
       }
-      setSubmitError(checkoutErrorMessage(error, language));
+      if (isMiniApp && error instanceof ApiResponseError && error.status === 401) {
+        setMiniAppAuthRejected(true);
+      }
+      setSubmitError(checkoutErrorMessage(error, language, isMiniApp));
     } finally {
       setIsSubmitting(false);
     }
@@ -617,7 +627,10 @@ export default function RequestPage() {
       if (error instanceof ApiResponseError && error.code === 'IDEMPOTENCY_CONFLICT') {
         setPendingIntentConflict(pending);
       }
-      setSubmitError(checkoutErrorMessage(error, language));
+      if (isMiniApp && error instanceof ApiResponseError && error.status === 401) {
+        setMiniAppAuthRejected(true);
+      }
+      setSubmitError(checkoutErrorMessage(error, language, isMiniApp));
     } finally {
       setIsSubmitting(false);
     }

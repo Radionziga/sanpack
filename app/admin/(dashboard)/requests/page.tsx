@@ -10,6 +10,7 @@ import { getProductPriceMode, getProductUnitPrice } from '@/lib/commerce/product
 import { formatOrderAmount, getOrderAmountOrZero } from '@/lib/orders/orderAmounts';
 import { parseJsonResponse } from '@/lib/http/parseJsonResponse';
 import type { CustomerRequestOrder } from '@/lib/orders/customerOrderProjection';
+import { isStatusOnlyOrderEdit } from '@/lib/orders/adminOrderEdit';
 
 type IsolatedTestOrder = CustomerRequestOrder & Pick<RequestOrder, 'notification' | 'test'>;
 
@@ -187,7 +188,10 @@ export default function AdminRequestsPage() {
     if (!selected) return;
     setSaving(true); setError(null); setNotice(null);
     try {
-      const updated = await AdminRepository.updateRequest(selected.id, selected.revision || 1, {
+      const current = orders.find((order) => order.id === selected.id);
+      const updated = current && isStatusOnlyOrderEdit(selected, current)
+        ? await AdminRepository.updateRequestStatus(selected.id, selected.status, selected.revision || 1)
+        : await AdminRepository.updateRequest(selected.id, selected.revision || 1, {
         contactName: selected.contactName,
         phone: selected.phone,
         status: selected.status,
@@ -204,7 +208,7 @@ export default function AdminRequestsPage() {
           unitPrice: item.price,
           comment: item.comment,
         })),
-      });
+        });
       setSelected(updated);
       setOrders((current) => current.map((order) => order.id === updated.id ? updated : order));
       setNotice(`Заказ ${updated.requestNumber} сохранён. Редакция ${updated.revision}.`);

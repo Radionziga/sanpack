@@ -13,6 +13,7 @@ import type { Language } from '@/types';
 import { presentCommercialSummary, summarizeCommercialLines } from '@/lib/commerce/commercialSummary';
 import { RepeatRequestPanel } from '@/components/orders/RepeatRequestPanel';
 import type { CustomerRequestOrder } from '@/lib/orders/customerOrderProjection';
+import { customerOrderStatusMessage } from '@/lib/orders/orderStatusPresentation';
 
 const localeCodes: Record<Language, string> = { ru: 'ru-RU', uz: 'uz-UZ', en: 'en-US', zh: 'zh-CN' };
 
@@ -42,7 +43,7 @@ export default function OrdersPage() {
       logout: 'Выйти', logoutError: 'Не удалось завершить выход. Проверьте соединение и повторите.', loading: 'Загружаем историю…', loginError: 'Не удалось войти через Telegram. Попробуйте ещё раз.', miniAppError: 'Аккаунт Telegram Mini App не подтверждён. Данные другой сессии не показаны.',
       loadError: 'Не удалось загрузить заявки.', loginTitle: 'Войдите через Telegram', loginText: 'После входа вы увидите заявки, связанные с этим Telegram-аккаунтом.',
       retry: 'Повторить',
-      login: 'Войти через Telegram', empty: 'Заявок пока нет', openCatalog: 'Открыть каталог', request: 'Заявка', accepted: 'Заявка принята. Менеджер свяжется с вами.', total: 'Предварительная сумма',
+      login: 'Войти через Telegram', empty: 'Заявок пока нет', openCatalog: 'Открыть каталог', request: 'Заявка', total: 'Предварительная сумма',
       delivery: 'Доставка', address: 'Адрес', priceOnRequest: 'Цена по запросу', telegramManaged: 'Аккаунт Mini App определяется текущим профилем Telegram.',
     },
     uz: {
@@ -50,7 +51,7 @@ export default function OrdersPage() {
       logout: 'Chiqish', logoutError: 'Chiqishni yakunlab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.', loading: 'Tarix yuklanmoqda…', loginError: 'Telegram orqali kirib bo‘lmadi. Qayta urinib ko‘ring.', miniAppError: 'Telegram Mini App akkaunti tasdiqlanmadi. Boshqa sessiya ma’lumotlari ko‘rsatilmadi.',
       loadError: 'Arizalarni yuklab bo‘lmadi.', loginTitle: 'Telegram orqali kiring', loginText: 'Kirgandan so‘ng Telegram akkauntingizga bog‘langan arizalarni ko‘rasiz.',
       retry: 'Qayta urinish',
-      login: 'Telegram orqali kirish', empty: 'Hozircha arizalar yo‘q', openCatalog: 'Katalogni ochish', request: 'Ariza', accepted: 'Ariza qabul qilindi. Menejer siz bilan bog‘lanadi.', total: 'Dastlabki summa',
+      login: 'Telegram orqali kirish', empty: 'Hozircha arizalar yo‘q', openCatalog: 'Katalogni ochish', request: 'Ariza', total: 'Dastlabki summa',
       delivery: 'Yetkazib berish', address: 'Manzil', priceOnRequest: 'Narx so‘rov bo‘yicha', telegramManaged: 'Mini App akkaunti joriy Telegram profilingiz orqali aniqlanadi.',
     },
     en: {
@@ -58,7 +59,7 @@ export default function OrdersPage() {
       logout: 'Sign out', logoutError: 'Could not complete sign-out. Check your connection and try again.', loading: 'Loading history…', loginError: 'Telegram sign-in failed. Please try again.', miniAppError: 'The Telegram Mini App account was not verified. Data from another session is not shown.',
       loadError: 'We could not load your requests.', loginTitle: 'Sign in with Telegram', loginText: 'After signing in, you will see requests linked to this Telegram account.',
       retry: 'Try again',
-      login: 'Sign in with Telegram', empty: 'No requests yet', openCatalog: 'Open catalog', request: 'Request', accepted: 'Your request has been received. A manager will contact you.', total: 'Preliminary total',
+      login: 'Sign in with Telegram', empty: 'No requests yet', openCatalog: 'Open catalog', request: 'Request', total: 'Preliminary total',
       delivery: 'Delivery', address: 'Address', priceOnRequest: 'Price on request', telegramManaged: 'The Mini App account follows your current Telegram profile.',
     },
     zh: {
@@ -66,7 +67,7 @@ export default function OrdersPage() {
       logout: '退出登录', logoutError: '无法完成退出登录。请检查网络连接后重试。', loading: '正在加载记录…', loginError: 'Telegram 登录失败，请重试。', miniAppError: 'Telegram Mini App 账号未通过验证。不会显示其他会话的数据。',
       loadError: '申请记录加载失败。', loginTitle: '使用 Telegram 登录', loginText: '登录后即可查看与此 Telegram 账号关联的申请。',
       retry: '重试',
-      login: '使用 Telegram 登录', empty: '暂无申请', openCatalog: '打开商品目录', request: '申请', accepted: '申请已收到，经理将与您联系。', total: '预估金额',
+      login: '使用 Telegram 登录', empty: '暂无申请', openCatalog: '打开商品目录', request: '申请', total: '预估金额',
       delivery: '配送', address: '地址', priceOnRequest: '价格需询价', telegramManaged: 'Mini App 使用当前 Telegram 账号。',
     },
   }[language];
@@ -153,7 +154,7 @@ export default function OrdersPage() {
               <div className="mt-4 space-y-3">{orderItems.map((item) => <div key={item.lineId || `${item.productId}-${item.variantId || 'base'}`} className="flex items-start justify-between gap-4 text-sm"><div className="min-w-0"><p className="font-semibold">{getLocalizedText(item.productTitleRu, item.productTitleUz, item.productTitleEn, item.productTitleZh)}</p>{item.variantTitleRu ? <p className="mt-0.5 text-xs text-[var(--sp-ink-secondary)]">{getLocalizedText(item.variantTitleRu, item.variantTitleUz, item.variantTitleEn, item.variantTitleZh)}</p> : null}{item.price === undefined ? <p className="mt-1 text-xs font-semibold text-[var(--sp-brand)]">{copy.priceOnRequest}</p> : <p className="mt-1 text-xs tabular-nums text-[var(--sp-ink-secondary)]">{formatMoney(item.lineTotal ?? item.price * item.quantity, language, order.currency || 'UZS')}</p>}</div><span className="shrink-0 text-xs font-semibold">{item.quantity} {localizeUnit(item.unit, language)}</span></div>)}</div>
               {order.deliveryAddress || order.deliveryDate || order.deliveryWindow ? <div className="mt-5 grid gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] p-3 text-xs text-[var(--sp-ink-secondary)] sm:grid-cols-2"><p className="flex items-start gap-2"><MapPin className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.address}</strong>{order.deliveryAddress || '—'}</span></p><p className="flex items-start gap-2"><CalendarDays className="mt-0.5 size-4 shrink-0 text-[var(--sp-brand)]" /><span><strong className="block text-[var(--sp-ink)]">{copy.delivery}</strong>{order.deliveryDate ? new Intl.DateTimeFormat(localeCodes[language], { dateStyle: 'medium' }).format(new Date(`${order.deliveryDate}T12:00:00`)) : '—'}{order.deliveryWindow ? ` · ${order.deliveryWindow.replace('-', '–')}` : ''}</span></p></div> : null}
               <div className="mt-5 border-t border-[var(--sp-line)] pt-4 text-sm"><div className="flex items-center justify-between gap-4"><span className="text-[var(--sp-ink-secondary)]">{summary.label}</span><strong className="text-base tabular-nums text-[var(--sp-brand)]">{summary.value}</strong></div>{summary.secondary ? <p className="mt-1 text-xs font-medium text-[var(--sp-ink-secondary)]">{summary.secondary}</p> : null}</div>
-              <p className="mt-4 flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 py-2.5 text-xs text-[var(--sp-ink-secondary)]"><PackageCheck className="size-4 text-[var(--sp-brand)]" />{copy.accepted}</p>
+              <p className="mt-4 flex items-center gap-2 rounded-[var(--sp-radius-control)] bg-[var(--sp-surface-inset)] px-3 py-2.5 text-xs text-[var(--sp-ink-secondary)]"><PackageCheck className="size-4 text-[var(--sp-brand)]" />{customerOrderStatusMessage(order.status, language)}</p>
               <RepeatRequestPanel items={orderItems} />
             </article>
           );})}
